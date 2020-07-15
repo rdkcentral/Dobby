@@ -1,0 +1,361 @@
+{
+    "description": "Definitions required for extended OCI",
+    "definitions": {
+        "DataTypeLog": {
+            "type": "object",
+            "properties": {
+                "enabled": {
+                    "type": "boolean"
+                },
+                "limit": {
+                    "$ref": "defs.json#/definitions/int32"
+                },
+                "path": {
+                    "type": "string"
+                }
+            }
+        },
+        "EthanLog": {
+            "type": "object",
+            "required": [
+                "required",
+                "data"
+            ],
+            "properties": {
+                "required": {
+                    "type": "boolean"
+                },
+                "data": {
+                    "type": "object",
+                    "properties": {
+                        "loglevels": {
+                            "$ref": "defs.json#/definitions/ArrayOfStrings"
+                        }
+                    }
+                }
+            }
+        },
+        "AppServices": {
+            "type": "object",
+            "required": [
+                "required",
+                "data"
+            ],
+            "properties": {
+                "required": {
+                    "type": "boolean"
+                },
+                "data": {
+                    "type": "object",
+                    "properties": {
+                        "setMenu": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "GPU": {
+            "type": "object",
+            "required": [
+                "required",
+                "data"
+            ],
+            "properties": {
+                "required": {
+                    "type": "boolean"
+                },
+                "data": {
+                    "type": "object",
+                    "properties": {
+                        "memory": {
+                            "$ref": "defs.json#/definitions/int32"
+                        }
+                    }
+                }
+            }
+        },
+        "IPC": {
+            "type": "object",
+            "required": [
+                "required",
+                "data"
+            ],
+            "properties": {
+                "required": {
+                    "type": "boolean"
+                },
+                "data": {
+                    "type": "object",
+                    "properties": {
+                        "session": {
+                            "type": "string"
+                        },
+                        "system": {
+                            "type": "string"
+                        },
+                        "debug": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "Logging": {
+            "type": "object",
+            "required": [
+                "required",
+                "data"
+            ],
+            "properties": {
+                "required": {
+                    "type": "boolean"
+                },
+                "data": {
+                    "type": "object",
+                    "examples": [
+                        {
+                            "sink": "file",
+                            "fileOptions": {
+                                "path": "/tmp/container.log",
+                                "limit": 65536
+                            }
+                        },
+                        {
+                            "sink": "journald",
+                            "journaldOptions": {
+                                "priority": "LOG_INFO"
+                            }
+                        },
+                        {
+                            "sink": "devnull"
+                        }
+                    ],
+                    "required": [
+                        "sink"
+                    ],
+                    "additionalProperties": true,
+                    "properties": {
+                        "sink": {
+                            "type": "string"
+                        },
+                        "fileOptions": {
+                            "type": "object",
+                            "required": [
+                                "path",
+                                "limit"
+                            ],
+                            "additionalProperties": true,
+                            "properties": {
+                                "path": {
+                                    "type": "string"
+                                },
+                                "limit": {
+                                    "type": "integer"
+                                }
+                            }
+                        },
+                        "journaldOptions": {
+                            "type": "object",
+                            "required": [
+                                "priority"
+                            ],
+                            "additionalProperties": true,
+                            "properties": {
+                                "priority": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "Networking": {
+            "type": "object",
+            "required": [
+                "required",
+                "data"
+            ],
+            "properties": {
+                "required": {
+                    "type": "boolean"
+                },
+                "data": {
+                    "type": "object",
+                    "properties": {
+                        "type": {
+                            "type": "string"
+                        },
+                        "dnsmasq": {
+                            "type": "boolean"
+                        },
+                        "holes": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "required": [
+                                    "port"
+                                ],
+                                "properties": {
+                                    "port": {
+                                        "$ref": "defs.json#/definitions/uint16"
+                                    },
+                                    "protocol": {
+                                        "type": "string"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "Storage": {
+            "type": "object",
+            "required": [
+                "required",
+                "data"
+            ],
+            "properties": {
+                "required": {
+                    "type": "boolean"
+                },
+                "data": {
+                    "type": "object",
+                    "properties": {
+                        "loopback": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "required": [
+                                    "destination",
+                                    "flags",
+                                    "source"
+                                ],
+                                "properties": {
+                                    "destination": {
+                                        "type": "string"
+                                    },
+                                    "flags": {
+                                        "$ref": "defs.json#/definitions/int32"
+                                    },
+                                    "fstype": {
+                                        "type": "string"
+                                    },
+                                    "options": {
+                                        "$ref": "defs.json#/definitions/ArrayOfStrings"
+                                    },
+                                    "source": {
+                                        "type": "string"
+                                    },
+                                    "imgsize": {
+                                        "$ref": "defs.json#/definitions/int32"
+                                    },
+                                    "persistent": {
+                                        "type": "boolean"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "DRM": {
+            "type": "object",
+            "required": [
+                "required",
+                "data"
+            ],
+            "properties": {
+                "required": {
+                    "type": "boolean"
+                },
+                "data": {
+                    "type": "object",
+                    "properties": {
+                        "systems": {
+                            "$ref": "defs.json#/definitions/ArrayOfStrings"
+                        }
+                    }
+                }
+            }
+        },
+        "TestRdkPlugin": {
+            "type": "object",
+            "required": [
+                "required",
+                "data"
+            ],
+            "properties": {
+                "required": {
+                    "type": "boolean"
+                },
+                "data": {
+                    "type": "object",
+                    "properties": {
+                        "testData": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "DummyPlugin": {
+            "type": "object",
+            "required": [
+                "required",
+                "data"
+            ],
+            "properties": {
+                "required": {
+                    "type": "boolean"
+                },
+                "data": {
+                    "type": "object",
+                    "propertyNames": {
+                        "pattern": "^[A-Za-z_][A-Za-z0-9_]*$"
+                    }
+                }
+            }
+        },
+        "LegacyPlugins": {
+            "type": "object",
+            "properties": {
+                "EthanLog": {
+                    "$ref": "#/definitions/EthanLog"
+                },
+                "AppServices": {
+                    "$ref": "#/definitions/AppServices"
+                }
+            }
+        },
+        "RdkPlugins": {
+            "type": "object",
+            "properties": {
+                "ipc": {
+                    "$ref": "#/definitions/IPC"
+                },
+                "gpu": {
+                    "$ref": "#/definitions/GPU"
+                },
+                "logging": {
+                    "$ref": "#/definitions/Logging"
+                },
+                "networking": {
+                    "$ref": "#/definitions/Networking"
+                },
+                "storage": {
+                    "$ref": "#/definitions/Storage"
+                },
+                "drm": {
+                    "$ref": "#/definitions/DRM"
+                },
+                "testrdkplugin": {
+                    "$ref": "#/definitions/TestRdkPlugin"
+                }
+            }
+        }
+    }
+}

@@ -1,0 +1,28 @@
+{
+    "dbus": {
+      "serviceName": "com.sky.dobby",
+      "objectPath": "/com/sky/dobby"
+    },
+
+    "paths": {
+      "workspaceDir": "/tmp/sky",
+      "persistentDir": "/opt/persistent/sky"
+    },
+
+    "logging": {
+      "consoleSocket": "/tmp/dobbyPty.sock"
+    },
+
+    "extraEnvVariables": [
+      "ETHAN_STB_TYPE=IP",
+      "ETHAN_STB_MODEL=VM"
+    ],
+
+    "network": {
+      "externalInterfaces": [ "enp0s3" ]
+    }
+
+  }
+
+
+

@@ -1,0 +1,39 @@
+{
+  "dbus": {
+    "serviceName": "com.sky.dobby",
+    "objectPath": "/com/sky/dobby"
+  },
+
+  "paths": {
+    "workspaceDir": "/var/volatile/sky",
+    "persistentDir": "/opt/persistent/sky"
+  },
+
+  "logging": {
+    "consoleSocket": "/tmp/dobbyPty.sock"
+  },
+
+  "extraEnvVariables": [
+    "ETHAN_STB_TYPE=IP",
+    "ETHAN_STB_MODEL=Xi6"
+  ],
+
+  "gpu": {
+    "devNodes": [ "/dev/nexus", "/dev/dri/card[0-9]" ],
+    "extraMounts": [
+      {
+        "source": "/tmp/nxserver_ipc",
+        "destination": "/tmp/nxserver_ipc",
+        "type": "bind",
+        "options": [ "bind", "ro" ]
+      }
+    ]
+  },
+
+  "network": {
+    "externalInterfaces": [ "eth0", "wlan0" ]
+  }
+
+}
+
+
