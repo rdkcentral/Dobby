@@ -1,5 +1,5 @@
 # Dobby
-Dobby “Docker based Thingy” is a tool for managing and running OCI containers using crun
+Dobby “Docker based Thingy” is a tool for managing and running OCI containers using [crun](https://github.com/containers/crun)
 
 # Getting Started
 ## Requirements
@@ -18,7 +18,7 @@ Dobby has the following dependencies
 
 The STB kernel should also have veth support enabled to allow for NAT networking: https://cateee.net/lkddb/web-lkddb/VETH.html
 
-For development, it is recommended to use the Vagrant VM (based on Ubuntu 16.04 LTS) here which has all the necessary libraries and packages preinstalled: https://redgitlab.redembedded.com:8443/rdk-sig-dac/dobby-ubuntu-build-environment-vm/-/tree/master
+For development, it is recommended to use the [Vagrant VM (based on Ubuntu 16.04 LTS) here](https://redgitlab.redembedded.com:8443/rdk-sig-dac/dobby-ubuntu-build-environment-vm/-/tree/master) which has all the necessary libraries and packages preinstalled
 
 ## Build
 Dobby is a CMake project and can be built with the standard CMake workflow. To build, run the following commands.
