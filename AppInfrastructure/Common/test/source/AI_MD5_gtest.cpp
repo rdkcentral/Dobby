@@ -133,6 +133,7 @@ struct MD5ConstTests {
     const char * input, * output;
 };
 
+// Tests based on test suite defined in section A.5 of RFC1321
 static std::vector<MD5ConstTests> md5ConstTests {
     {
         "",
