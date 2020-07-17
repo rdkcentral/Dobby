@@ -19,7 +19,7 @@
 /*
  * File:   ReadLine.h
  *
- * Copyright (C) BSKYB 2015+
+ * Copyright (C) Sky UK 2015+
  */
 #ifndef READLINE_H
 #define READLINE_H

@@ -19,7 +19,7 @@
 /*
  * File:   DobbyAsync.cpp
  *
- * Copyright (C) BSKYB 2017+
+ * Copyright (C) Sky UK 2017+
  */
 
 #include "DobbyAsync.h"

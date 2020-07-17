@@ -20,7 +20,7 @@
  * DobbyFactory.cpp
  * Author:
  *
- * Copyright (C) BSKYB 2016+
+ * Copyright (C) Sky UK 2016+
  */
 #include "DobbyFactory.h"
 #include "DobbyProxy.h"

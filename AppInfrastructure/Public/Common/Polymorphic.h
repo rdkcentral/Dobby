@@ -22,7 +22,7 @@
  *
  * Created on 26 June 2014
  *
- * Copyright (C) BSKYB 2014
+ * Copyright (C) Sky UK 2014
  */
 
 #ifndef POLYMORPHIC_H

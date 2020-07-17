@@ -20,7 +20,7 @@
  * DobbyProxy.h
  * Author:
  *
- * Copyright (C) BSKYB 2016+
+ * Copyright (C) Sky UK 2016+
  */
 #ifndef DOBBYPROXY_H
 #define DOBBYPROXY_H

@@ -20,7 +20,7 @@
  * IDobbyProxy.h
  * Author:
  *
- * Copyright (C) BSKYB 2016+
+ * Copyright (C) Sky UK 2016+
  */
 #ifndef IDOBBYPROXY_H
 #define IDOBBYPROXY_H

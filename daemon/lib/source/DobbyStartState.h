@@ -19,7 +19,7 @@
 /*
  * File:   DobbyStartState.h
  *
- * Copyright (C) BSKYB 2016+
+ * Copyright (C) Sky UK 2016+
  */
 #ifndef DOBBYSTARTSTATE_H
 #define DOBBYSTARTSTATE_H

@@ -19,7 +19,7 @@
 /*
  * File: BaseService.cpp
  *
- * Copyright (C) Sky 2018+
+ * Copyright (C) Sky UK 2018+
  */
 #include "BaseService.h"
 #include <Logging.h>

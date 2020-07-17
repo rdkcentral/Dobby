@@ -19,7 +19,7 @@
 /*
  * File:   Mutex.h
  *
- * Copyright (C) BSKYB 2016+
+ * Copyright (C) Sky UK 2016+
  */
 #ifndef MUTEX_H
 #define MUTEX_H

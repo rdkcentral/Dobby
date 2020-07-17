@@ -19,7 +19,7 @@
 /*
  * File:   DobbyManager.h
  *
- * Copyright (C) BSKYB 2016+
+ * Copyright (C) Sky UK 2016+
  */
 #ifndef DOBBYMANAGER_H
 #define DOBBYMANAGER_H

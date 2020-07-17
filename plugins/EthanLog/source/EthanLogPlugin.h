@@ -19,7 +19,7 @@
 /*
  * File:   EthanLogPlugin.h
  *
- * Copyright (C) BSKYB 2016+
+ * Copyright (C) Sky UK 2016+
  */
 #ifndef ETHANLOGPLUGIN_H
 #define ETHANLOGPLUGIN_H

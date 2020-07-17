@@ -19,7 +19,7 @@
 /*
  * File:   ServiceMonitor.h
  *
- * Copyright (C) BSKYB 2016+
+ * Copyright (C) Sky UK 2016+
  */
 #ifndef SERVICEMONITOR_H
 #define SERVICEMONITOR_H

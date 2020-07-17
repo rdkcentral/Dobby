@@ -1,6 +1,6 @@
 ################################################################################
 ## Function     : Build unit tests for IpcService
-## Copyright    : BSkyB 2015
+## Copyright    : Sky UK 2015
 ################################################################################
 ifndef __IpcServiceTest_COMPONENT_MK__
 __IpcServiceTest_COMPONENT_MK__ := DEFINED

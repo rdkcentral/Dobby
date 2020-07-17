@@ -19,7 +19,7 @@
 /*
  * File:   DobbyContainer.h
  *
- * Copyright (C) BSKYB 2016+
+ * Copyright (C) Sky UK 2016+
  */
 #ifndef DOBBYCONTAINER_H
 #define DOBBYCONTAINER_H

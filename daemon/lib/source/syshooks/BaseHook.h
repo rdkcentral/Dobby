@@ -19,7 +19,7 @@
 /*
  * File:   BaseHook.h
  *
- * Copyright (C) BSKYB 2016+
+ * Copyright (C) Sky UK 2016+
  */
 #ifndef BASEHOOK_H
 #define BASEHOOK_H

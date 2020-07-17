@@ -19,7 +19,7 @@
 /*
  * File:   DobbyTemplate.h
  *
- * Copyright (C) BSKYB 2016+
+ * Copyright (C) Sky UK 2016+
  */
 #ifndef DOBBYTEMPLATE_H
 #define DOBBYTEMPLATE_H

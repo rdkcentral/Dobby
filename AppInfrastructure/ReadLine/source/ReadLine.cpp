@@ -20,7 +20,7 @@
  * File:   ReadLine.cpp
  * Author:
  *
- * Copyright (C) BSKYB 2015+
+ * Copyright (C) Sky UK 2015+
  */
 #include "ReadLine.h"
 

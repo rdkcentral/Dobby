@@ -20,7 +20,7 @@
 //  Logging.cpp
 //  AppInfrastructure
 //
-//  Copyright © 2019 Sky UK. All rights reserved.
+//  Copyright © 2019 Sky UK. 
 //
 #ifndef _GNU_SOURCE
 #  define _GNU_SOURCE

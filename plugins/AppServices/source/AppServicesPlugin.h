@@ -19,7 +19,7 @@
 /*
  * File:   AppServicesPlugin.h
  *
- * Copyright (C) BSKYB 2019+
+ * Copyright (C) Sky UK 2019+
  */
 #ifndef APPSERVICESPLUGIN_H
 #define APPSERVICESPLUGIN_H

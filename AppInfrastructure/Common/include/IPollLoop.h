@@ -19,7 +19,7 @@
 /*
  * File:   IPollLoop.h
  *
- * Copyright (C) BSKYB 2015+
+ * Copyright (C) Sky UK 2015+
  */
 #ifndef IPOLLLOOP_H
 #define IPOLLLOOP_H

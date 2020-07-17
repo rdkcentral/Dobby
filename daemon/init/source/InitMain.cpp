@@ -20,7 +20,7 @@
  *  File:   InitMain.cpp
  *  Author:
  *
- *  Copyright (C) BSKYB 2016+
+ *  Copyright (C) Sky UK 2016+
  *
  *  This file creates a very simple 'init' process for the container.  The main
  *  motivation for this is described here:

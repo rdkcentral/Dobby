@@ -1,6 +1,6 @@
 ################################################################################
 ## Function     : Build unit tests for Common
-## Copyright    : BSkyB 2013+
+## Copyright    : Sky UK 2013+
 ################################################################################
 ifndef __AppInfraCommonTests_COMPONENT_MK__
 __AppInfraCommonTests_COMPONENT_MK__ := DEFINED

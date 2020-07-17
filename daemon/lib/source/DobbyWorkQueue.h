@@ -19,7 +19,7 @@
 /*
  * File:   DobbyWorkQueue.h
  *
- * Copyright (C) Sky.uk 2020+
+ * Copyright (C) Sky UK 2020+
  */
 
 #ifndef DOBBYWORKQUEUE_H

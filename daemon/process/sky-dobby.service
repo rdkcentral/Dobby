@@ -1,4 +1,4 @@
-# Copyright © 2019 Sky UK. All rights reserved.
+# Copyright © 2019 Sky UK. 
 #
 # This file is systemd script for launching the dobby service
 # at boot time.

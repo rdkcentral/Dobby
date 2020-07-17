@@ -19,7 +19,7 @@
 /*
  * File:   DobbyBundleConfig.h
  *
- * Copyright (C) BSKYB 2016+
+ * Copyright (C) Sky UK 2016+
  */
 #ifndef DOBBYBUNDLECONFIG_H
 #define DOBBYBUNDLECONFIG_H

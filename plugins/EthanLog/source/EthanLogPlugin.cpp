@@ -19,7 +19,7 @@
 /*
  * File:   EthanLogPlugin.cpp
  *
- * Copyright (C) BSKYB 2016+
+ * Copyright (C) Sky UK 2016+
  */
 #include "EthanLogPlugin.h"
 #include "EthanLogLoop.h"

@@ -19,7 +19,7 @@
 /*
  * File:   DobbyRunc.h
  *
- * Copyright (C) BSKYB 2016+
+ * Copyright (C) Sky UK 2016+
  */
 #ifndef DOBBYRUNC_H
 #define DOBBYRUNC_H

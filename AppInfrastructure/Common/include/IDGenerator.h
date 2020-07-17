@@ -19,7 +19,7 @@
 /*
  * File:   IDGenerator.h
  *
- * Copyright (C) BSKYB 2016+
+ * Copyright (C) Sky UK 2016+
  */
 #ifndef IDGENERATOR_H
 #define IDGENERATOR_H

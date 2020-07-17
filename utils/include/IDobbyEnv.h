@@ -19,7 +19,7 @@
 /*
  * File:   IDobbyEnv.h
  *
- * Copyright (C) BSKYB 2016+
+ * Copyright (C) Sky UK 2016+
  */
 #ifndef IDOBBYENV_H
 #define IDOBBYENV_H

@@ -19,7 +19,7 @@
 /*
  * File:   HolePuncherPlugin.cpp
  *
- * Copyright (C) Sky.uk 2018+
+ * Copyright (C) Sky UK 2018+
  */
 #include "HolePuncherPlugin.h"
 

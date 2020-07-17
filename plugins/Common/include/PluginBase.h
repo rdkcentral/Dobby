@@ -19,7 +19,7 @@
 /*
  * File:   PluginBase.h
  *
- * Copyright (C) BSKYB 2016+
+ * Copyright (C) Sky UK 2016+
  */
 #ifndef PLUGINBASE_H
 #define PLUGINBASE_H

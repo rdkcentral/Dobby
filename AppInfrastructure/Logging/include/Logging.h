@@ -20,7 +20,7 @@
 //  Logging.h
 //  AppInfrastructure
 //
-//  Copyright © 2019 Sky UK. All rights reserved.
+//  Copyright © 2019 Sky UK. 
 //
 #ifndef LOGGING_H
 #define LOGGING_H

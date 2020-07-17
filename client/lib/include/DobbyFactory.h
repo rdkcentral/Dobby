@@ -20,7 +20,7 @@
  * DobbyFactory.h
  * Author:
  *
- * Copyright (C) BSKYB 2016+
+ * Copyright (C) Sky UK 2016+
  */
 #ifndef DOBBYFACTORY_H
 #define DOBBYFACTORY_H

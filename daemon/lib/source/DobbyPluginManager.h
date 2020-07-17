@@ -19,7 +19,7 @@
 /*
  * File:   DobbyPluginManager.h
  *
- * Copyright (C) BSKYB 2016+
+ * Copyright (C) Sky UK 2016+
  */
 #ifndef DOBBYPLUGINMANAGER_H
 #define DOBBYPLUGINMANAGER_H

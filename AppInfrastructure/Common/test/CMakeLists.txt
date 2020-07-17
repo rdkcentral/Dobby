@@ -30,7 +30,6 @@ add_component_gtests(
         "${CMAKE_CURRENT_LIST_DIR}/source/FileWatcherTest.cpp"
         "${CMAKE_CURRENT_LIST_DIR}/source/IDGeneratorTest.cpp"
         "${CMAKE_CURRENT_LIST_DIR}/source/ISO8601Test.cpp"
-        "${CMAKE_CURRENT_LIST_DIR}/source/MutexTest.cpp"
         "${CMAKE_CURRENT_LIST_DIR}/source/NotifierTest.cpp"
         "${CMAKE_CURRENT_LIST_DIR}/source/ScratchSpaceTest.cpp"
         "${CMAKE_CURRENT_LIST_DIR}/source/SignallingFifoTest.cpp"

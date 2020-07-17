@@ -19,7 +19,7 @@
 /*
  * File:   PollLoop.h
  *
- * Copyright (C) BSKYB 2015+
+ * Copyright (C) Sky UK 2015+
  */
 #ifndef POLLLOOP_H
 #define POLLLOOP_H

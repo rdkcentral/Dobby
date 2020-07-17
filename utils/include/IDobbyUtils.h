@@ -19,7 +19,7 @@
 /*
  * File:   IDobbyUtils.h
  *
- * Copyright (C) BSKYB 2016+
+ * Copyright (C) Sky UK 2016+
  */
 #ifndef IDOBBYUTILS_H
 #define IDOBBYUTILS_H

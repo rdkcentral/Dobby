@@ -19,7 +19,7 @@
 /*
  * File:   DobbyRootfs.cpp
  *
- * Copyright (C) BSKYB 2016+
+ * Copyright (C) Sky UK 2016+
  */
 #include "DobbyRootfs.h"
 #include "DobbyBundle.h"

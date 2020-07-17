@@ -19,7 +19,7 @@
 /*
  * File:   GpuMemoryHook.h
  *
- * Copyright (C) BSKYB 2016+
+ * Copyright (C) Sky UK 2016+
  */
 #include "GpuMemoryHook.h"
 #include <IDobbyEnv.h>

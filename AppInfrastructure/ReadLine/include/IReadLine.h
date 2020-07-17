@@ -19,7 +19,7 @@
 /*
  * File:   IReadLine.h
  *
- * Copyright (C) BSKYB 2015+
+ * Copyright (C) Sky UK 2015+
  */
 #ifndef IREADLINE_H
 #define IREADLINE_H

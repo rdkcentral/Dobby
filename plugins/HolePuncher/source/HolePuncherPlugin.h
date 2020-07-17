@@ -19,7 +19,7 @@
 /*
  * File:   HolePuncherPlugin.h
  *
- * Copyright (C) Sky.uk 2018+
+ * Copyright (C) Sky UK 2018+
  */
 #ifndef HOLEPUNCHERPLUGIN_H
 #define HOLEPUNCHERPLUGIN_H

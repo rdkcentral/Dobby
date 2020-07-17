@@ -19,7 +19,7 @@
 /*
  * File:   ContainerId.h
  *
- * Copyright (C) BSKYB 2016+
+ * Copyright (C) Sky UK 2016+
  */
 #ifndef CONTAINERID_H
 #define CONTAINERID_H

@@ -20,7 +20,7 @@
 //  IpcFileDescriptor.cpp
 //  IpcService
 //
-//  Copyright © 2019 Sky UK. All rights reserved.
+//  Copyright © 2019 Sky UK. 
 //
 
 #include "IpcFileDescriptor.h"

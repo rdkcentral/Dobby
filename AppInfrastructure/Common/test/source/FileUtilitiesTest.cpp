@@ -22,7 +22,7 @@
  *
  * Created on 11 July 2014
  *
- * Copyright (C) BSKYB 2014
+ * Copyright (C) Sky UK 2014
  */
 
 #include <FileUtilities.h>

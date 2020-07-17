@@ -19,7 +19,7 @@
 /*
  * File:   DobbyPluginManager.cpp
  *
- * Copyright (C) BSKYB 2016+
+ * Copyright (C) Sky UK 2016+
  */
 #include "DobbyPluginManager.h"
 #include "IDobbyPlugin.h"

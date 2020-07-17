@@ -19,7 +19,7 @@
 /*
  * File:   DobbyWorkQueue.cpp
  *
- * Copyright (C) Sky.uk 2020+
+ * Copyright (C) Sky UK 2020+
  */
 
 #include "DobbyWorkQueue.h"

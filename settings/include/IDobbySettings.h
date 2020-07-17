@@ -19,7 +19,7 @@
 /*
  * File:   IDobbySettings.h
  *
- * Copyright (C) BSKYB 2020+
+ * Copyright (C) Sky UK 2020+
  */
 #ifndef IDOBBYSETTINGS_H
 #define IDOBBYSETTINGS_H

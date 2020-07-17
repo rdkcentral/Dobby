@@ -19,7 +19,7 @@
 /*
  * File:   DobbyAsync.h
  *
- * Copyright (C) BSKYB 2017+
+ * Copyright (C) Sky UK 2017+
  */
 #ifndef DOBBYASYNC_H
 #define DOBBYASYNC_H

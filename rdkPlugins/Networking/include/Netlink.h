@@ -19,7 +19,7 @@
 /*
  * File:   Netlink.h
  *
- * Copyright (C) BSKYB 2016+
+ * Copyright (C) Sky UK 2016+
  */
 #ifndef NETLINK_H
 #define NETLINK_H

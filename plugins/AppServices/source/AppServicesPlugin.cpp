@@ -19,7 +19,7 @@
 /*
  * File:   AppServicesPlugin.cpp
  *
- * Copyright (C) BSKYB 2019+
+ * Copyright (C) Sky UK 2019+
  */
 #include "AppServicesPlugin.h"
 

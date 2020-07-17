@@ -19,7 +19,7 @@
 /*
  * File:   Settings.h
  *
- * Copyright (C) BSKYB 2020+
+ * Copyright (C) Sky UK 2020+
  */
 
 #ifndef SETTINGS_H

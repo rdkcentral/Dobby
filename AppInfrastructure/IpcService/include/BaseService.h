@@ -19,7 +19,7 @@
 /*
  * File: BaseService.h
  *
- * Copyright (C) Sky 2018+
+ * Copyright (C) Sky UK 2018+
  */
 #ifndef BASESERVICE_H
 #define BASESERVICE_H
