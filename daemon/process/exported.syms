@@ -1,0 +1,17 @@
+{
+    # Export the functions needed for AI_LOG macros
+    __ai_debug_log_level;
+    __ai_debug_log_printf;
+    __ai_debug_log_sys_printf;
+
+    # Export the IpcService API for the plugins to use
+    extern "C++" {
+        *AI_IPC::*;
+    };
+
+    # Export the jsoncpp API for plugins to use (only used
+    # on RDK build where JsonCpp is built into DobbyDaemon)
+    extern "C++" {
+        *Json::*;
+    };
+};

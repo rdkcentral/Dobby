@@ -1,0 +1,4 @@
+[submodule "libocispec"]
+	path = libocispec
+	url = https://github.com/containers/libocispec.git
+	ignore = dirty

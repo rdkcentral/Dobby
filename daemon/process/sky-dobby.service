@@ -1,0 +1,29 @@
+# Copyright © 2019 Sky UK. 
+#
+# This file is systemd script for launching the dobby service
+# at boot time.
+#
+# Enable dobby to start on boot:
+#         systemctl enable sky-dobby.service
+#
+# Start dobby immediately:
+#         systemctl start sky-dobby.service
+#
+# Stop dobby:
+#         systemctl stop sky-dobby.service
+#
+# Status:
+#         systemctl status sky-dobby.service
+
+[Unit]
+Description=Sky Dobby (Container) daemon
+
+[Service]
+Type=dbus
+BusName=com.sky.dobby
+ExecStart=/usr/sbin/DobbyDaemon --nofork --noconsole --journald
+WatchdogSec=5
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

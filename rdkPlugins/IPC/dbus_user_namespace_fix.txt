@@ -1,0 +1,52 @@
+This patch adds an option to disable sending of the clients user id
+as part of the AUTH EXTERNAL process, which causes problems if the client
+is in a user namespace different from the dbus-daemon process as the UID
+sent in the AUTH message doesn't match the value read from the unix socket.
+The following is an example of AUTH handshaking when
+SKY_DBUS_DISABLE_UID_IN_EXTERNAL_AUTH is not set (original):
+	C: AUTH EXTERNAL 31303030     <-- 31303030 is UID 1000
+	S: OK 1234deadbeef
+	C: BEGIN
+If SKY_DBUS_DISABLE_UID_IN_EXTERNAL_AUTH is set:
+	C: AUTH EXTERNAL              <-- Empty auth data
+	S: DATA                       <-- Server sends another request for data
+	C: DATA                       <-- Client sends back another empty data
+                                          Server will revert to just use the socket data
+	S: OK 1234deadbeef
+	C: BEGIN
+Note that there is no reduction in security by setting the
+SKY_DBUS_DISABLE_UID_IN_EXTERNAL_AUTH env var.  The server
+still uses the SO_PEERCRED which is enforced by the kernel.
+--- a/dbus/dbus-auth.c	2019-12-09 10:55:18.710037328 +0000
++++ b/dbus/dbus-auth.c	2019-12-09 11:01:31.700182869 +0000
+@@ -1176,6 +1176,16 @@
+ handle_client_initial_response_external_mech (DBusAuth         *auth,
+                                               DBusString       *response)
+ {
++  /* [Sky] Optionally we disable sending the UID of the caller in
++   * the EXTERNAL AUTH, it's not strictly required and it causes
++   * issues with apps inside username namespaces as the UID is
++   * different from their POV compared with the dbus-daemon (which
++   * is in a different user namespace).
++   */
++  if (getenv("SKY_DBUS_DISABLE_UID_IN_EXTERNAL_AUTH")) {
++    return TRUE;
++  }
++
+   /* We always append our UID as an initial response, so the server
+    * doesn't have to send back an empty challenge to check whether we
+    * want to specify an identity. i.e. this avoids a round trip that
+@@ -1217,7 +1217,13 @@
+ handle_client_data_external_mech (DBusAuth         *auth,
+                                   const DBusString *data)
+ {
+-
++  /* [Sky] Send back an empty DATA message, this causes the server
++   * side to drop back to just using the credentials in the socket.
++   */
++  if (getenv("SKY_DBUS_DISABLE_UID_IN_EXTERNAL_AUTH")) {
++    return send_data (auth, NULL);
++  }
++
+   return TRUE;
+ }
