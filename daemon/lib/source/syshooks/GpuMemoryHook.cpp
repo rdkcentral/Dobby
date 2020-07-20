@@ -116,7 +116,7 @@ bool GpuMemoryHook::writeCgroupFile(const ContainerId& id,
                                     size_t value)
 {
     const std::string filePath(id.str() + "/" + fileName);
-    int fd = openat(mCgroupDirfd, filePath.c_str(), O_WRONLY|O_CREAT|O_TRUNC|O_CLOEXEC);
+    int fd = openat(mCgroupDirfd, filePath.c_str(), O_WRONLY|O_CREAT|O_TRUNC|O_CLOEXEC, 0700);
     if (fd < 0)
     {
         AI_LOG_SYS_ERROR(errno, "failed to open '%s'", filePath.c_str());
