@@ -2163,8 +2163,22 @@ void DobbyManager::onChildExit()
         if (rc < 0)
         {
             AI_LOG_SYS_ERROR(errno, "waitpid failed for pid %d", containerPid);
+
+            // Sometimes waitpid fails even though container is already dead
+            // we can check if it is running by sending "dummy" kill (it will
+            // not perform kill, just check if it CAN)
+            int tmp = kill(containerPid, 0);
+            AI_LOG_SYS_ERROR(errno, "kill status %d", tmp);
+            // Cannot kill process, probably already dead
+            if (tmp == -1)
+            {
+                // Threat it as it would return proper waitpid
+                status = 0;
+                rc = container->containerPid;
+            }
         }
-        else if (rc == container->containerPid)
+
+        if (rc == container->containerPid)
         {
             const ContainerId &id = it->first;
 
