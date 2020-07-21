@@ -123,7 +123,7 @@ def create_curl_command(test, bundle_path):
                     "--silent",
                     "-X",
                     "POST",
-                    "http://127.0.0.1:9998/Service/",
+                    "http://127.0.0.1:9998/jsonrpc/",
                     "--header",
                     "Content-Type: application/json",
                     "-d",
