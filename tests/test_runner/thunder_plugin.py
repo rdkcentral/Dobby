@@ -114,7 +114,7 @@ def create_curl_command(test, bundle_path):
     if params:
         params = ', "params":{%s}' % params
 
-    plugin_name = "OCIContainer.1"
+    plugin_name = "org.rdk.OCIContainer.1"
 
     if test_utils.selected_platform == test_utils.Platforms.xi_6:
         plugin_name = "org.rdk." + plugin_name
