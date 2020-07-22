@@ -28,7 +28,7 @@
     "mounts": [{
         "destination": "/files",
         "options": ["rbind", "ro", "nosuid", "nodev"],
-        "source": "/vagrant/tests/files",
+        "source": "/home/vagrant/srcDobby/tests/test_runner/files",
         "type": "bind"
     }]
 }
