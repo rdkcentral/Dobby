@@ -2,7 +2,7 @@
 * If not stated otherwise in this file or this component's LICENSE file the
 * following copyright and licenses apply:
 *
-* Copyright 2020 RDK Management
+* Copyright 2019 Sky UK
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -20,7 +20,6 @@
 //  SDBusAsyncReplyGetter.h
 //  IpcService
 //
-//  Copyright © 2019 Sky UK. 
 //
 
 #ifndef SDBUSASYNCREPLYGETTER_H

@@ -2,7 +2,7 @@
 * If not stated otherwise in this file or this component's LICENSE file the
 * following copyright and licenses apply:
 *
-* Copyright 2020 RDK Management
+* Copyright 2016 Sky UK
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@
 /*
  * File:   IDGenerator.h
  *
- * Copyright (C) Sky UK 2016+
  */
 #ifndef IDGENERATOR_H
 #define IDGENERATOR_H
