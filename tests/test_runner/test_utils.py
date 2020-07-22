@@ -68,7 +68,11 @@ class dobby_daemon:
 
     def __exit__(self, etype, value, traceback):
         print_log("Stopping Dobby Daemon", Severity.debug)
-        self.subproc.kill()
+
+        if selected_platform == Platforms.xi_6:
+            self.subproc.kill()
+        else:
+            subprocess.run(["sudo", "pkill", "DobbyDaemon"])
         sleep(0.2)
 
         # check for segfault
