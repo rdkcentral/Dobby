@@ -1,3 +1,5 @@
+Source: Sky UK
+
 This patch adds an option to disable sending of the clients user id
 as part of the AUTH EXTERNAL process, which causes problems if the client
 is in a user namespace different from the dbus-daemon process as the UID
