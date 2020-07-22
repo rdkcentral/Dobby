@@ -55,7 +55,7 @@ cmake -DCMAKE_BUILD_TYPE=Debug -DRDK_PLATFORM=DEV_VM ../
 sudo make install -j6
 ```
 
-There are two key components of Dobby that are used for testing - `DobbyDaemon` and `DobbyTool`. `DobbyDaemon` is the main Dobby engine and is responsible for the creation and management of containers. `DobbyTool` is a debugging tool that allows manually creating, inspecting and listing containers. The daemon must be running for the DobbyTool to work.
+There are two key components of Dobby that are used for testing - `DobbyDaemon` and `DobbyTool`. `DobbyDaemon` is the main Dobby engine and is responsible for the creation and management of containers. `DobbyTool` is a debugging tool that allows manually creating, inspecting and listing containers. The daemon must be running as root for the DobbyTool to work.
 
 ### Basic Test
 
@@ -101,3 +101,4 @@ It is possible to access Thunder from the host machine if you enable port forwar
 ## Known Issues
 
 * DobbyDaemon sometimes fails to start with error `failed to create veth pair ('veth0' : 'enp0s3') (12 - Object not found)`. Rebooting the VM (`vagrant halt && vagrant up`) should fix this.
+    * If rebooting doesn't solve the issue, then set the container network type to `open` or `none` instead of `nat` until a fix is found.
