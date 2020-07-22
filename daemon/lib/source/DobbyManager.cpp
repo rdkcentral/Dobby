@@ -2165,12 +2165,10 @@ void DobbyManager::onChildExit()
             // Sometimes waitpid fails even though container is already dead
             // we can check if it is running by sending "dummy" kill (it will
             // not perform kill, just check if it CAN)
-            int tmp = kill(containerPid, 0);
-
-            if (tmp == -1)
+            if (kill(containerPid, 0) == -1)
             {
                 // Cannot kill process, probably already dead
-                // Threat it as it would return proper waitpid
+                // treat it as if it would return proper waitpid
                 status = 0;
                 rc = container->containerPid;
             }
