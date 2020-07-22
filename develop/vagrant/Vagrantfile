@@ -1,0 +1,284 @@
+# If not stated otherwise in this file or this component's license file the
+# following copyright and licenses apply:
+#
+# Copyright 2020 RDK Management
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+=begin
+################################################################################
+Vagrantfile to configure a VirtualBox VM that can be used for Dobby development.
+Builds & installs the following components (plus dependencies):
+  * Dobby (https://github.com/rdkcentral/Dobby/)
+  * Crun (https://github.com/containers/crun)
+  * Thunder (https://github.com/rdkcentral/Thunder)
+  * OCIContainer NanoService (https://github.com/rdkcentral/rdkservices)
+################################################################################
+=end
+
+Vagrant.configure("2") do |config|
+
+    ##################################################
+    #
+    # VM Configuration (Ubuntu 16.04)
+    #
+    config.vm.box = "ubuntu/xenial64"
+
+    config.vm.hostname = "dobby-vagrant"
+    config.vm.define "dobby-vagrant"
+
+    config.vm.network "public_network"
+
+    config.vagrant.plugins = "vagrant-disksize"
+    config.vagrant.plugins = "vagrant-vbguest"
+    config.disksize.size = '20GB'
+
+    config.vm.provider "virtualbox" do |vb|
+        vb.memory = "6144"  # Change this to reduce the amount of RAM assigned to the VM
+        vb.cpus = "6"       # Change this to reduce the amount of cores assigned to the VM
+        vb.customize ["modifyvm", :id, "--ioapic", "on", "--vram", "100", "--graphicscontroller", "vmsvga", "--audio", "none"]
+    end
+
+    ##################################################
+    #
+    # Git & SSH Config
+    #
+    # Forward SSH keys from host
+    config.ssh.forward_agent = true
+
+    # Copy host gitconfig
+    config.vm.provision "file", source: "~/.gitconfig", destination: ".gitconfig"
+    config.vm.provision "file", source: "~/.ssh", destination: "$HOME/.ssh"
+
+    # Configure git/ssh keys
+    config.vm.provision "shell", privileged: false, inline: <<-SHELL
+        mkdir -p ~/.ssh
+        chmod 700 ~/.ssh
+        ssh-keyscan -Ht rsa github.com >> ~/.ssh/known_hosts
+    SHELL
+
+    config.vm.provision "shell", inline: <<-SHELL
+        apt install figlet
+    SHELL
+
+    ##################################################
+    #
+    # Install dependencies inc. CMake
+    #
+    config.vm.provision "shell", inline: <<-SHELL
+        figlet DEPENDENCIES  # ASCII banner
+
+        sudo add-apt-repository ppa:deadsnakes/ppa
+        apt update && apt upgrade
+        apt install -y build-essential libctemplate-dev libjsoncpp-dev libjsoncpp1 libjsoncpp-doc libdbus-1-dev libdbus-cpp-dev dbus libdbus-c++-dev libnl-3-dev libnl-route-3-dev libsystemd-dev libcap-dev runc bison flex zlib1g-dev autoconf python-pip python3.7  pkgconf libtool seccomp libseccomp-dev libyajl2 libyajl-dev go-md2man python3-pip gdb libcurl4-openssl-dev libssl-dev libgpgme11-dev
+        alias python=python3.7
+        pip3 install jsonref
+
+        figlet CMAKE
+        # If CMake is already installed, skip
+        if [ ! -f "/usr/local/bin/cmake" ]; then
+            mkdir ~/temp
+            cd ~/temp
+            wget https://cmake.org/files/v3.8/cmake-3.8.2.tar.gz
+            tar -xzvf cmake-3.8.2.tar.gz
+            cd ./cmake-3.8.2
+            ./bootstrap --parallel=$(nproc)
+            make -j$(nproc)
+            make install
+
+            cd ~
+            rm -rf ~/temp
+        fi
+
+        #
+        # Create build folders, links etc...
+        #
+        ln -s /usr/include/jsoncpp/json/ /usr/include/json
+        ln -s /usr/include/dbus-1.0/dbus /usr/include/dbus
+        cp /usr/lib/x86_64-linux-gnu/dbus-1.0/include/dbus/dbus-arch-deps.h /usr/include/dbus-1.0/dbus
+
+        mkdir -p /usr/lib/plugins/dobby
+        mkdir -p /opt/persistent/sky
+        mkdir -p /var/volatile/sky/dobby/bundles
+        chmod 755 /var/volatile/sky/dobby/bundles
+
+        # Hardcoded .so locations in the code so need to create a symlink
+        ln -s /lib/x86_64-linux-gnu/libreadline.so.* /lib/
+
+        # iptables commands are in a different dir in Ubuntu
+        ln -s /sbin/iptables-save /usr/sbin/iptables-save
+        ln -s /sbin/iptables-restore /usr/sbin/iptables-restore
+    SHELL
+
+    ##################################################
+    #
+    # Clone and build CRUN
+    #
+    config.vm.provision "shell", privileged: false, inline: <<-SHELL
+        figlet CRUN  # ASCII banner
+        mkdir ~/crun
+        cd ~/crun
+        git clone --depth 1 --branch 0.14.1 https://github.com/containers/crun.git .
+        ./autogen.sh
+        ./configure --disable-systemd
+        sudo make install -j$(nproc)
+        sudo ln -s /usr/local/bin/crun /usr/bin/crun
+    SHELL
+
+    ##################################################
+    #
+    # Build & install the BOOST libraries v1.61.0.2 (match OpenEmbedded version)
+    #
+    config.vm.provision "shell", privileged: false, inline: <<-SHELL
+        figlet BOOST  # ASCII banner
+        mkdir ~/
+        cd ~/
+        wget http://launchpadlibrarian.net/277227509/libboost-all-dev_1.61.0.2_amd64.deb
+
+        # Not a pretty solution... but it works
+        sudo dpkg -i ./libboost-all-dev_1.61.0.2_amd64.deb  # Attempt to install package - fails on missing dependencies
+        sudo apt-get -f install -y                          # Force install dependencies
+        sudo dpkg -i ./libboost-all-dev_1.61.0.2_amd64.deb  # Attempt to install again - fails on more missing dependencies
+        sudo apt-get -f install -y                          # Force install more dependencies
+        sudo dpkg -i ./libboost-all-dev_1.61.0.2_amd64.deb  # Successful install
+
+        rm ./libboost-all-dev_1.61.0.2_amd64.deb
+    SHELL
+
+    ##################################################
+    #
+    # Clone DOBBY repo and install
+    #
+    # **If you want to clone your own fork of Dobby, change the repo URL here**
+    #
+    config.vm.provision "shell", privileged: false, inline: <<-SHELL
+        figlet DOBBY  # ASCII banner
+        # Build Dobby
+        mkdir ~/srcDobby
+        cd ~/srcDobby
+        git clone https://github.com/rdkcentral/Dobby.git .
+
+        mkdir build
+        cd build
+        cmake -DCMAKE_BUILD_TYPE=Debug -DRDK_PLATFORM=DEV_VM ../
+        make -j$(nproc)
+        sudo make install
+
+        # Link for the DobbyInit tool
+        sudo ln -s /usr/local/libexec/ /usr/libexec
+    SHELL
+
+    ##################################################
+    #
+    # Set DBUS config
+    #
+    config.vm.provision "shell", inline: <<-SHELL
+        figlet DBUS  # ASCII banner
+        # FIXME - This is not secure - only for debugging
+        if [ ! -e "/etc/dbus-1/system.d/com.sky.dobby.conf" ]; then
+            echo '
+<!DOCTYPE busconfig PUBLIC "-//freedesktop//DTD D-Bus Bus Configuration 1.0//EN"
+    "http://www.freedesktop.org/standards/dbus/1.0/busconfig.dtd">
+<busconfig>
+    <policy context="default">
+    <!-- Allow everything to be sent -->
+    <allow send_destination="*" eavesdrop="true"/>
+    <!-- Allow everything to be received -->
+    <allow eavesdrop="true"/>
+    <!-- Allow anyone to own anything -->
+    <allow own="*"/>
+    <!-- XXX: Allow all users to connect -->
+    <allow user="*"/>
+</policy>
+</busconfig>
+' > "/etc/dbus-1/system.d/com.sky.dobby.conf"
+        fi
+    SHELL
+
+    ##################################################
+    #
+    # Clone and build THUNDER
+    #
+    config.vm.provision "shell", privileged: false, inline: <<-SHELL
+        figlet THUNDER REPO # ASCII banner
+
+        # Make sure any extra Thunder dependencies are installed
+        sudo apt install -y gcc libtool autoconf pkg-config libarchive13 libarchive-dev libcurl3 libcurl4-gnutls-dev libssl-dev libgpgme11-dev libtool-bin
+
+        mkdir -p ~/srcThunder/Thunder
+        cd ~/srcThunder/Thunder
+        git clone https://github.com/rdkcentral/Thunder.git .
+
+        cd ~/srcThunder/Thunder/Source
+        ln -s ../Tools tools
+
+        # Install Thunder Tools
+        figlet THUNDER TOOLS # ASCII banner
+        cd ~/srcThunder/Thunder/Tools
+        cmake  -DGENERIC_CMAKE_MODULE_PATH=/usr/local/lib/cmake ./CMakeLists.txt
+        make -j$(nproc)
+        sudo make install
+
+        # Install Thunder
+        figlet THUNDER BUILD # ASCII banner
+        cd ~/srcThunder/Thunder
+        cmake  -DGENERIC_CMAKE_MODULE_PATH=/usr/local/lib/cmake -DDEBUG=ON -DVIRTUALINPUT=ON -DPLUGINS=ON -DCORE=ON -DPORT=9998 -DBINDING=127.0.0.1 -DPERSISTENT_PATH=/opt -DCMAKE_MODULE_PATH=./Tools ./CMakeLists.txt
+        make -j$(nproc)
+        sudo make install
+
+        ##################################################
+        #
+        # Clone RDKSERVICES
+        #
+        figlet RDK SERVICES  # ASCII banner
+        # Install Thunder service plugins
+        mkdir -p ~/srcThunder/rdkServices
+        cd ~/srcThunder/rdkServices
+        git clone https://github.com/rdkcentral/rdkservices.git .
+
+        ##################################################
+        #
+        # Build RDKSERVICES
+        #
+        # Only build the OCIContainer plugin in this VM, others not needed
+        #
+        cd ~/srcThunder/rdkServices
+        sed -i "s/include(services.cmake)/ if(BUILD_VAGRANT) \\n    # DO NOTHING FOR NOW \\n else()\\n    # include(services.cmake) \\n endif() \\n /g" CMakeLists.txt
+        mkdir build
+        cd build
+        # Disable default plugins, enable only OCIContainer
+        cmake  -DBUILD_TYPE=Debug -DBUILD_VAGRANT=true \
+               -DPLUGIN_DATA_CAPTURE=OFF \
+               -DPLUGIN_DISPLAYSETTINGS=OFF \
+               -DPLUGIN_LOGGING_PREFERENCES=OFF \
+               -DPLUGIN_USER_PREFERENCES=OFF \
+               -DPLUGIN_SYSTEMSERVICES=OFF \
+               -DPLUGIN_CONTROLSERVICE=OFF \
+               -DENABLE_TRACE_CONTROL=false \
+               -DENABLE_MONITOR=true \
+               -DENABLE_DEVICE_INFO=true \
+               -DPLUGIN_OCICONTAINER=ON \
+               -DRDK_PLATFORM=DEV_VM ../
+
+        make -j$(nproc)
+        sudo make install
+        # Create symlinks for required components
+        sudo ln -s /usr/local/lib/libWPE*        /usr/lib/
+        sudo ln -s /usr/local/lib/wpeframework/  /usr/lib/
+        sudo ln -s /usr/share/WPEFramework/      /usr/local/share
+        sudo ln -s /usr/etc/WPEFramework/        /etc/WPEFramework
+
+        figlet "FINISHED"  # ASCII banner
+    SHELL
+
+end
