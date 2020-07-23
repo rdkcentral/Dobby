@@ -18,8 +18,6 @@ Dobby has the following dependencies
 
 The STB kernel should also have veth support enabled to allow for NAT networking: https://cateee.net/lkddb/web-lkddb/VETH.html
 
-For development, it is recommended to use the [Vagrant VM (based on Ubuntu 16.04 LTS) here](https://redgitlab.redembedded.com:8443/rdk-sig-dac/dobby-ubuntu-build-environment-vm/-/tree/master) which has all the necessary libraries and packages preinstalled
-
 ## Build
 Dobby is a CMake project and can be built with the standard CMake workflow. To build, run the following commands.
 
@@ -45,6 +43,8 @@ If the schema files in the `bundle/runtime-schemas` directory are changed, then 
   * `LLAMA`
   * `DEV_VM`
 
+## Development
+If you with to develop Dobby further, detailed instructions on setting up a development environment can be found in the `develop` directory in this repo, including a Vagrant VM with all the necessary dependencies pre-installed.
 
 # Usage
 ## DobbyDaemon
