@@ -166,7 +166,7 @@ Usage: DobbyInit <process-to-run> <arg1> <arg2> ... <argN>
 ---
 # Copyright and license
 
-If not stated otherwise in this file or this component's Licenses.txt file the following copyright and licenses apply:
+If not stated otherwise in this file or this component's LICENSE file the following copyright and licenses apply:
 
 Copyright 2020 Sky UK
 
