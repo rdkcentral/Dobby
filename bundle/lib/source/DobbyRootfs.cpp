@@ -646,7 +646,7 @@ bool DobbyRootfs::constructRootfs(int dirfd,
     }
 
     // write empty /etc/resolv.conf file in case we want to mount it from the host
-    if (openat(dirfd, "etc/resolv.conf", O_CREAT | O_WRONLY | O_TRUNC) < 0)
+    if (openat(dirfd, "etc/resolv.conf", O_CREAT | O_WRONLY | O_TRUNC, 0644) < 0)
     {
         AI_LOG_FN_EXIT();
         return false;
