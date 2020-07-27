@@ -10,6 +10,8 @@ Add the following section to your OCI runtime configuration `config.json` file t
             "required": true,
             "data": {
                 "type": "nat",
+                "ipv4": "true",
+                "ipv6": "true",
                 "dnsmasq": "true",
                 "holes": [
                     {
@@ -52,11 +54,17 @@ In NAT networking mode, the Networking plugin creates a bridge device `dobby0` w
 
 The adaptor is visible inside the container, usually named `eth0`, depending on the external interfaces defined in Dobby settings.
 
-Each container then gets a unique IPv4 address from an address pool range of 100.64.11.2 - 100.64.11.250.
+For NAT, you can choose to enable or disable IPv4 and IPv6 as you please. If both are set to false or not set at all, the Networking plugin defaults to IPv4.
+
+With IPv4 enabled, each container gets a unique IPv4 address from an address pool range of `100.64.11.2` - `100.64.11.252` (total pool size = 250).
+
+With IPv6 enabled, each container gets a unique IPv6 address in the subnet `2080:d0bb:1e::0/64`. The unique address is determined by merging the container's IPv4 address into the last 32 bits of the IPV6 address. For example, with `100.64.11.2`, the IPv6 address of the container would be `2080:d0bb:1e::6440:b02`, up to `2080:d0bb:1e::6440:bfc`.
 
 ```json
 "data": {
-    "type": "nat"
+    "type": "nat",
+    "ipv4": "true",
+    "ipv6": "false"
 }
 ```
 
@@ -72,12 +80,13 @@ In this network mode, the container will only see a loopback device `lo`, which 
 
 The external interfaces can be any interfaces on the host device that are to be used in setting up Networking for containers.
 
-
 ### Dnsmasq
 
 The `dnsmasq` data field can be used to allow a container to talk to the dnsmasq server running outside the container. Essentially it just routes traffic sent to the `dobby0` bridge on port 53 to the localhost interface on the host.
 
 If the `dnsmasq` field is empty, Networking plugin defaults to not setting up dnsmasq access to the container.
+
+Only usable with network types 'open' and 'nat'.
 
 ```json
     "data": {
@@ -114,6 +123,8 @@ To set up external interfaces for the Networking plugin, add the following to th
       "externalInterfaces": [ "eth0", "wlan0" ]
     }
 ```
+
+The first external interface listed will be used for creating virtual ethernet devices for containers to use internally.
 
 ## Troubleshooting
 

@@ -19,21 +19,25 @@
 
 #include "DobbyState.h"
 
-#include <NetworkingPluginCommon.h>
 #include <Logging.h>
 
 #include <fcntl.h>
 #include <unistd.h>
 
 
-#define TOTAL_ADDRESS_POOL_SIZE (INADDR_RANGE_END - INADDR_RANGE_START + 1)
+#define TOTAL_ADDRESS_POOL_SIZE 250
 
-DobbyState::DobbyState()
+DobbyState::DobbyState(const std::shared_ptr<const IDobbySettings> &settings)
+    : mSettings(settings)
 {
     AI_LOG_FN_ENTRY();
 
+    // start from xxx.xxx.xxx.2 to leave xxx.xxx.xxx.1 open for bridge device
+    in_addr_t addrBegin = mSettings->addressRange() + 2;
+    in_addr_t addrEnd = addrBegin + TOTAL_ADDRESS_POOL_SIZE;
+
     // populate the pool of available addresses
-    for (in_addr_t addr = INADDR_RANGE_START; addr <= INADDR_RANGE_END; addr++)
+    for (in_addr_t addr = addrBegin; addr < addrEnd; addr++)
     {
         mAddressPool.push(addr);
     }

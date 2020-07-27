@@ -202,14 +202,14 @@ Settings::Settings(const Json::Value& settings)
         Json::Value externalIfaces = Json::Path(".network.externalInterfaces").resolve(settings);
         if (externalIfaces.isString())
         {
-            mExternalInterfaces.insert(externalIfaces.asString());
+            mExternalInterfaces.emplace_back(externalIfaces.asString());
         }
         else if (externalIfaces.isArray())
         {
             for (const Json::Value &iface : externalIfaces)
             {
                 if (iface.isString())
-                    mExternalInterfaces.insert(iface.asString());
+                    mExternalInterfaces.push_back(iface.asString());
                 else
                     AI_LOG_ERROR("invalid entry in network externalInterfaces array in JSON settings file");
             }
@@ -217,6 +217,34 @@ Settings::Settings(const Json::Value& settings)
         else
         {
             AI_LOG_ERROR("invalid or missing network externalInterfaces in JSON settings file");
+        }
+
+        Json::Value addressRange = Json::Path(".network.addressRange").resolve(settings);
+        if (addressRange.isString() && !addressRange.asString().empty())
+        {
+            std::string addrStr = addressRange.asString();
+
+            // firstly check that the last byte is 0
+            size_t lastDot = addrStr.rfind(".");
+            if (addrStr.substr(lastDot+1) != "0")
+            {
+                AI_LOG_ERROR("invalid network addressRange - last byte should be 0");
+            }
+            else
+            {
+                // convert the string to in_addr_t
+                mAddressRange.first = addrStr;
+                size_t firstDot = addrStr.find(".");
+                mAddressRange.second = stoul(addrStr.substr(0, firstDot)) << 24 & 0xff000000;
+                size_t secondDot = addrStr.find(".", firstDot+1);
+                mAddressRange.second |= stoul(addrStr.substr(firstDot+1, secondDot)) << 16 & 0x00ff0000;
+                mAddressRange.second |= stoul(addrStr.substr(secondDot+1, lastDot)) <<  8 & 0x0000ff00;
+                // no need to parse last 8 bytes since it should always be 0
+            }
+        }
+        else
+        {
+            AI_LOG_ERROR("invalid or missing network addressRange in JSON settings file");
         }
     }
 
@@ -369,9 +397,29 @@ std::list<Settings::GpuExtraMount> Settings::gpuExtraMounts() const
  *  @brief
  *
  */
-std::set<std::string> Settings::externalInterfaces() const
+std::vector<std::string> Settings::externalInterfaces() const
 {
     return mExternalInterfaces;
+}
+
+ // -----------------------------------------------------------------------------
+ /**
+ *  @brief
+ *
+ */
+std::string Settings::addressRangeStr() const
+{
+    return mAddressRange.first;
+}
+
+ // -----------------------------------------------------------------------------
+ /**
+ *  @brief
+ *
+ */
+in_addr_t Settings::addressRange() const
+{
+    return mAddressRange.second;
 }
 
 // -----------------------------------------------------------------------------
@@ -427,6 +475,8 @@ void Settings::dump(int aiLogLevel) const
         __AI_LOG_PRINTF(aiLogLevel, "settings.network.externalInterfaces[%u]='%s'",
                         i++, extIface.c_str());
     }
+
+    __AI_LOG_PRINTF(aiLogLevel, "settings.network.addressRange=%s", mAddressRange.first.c_str());
 }
 
 // -----------------------------------------------------------------------------

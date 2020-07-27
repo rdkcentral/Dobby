@@ -31,7 +31,8 @@
   },
 
   "network": {
-    "externalInterfaces": [ "eth0", "wlan0" ]
+    "externalInterfaces": [ "eth0", "wlan0" ],
+    "addressRange": "100.64.11.0"
   }
 
 }

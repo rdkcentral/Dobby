@@ -35,10 +35,11 @@ std::mutex mLock;
  *  hook.
  *
  *  @param[in]  containerId         Container identifier
+ *  @param[in]  ipVersion           IP address family to use (AF_INET/AF_INET6).
  *
  *  @return netfilter ruleset
  */
-Netfilter::RuleSet constructRules(const std::string &containerId)
+Netfilter::RuleSet constructRules(const std::string &containerId, int ipVersion)
 {
     AI_LOG_FN_ENTRY();
 
@@ -55,33 +56,94 @@ Netfilter::RuleSet constructRules(const std::string &containerId)
     // setup NAT'ing on the Dobby network ip range through external interface
     std::list<std::string> natRules;
     std::string natRule("PREROUTING "
-                        "-s " BRIDGE_ADDRESS_RANGE "/24 "
-                        "-d " BRIDGE_ADDRESS "/32 "
+                        "-s %s "
+                        "-d %s "
                         "-i " BRIDGE_NAME " "
                         "-p %s "
                         "-m %s --dport 53 "
                         "-m comment --comment " + id + " "
-                        "-j DNAT --to-destination " LOCALHOST ":53");
-    snprintf(buf, sizeof(buf), natRule.c_str(), "udp", "udp");
-    natRules.emplace_back(buf);
-    memset(buf, 0, sizeof(buf));
-    snprintf(buf, sizeof(buf), natRule.c_str(), "tcp", "tcp");
-    natRules.emplace_back(buf);
-    memset(buf, 0, sizeof(buf));
+                        "-j DNAT --to-destination %s:53");
 
     // allow DNS packets from containers
     std::list<std::string> filterRules;
-    std::string filterRule("DobbyInputChain -s " BRIDGE_ADDRESS_RANGE "/24 "
-                           "-d " LOCALHOST "/32 "
+    std::string filterRule("DobbyInputChain -s %s "
+                           "-d %s "
                            "-i " BRIDGE_NAME " "
                            "-p %s "
                            "-m %s --dport 53 "
                            "-m comment --comment " + id + " -j ACCEPT");
-    snprintf(buf, sizeof(buf), filterRule.c_str(), "udp", "udp");
-    filterRules.emplace_back(buf);
-    memset(buf, 0, sizeof(buf));
-    snprintf(buf, sizeof(buf), filterRule.c_str(), "tcp", "tcp");
-    filterRules.emplace_back(buf);
+
+    if (ipVersion == AF_INET)
+    {
+        // compose IPv4 rules for 'nat' table
+        snprintf(buf, sizeof(buf), natRule.c_str(),
+                 BRIDGE_ADDRESS_RANGE "/24",
+                 BRIDGE_ADDRESS "/32",
+                 "udp",
+                 "udp",
+                 LOCALHOST);
+        natRules.emplace_back(buf);
+        memset(buf, 0, sizeof(buf));
+        snprintf(buf, sizeof(buf), natRule.c_str(),
+                 BRIDGE_ADDRESS_RANGE "/24",
+                 BRIDGE_ADDRESS "/32",
+                 "tcp",
+                 "tcp",
+                 LOCALHOST);
+        natRules.emplace_back(buf);
+        memset(buf, 0, sizeof(buf));
+
+        // compose IPv4 rules for 'filter' table
+        snprintf(buf, sizeof(buf), filterRule.c_str(),
+                 BRIDGE_ADDRESS_RANGE "/24",
+                 LOCALHOST "/32",
+                 "udp",
+                 "udp");
+        filterRules.emplace_back(buf);
+        memset(buf, 0, sizeof(buf));
+        snprintf(buf, sizeof(buf), filterRule.c_str(),
+                 BRIDGE_ADDRESS_RANGE "/24",
+                 LOCALHOST "/32",
+                 "tcp",
+                 "tcp");
+        filterRules.emplace_back(buf);
+    }
+    else if (ipVersion == AF_INET6)
+    {
+        // compose IPv6 rules for 'nat' table
+        snprintf(buf, sizeof(buf), natRule.c_str(),
+                 BRIDGE_ADDRESS_RANGE_IPV6 "/120",
+                 BRIDGE_ADDRESS_IPV6 "/128",
+                 "udp",
+                 "udp",
+                 "[" LOCALHOST_IPV6 "]");
+        natRules.emplace_back(buf);
+        memset(buf, 0, sizeof(buf));
+        snprintf(buf, sizeof(buf), natRule.c_str(),
+                 BRIDGE_ADDRESS_RANGE_IPV6 "/120",
+                 BRIDGE_ADDRESS_IPV6 "/128",
+                 "tcp",
+                 "tcp",
+                 "[" LOCALHOST_IPV6 "]");
+        natRules.emplace_back(buf);
+        memset(buf, 0, sizeof(buf));
+
+        // compose IPv6 rules for 'filter' table
+        snprintf(buf, sizeof(buf), filterRule.c_str(),
+                 BRIDGE_ADDRESS_RANGE_IPV6 "/120",
+                 LOCALHOST_IPV6 "/128",
+                 "udp",
+                 "udp");
+        filterRules.emplace_back(buf);
+        memset(buf, 0, sizeof(buf));
+        snprintf(buf, sizeof(buf), filterRule.c_str(),
+                 BRIDGE_ADDRESS_RANGE_IPV6 "/120",
+                 LOCALHOST_IPV6 "/128",
+                 "tcp",
+                 "tcp");
+        filterRules.emplace_back(buf);
+        memset(buf, 0, sizeof(buf));
+    }
 
     // add nat and filter rules to create a ruleset
     Netfilter::RuleSet appendRuleSet =
@@ -99,14 +161,15 @@ Netfilter::RuleSet constructRules(const std::string &containerId)
 /**
  *  @brief Add iptables rules and create the /etc/resolv.conf file.
  *
- *  Run in postInstallation hook.
+ *  Run in createRuntime hook.
  *
  *  Create a new /etc/resolv.conf file specifying the name server as our bridge
- *  interface. A PREROUTING rule is already added to the iptable NAT table, which
- *  will redirect the traffic to localhost outside the container for port 53 only.
+ *  interface. Add a PREROUTING rule to the iptable NAT table, which will
+ *  redirect the traffic to localhost outside the container for port 53 only.
  *
  *  @param[in]  utils               Instance of DobbyRdkPluginUtils class
  *  @param[in]  netfilter           Instance of Netfilter class
+ *  @param[in]  helper              Instance of NetworkingHelper.
  *  @param[in]  rootfsPath          Path to container rootfs on the host
  *  @param[in]  containerId         Container identifier
  *  @param[in]  networkType         Network type
@@ -115,6 +178,7 @@ Netfilter::RuleSet constructRules(const std::string &containerId)
  */
 bool DnsmasqSetup::set(const std::shared_ptr<DobbyRdkPluginUtils> &utils,
                        const std::shared_ptr<Netfilter> &netfilter,
+                       const std::shared_ptr<NetworkingHelper> &helper,
                        const std::string &rootfsPath,
                        const std::string &containerId,
                        const NetworkType networkType)
@@ -123,13 +187,24 @@ bool DnsmasqSetup::set(const std::shared_ptr<DobbyRdkPluginUtils> &utils,
 
     std::lock_guard<std::mutex> locker(mLock);
 
-    Netfilter::RuleSet ruleSet = constructRules(containerId);
-
     // install the iptables rules
-    if (!netfilter->appendRules(ruleSet))
+    if (helper->ipv4())
     {
-        AI_LOG_ERROR_EXIT("failed to setup netfilter rules for dns");
-        return false;
+        Netfilter::RuleSet ipv4RuleSet = constructRules(containerId, AF_INET);
+        if (!netfilter->appendRules(ipv4RuleSet, AF_INET))
+        {
+            AI_LOG_ERROR_EXIT("failed to setup netfilter rules for dns");
+            return false;
+        }
+    }
+    if (helper->ipv6())
+    {
+        Netfilter::RuleSet ipv6RuleSet = constructRules(containerId, AF_INET6);
+        if (!netfilter->appendRules(ipv6RuleSet, AF_INET6))
+        {
+            AI_LOG_ERROR_EXIT("failed to setup netfilter rules for dns");
+            return false;
+        }
     }
 
     // set the nameserver, if using a NAT network setup then set the bridge
@@ -137,11 +212,21 @@ bool DnsmasqSetup::set(const std::shared_ptr<DobbyRdkPluginUtils> &utils,
     std::string content;
     if (networkType == NetworkType::Nat)
     {
-        content = "nameserver " BRIDGE_ADDRESS "\n";
+        content.append("nameserver " BRIDGE_ADDRESS "\n");
+
+        if (helper->ipv6())
+        {
+            content.append("nameserver " BRIDGE_ADDRESS_IPV6 "\n");
+        }
     }
     else
     {
-        content = "nameserver " LOCALHOST "\n";
+        content.append("nameserver " LOCALHOST "\n");
+
+        if (helper->ipv6())
+        {
+            content.append("nameserver " LOCALHOST_IPV6 "\n");
+        }
     }
 
     // write the /etc/resolv.conf for the container
@@ -160,23 +245,37 @@ bool DnsmasqSetup::set(const std::shared_ptr<DobbyRdkPluginUtils> &utils,
 /**
  *  @brief Deletes dnsmasq rules for the container
  *
- *  Run in postStop hook.
+ *  Run in postHalt hook.
  *
  *  @param[in]  netfilter           Instance of Netfilter class
+ *  @param[in]  helper              Instance of NetworkingHelper.
  *  @param[in]  containerId         Container identifier
  *
  *  @return true if successful, otherwise false
- *
  */
-bool DnsmasqSetup::removeRules(const std::shared_ptr<Netfilter> &netfilter, const std::string &containerId)
+bool DnsmasqSetup::removeRules(const std::shared_ptr<Netfilter> &netfilter,
+                               const std::shared_ptr<NetworkingHelper> &helper,
+                               const std::string &containerId)
 {
     AI_LOG_FN_ENTRY();
 
-    Netfilter::RuleSet ruleSet = constructRules(containerId);
-    if (!netfilter->deleteRules(ruleSet))
+    if (helper->ipv4())
     {
-        AI_LOG_ERROR_EXIT("failed to delete netfilter rules for dnsmasq");
-        return false;
+        Netfilter::RuleSet ipv4RuleSet = constructRules(containerId, AF_INET);
+        if (!netfilter->deleteRules(ipv4RuleSet, AF_INET))
+        {
+            AI_LOG_ERROR_EXIT("failed to delete netfilter rules for dnsmasq");
+            return false;
+        }
+    }
+    if (helper->ipv6())
+    {
+        Netfilter::RuleSet ipv6RuleSet = constructRules(containerId, AF_INET6);
+        if (!netfilter->deleteRules(ipv6RuleSet, AF_INET6))
+        {
+            AI_LOG_ERROR_EXIT("failed to delete netfilter rules for dnsmasq");
+            return false;
+        }
     }
 
     AI_LOG_FN_EXIT();

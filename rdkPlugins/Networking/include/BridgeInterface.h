@@ -24,7 +24,7 @@
 #define BRIDGEINTERFACE_H
 
 #include <DobbyRdkPluginUtils.h>
-#include "NetworkingPluginCommon.h"
+#include "NetworkingHelper.h"
 #include "Netlink.h"
 
 #include <string>
@@ -49,15 +49,20 @@ namespace BridgeInterface
     bool destroyBridge(const std::shared_ptr<Netlink> &netlink);
     bool up(const std::shared_ptr<Netlink> &netlink);
     bool down(const std::shared_ptr<Netlink> &netlink);
-    bool setAddress(const std::shared_ptr<Netlink> &netlink,
-                    in_addr_t address,
-                    in_addr_t netmask);
+    bool setAddresses(const std::shared_ptr<Netlink> &netlink);
     bool setIfaceForwarding(const std::shared_ptr<DobbyRdkPluginUtils> &utils,
                             const std::shared_ptr<Netlink> &netlink,
                             bool enable);
     bool setIfaceRouteLocalNet(const std::shared_ptr<DobbyRdkPluginUtils> &utils,
                                const std::shared_ptr<Netlink> &netlink,
                                bool enable);
+    bool setIfaceProxyNdp(const std::shared_ptr<DobbyRdkPluginUtils> &utils,
+                          const std::shared_ptr<Netlink> &netlink,
+                          bool enable);
+    bool setIfaceAcceptRa(const std::shared_ptr<DobbyRdkPluginUtils> &utils,
+                          const std::shared_ptr<Netlink> &netlink,
+                          int value);
+
     bool disableStp(const std::shared_ptr<DobbyRdkPluginUtils> &utils);
 };
 

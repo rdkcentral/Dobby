@@ -45,14 +45,17 @@ NetworkingPlugin::NetworkingPlugin(std::shared_ptr<rt_dobby_schema> &cfg,
 {
     AI_LOG_FN_ENTRY();
 
-    if (!mContainerConfig)
+    if (!mContainerConfig || !cfg->rdk_plugins->networking ||
+        !cfg->rdk_plugins->networking->data)
     {
-        AI_LOG_WARN("Container config not found");
         mValid = false;
     }
     else
     {
-        std::string networkType = cfg->rdk_plugins->networking->data->type;
+        mPluginData = cfg->rdk_plugins->networking->data;
+        mHelper = std::make_shared<NetworkingHelper>(mPluginData->ipv4, mPluginData->ipv6);
+
+        std::string networkType = mPluginData->type;
         if (networkType == "nat")
         {
             mNetworkType = NetworkType::Nat;
@@ -73,6 +76,8 @@ NetworkingPlugin::NetworkingPlugin(std::shared_ptr<rt_dobby_schema> &cfg,
         }
         mValid = true;
     }
+
+    AI_LOG_FN_EXIT();
 }
 
 NetworkingPlugin::~NetworkingPlugin()
@@ -84,6 +89,8 @@ NetworkingPlugin::~NetworkingPlugin()
     {
         mIpcService->stop();
     }
+
+    AI_LOG_FN_EXIT();
 }
 
 /**
@@ -121,6 +128,19 @@ bool NetworkingPlugin::postInstallation()
         // add mount to sysfs
         NetworkSetup::addSysfsMount(mUtils, mContainerConfig);
 
+        // add /etc/resolv.conf mount if not using dnsmasq. If dnsmasq is enabled,
+        // a new /etc/resolv.conf is created rather than mounting the host's
+        if (!mPluginData->dnsmasq)
+        {
+            NetworkSetup::addResolvMount(mUtils, mContainerConfig);
+        }
+
+        // add /etc/nsswitch.conf mount if using IPv6
+        if (mHelper->ipv6())
+        {
+            NetworkSetup::addNsswitchMount(mUtils, mContainerConfig);
+        }
+
         // add network namespacing to the OCI config
         NetworkSetup::addNetworkNamespace(mContainerConfig);
     }
@@ -157,6 +177,14 @@ bool NetworkingPlugin::createRuntime()
         return false;
     }
 
+    // get external interfaces from daemon
+    const std::vector<std::string> extIfaces = mDobbyProxy->getExternalInterfaces();
+    if (extIfaces.empty())
+    {
+        AI_LOG_ERROR_EXIT("no external network interfaces defined in settings");
+        return false;
+    }
+
     // check if another container has already initialised the bridge device for us
     int32_t bridgeConnections = mDobbyProxy->getBridgeConnections();
     if (bridgeConnections < 0)
@@ -168,14 +196,6 @@ bool NetworkingPlugin::createRuntime()
     {
         AI_LOG_DEBUG("No connections to dobby network bridge found, setting it up");
 
-        // get external interfaces from daemon
-        const std::vector<std::string> extIfaces = mDobbyProxy->getExternalInterfaces();
-        if (extIfaces.empty())
-        {
-            AI_LOG_ERROR_EXIT("no external network interfaces defined in settings");
-            return false;
-        }
-
         // setup the bridge device
         if (!NetworkSetup::setupBridgeDevice(mUtils, mNetfilter, extIfaces))
         {
@@ -185,7 +205,7 @@ bool NetworkingPlugin::createRuntime()
     }
 
     // setup veth, ip address and iptables rules for container
-    if (!NetworkSetup::setupVeth(mUtils, mNetfilter, mDobbyProxy,
+    if (!NetworkSetup::setupVeth(mUtils, mNetfilter, mDobbyProxy, mHelper, extIfaces,
                                  mRootfsPath, mContainerId, mNetworkType))
     {
         AI_LOG_ERROR_EXIT("failed to setup virtual ethernet device");
@@ -193,10 +213,10 @@ bool NetworkingPlugin::createRuntime()
     }
 
     // setup dnsmasq rules if enabled
-    if (mNetworkType != NetworkType::None &&
-        mContainerConfig->rdk_plugins->networking->data->dnsmasq)
+    if (mNetworkType != NetworkType::None &&  mPluginData->dnsmasq)
     {
-        if (!DnsmasqSetup::set(mUtils, mNetfilter, mRootfsPath, mContainerId, mNetworkType))
+        if (!DnsmasqSetup::set(mUtils, mNetfilter, mHelper, mRootfsPath,
+                               mContainerId, mNetworkType))
         {
             AI_LOG_ERROR_EXIT("failed to setup container for dnsmasq use");
             return false;
@@ -250,23 +270,24 @@ bool NetworkingPlugin::postHalt()
     else
     {
         // parse ip address and vethname from the read string
-        const std::string ipAddressStr = addressFileStr.substr(0, addressFileStr.find("/"));
-        const std::string vethName = addressFileStr.substr(ipAddressStr.length() + 1, addressFileStr.length());
+        std::string addressStr = addressFileStr.substr(0, addressFileStr.find("/"));
+        const std::string vethName = addressFileStr.substr(addressStr.length() + 1, addressFileStr.length());
+        in_addr_t ipAddress;
+        inet_pton(AF_INET, addressStr.c_str(), &ipAddress);
+        mHelper->setAddresses(ipAddress);
 
         // delete the veth pair for the container
-        if (!NetworkSetup::removeVethPair(mNetfilter, ipAddressStr, vethName, mNetworkType))
+        if (!NetworkSetup::removeVethPair(mNetfilter, mHelper, vethName, mNetworkType, mContainerId))
         {
             AI_LOG_WARN("failed to remove veth pair %s", vethName.c_str());
             success = false;
         }
 
         // return the container's ip address back to the address pool
-        in_addr_t ipAddress;
-        inet_pton(AF_INET, ipAddressStr.c_str(), &ipAddress);
         if (!mDobbyProxy->freeIpAddress(ipAddress))
         {
             AI_LOG_WARN("failed to return address %s of container %s back to the"
-                        "address pool", ipAddressStr.c_str(), mContainerId.c_str());
+                        "address pool", mHelper->ipv4AddrStr().c_str(), mContainerId.c_str());
             success = false;
         }
     }
@@ -300,10 +321,9 @@ bool NetworkingPlugin::postHalt()
     }
 
     // if dnsmasq iptables rules were set up for container, "uninstall" them
-    if (mNetworkType != NetworkType::None &&
-        mContainerConfig->rdk_plugins->networking->data->dnsmasq)
+    if (mNetworkType != NetworkType::None && mPluginData->dnsmasq)
     {
-        if (!DnsmasqSetup::removeRules(mNetfilter, mContainerId))
+        if (!DnsmasqSetup::removeRules(mNetfilter, mHelper, mContainerId))
         {
             success = false;
         }

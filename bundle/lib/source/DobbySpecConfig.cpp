@@ -567,7 +567,7 @@ bool DobbySpecConfig::parseSpec(ctemplate::TemplateDictionary* dictionary,
         }
     }
 
-    // step 4 - if successiful check if all the mandatory fields were present
+    // step 4 - if successful check if all the mandatory fields were present
     // in the supplied json
     if (success)
     {
@@ -1407,9 +1407,10 @@ bool DobbySpecConfig::processGpu(const Json::Value& value,
  *
  *      "network": "nat"
  *      "network": "open"
- *      "network": "none"
+ *      "network": "private"
  *
- *  The network can be either 'nat', 'open' or 'none', the default is none.
+ *  The network can be either 'nat', 'open' or 'private', the default is
+ *  private. 'private' is translated to 'none' for bundle config use.
  *
  *  A 'nat' network is one where inside the container there is an interface
  *  called eth0 which is attached to a NAT-bridge outside the container.
@@ -1453,18 +1454,19 @@ bool DobbySpecConfig::processNetwork(const Json::Value& value,
     if (type == "nat")
     {
         rdkPluginData["type"] = "nat";
-#if defined(RDK)
+#if !defined(DEV_VM)
         rdkPluginData["dnsmasq"] = true;
 #endif
+        rdkPluginData["ipv4"] = "true";
     }
     else if (type == "open")
     {
         rdkPluginData["type"] = "open";
-#if defined(RDK)
+#if !defined(DEV_VM)
         rdkPluginData["dnsmasq"] = true;
 #endif
     }
-    else if (type == "none")
+    else if (type == "private")
     {
         rdkPluginData["type"] = "none";
     }

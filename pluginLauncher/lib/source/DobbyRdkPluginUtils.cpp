@@ -103,7 +103,7 @@ pid_t DobbyRdkPluginUtils::getContainerPid(const std::string &stdin) const
  *  @param[in]  func        The function to execute in the new namespace.
  */
 void DobbyRdkPluginUtils::nsThread(int newNsFd, int nsType, bool* success,
-                          std::function<bool()>& func) const
+                                   std::function<bool()>& func) const
 {
     AI_LOG_FN_ENTRY();
 

@@ -20,7 +20,7 @@
 #ifndef DNSMASQSETUP_H
 #define DNSMASQSETUP_H
 
-#include "NetworkingPluginCommon.h"
+#include "NetworkingHelper.h"
 #include "DobbyRdkPluginUtils.h"
 #include "Netfilter.h"
 
@@ -47,10 +47,13 @@ namespace DnsmasqSetup
 {
     bool set(const std::shared_ptr<DobbyRdkPluginUtils> &utils,
              const std::shared_ptr<Netfilter> &netfilter,
+             const std::shared_ptr<NetworkingHelper> &helper,
              const std::string &rootfsPath,
              const std::string &containerId,
              const NetworkType networkType);
+
     bool removeRules(const std::shared_ptr<Netfilter> &netfilter,
+                     const std::shared_ptr<NetworkingHelper> &helper,
                      const std::string &containerId);
 };
 

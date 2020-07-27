@@ -27,6 +27,64 @@
 
 #include <fcntl.h>
 #include <unistd.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <sys/mount.h>
+#include <sys/wait.h>
+
+
+// -----------------------------------------------------------------------------
+/**
+ *  @brief Modifies a rule set replacing all entires which have '%y' in them
+ *  with actual address names.
+ *
+ *  @param[in]  ruleSet                 Iptables ruleset to expand.
+ *  @param[in]  address                 IP address string to insert to rule.
+ */
+void expandRuleSetAddresses(Netfilter::RuleSet *ruleSet, const std::string &address)
+{
+    for (auto &table : *ruleSet)
+    {
+        std::list<std::string> &rules = table.second;
+
+        auto it = rules.begin();
+        while (it != rules.end())
+        {
+            std::string &rule = *it;
+            bool replaceRule = false;
+
+            // add address to template rule
+            std::string newRule = rule;
+            size_t pos = rule.find("%y");
+            while (pos != std::string::npos)
+            {
+                // replace '%y' with address
+                newRule.replace(pos, 2, address);
+                replaceRule = true;
+
+                // try and find '%y' again
+                pos = newRule.find("%y", pos + 1);
+                if (pos == std::string::npos)
+                {
+                    // no '%y' found, move on to next rule
+                    break;
+                }
+            }
+
+            if (replaceRule)
+            {
+                // add new rule and remove the template
+                rules.emplace(it, std::move(newRule));
+                it = rules.erase(it);
+            }
+            else
+            {
+                ++it;
+            }
+        }
+    }
+}
+
 
 // -----------------------------------------------------------------------------
 /**
@@ -79,68 +137,119 @@ void expandRuleSetForExtIfaces(Netfilter::RuleSet *ruleSet, const std::vector<st
 /**
  *  @brief Constructs the NAT rules into rulesets that can be added or removed
  *
- *  @param[in]  netfilter               Instance of Netfilter.
- *  @param[in]  extIfaces               External interfaces on the device.
+ *  @param[in]  netfilter       Instance of Netfilter.
+ *  @param[in]  extIfaces       External interfaces on the device.
+ *  @param[in]  ipVersion       IP address family to use (AF_INET/AF_INET6).
  *
  *  @return returns a vector containing the constructed rules
  */
 std::vector<Netfilter::RuleSet> constructBridgeRules(const std::shared_ptr<Netfilter> &netfilter,
-                                                     const std::vector<std::string> &extIfaces)
+                                                     const std::vector<std::string> &extIfaces,
+                                                     const int ipVersion)
 {
-    // start with creating a new chain to filter input into the dobby bridge
-    // device
-    if (!netfilter->createNewChain(Netfilter::TableType::Filter,
-                                   "DobbyInputChain", false))
+    // the following rulesets were obtained by looking at what libvirt had setup
+    // for the NAT connection, we're just replicating
+    // '%y' will be replaced by the dobby bridge address range
+    // '%l' will be replaced with an external interface name
+    Netfilter::RuleSet insertRuleSet =
     {
-        AI_LOG_ERROR_EXIT("failed to create iptables 'DobbyInputChain' chain");
+        {
+            Netfilter::TableType::Filter,
+            {
+                "INPUT -i " BRIDGE_NAME " -j DobbyInputChain",
+                "FORWARD -d %y -i %1 -o " BRIDGE_NAME " -m state --state INVALID -j DROP",
+                "FORWARD -s %y -i " BRIDGE_NAME " -o %1 -m state --state INVALID -j DROP",
+                "OUTPUT -s %y -o %1 -j DROP"
+            }
+        }
+    };
+
+    Netfilter::RuleSet appendRuleSet =
+    {
+        {
+            Netfilter::TableType::Nat,
+            {
+                // setup NAT'ing on the BRIDGE_ADDRESS_RANGE ip range through external interface
+                "POSTROUTING -s %y ! -d %y ! -o " BRIDGE_NAME " -p tcp -j MASQUERADE --to-ports 1024-65535",
+                "POSTROUTING -s %y ! -d %y ! -o " BRIDGE_NAME " -p udp -j MASQUERADE --to-ports 1024-65535",
+                "POSTROUTING -s %y ! -d %y ! -o " BRIDGE_NAME " -j MASQUERADE"
+            }
+        },
+        {
+            Netfilter::TableType::Filter,
+            {
+                // enable traffic between external interface and dobby bridge device
+                "FORWARD -d %y -i %1 -o " BRIDGE_NAME " -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT",
+                "FORWARD -s %y -i " BRIDGE_NAME " -o %1 -j ACCEPT",
+                "FORWARD -i " BRIDGE_NAME " -o %1 -j ACCEPT",
+            }
+        }
+    };
+
+    // add addresses to rules depending on ipVersion
+    char buf[128];
+    std::string bridgeAddressRange;
+    if (ipVersion == AF_INET)
+    {
+        // start with creating a chain to filter input into the bridge device
+        if (!netfilter->createNewChain(Netfilter::TableType::Filter,
+                                    "DobbyInputChain", false, AF_INET))
+        {
+            AI_LOG_ERROR_EXIT("failed to create iptables 'DobbyInputChain' chain");
+            return std::vector<Netfilter::RuleSet>();
+        }
+
+        // add POSTROUTING RETURN rules to the front of the NAT table
+        Netfilter::RuleSet::iterator appendNatRules = appendRuleSet.find(Netfilter::TableType::Nat);
+        appendNatRules->second.emplace_front("POSTROUTING -s %y -d 255.255.255.255/32 ! -o " BRIDGE_NAME " -j RETURN");
+        appendNatRules->second.emplace_front("POSTROUTING -s %y -d 224.0.0.0/24 ! -o " BRIDGE_NAME " -j RETURN");
+
+        // reject with "icmp-port-unreachable" if not ACCEPTed by now
+        Netfilter::RuleSet::iterator appendFilterRules = appendRuleSet.find(Netfilter::TableType::Filter);
+        appendFilterRules->second.emplace_back("FORWARD -o " BRIDGE_NAME " -j REJECT --reject-with icmp-port-unreachable");
+        appendFilterRules->second.emplace_back("FORWARD -i " BRIDGE_NAME " -j REJECT --reject-with icmp-port-unreachable");
+
+        bridgeAddressRange = BRIDGE_ADDRESS_RANGE "/24";
+    }
+    else if (ipVersion == AF_INET6)
+    {
+        // start with creating a chain to filter input into the bridge device
+        if (!netfilter->createNewChain(Netfilter::TableType::Filter,
+                                       "DobbyInputChain", false, AF_INET6))
+        {
+            AI_LOG_ERROR_EXIT("failed to create ip6tables 'DobbyInputChain' chain");
+            return std::vector<Netfilter::RuleSet>();
+        }
+
+        // add POSTROUTING RETURN rule to the front of the NAT table
+        Netfilter::RuleSet::iterator appendNatRules = appendRuleSet.find(Netfilter::TableType::Nat);
+        appendNatRules->second.emplace_front("POSTROUTING -s %y -d ff02::/16 ! -o " BRIDGE_NAME " -j RETURN");
+
+        // reject with "icmp6-port-unreachable" if not ACCEPTed by the
+        Netfilter::RuleSet::iterator appendFilterRules = appendRuleSet.find(Netfilter::TableType::Filter);
+        appendFilterRules->second.emplace_back("FORWARD -o " BRIDGE_NAME " -j REJECT --reject-with icmp6-port-unreachable");
+        appendFilterRules->second.emplace_back("FORWARD -i " BRIDGE_NAME " -j REJECT --reject-with icmp6-port-unreachable");
+
+        bridgeAddressRange = BRIDGE_ADDRESS_RANGE_IPV6 "/120";
+    }
+    else
+    {
+        AI_LOG_ERROR_EXIT("supported ip address families are AF_INET or AF_INET6");
         return std::vector<Netfilter::RuleSet>();
     }
 
     std::vector<Netfilter::RuleSet> ruleSets;
 
-    Netfilter::RuleSet insertRuleSet =
-    {
-        {   Netfilter::TableType::Filter,
-            {
-                "INPUT -i " BRIDGE_NAME " -j DobbyInputChain",
-                "FORWARD -d " BRIDGE_ADDRESS_RANGE "/24 -i %1 -o " BRIDGE_NAME " -m state --state INVALID -j DROP",
-                "FORWARD -s " BRIDGE_ADDRESS_RANGE "/24 -i " BRIDGE_NAME " -o %1 -m state --state INVALID -j DROP",
-                "OUTPUT -s " BRIDGE_ADDRESS_RANGE "/24 -o %1 -j DROP"
-            }
-        },
-    };
-
-    // replace the %1 in the above ruleset with the name of external interface(s)
+    // replace the %y in rulesets with Dobby bridge address range
+    expandRuleSetAddresses(&insertRuleSet, bridgeAddressRange);
+    // replace the %1 in the ruleset with the name of external interface(s)
     expandRuleSetForExtIfaces(&insertRuleSet, extIfaces);
     ruleSets.emplace_back(insertRuleSet);
 
-    // the following rule set was obtained by looking at what libvirt had setup
-    // for the NAT connection, we're just replicating
-    Netfilter::RuleSet appendRuleSet =
-    {
-        {   Netfilter::TableType::Filter,
-            {
-                // enable traffic between external interface and dobby bridge device
-                "FORWARD -d " BRIDGE_ADDRESS_RANGE "/24 -i %1 -o " BRIDGE_NAME " -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT",
-                "FORWARD -s " BRIDGE_ADDRESS_RANGE "/24 -i " BRIDGE_NAME " -o %1 -j ACCEPT",
-                "FORWARD -i " BRIDGE_NAME " -o %1 -j ACCEPT",
-                "FORWARD -o " BRIDGE_NAME " -j REJECT --reject-with icmp-port-unreachable",
-                "FORWARD -i " BRIDGE_NAME " -j REJECT --reject-with icmp-port-unreachable",
-            }
-        },
-        {   Netfilter::TableType::Nat,
-            {
-                // setup NAT'ing on the BRIDGE_ADDRESS_RANGE/24 ip range through external interface
-                "POSTROUTING -s " BRIDGE_ADDRESS_RANGE "/24 -d 224.0.0.0/24 ! -o " BRIDGE_NAME " -j RETURN",
-                "POSTROUTING -s " BRIDGE_ADDRESS_RANGE "/24 -d 255.255.255.255/32 ! -o " BRIDGE_NAME " -j RETURN",
-                "POSTROUTING -s " BRIDGE_ADDRESS_RANGE "/24 ! -d " BRIDGE_ADDRESS_RANGE "/24 ! -o " BRIDGE_NAME " -p tcp -j MASQUERADE --to-ports 1024-65535",
-                "POSTROUTING -s " BRIDGE_ADDRESS_RANGE "/24 ! -d " BRIDGE_ADDRESS_RANGE "/24 ! -o " BRIDGE_NAME " -p udp -j MASQUERADE --to-ports 1024-65535",
-                "POSTROUTING -s " BRIDGE_ADDRESS_RANGE "/24 ! -d " BRIDGE_ADDRESS_RANGE "/24 ! -o " BRIDGE_NAME " -j MASQUERADE",
-            }
-        }
-    };
 
-    // replace the %1 in the above ruleset with the name of external interface(s)
+    // replace the %y in rulesets with Dobby bridge address range
+    expandRuleSetAddresses(&appendRuleSet, bridgeAddressRange);
+    // replace the %1 in the ruleset with the name of external interface(s)
     expandRuleSetForExtIfaces(&appendRuleSet, extIfaces);
     ruleSets.emplace_back(appendRuleSet);
 
@@ -153,23 +262,49 @@ std::vector<Netfilter::RuleSet> constructBridgeRules(const std::shared_ptr<Netfi
  *  @brief Creates a netfilter rule to drop packets received from the veth into
  *  the bridge if they don't have the correct source IP address.
  *
- *  @param[in]  ipAddress       The ip address of the container.
  *  @param[in]  vethName        The name of the veth of the container.
+ *  @param[in]  address         IPv4/6 address of the container.
+ *  @param[in]  ipVersion       IPv family version (AF_INET/AF_INET6).
  *
  *  @return returns the created ruleset
  */
-Netfilter::RuleSet createAntiSpoofRule(const std::string ipAddress,
-                                       const std::string &vethName)
+Netfilter::RuleSet createAntiSpoofRule(const std::string &vethName,
+                                       const std::string &address,
+                                       const int ipVersion)
 {
+    std::list<std::string> antiSpoofRules;
+    char buf[128];
+
+    std::string filterRule("DobbyInputChain "
+                           "! -s %s/%s "                    // ipAddress / mask
+                           "-i %s "                         // bridge name
+                           "-m physdev --physdev-in %s "    // veth name
+                           "-j DROP");
+
     // construct the rule
-    char filterRule[128];
-    snprintf(filterRule, sizeof(filterRule),
-             "DobbyInputChain ! -s %s/32 -i " BRIDGE_NAME " -m physdev --physdev-in %s -j DROP",
-             ipAddress.c_str(),
-             vethName.c_str());
+    if (ipVersion == AF_INET)
+    {
+        snprintf(buf, sizeof(buf), filterRule.c_str(),
+                 address.c_str(), "32",
+                 BRIDGE_NAME,
+                 vethName.c_str());
+        antiSpoofRules.emplace_back(buf);
+    }
+    else if (ipVersion == AF_INET6)
+    {
+        snprintf(buf, sizeof(buf), filterRule.c_str(),
+                 address.c_str(), "128",
+                 BRIDGE_NAME,
+                 vethName.c_str());
+        antiSpoofRules.emplace_back(buf);
+    }
+    else
+    {
+        return Netfilter::RuleSet();
+    }
 
     // return the rule in the default filter table
-    return Netfilter::RuleSet {{ Netfilter::TableType::Filter, { filterRule } }};
+    return Netfilter::RuleSet {{ Netfilter::TableType::Filter, antiSpoofRules }};
 }
 
 
@@ -196,8 +331,7 @@ Netfilter::RuleSet createDropAllRule(const std::string &vethName)
              vethName.c_str());
 
     // return the rule in the default filter table
-    return Netfilter::RuleSet {
-        { Netfilter::TableType::Filter, { filterRule } }};
+    return Netfilter::RuleSet {{ Netfilter::TableType::Filter, { filterRule }}};
 }
 
 
@@ -237,57 +371,119 @@ bool NetworkSetup::setupBridgeDevice(const std::shared_ptr<DobbyRdkPluginUtils> 
     // step 2 - disable Spanning Tree Protocol (STP)
     if (!BridgeInterface::disableStp(utils))
     {
-        AI_LOG_ERROR("failed to disable STP");
-    }
-
-    // step 3 - assign an IP address to the bridge
-    if (!BridgeInterface::setAddress(netlink, INADDR_BRIDGE, INADDR_BRIDGE_NETMASK))
-    {
-        AI_LOG_ERROR_EXIT("failed to set the ip address on the bridge interface");
+        AI_LOG_ERROR_EXIT("failed to disable STP");
         return false;
     }
 
-    // step 4 - construct the rules to be added to iptables and then add them
-    std::vector<Netfilter::RuleSet> ruleSets = constructBridgeRules(netfilter, extIfaces);
+    // step 3 - assign an IPv4 and IPv6 address to the bridge
+    if (!BridgeInterface::setAddresses(netlink))
+    {
+        AI_LOG_ERROR_EXIT("failed to set the ip addresses on the bridge interface");
+        return false;
+    }
+
+    // step 4 - construct the IPv4 rules to be added to iptables and then add them
+    std::vector<Netfilter::RuleSet> ipv4RuleSets = constructBridgeRules(netfilter, extIfaces, AF_INET);
+    if (ipv4RuleSets.empty())
+    {
+        AI_LOG_FN_EXIT();
+        return false;
+    }
 
     // set the iptables drop rules for the NAT
-    if (!netfilter->insertRules(ruleSets[0]))
+    if (!netfilter->insertRules(ipv4RuleSets[0], AF_INET))
     {
         AI_LOG_ERROR_EXIT("failed to setup iptables drop rules for NAT");
         return false;
     }
 
     // set the iptables rules for the NAT
-    if (!netfilter->appendRules(ruleSets[1]))
+    if (!netfilter->appendRules(ipv4RuleSets[1], AF_INET))
     {
         AI_LOG_ERROR_EXIT("failed to setup iptables forwarding rules for NAT");
         return false;
     }
 
-    // step 5 - bring the bridge interface up
+    // step 5 - construct the IPv6 rules to be added to iptables and then add them
+    std::vector<Netfilter::RuleSet> ipv6RuleSets = constructBridgeRules(netfilter, extIfaces, AF_INET6);
+    if (ipv6RuleSets.empty())
+    {
+        AI_LOG_FN_EXIT();
+        return false;
+    }
+
+    // set the ip6tables drop rules for the NAT
+    if (!netfilter->insertRules(ipv6RuleSets[0], AF_INET6))
+    {
+        AI_LOG_ERROR_EXIT("failed to setup iptables drop rules for NAT");
+        return false;
+    }
+
+    // set the ip6tables rules for the NAT
+    if (!netfilter->appendRules(ipv6RuleSets[1], AF_INET6))
+    {
+        AI_LOG_ERROR_EXIT("failed to setup iptables forwarding rules for NAT");
+        return false;
+    }
+
+    // step 6 - bring the bridge interface up
     if (!BridgeInterface::up(netlink))
     {
         AI_LOG_ERROR_EXIT("failed to bring the bridge interface up");
         return false;
     }
 
-    // step 6 - enable ip forwarding on our local NAT bridge and external ifaces
+    // step 7 - enable IPv6 forwarding on all devices for device-specific
+    // forwarding enables to work. IPv4 usually has this enabled by default.
+    if (!netlink->setIfaceForwarding6(utils, "all", true))
+    {
+        AI_LOG_ERROR("failed to enable IPv6 forwarding on all interfaces");
+        return false;
+    }
+
+    // step 8 - enable ip forwarding on our local NAT bridge and external ifaces
     for (const std::string &extIface : extIfaces)
     {
+        // set up IPv4 forwarding on interface
         if (!netlink->setIfaceForwarding(extIface, true))
         {
-            AI_LOG_ERROR("failed to enable forwarding on interface '%s'",
+            AI_LOG_ERROR("failed to enable IPv4 forwarding on interface '%s'",
                          extIface.c_str());
+            return false;
+        }
+
+        // set up IPv6 forwarding on interface
+        if (!netlink->setIfaceForwarding6(utils, extIface, true))
+        {
+            AI_LOG_ERROR("failed to enable IPv6 forwarding on interface '%s'",
+                         extIface.c_str());
+            return false;
+        }
+
+        // enable IPv6 router advertisements even when forwarding is enabled
+        if (!netlink->setIfaceAcceptRa(utils, extIface, 2))
+        {
+            AI_LOG_ERROR_EXIT("failed to enable accept_ra on interface %s",
+                              extIface.c_str());
+            return false;
         }
     }
 
+    // set up forwarding on the bridge interface
     if (!BridgeInterface::setIfaceForwarding(utils, netlink, true))
     {
         AI_LOG_ERROR_EXIT("failed to enable forwarding on the NATed ifaces");
         return false;
     }
 
-    // step 7 - enable the 'route localnet' config to re-route dns requests to
+    // accept router advertisements on the bridge even with forwarding enabled
+    if (!BridgeInterface::setIfaceAcceptRa(utils, netlink, 2))
+    {
+        AI_LOG_ERROR_EXIT("failed to enable accept_ra on the bridge device");
+        return false;
+    }
+
+    // step 9 - enable the 'route localnet' config to re-route dns requests to
     // localhost outside the container
     if (!BridgeInterface::setIfaceRouteLocalNet(utils, netlink, true))
     {
@@ -300,19 +496,23 @@ bool NetworkSetup::setupBridgeDevice(const std::shared_ptr<DobbyRdkPluginUtils> 
 
 // -----------------------------------------------------------------------------
 /**
- *  @brief Set ip address to a container and register the veth name to it
+ *  @brief Saves an ip address to a container and register the veth name to it.
+ *
+ *  The ip address is stored in the NetworkingHelper object provided in args.
  *
  *  @param[in]  utils           Instance of DobbyRdkPluginUtils.
  *  @param[in]  dobbyProxy      Instance of DobbyRdkPluginProxy.
+ *  @param[in]  helper          Instance of NetworkingHelper.
  *  @param[in]  rootfsPath      Path to the rootfs on the host.
  *  @param[in]  vethName        Name of the virtual ethernet device
  *
- *  @return ip address that was registered
+ *  @return true if successful, otherwise false.
  */
-const std::string setContainerAddress(const std::shared_ptr<DobbyRdkPluginUtils> &utils,
-                                      const std::shared_ptr<DobbyRdkPluginProxy> &dobbyProxy,
-                                      const std::string &rootfsPath,
-                                      const std::string &vethName)
+bool saveContainerAddress(const std::shared_ptr<DobbyRdkPluginUtils> &utils,
+                          const std::shared_ptr<DobbyRdkPluginProxy> &dobbyProxy,
+                          const std::shared_ptr<NetworkingHelper> &helper,
+                          const std::string &rootfsPath,
+                          const std::string &vethName)
 {
     AI_LOG_FN_ENTRY();
 
@@ -321,27 +521,29 @@ const std::string setContainerAddress(const std::shared_ptr<DobbyRdkPluginUtils>
     if (!ipAddress)
     {
         AI_LOG_ERROR_EXIT("failed to get ip address from daemon");
-        return std::string();
+        return false;
     }
 
-    // convert address to string
-    char addressStr[INET_ADDRSTRLEN];
-    struct in_addr ipAddress_ = { htonl(ipAddress) };
-    inet_ntop(AF_INET, &ipAddress_, addressStr, INET_ADDRSTRLEN);
+    // set addresses in helper
+    if (!helper->setAddresses(ipAddress))
+    {
+        AI_LOG_ERROR_EXIT("failed to set ip addresses");
+        return false;
+    }
 
     // combine ip address and veth name strings
-    const std::string fileContent(std::string() + addressStr + "/" + vethName);
+    const std::string fileContent(std::string() + helper->ipv4AddrStr() + "/" + vethName);
 
     // write address and veth name to a file in the container rootfs
     const std::string filePath(rootfsPath + ADDRESS_FILE_PATH);
     if (!utils->writeTextFile(filePath, fileContent, O_CREAT | O_TRUNC, 0644))
     {
         AI_LOG_ERROR_EXIT("failed to write ip address file");
-        return std::string();
+        return false;
     }
 
     AI_LOG_FN_EXIT();
-    return std::string(addressStr);
+    return true;
 }
 
 
@@ -354,12 +556,13 @@ const std::string setContainerAddress(const std::shared_ptr<DobbyRdkPluginUtils>
  *      - sets the default routes for both the lo and eth0 interfaces
  *      - brings both interfaces up
  *
- *  @param[in]  address         The IPv4 address to give to the interface inside
- *                              the container.
+ *  @param[in]  helper          Instance of NetworkingHelper.
+ *  @param[in]  extIfaces       External interfaces.
  *
  *  @return true if successful, otherwise false
  */
-bool setupContainerNet(in_addr_t address)
+bool setupContainerNet(const std::shared_ptr<NetworkingHelper> &helper,
+                       const std::vector<std::string> &extIfaces)
 {
     AI_LOG_FN_ENTRY();
 
@@ -372,20 +575,35 @@ bool setupContainerNet(in_addr_t address)
     }
 
     // step 2 - set the address of the ifaceName interface inside the container
+
+    // first add IPv4 address if enabled
     // nb: htonl used for address to convert to network byte order
-    const std::string ifaceName(PEER_NAME);
-    if (!netlink->setIfaceAddress(ifaceName, htonl(address), INADDR_BRIDGE_NETMASK))
+    const std::string ifaceName(extIfaces[0]);
+    if (helper->ipv4())
     {
-        AI_LOG_ERROR_EXIT("failed to set the address and netmask of '%s'",
-                          ifaceName.c_str());
-        return false;
+        if (!netlink->setIfaceAddress(ifaceName, helper->ipv4Addr(), INADDR_BRIDGE_NETMASK))
+        {
+            AI_LOG_ERROR_EXIT("failed to set the IPv4 address and netmask of '%s'",
+                              ifaceName.c_str());
+            return false;
+        }
+    }
+
+    // add IPv6 address if enabled, create address by merging IPv4 address into
+    // a base address
+    if (helper->ipv6())
+    {
+        if (!netlink->setIfaceAddress(ifaceName, helper->ipv6Addr(), 64))
+        {
+            AI_LOG_ERROR_EXIT("failed to set the IPv6 address and netmask of '%s'",
+                              ifaceName.c_str());
+            return false;
+        }
     }
 
     // step 3 - set the address of the 'lo' interface inside the container
     const std::string loName("lo");
-    const in_addr_t loAddress = INADDR_CREATE(127, 0, 0, 1);
-    const in_addr_t loNetmask = INADDR_CREATE(255, 0, 0, 0);
-    if (!netlink->setIfaceAddress(loName, loAddress, loNetmask))
+    if (!netlink->setIfaceAddress(loName, INADDR_LO, INADDR_LO_NETMASK))
     {
         AI_LOG_ERROR_EXIT("failed to set the address and netmask of 'lo'");
         return false;
@@ -398,25 +616,55 @@ bool setupContainerNet(in_addr_t address)
         return false;
     }
 
-    // step 5 - and the final step is to set the route table for the container
-    const struct Route {
-        const std::string& iface;
-        in_addr_t dest;
-        in_addr_t gateway;
-        in_addr_t mask;
-    } routes[] = {
-        //  iface       destination                 gateway                     mask
-        {   ifaceName,  INADDR_CREATE(0, 0, 0, 0),  INADDR_BRIDGE,              INADDR_CREATE(0, 0, 0, 0)   },
-        {   loName,     (loAddress & loNetmask),    INADDR_CREATE(0, 0, 0, 0),  loNetmask                   },
-    };
-
-    // step 6 - set the routes
-    for (const struct Route &route : routes)
+    // step 5 - and the final step is to set the route table(s) for the container
+    if (helper->ipv4())
     {
-        if (!netlink->addRoute(route.iface, route.dest, route.gateway, route.mask))
+        const struct ipv4Route {
+            const std::string& iface;
+            in_addr_t dest;
+            in_addr_t mask;
+            in_addr_t gateway;
+        } ipv4Routes[] = {
+            //  iface       destination                         mask                        gateway
+            {   ifaceName,  INADDR_CREATE(0, 0, 0, 0),          INADDR_CREATE(0, 0, 0, 0),  INADDR_BRIDGE               },
+            {   loName,     (INADDR_LO & INADDR_LO_NETMASK),    INADDR_LO_NETMASK,          INADDR_CREATE(0, 0, 0, 0)   },
+        };
+
+        // set the routes
+        for (auto &route : ipv4Routes)
         {
-            AI_LOG_ERROR_EXIT("failed to apply route");
-            return false;
+            if (!netlink->addRoute(route.iface, route.dest, route.mask, route.gateway))
+            {
+                AI_LOG_ERROR_EXIT("failed to apply route");
+                return false;
+            }
+        }
+    }
+
+    if (helper->ipv6())
+    {
+        //construct lo address (::1)
+        struct in6_addr loAddr = IN6ADDR_ANY;
+        loAddr.s6_addr[15] = 1;
+
+        const struct ipv6Route {
+            const std::string& iface;
+            struct in6_addr dest;
+            int mask;
+            struct in6_addr gateway;
+        } ipv6Routes[] = {
+            //  iface       destination     mask    gateway
+            {   ifaceName,  IN6ADDR_ANY,    0,      NetworkingHelper::in6addrCreate(INADDR_BRIDGE)  }
+        };
+
+        // set the routes
+        for (auto &route : ipv6Routes)
+        {
+            if (!netlink->addRoute(route.iface, route.dest, route.mask, route.gateway))
+            {
+                AI_LOG_ERROR_EXIT("failed to apply route");
+                return false;
+            }
         }
     }
 
@@ -438,15 +686,19 @@ bool setupContainerNet(in_addr_t address)
  *  @param[in]  utils           Instance of DobbyRdkPluginUtils.
  *  @param[in]  netfilter       Instance of Netfilter.
  *  @param[in]  dobbyProxy      Instance of DobbyRdkPluginProxy.
+ *  @param[in]  helper          Instance of NetworkingHelper.
+ *  @param[in]  extIfaces       External interfaces.
  *  @param[in]  rootfsPath      Path to the rootfs on the host.
  *  @param[in]  containerId     The id of the container.
- *  @param[in]  networkType     Container's network type.
+ *  @param[in]  networkType     Network type.
  *
  *  @return true if successful, otherwise false
  */
 bool NetworkSetup::setupVeth(const std::shared_ptr<DobbyRdkPluginUtils> &utils,
                              const std::shared_ptr<Netfilter> &netfilter,
                              const std::shared_ptr<DobbyRdkPluginProxy> &dobbyProxy,
+                             const std::shared_ptr<NetworkingHelper> &helper,
+                             const std::vector<std::string> &extIfaces,
                              const std::string &rootfsPath,
                              const std::string &containerId,
                              const NetworkType networkType)
@@ -469,8 +721,9 @@ bool NetworkSetup::setupVeth(const std::shared_ptr<DobbyRdkPluginUtils> &utils,
         return false;
     }
 
-    // step 3 - create a veth pair for the container
-    std::string vethName = netlink->createVeth(PEER_NAME, containerPid);
+    // step 3 - create a veth pair for the container, using the name of the
+    // first external interface defined in Dobby settings
+    std::string vethName = netlink->createVeth(extIfaces[0], containerPid);
     if (vethName.empty())
     {
         AI_LOG_ERROR_EXIT("failed to create veth pair for container '%s'",
@@ -478,23 +731,20 @@ bool NetworkSetup::setupVeth(const std::shared_ptr<DobbyRdkPluginUtils> &utils,
         return false;
     }
 
-    // step 4 - set ip address for container
-    const std::string ipAddressStr = setContainerAddress(utils, dobbyProxy, rootfsPath, vethName);
-    if (ipAddressStr.empty())
+    // step 4 - get and save the ip address for container in DobbyDaemon and an
+    // address file in the container rootfs
+    if (!saveContainerAddress(utils, dobbyProxy, helper, rootfsPath, vethName))
     {
+        AI_LOG_ERROR_EXIT("failed to get address for container '%s'",
+                          containerId.c_str());
         return false;
     }
-
-    in_addr_t ipAddress;
-    inet_pton(AF_INET, ipAddressStr.c_str(), &ipAddress);
-    AI_LOG_DEBUG("ip address %s set for container %s", ipAddressStr.c_str(),
-                 containerId.c_str());
 
     // step 5 - enable ip forwarding on the veth interface created outside
     // the container
     if (!netlink->setIfaceForwarding(vethName, true))
     {
-        AI_LOG_ERROR_EXIT("failed to enable ip forwarding on %s for '%s'",
+        AI_LOG_ERROR_EXIT("failed to enable IPv4 forwarding on %s for '%s'",
                           vethName.c_str(), containerId.c_str());
         return false;
     }
@@ -508,41 +758,88 @@ bool NetworkSetup::setupVeth(const std::shared_ptr<DobbyRdkPluginUtils> &utils,
         return false;
     }
 
-    // step 7 - enter the network namespace of the container and set the
+    // step 7 - enable IPv6 forwarding on veth interface if using IPv6
+    if (helper->ipv6())
+    {
+        // enable IPv6 forwarding
+        if (!netlink->setIfaceForwarding6(utils, vethName, true))
+        {
+            AI_LOG_ERROR("failed to enable IPv6 forwarding on %s for '%s'",
+                         vethName.c_str(), containerId.c_str());
+            return false;
+        }
+
+        // accept router advertisements even with forwarding enabled
+        if (!netlink->setIfaceAcceptRa(utils, vethName, 2))
+        {
+            AI_LOG_ERROR_EXIT("failed to enable accept_ra on %s for '%s'",
+                              vethName.c_str(), containerId.c_str());
+            return false;
+        }
+    }
+
+    // step 8 - enter the network namespace of the container and set the
     // default routes
     if (!utils->callInNamespace(containerPid, CLONE_NEWNET,
-                                &setupContainerNet, ipAddress))
+                                &setupContainerNet, helper, extIfaces))
     {
         AI_LOG_ERROR_EXIT("failed to setup routing for container '%s'",
                           containerId.c_str());
         return false;
     }
 
-    // step 8 - bring the veth interface outside the container up
+    // step 9 - add routing table entry to the container
+    if (!netlink->addRoute(BRIDGE_NAME, helper->ipv6Addr(), 128, IN6ADDR_ANY))
+    {
+        AI_LOG_ERROR_EXIT("failed to apply route");
+        return false;
+    }
+
+    // step 10 - bring the veth interface outside the container up
     if (!netlink->ifaceUp(vethName))
     {
         AI_LOG_ERROR_EXIT("failed to bring up veth interface");
         return false;
     }
 
-    // step 9 - add an iptables rule to either drop anything that comes from the
+    // step 11 - add an iptables rule to either drop anything that comes from the
     // veth if a private network is enabled, or to drop anything that doesn't
     // have the correct ip address
-    Netfilter::RuleSet ruleSet;
-    if (networkType == NetworkType::Nat)
+    if (helper->ipv4())
     {
-        ruleSet = createAntiSpoofRule(ipAddressStr, vethName);
-    }
-    else if (networkType == NetworkType::None)
-    {
-        ruleSet = createDropAllRule(vethName);
-    }
+        Netfilter::RuleSet ipv4RuleSet;
+        if (networkType == NetworkType::Nat)
+        {
+            ipv4RuleSet = createAntiSpoofRule(vethName, helper->ipv4AddrStr(), AF_INET);
+        }
+        else if (networkType == NetworkType::None)
+        {
+            ipv4RuleSet = createDropAllRule(vethName);
+        }
 
-    if (!netfilter->insertRules(ruleSet))
+        if (!netfilter->insertRules(ipv4RuleSet, AF_INET))
+        {
+            AI_LOG_ERROR_EXIT("failed to add iptables rule to drop veth packets");
+            return false;
+        }
+    }
+    if (helper->ipv6())
     {
-        AI_LOG_ERROR("failed to add iptables rule to drop veth packets");
-        // for now this is not fatal as some kernels lack the netfilter physdev
-        // matcher plugin
+        Netfilter::RuleSet ipv6RuleSet;
+        if (networkType == NetworkType::Nat)
+        {
+            ipv6RuleSet = createAntiSpoofRule(vethName, helper->ipv6AddrStr(), AF_INET6);
+        }
+        else if (networkType == NetworkType::None)
+        {
+            ipv6RuleSet = createDropAllRule(vethName);
+        }
+
+        if (!netfilter->insertRules(ipv6RuleSet, AF_INET6))
+        {
+            AI_LOG_ERROR_EXIT("failed to add iptables rule to drop veth packets");
+            return false;
+        }
     }
 
     AI_LOG_FN_EXIT();
@@ -556,18 +853,21 @@ bool NetworkSetup::setupVeth(const std::shared_ptr<DobbyRdkPluginUtils> &utils,
  *  veth pair down.
  *
  *  @param[in]  netfilter       Instance of Netfilter.
- *  @param[in]  ipAddressStr    Container's ip address in string format.
- *  @param[in]  vethName        Name of the container's veth interface
+ *  @param[in]  helper          Instance of NetworkingHelper.
+ *  @param[in]  vethName        Name of the container's veth interface.
  *  @param[in]  networkType     Container's network type.
  *
  *  @return true if successful, otherwise false
  */
 bool NetworkSetup::removeVethPair(const std::shared_ptr<Netfilter> &netfilter,
-                                  const std::string ipAddressStr,
-                                  const std::string vethName,
-                                  const NetworkType networkType)
+                                  const std::shared_ptr<NetworkingHelper> &helper,
+                                  const std::string &vethName,
+                                  const NetworkType networkType,
+                                  const std::string &containerId)
 {
     AI_LOG_FN_ENTRY();
+
+    bool success = true;
 
     // create a new netlink object
     std::shared_ptr<Netlink> netlink = std::make_shared<Netlink>();
@@ -580,26 +880,55 @@ bool NetworkSetup::removeVethPair(const std::shared_ptr<Netfilter> &netfilter,
     // take down the veth interface
     netlink->ifaceDown(vethName);
 
-    // construct rule for container to match in iptables for removal
-    Netfilter::RuleSet ruleSet;
-    if (networkType == NetworkType::Nat)
+    // construct iptables rules and remove them
+    if (helper->ipv4())
     {
-        ruleSet = createAntiSpoofRule(ipAddressStr, vethName);
-    }
-    else if (networkType == NetworkType::None)
-    {
-        ruleSet = createDropAllRule(vethName);
+        Netfilter::RuleSet ipv4RuleSet;
+        if (networkType == NetworkType::Nat)
+        {
+            ipv4RuleSet = createAntiSpoofRule(vethName, helper->ipv4AddrStr(), AF_INET);
+        }
+        else if (networkType == NetworkType::None)
+        {
+            ipv4RuleSet = createDropAllRule(vethName);
+        }
+
+        if (!netfilter->deleteRules(ipv4RuleSet, AF_INET))
+        {
+            AI_LOG_ERROR("failed to delete netfilter rules for container veth");
+            success = false;
+        }
     }
 
-    // create a netfilter object
-    if (!netfilter->deleteRules(ruleSet))
+    // construct ip6tables rules and remove them
+    if (helper->ipv6())
     {
-        AI_LOG_ERROR_EXIT("failed to delete netfilter rules for container veth");
-        return false;
+        Netfilter::RuleSet ipv6RuleSet;
+        if (networkType == NetworkType::Nat)
+        {
+            ipv6RuleSet = createAntiSpoofRule(vethName, helper->ipv6AddrStr(), AF_INET6);
+        }
+        else if (networkType == NetworkType::None)
+        {
+            ipv6RuleSet = createDropAllRule(vethName);
+        }
+
+        if (!netfilter->deleteRules(ipv6RuleSet, AF_INET6))
+        {
+            AI_LOG_ERROR("failed to delete netfilter rules for container veth");
+            success = false;
+        }
+    }
+
+    if (!netlink->delIfaceFromBridge(BRIDGE_NAME, vethName))
+    {
+        AI_LOG_ERROR("failed to delete interface '%s' from bridge interface",
+                     vethName.c_str());
+        success = false;
     }
 
     AI_LOG_FN_EXIT();
-    return true;
+    return success;
 }
 
 
@@ -618,14 +947,39 @@ bool NetworkSetup::removeBridgeDevice(const std::shared_ptr<Netfilter> &netfilte
 {
     AI_LOG_FN_ENTRY();
 
-    // delete network rules for bridge device
-    std::vector<Netfilter::RuleSet> ruleSets = constructBridgeRules(netfilter, extIfaces);
-    for (Netfilter::RuleSet &ruleSet : ruleSets)
+    bool success = true;
+
+    // delete IPv4 network rules for bridge device
+    std::vector<Netfilter::RuleSet> ipv4RuleSets = constructBridgeRules(netfilter, extIfaces, AF_INET);
+    if (ipv4RuleSets.empty())
     {
-        if (!netfilter->deleteRules(ruleSet))
+        AI_LOG_FN_EXIT();
+        return false;
+    }
+
+    for (Netfilter::RuleSet &ipv4RuleSet : ipv4RuleSets)
+    {
+        if (!netfilter->deleteRules(ipv4RuleSet, AF_INET))
         {
-            AI_LOG_ERROR_EXIT("failed to delete netfilter rules for bridge device");
-            return false;
+            AI_LOG_ERROR("failed to delete netfilter rules for bridge device");
+            success = false;
+        }
+    }
+
+    // delete IPv6 network rules for bridge device
+    std::vector<Netfilter::RuleSet> ipv6RuleSets = constructBridgeRules(netfilter, extIfaces, AF_INET6);
+    if (ipv6RuleSets.empty())
+    {
+        AI_LOG_FN_EXIT();
+        return false;
+    }
+
+    for (Netfilter::RuleSet &ipv6RuleSet : ipv6RuleSets)
+    {
+        if (!netfilter->deleteRules(ipv6RuleSet, AF_INET6))
+        {
+            AI_LOG_ERROR("failed to delete netfilter rules for bridge device");
+            success = false;
         }
     }
 
@@ -642,7 +996,7 @@ bool NetworkSetup::removeBridgeDevice(const std::shared_ptr<Netfilter> &netfilte
     BridgeInterface::destroyBridge(netlink);
 
     AI_LOG_FN_EXIT();
-    return true;
+    return success;
 }
 
 
@@ -662,7 +1016,8 @@ void NetworkSetup::addSysfsMount(const std::shared_ptr<DobbyRdkPluginUtils> &uti
     // iterate through the mounts to check that the mount doesn't already exist
     for (int i=0; i < cfg->mounts_len; i++)
     {
-        if (!strcmp(cfg->mounts[i]->source, source.c_str()) && !strcmp(cfg->mounts[i]->destination, destination.c_str()))
+        if (!strcmp(cfg->mounts[i]->source, source.c_str()) &&
+            !strcmp(cfg->mounts[i]->destination, destination.c_str()))
         {
             AI_LOG_DEBUG("sysfs mount already exists in the config");
             return;
@@ -675,6 +1030,66 @@ void NetworkSetup::addSysfsMount(const std::shared_ptr<DobbyRdkPluginUtils> &uti
     );
 }
 
+
+// -----------------------------------------------------------------------------
+/**
+ *  @brief Adds a mount to /etc/nsswitch.conf
+ *
+ *  @param[in]  utils           Instance of DobbyRdkPluginUtils.
+ *  @param[in]  cfg             Pointer to bundle config struct.
+ */
+void NetworkSetup::addNsswitchMount(const std::shared_ptr<DobbyRdkPluginUtils> &utils,
+                                    const std::shared_ptr<rt_dobby_schema> &cfg)
+{
+    const std::string source = "/etc/nsswitch.conf";
+    const std::string destination = "/etc/nsswitch.conf";
+
+    // iterate through the mounts to check that the mount doesn't already exist
+    for (int i=0; i < cfg->mounts_len; i++)
+    {
+        if (!strcmp(cfg->mounts[i]->source, source.c_str()) &&
+            !strcmp(cfg->mounts[i]->destination, destination.c_str()))
+        {
+            AI_LOG_DEBUG("/etc/nsswitch.conf mount already exists in the config");
+            return;
+        }
+    }
+
+    // add the mount
+    utils->addMount(cfg, source, destination, "bind",
+                    { "nosuid", "noexec", "nodev", "ro" }
+    );
+}
+
+// -----------------------------------------------------------------------------
+/**
+ *  @brief Adds a mount to /etc/resolv.conf
+ *
+ *  @param[in]  utils           Instance of DobbyRdkPluginUtils.
+ *  @param[in]  cfg             Pointer to bundle config struct.
+ */
+void NetworkSetup::addResolvMount(const std::shared_ptr<DobbyRdkPluginUtils> &utils,
+                                  const std::shared_ptr<rt_dobby_schema> &cfg)
+{
+    const std::string source = "/etc/resolv.conf";
+    const std::string destination = "/etc/resolv.conf";
+
+    // iterate through the mounts to check that the mount doesn't already exist
+    for (int i=0; i < cfg->mounts_len; i++)
+    {
+        if (!strcmp(cfg->mounts[i]->source, source.c_str()) &&
+            !strcmp(cfg->mounts[i]->destination, destination.c_str()))
+        {
+            AI_LOG_DEBUG("/etc/resolv.conf mount already exists in the config");
+            return;
+        }
+    }
+
+    // add the mount
+    utils->addMount(cfg, source, destination, "bind",
+                    { "ro", "rbind", "rprivate", "nosuid", "noexec", "nodev", }
+    );
+}
 
 // -----------------------------------------------------------------------------
 /**

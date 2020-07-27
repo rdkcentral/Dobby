@@ -113,8 +113,8 @@ bool BridgeInterface::down(const std::shared_ptr<Netlink> &netlink)
  *
  *  Uses a workaround function if needed (libnl v3.3.x-3.4.0).
  *
- *  @param[in]  utils       Instance of the DobbyRdkPluginUtils class
- *  @param[in]  netlink     Instance of the Netlink class
+ *  @param[in]  utils       Instance of the DobbyRdkPluginUtils class.
+ *  @param[in]  netlink     Instance of the Netlink class.
  *  @param[in]  enable      true to enable, false to disable.
  *
  *  @see Netlink::setIfaceForwarding()
@@ -125,10 +125,19 @@ bool BridgeInterface::setIfaceForwarding(const std::shared_ptr<DobbyRdkPluginUti
                                          const std::shared_ptr<Netlink> &netlink,
                                          bool enable)
 {
+
 #if ENABLE_LIBNL_BRIDGE_WORKAROUND
     return netlinkForwardingWorkaround(utils, enable);
 #else
-    return netlink->setIfaceForwarding(BRIDGE_NAME, enable);
+    // set forwarding for IPv4 using libnl API
+    bool success = netlink->setIfaceForwarding(BRIDGE_NAME, enable);
+
+    // libnl doesn't have an API for editing IPv6 devconf values, so we have
+    // to write it manually
+    std::string path = "/proc/sys/net/ipv6/conf/" BRIDGE_NAME "/forwarding";
+    success &= utils->writeTextFile(path, enable ? "1" : "0", O_TRUNC, 0);
+
+    return success;
 #endif
 }
 
@@ -138,8 +147,8 @@ bool BridgeInterface::setIfaceForwarding(const std::shared_ptr<DobbyRdkPluginUti
  *
  *  Uses a workaround function if needed (libnl v3.3.x-3.4.0).
  *
- *  @param[in]  utils       Instance of the DobbyRdkPluginUtils class
- *  @param[in]  netlink     Instance of the Netlink class
+ *  @param[in]  utils       Instance of the DobbyRdkPluginUtils class.
+ *  @param[in]  netlink     Instance of the Netlink class.
  *  @param[in]  enable      true to enable, false to disable.
  *
  *  @see Netlink::setIfaceRouteLocalNet()
@@ -159,22 +168,66 @@ bool BridgeInterface::setIfaceRouteLocalNet(const std::shared_ptr<DobbyRdkPlugin
 
 // -----------------------------------------------------------------------------
 /**
- *  @brief Sets the ip address and netmask of the bridge interface
+ *  @brief Sets the proxy_ndp on the Dobby bridge device.
+ *
+ *  @param[in]  utils       Instance of the DobbyRdkPluginUtils class.
+ *  @param[in]  netlink     Instance of the Netlink class.
+ *  @param[in]  enable      true to enable, false to disable.
+ *
+ *  @see Netlink::setIfaceProxyNdp()
+ *
+ *  @return true on success, false on failure.
+ */
+bool BridgeInterface::setIfaceProxyNdp(const std::shared_ptr<DobbyRdkPluginUtils> &utils,
+                                       const std::shared_ptr<Netlink> &netlink,
+                                       bool enable)
+{
+    return netlink->setIfaceProxyNdp(utils, BRIDGE_NAME, enable);
+}
+
+// -----------------------------------------------------------------------------
+/**
+ *  @brief Sets the proxy_ndp on the Dobby bridge device.
+ *
+ *  @param[in]  utils       Instance of the DobbyRdkPluginUtils class.
+ *  @param[in]  netlink     Instance of the Netlink class.
+ *  @param[in]  value       value to set to accept_ra.
+ *
+ *  @see Netlink::setIfaceAcceptRa()
+ *
+ *  @return true on success, false on failure.
+ */
+bool BridgeInterface::setIfaceAcceptRa(const std::shared_ptr<DobbyRdkPluginUtils> &utils,
+                                       const std::shared_ptr<Netlink> &netlink,
+                                       int value)
+{
+    return netlink->setIfaceAcceptRa(utils, BRIDGE_NAME, value);
+}
+
+// -----------------------------------------------------------------------------
+/**
+ *  @brief Sets the ip addresses for the bridge device
  *
  *  This is the equivalent of the following on the command line
  *
  *      ifconfig <BRIDGE_NAME> <address> netmask <netmask>
+ *      ifconfig <BRIDGE_NAME> inet6 add <address>/<netmask>
  *
  *  @param[in]  netlink     Instance of the Netlink class
- *  @param[in]  address     The address to set, the netmask will be applied to
- *                          this before setting on the iface
- *  @param[in]  netmask     The netmask to apply.
  *
  *  @return true on success, false on failure.
  */
-bool BridgeInterface::setAddress(const std::shared_ptr<Netlink> &netlink, in_addr_t address, in_addr_t netmask)
+bool BridgeInterface::setAddresses(const std::shared_ptr<Netlink> &netlink)
 {
-    return netlink->setIfaceAddress(BRIDGE_NAME, address, netmask);
+    bool success = true;
+
+    // set IPv4 address
+    success &= netlink->setIfaceAddress(BRIDGE_NAME, INADDR_BRIDGE, INADDR_BRIDGE_NETMASK);
+
+    // set IPv6 address
+    success &= netlink->setIfaceAddress(BRIDGE_NAME, NetworkingHelper::in6addrCreate(INADDR_BRIDGE), 64);
+
+    return success;
 }
 
 // -----------------------------------------------------------------------------
@@ -208,9 +261,8 @@ bool BridgeInterface::disableStp(const std::shared_ptr<DobbyRdkPluginUtils> &uti
  *  https://stackoverflow.com/questions/56535754/change-bridge-flags-with-libnl
  *  http://lists.infradead.org/pipermail/libnl/2017-November/thread.html#2384
  *
- *
- *  @param[in]  mask    The interface flags mask.
- *  @param[in]  flags   The flags to set.
+ *  @param[in]  mask        The interface flags mask.
+ *  @param[in]  flags       The flags to set.
  *
  *  @return true on success, false on failure.
  */
@@ -262,8 +314,10 @@ bool netlinkFlagsWorkaround(short int mask, short int flags)
  *  This is the equivalent of the following on the command line
  *
  *      echo "1" > /proc/sys/net/ipv4/conf/<BRIDGE_NAME>/forwarding
+ *      echo "1" > /proc/sys/net/ipv6/conf/<BRIDGE_NAME>/forwarding
  *  Or
  *      echo "0" > /proc/sys/net/ipv4/conf/<BRIDGE_NAME>/forwarding
+ *      echo "0" > /proc/sys/net/ipv6/conf/<BRIDGE_NAME>/forwarding
  *
  * This is a workaround needed for certain versions of netlink which have a bug
  * when setting / clearing the interface flags.  See the following:
@@ -273,14 +327,23 @@ bool netlinkFlagsWorkaround(short int mask, short int flags)
  *
  *  @param[in]  utils       instance of the DobbyRdkPluginUtils class
  *  @param[in]  enable      true to enable forwarding, false to disable.
+ *  @param[in]  addrFamily  Address family (AF_INET/AF_INET6).
  *
  *  @return true on success, false on failure.
  */
-bool netlinkForwardingWorkaround(const std::shared_ptr<DobbyRdkPluginUtils> &utils, bool enable)
+bool netlinkForwardingWorkaround(const std::shared_ptr<DobbyRdkPluginUtils> &utils,
+                                 bool enable)
 {
-    std::string path = "/proc/sys/net/ipv4/conf/" BRIDGE_NAME "/forwarding";
+    bool success = true;
+    std::string path;
 
-    return utils->writeTextFile(path, enable ? "1" : "0", O_TRUNC, 0);
+    path = "/proc/sys/net/ipv4/conf/" BRIDGE_NAME "/forwarding";
+    success &= utils->writeTextFile(path, enable ? "1" : "0", O_TRUNC, 0);
+
+    path = "/proc/sys/net/ipv6/conf/" BRIDGE_NAME "/forwarding";
+    success &= utils->writeTextFile(path, enable ? "1" : "0", O_TRUNC, 0);
+
+    return success;
 }
 
 // -----------------------------------------------------------------------------
