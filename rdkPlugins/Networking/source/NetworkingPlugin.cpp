@@ -135,12 +135,6 @@ bool NetworkingPlugin::postInstallation()
             NetworkSetup::addResolvMount(mUtils, mContainerConfig);
         }
 
-        // add /etc/nsswitch.conf mount if using IPv6
-        if (mHelper->ipv6())
-        {
-            NetworkSetup::addNsswitchMount(mUtils, mContainerConfig);
-        }
-
         // add network namespacing to the OCI config
         NetworkSetup::addNetworkNamespace(mContainerConfig);
     }

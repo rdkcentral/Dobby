@@ -69,8 +69,6 @@ namespace NetworkSetup
 
     void addSysfsMount(const std::shared_ptr<DobbyRdkPluginUtils> &utils,
                        const std::shared_ptr<rt_dobby_schema> &cfg);
-    void addNsswitchMount(const std::shared_ptr<DobbyRdkPluginUtils> &utils,
-                          const std::shared_ptr<rt_dobby_schema> &cfg);
     void addResolvMount(const std::shared_ptr<DobbyRdkPluginUtils> &utils,
                         const std::shared_ptr<rt_dobby_schema> &cfg);
 

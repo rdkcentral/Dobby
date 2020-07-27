@@ -1030,36 +1030,6 @@ void NetworkSetup::addSysfsMount(const std::shared_ptr<DobbyRdkPluginUtils> &uti
 
 // -----------------------------------------------------------------------------
 /**
- *  @brief Adds a mount to /etc/nsswitch.conf
- *
- *  @param[in]  utils           Instance of DobbyRdkPluginUtils.
- *  @param[in]  cfg             Pointer to bundle config struct.
- */
-void NetworkSetup::addNsswitchMount(const std::shared_ptr<DobbyRdkPluginUtils> &utils,
-                                    const std::shared_ptr<rt_dobby_schema> &cfg)
-{
-    const std::string source = "/etc/nsswitch.conf";
-    const std::string destination = "/etc/nsswitch.conf";
-
-    // iterate through the mounts to check that the mount doesn't already exist
-    for (int i=0; i < cfg->mounts_len; i++)
-    {
-        if (!strcmp(cfg->mounts[i]->source, source.c_str()) &&
-            !strcmp(cfg->mounts[i]->destination, destination.c_str()))
-        {
-            AI_LOG_DEBUG("/etc/nsswitch.conf mount already exists in the config");
-            return;
-        }
-    }
-
-    // add the mount
-    utils->addMount(cfg, source, destination, "bind",
-                    { "nosuid", "noexec", "nodev", "ro" }
-    );
-}
-
-// -----------------------------------------------------------------------------
-/**
  *  @brief Adds a mount to /etc/resolv.conf
  *
  *  @param[in]  utils           Instance of DobbyRdkPluginUtils.
