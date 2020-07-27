@@ -1,10 +1,9 @@
-Copyright 2020 RDK Management
-Licensed under the Apache License, Version 2.0
-
-Copyright (c) 2013-2020, Sky UK
+Copyright 2013-2020 Sky UK
 Licensed under the Apache License, Version 2.0
 
 Alexander Peslyak, better known as Solar Designer <solar at openwall.com>
 This software was written by Alexander Peslyak in 2001.  No copyright is
 claimed, and the software is hereby placed in the public domain.
 
+Used test results from RFC 1321
+("Distribution of this memo is unlimited.")
