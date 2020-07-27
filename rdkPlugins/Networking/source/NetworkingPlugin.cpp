@@ -274,7 +274,7 @@ bool NetworkingPlugin::postHalt()
         const std::string vethName = addressFileStr.substr(addressStr.length() + 1, addressFileStr.length());
         in_addr_t ipAddress;
         inet_pton(AF_INET, addressStr.c_str(), &ipAddress);
-        mHelper->setAddresses(ipAddress);
+        mHelper->setAddresses(htonl(ipAddress));
 
         // delete the veth pair for the container
         if (!NetworkSetup::removeVethPair(mNetfilter, mHelper, vethName, mNetworkType, mContainerId))
