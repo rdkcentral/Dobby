@@ -64,9 +64,9 @@ public:
     bool ifaceIsUp(const std::string& ifaceName) const;
 
     bool setIfaceAddress(const std::string& ifaceName,
-                         in_addr_t address, in_addr_t netmask);
+                         const in_addr_t address, const in_addr_t netmask);
     bool setIfaceAddress(const std::string& ifaceName,
-                         struct in6_addr address, int netmask);
+                         const struct in6_addr address, const int netmask);
 
     bool setIfaceForwarding(const std::string& ifaceName, bool enable);
     bool setIfaceForwarding6(const std::shared_ptr<DobbyRdkPluginUtils> &utils,
@@ -94,24 +94,23 @@ public:
                            pid_t peerPid);
     bool checkVeth(const std::string& vethName);
 
-
 public:
-    bool addRoute(const std::string& iface, in_addr_t destination,
-                  in_addr_t netmask, in_addr_t gateway);
-    bool addRoute(const std::string& iface, struct in6_addr destination,
-                  int netmask, struct in6_addr gateway);
+    bool addRoute(const std::string& iface, const in_addr_t destination,
+                  const in_addr_t netmask, const in_addr_t gateway);
+    bool addRoute(const std::string& iface, const struct in6_addr destination,
+                  const int netmask, const struct in6_addr gateway);
 
 private:
     bool applyChangesToLink(const std::string& ifaceName,
                             const NlLink& changes);
 
     bool setLinkAddress(const NlLink& link,
-                        in_addr_t address, in_addr_t netmask);
+                        const in_addr_t address, const in_addr_t netmask);
     bool setLinkAddress(const NlLink& link,
-                        struct in6_addr address, int netmask);
+                        const struct in6_addr address, const int netmask);
 
-    bool setIfaceConfig(const std::string& ifaceName, unsigned int configId,
-                        uint32_t value);
+    bool setIfaceConfig(const std::string& ifaceName, const unsigned int configId,
+                        const uint32_t value);
 
 
     std::string getAvailableVethName(const int startIndex) const;

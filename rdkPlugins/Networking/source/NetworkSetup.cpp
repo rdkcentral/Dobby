@@ -32,6 +32,7 @@
 #include <sys/mount.h>
 #include <sys/wait.h>
 
+#define PEER_NAME "eth0" // name of the interface created inside containers
 
 // -----------------------------------------------------------------------------
 /**
@@ -557,12 +558,10 @@ bool saveContainerAddress(const std::shared_ptr<DobbyRdkPluginUtils> &utils,
  *      - brings both interfaces up
  *
  *  @param[in]  helper          Instance of NetworkingHelper.
- *  @param[in]  extIfaces       External interfaces.
  *
  *  @return true if successful, otherwise false
  */
-bool setupContainerNet(const std::shared_ptr<NetworkingHelper> &helper,
-                       const std::vector<std::string> &extIfaces)
+bool setupContainerNet(const std::shared_ptr<NetworkingHelper> &helper)
 {
     AI_LOG_FN_ENTRY();
 
@@ -578,7 +577,7 @@ bool setupContainerNet(const std::shared_ptr<NetworkingHelper> &helper,
 
     // first add IPv4 address if enabled
     // nb: htonl used for address to convert to network byte order
-    const std::string ifaceName(extIfaces[0]);
+    const std::string ifaceName(PEER_NAME);
     if (helper->ipv4())
     {
         if (!netlink->setIfaceAddress(ifaceName, helper->ipv4Addr(), INADDR_BRIDGE_NETMASK))
@@ -687,7 +686,6 @@ bool setupContainerNet(const std::shared_ptr<NetworkingHelper> &helper,
  *  @param[in]  netfilter       Instance of Netfilter.
  *  @param[in]  dobbyProxy      Instance of DobbyRdkPluginProxy.
  *  @param[in]  helper          Instance of NetworkingHelper.
- *  @param[in]  extIfaces       External interfaces.
  *  @param[in]  rootfsPath      Path to the rootfs on the host.
  *  @param[in]  containerId     The id of the container.
  *  @param[in]  networkType     Network type.
@@ -698,7 +696,6 @@ bool NetworkSetup::setupVeth(const std::shared_ptr<DobbyRdkPluginUtils> &utils,
                              const std::shared_ptr<Netfilter> &netfilter,
                              const std::shared_ptr<DobbyRdkPluginProxy> &dobbyProxy,
                              const std::shared_ptr<NetworkingHelper> &helper,
-                             const std::vector<std::string> &extIfaces,
                              const std::string &rootfsPath,
                              const std::string &containerId,
                              const NetworkType networkType)
@@ -723,7 +720,7 @@ bool NetworkSetup::setupVeth(const std::shared_ptr<DobbyRdkPluginUtils> &utils,
 
     // step 3 - create a veth pair for the container, using the name of the
     // first external interface defined in Dobby settings
-    std::string vethName = netlink->createVeth(extIfaces[0], containerPid);
+    std::string vethName = netlink->createVeth(PEER_NAME, containerPid);
     if (vethName.empty())
     {
         AI_LOG_ERROR_EXIT("failed to create veth pair for container '%s'",
@@ -781,7 +778,7 @@ bool NetworkSetup::setupVeth(const std::shared_ptr<DobbyRdkPluginUtils> &utils,
     // step 8 - enter the network namespace of the container and set the
     // default routes
     if (!utils->callInNamespace(containerPid, CLONE_NEWNET,
-                                &setupContainerNet, helper, extIfaces))
+                                &setupContainerNet, helper))
     {
         AI_LOG_ERROR_EXIT("failed to setup routing for container '%s'",
                           containerId.c_str());

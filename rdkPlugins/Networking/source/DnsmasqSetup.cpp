@@ -39,7 +39,7 @@ std::mutex mLock;
  *
  *  @return netfilter ruleset
  */
-Netfilter::RuleSet constructRules(const std::string &containerId, int ipVersion)
+Netfilter::RuleSet constructRules(const std::string &containerId, const int ipVersion)
 {
     AI_LOG_FN_ENTRY();
 

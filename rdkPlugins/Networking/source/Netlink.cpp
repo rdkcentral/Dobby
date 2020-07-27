@@ -585,7 +585,8 @@ bool Netlink::applyChangesToLink(const std::string& ifaceName,
  *
  *  @return true on success, false on failure.
  */
-bool Netlink::setLinkAddress(const NlLink& link, in_addr_t address, in_addr_t netmask)
+bool Netlink::setLinkAddress(const NlLink& link, const in_addr_t address,
+                             const in_addr_t netmask)
 {
     AI_LOG_FN_ENTRY();
 
@@ -629,8 +630,8 @@ bool Netlink::setLinkAddress(const NlLink& link, in_addr_t address, in_addr_t ne
  *
  *  @return true on success, false on failure.
  */
-bool Netlink::setLinkAddress(const NlLink& link, struct in6_addr address,
-                             int netmask)
+bool Netlink::setLinkAddress(const NlLink& link, const struct in6_addr address,
+                             const int netmask)
 {
     AI_LOG_FN_ENTRY();
 
@@ -675,7 +676,7 @@ bool Netlink::setLinkAddress(const NlLink& link, struct in6_addr address,
  *  @return true on success, false on failure.
  */
 bool Netlink::setIfaceAddress(const std::string& ifaceName,
-                              in_addr_t address, in_addr_t netmask)
+                              const in_addr_t address, const in_addr_t netmask)
 {
     AI_LOG_FN_ENTRY();
 
@@ -718,7 +719,7 @@ bool Netlink::setIfaceAddress(const std::string& ifaceName,
  *  @return true on success, false on failure.
  */
 bool Netlink::setIfaceAddress(const std::string& ifaceName,
-                              struct in6_addr address, int netmask)
+                              const struct in6_addr address, const int netmask)
 {
     AI_LOG_FN_ENTRY();
 
@@ -757,8 +758,8 @@ bool Netlink::setIfaceAddress(const std::string& ifaceName,
  *
  *  @return true on success, false on failure.
  */
-bool Netlink::setIfaceConfig(const std::string& ifaceName, unsigned int configId,
-                             uint32_t value)
+bool Netlink::setIfaceConfig(const std::string& ifaceName, const unsigned int configId,
+                             const uint32_t value)
 {
     AI_LOG_FN_ENTRY();
 
@@ -1127,7 +1128,7 @@ std::string Netlink::getAvailableVethName(const int startIndex) const
  *  On failure an empty string is returned.
  */
 std::string Netlink::createVeth(const std::string& peerVethName,
-                                pid_t peerPid)
+                                const pid_t peerPid)
 {
     AI_LOG_FN_ENTRY();
 
@@ -1476,8 +1477,8 @@ bool Netlink::delIfaceFromBridge(const std::string& bridgeName,
  *
  *  @return true on success, false on failure.
  */
-bool Netlink::addRoute(const std::string &iface, in_addr_t destination,
-                       in_addr_t netmask, in_addr_t gateway)
+bool Netlink::addRoute(const std::string &iface, const in_addr_t destination,
+                       const in_addr_t netmask, const in_addr_t gateway)
 {
     AI_LOG_FN_ENTRY();
 
@@ -1586,8 +1587,8 @@ bool Netlink::addRoute(const std::string &iface, in_addr_t destination,
  *
  *  @return true on success, false on failure.
  */
-bool Netlink::addRoute(const std::string &iface, struct in6_addr destination,
-                       int netmask, struct in6_addr gateway)
+bool Netlink::addRoute(const std::string &iface, const struct in6_addr destination,
+                       const int netmask, const struct in6_addr gateway)
 {
     AI_LOG_FN_ENTRY();
 

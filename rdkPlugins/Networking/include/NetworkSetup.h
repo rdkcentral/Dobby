@@ -54,7 +54,6 @@ namespace NetworkSetup
                    const std::shared_ptr<Netfilter> &netfilter,
                    const std::shared_ptr<DobbyRdkPluginProxy> &dobbyProxy,
                    const std::shared_ptr<NetworkingHelper> &helper,
-                   const std::vector<std::string> &extIfaces,
                    const std::string &rootfsPath,
                    const std::string &containerId,
                    const NetworkType networkType);
@@ -78,8 +77,7 @@ namespace NetworkSetup
     void addNetworkNamespace(const std::shared_ptr<rt_dobby_schema> &cfg);
 };
 
-bool setupContainerNet(const std::shared_ptr<NetworkingHelper> &helper,
-                       const std::vector<std::string> &extIfaces);
+bool setupContainerNet(const std::shared_ptr<NetworkingHelper> &helper);
 
 pid_t spawnNetnsOwner(const std::string &containerId);
 

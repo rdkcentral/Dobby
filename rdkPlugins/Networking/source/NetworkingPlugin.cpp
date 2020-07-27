@@ -205,7 +205,7 @@ bool NetworkingPlugin::createRuntime()
     }
 
     // setup veth, ip address and iptables rules for container
-    if (!NetworkSetup::setupVeth(mUtils, mNetfilter, mDobbyProxy, mHelper, extIfaces,
+    if (!NetworkSetup::setupVeth(mUtils, mNetfilter, mDobbyProxy, mHelper,
                                  mRootfsPath, mContainerId, mNetworkType))
     {
         AI_LOG_ERROR_EXIT("failed to setup virtual ethernet device");
