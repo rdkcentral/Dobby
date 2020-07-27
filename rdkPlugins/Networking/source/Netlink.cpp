@@ -1552,7 +1552,7 @@ bool Netlink::addRoute(const std::string &iface, const in_addr_t destination,
     // and finally add the route to the table
     AI_LOG_INFO("adding route '%s'", route.toString().c_str());
     ret = rtnl_route_add(mSocket, route, 0);
-    if (ret == NLE_EXIST)
+    if (ret == -NLE_EXIST)
     {
         // failing to add a route that already exists isn't harmful for
         // operation, but indicates that there may have been a failed cleanup
@@ -1675,7 +1675,8 @@ bool Netlink::addRoute(const std::string &iface, const struct in6_addr destinati
     AI_LOG_INFO("adding route '%s'", route.toString().c_str());
     ret = rtnl_route_add(mSocket, route, 0);
 
-    if (ret == NLE_EXIST)
+
+    if (ret == -NLE_EXIST)
     {
         // failing to add a route that already exists isn't harmful for
         // operation, but indicates that there may have been a failed cleanup

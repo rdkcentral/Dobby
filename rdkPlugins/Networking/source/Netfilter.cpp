@@ -274,7 +274,7 @@ bool Netfilter::forkExec(const std::string &execFile,
  *
  *  @return an list of all the rules read (ruleset)
  */
-Netfilter::RuleSet Netfilter::getRuleSet(int ipVersion) const
+Netfilter::RuleSet Netfilter::getRuleSet(const int ipVersion) const
 {
     AI_LOG_FN_ENTRY();
 
@@ -436,7 +436,7 @@ Netfilter::RuleSet Netfilter::getRuleSet(int ipVersion) const
  *
  *  @return true on success, false on failure.
  */
-bool Netfilter::applyRuleSet(Operation operation, const RuleSet &ruleSet, int ipVersion)
+bool Netfilter::applyRuleSet(Operation operation, const RuleSet &ruleSet, const int ipVersion)
 {
     AI_LOG_FN_ENTRY();
 
@@ -627,9 +627,8 @@ bool Netfilter::writeString(int fd, const std::string &str) const
  *
  *  @return an list of all the rules read (ruleset)
  */
-Netfilter::RuleSet Netfilter::rules(int ipVersion) const
+Netfilter::RuleSet Netfilter::rules(const int ipVersion) const
 {
-    std::lock_guard<std::mutex> locker(mLock);
     return getRuleSet(ipVersion);
 }
 
@@ -646,11 +645,9 @@ Netfilter::RuleSet Netfilter::rules(int ipVersion) const
  *
  *  @return true on success, false on failure.
  */
-bool Netfilter::setRules(const RuleSet &ruleSet, int ipVersion)
+bool Netfilter::setRules(const RuleSet &ruleSet, const int ipVersion)
 {
     AI_LOG_FN_ENTRY();
-
-    std::lock_guard<std::mutex> locker(mLock);
 
     // finally apply the rules
     bool success = applyRuleSet(Operation::Set, ruleSet, ipVersion);
@@ -702,18 +699,12 @@ bool Netfilter::ruleInList(const std::string &rule,
  *
  *  @return true on success, false on failure.
  */
-bool Netfilter::appendRules(const RuleSet &ruleSet, int ipVersion)
+bool Netfilter::appendRules(const RuleSet &ruleSet, const int ipVersion)
 {
     AI_LOG_FN_ENTRY();
 
-    // dump(ruleSet, "APPEND");
-
-    std::lock_guard<std::mutex> locker(mLock);
-
     // get the existing iptables rules
     RuleSet existing = getRuleSet(ipVersion);
-
-    // dump(existing, "EXISTING");
 
     // create a rule set from entries in the supplied argument that are not
     // not in the existing rules
@@ -738,15 +729,12 @@ bool Netfilter::appendRules(const RuleSet &ruleSet, int ipVersion)
         }
     }
 
-    // dump(actual, "ACTUAL");
-
     if (actual.empty())
     {
         AI_LOG_INFO("all iptables rules are already set");
         AI_LOG_FN_EXIT();
         return true;
     }
-
 
     // finally apply the rules
     bool success = applyRuleSet(Operation::Append, actual, ipVersion);
@@ -777,11 +765,9 @@ bool Netfilter::appendRules(const RuleSet &ruleSet, int ipVersion)
  *
  *  @return true on success, false on failure.
  */
-bool Netfilter::insertRules(const RuleSet &ruleSet, int ipVersion)
+bool Netfilter::insertRules(const RuleSet &ruleSet, const int ipVersion)
 {
     AI_LOG_FN_ENTRY();
-
-    std::lock_guard<std::mutex> locker(mLock);
 
     // get the existing iptables rules
     RuleSet existing = getRuleSet(ipVersion);
@@ -842,11 +828,9 @@ bool Netfilter::insertRules(const RuleSet &ruleSet, int ipVersion)
  *
  *  @return true on success, false on failure.
  */
-bool Netfilter::deleteRules(const RuleSet &ruleSet, int ipVersion)
+bool Netfilter::deleteRules(const RuleSet &ruleSet, const int ipVersion)
 {
     AI_LOG_FN_ENTRY();
-
-    std::lock_guard<std::mutex> locker(mLock);
 
     // get the existing iptables rules
     RuleSet existing = getRuleSet(ipVersion);
@@ -915,11 +899,9 @@ bool Netfilter::deleteRules(const RuleSet &ruleSet, int ipVersion)
  *  @return true on success, false on failure.
  */
 bool Netfilter::createNewChain(TableType table, const std::string &name,
-                               bool withDropRule, int ipVersion)
+                               bool withDropRule, const int ipVersion)
 {
     AI_LOG_FN_ENTRY();
-
-    std::lock_guard<std::mutex> locker(mLock);
 
     // create the initial ruleset to create the table
     RuleSet newChainRuleSet =

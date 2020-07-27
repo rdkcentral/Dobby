@@ -327,7 +327,6 @@ bool netlinkFlagsWorkaround(short int mask, short int flags)
  *
  *  @param[in]  utils       instance of the DobbyRdkPluginUtils class
  *  @param[in]  enable      true to enable forwarding, false to disable.
- *  @param[in]  addrFamily  Address family (AF_INET/AF_INET6).
  *
  *  @return true on success, false on failure.
  */

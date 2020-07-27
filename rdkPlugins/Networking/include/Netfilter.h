@@ -51,15 +51,15 @@ public:
     enum class TableType { Invalid, Raw, Nat, Mangle, Filter, Security };
     typedef std::map<TableType, std::list<std::string>> RuleSet;
 
-    RuleSet rules(int ipVersion) const;
-    bool setRules(const RuleSet &ruleSet, int ipVersion);
+    RuleSet rules(const int ipVersion) const;
+    bool setRules(const RuleSet &ruleSet, const int ipVersion);
 
-    bool appendRules(const RuleSet &ruleSet, int ipVersion);
-    bool insertRules(const RuleSet &ruleSet, int ipVersion);
-    bool deleteRules(const RuleSet &ruleSet, int ipVersion);
+    bool appendRules(const RuleSet &ruleSet, const int ipVersion);
+    bool insertRules(const RuleSet &ruleSet, const int ipVersion);
+    bool deleteRules(const RuleSet &ruleSet, const int ipVersion);
 
     bool createNewChain(TableType table, const std::string &name,
-                        bool withDropRule, int ipVersion);
+                        bool withDropRule, const int ipVersion);
 
 private:
     bool forkExec(const std::string &file,
@@ -68,13 +68,13 @@ private:
 
     bool writeString(int fd, const std::string &str) const;
 
-    RuleSet getRuleSet(int ipVersion) const;
+    RuleSet getRuleSet(const int ipVersion) const;
 
     bool ruleInList(const std::string &rule,
                     const std::list<std::string> &rulesList) const;
 
     enum class Operation { Set, Append, Insert, Delete, Unchanged };
-    bool applyRuleSet(Operation operation, const RuleSet &ruleSet, int ipVersion);
+    bool applyRuleSet(Operation operation, const RuleSet &ruleSet, const int ipVersion);
 
     void dump(const RuleSet &ruleSet, const char *title = nullptr) const;
 

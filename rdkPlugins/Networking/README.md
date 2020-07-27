@@ -95,7 +95,10 @@ Only usable with network types 'open' and 'nat'.
 ```
 
 ### Holepuncher
-TODO:
+
+The `holes` data field can be used to punch holes in the firewall to enable port forwarding to allow containered processes to run servers.
+
+The `protocol` field can be omitted in which case TCP will be specified.
 
 ```json
     "data": {

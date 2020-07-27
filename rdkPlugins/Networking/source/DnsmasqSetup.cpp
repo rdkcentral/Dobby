@@ -212,7 +212,10 @@ bool DnsmasqSetup::set(const std::shared_ptr<DobbyRdkPluginUtils> &utils,
     std::string content;
     if (networkType == NetworkType::Nat)
     {
+        if (helper->ipv4())
+        {
         content.append("nameserver " BRIDGE_ADDRESS "\n");
+        }
 
         if (helper->ipv6())
         {
@@ -221,7 +224,10 @@ bool DnsmasqSetup::set(const std::shared_ptr<DobbyRdkPluginUtils> &utils,
     }
     else
     {
+        if (helper->ipv4())
+        {
         content.append("nameserver " LOCALHOST "\n");
+        }
 
         if (helper->ipv6())
         {

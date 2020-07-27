@@ -100,7 +100,7 @@ void expandRuleSetAddresses(Netfilter::RuleSet *ruleSet, const std::string &addr
  */
 void expandRuleSetForExtIfaces(Netfilter::RuleSet *ruleSet, const std::vector<std::string> &extIfaces)
 {
-    for (auto & table : *ruleSet)
+    for (auto &table : *ruleSet)
     {
         std::list<std::string> &rules = table.second;
 
@@ -438,7 +438,7 @@ bool NetworkSetup::setupBridgeDevice(const std::shared_ptr<DobbyRdkPluginUtils> 
     // forwarding enables to work. IPv4 usually has this enabled by default.
     if (!netlink->setIfaceForwarding6(utils, "all", true))
     {
-        AI_LOG_ERROR("failed to enable IPv6 forwarding on all interfaces");
+        AI_LOG_ERROR_EXIT("failed to enable IPv6 forwarding on all interfaces");
         return false;
     }
 
@@ -448,16 +448,16 @@ bool NetworkSetup::setupBridgeDevice(const std::shared_ptr<DobbyRdkPluginUtils> 
         // set up IPv4 forwarding on interface
         if (!netlink->setIfaceForwarding(extIface, true))
         {
-            AI_LOG_ERROR("failed to enable IPv4 forwarding on interface '%s'",
-                         extIface.c_str());
+            AI_LOG_ERROR_EXIT("failed to enable IPv4 forwarding on interface"
+                              "'%s'", extIface.c_str());
             return false;
         }
 
         // set up IPv6 forwarding on interface
         if (!netlink->setIfaceForwarding6(utils, extIface, true))
         {
-            AI_LOG_ERROR("failed to enable IPv6 forwarding on interface '%s'",
-                         extIface.c_str());
+            AI_LOG_ERROR_EXIT("failed to enable IPv6 forwarding on interface"
+                              "'%s'", extIface.c_str());
             return false;
         }
 
@@ -761,8 +761,8 @@ bool NetworkSetup::setupVeth(const std::shared_ptr<DobbyRdkPluginUtils> &utils,
         // enable IPv6 forwarding
         if (!netlink->setIfaceForwarding6(utils, vethName, true))
         {
-            AI_LOG_ERROR("failed to enable IPv6 forwarding on %s for '%s'",
-                         vethName.c_str(), containerId.c_str());
+            AI_LOG_ERROR_EXIT("failed to enable IPv6 forwarding on %s for '%s'",
+                              vethName.c_str(), containerId.c_str());
             return false;
         }
 
