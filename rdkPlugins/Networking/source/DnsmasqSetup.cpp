@@ -214,7 +214,7 @@ bool DnsmasqSetup::set(const std::shared_ptr<DobbyRdkPluginUtils> &utils,
     {
         if (helper->ipv4())
         {
-        content.append("nameserver " BRIDGE_ADDRESS "\n");
+            content.append("nameserver " BRIDGE_ADDRESS "\n");
         }
 
         if (helper->ipv6())
@@ -226,7 +226,7 @@ bool DnsmasqSetup::set(const std::shared_ptr<DobbyRdkPluginUtils> &utils,
     {
         if (helper->ipv4())
         {
-        content.append("nameserver " LOCALHOST "\n");
+            content.append("nameserver " LOCALHOST "\n");
         }
 
         if (helper->ipv6())

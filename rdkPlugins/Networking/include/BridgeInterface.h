@@ -56,9 +56,6 @@ namespace BridgeInterface
     bool setIfaceRouteLocalNet(const std::shared_ptr<DobbyRdkPluginUtils> &utils,
                                const std::shared_ptr<Netlink> &netlink,
                                bool enable);
-    bool setIfaceProxyNdp(const std::shared_ptr<DobbyRdkPluginUtils> &utils,
-                          const std::shared_ptr<Netlink> &netlink,
-                          bool enable);
     bool setIfaceAcceptRa(const std::shared_ptr<DobbyRdkPluginUtils> &utils,
                           const std::shared_ptr<Netlink> &netlink,
                           int value);

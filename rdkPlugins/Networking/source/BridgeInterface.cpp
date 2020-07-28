@@ -168,26 +168,7 @@ bool BridgeInterface::setIfaceRouteLocalNet(const std::shared_ptr<DobbyRdkPlugin
 
 // -----------------------------------------------------------------------------
 /**
- *  @brief Sets the proxy_ndp on the Dobby bridge device.
- *
- *  @param[in]  utils       Instance of the DobbyRdkPluginUtils class.
- *  @param[in]  netlink     Instance of the Netlink class.
- *  @param[in]  enable      true to enable, false to disable.
- *
- *  @see Netlink::setIfaceProxyNdp()
- *
- *  @return true on success, false on failure.
- */
-bool BridgeInterface::setIfaceProxyNdp(const std::shared_ptr<DobbyRdkPluginUtils> &utils,
-                                       const std::shared_ptr<Netlink> &netlink,
-                                       bool enable)
-{
-    return netlink->setIfaceProxyNdp(utils, BRIDGE_NAME, enable);
-}
-
-// -----------------------------------------------------------------------------
-/**
- *  @brief Sets the proxy_ndp on the Dobby bridge device.
+ *  @brief Sets the accept_ra on the Dobby bridge device.
  *
  *  @param[in]  utils       Instance of the DobbyRdkPluginUtils class.
  *  @param[in]  netlink     Instance of the Netlink class.

@@ -207,7 +207,7 @@ bool NetworkingPlugin::createRuntime()
     }
 
     // setup dnsmasq rules if enabled
-    if (mNetworkType != NetworkType::None &&  mPluginData->dnsmasq)
+    if (mNetworkType != NetworkType::None && mPluginData->dnsmasq)
     {
         if (!DnsmasqSetup::set(mUtils, mNetfilter, mHelper, mRootfsPath,
                                mContainerId, mNetworkType))

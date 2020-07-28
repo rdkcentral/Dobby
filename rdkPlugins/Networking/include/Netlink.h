@@ -74,9 +74,6 @@ public:
 
     bool setIfaceRouteLocalNet(const std::string& ifaceName, bool enable);
 
-    bool setIfaceProxyNdp(const std::shared_ptr<DobbyRdkPluginUtils> &utils,
-                          const std::string& ifaceName, bool enable);
-
     bool setIfaceAcceptRa(const std::shared_ptr<DobbyRdkPluginUtils> &utils,
                           const std::string& ifaceName, int value);
 

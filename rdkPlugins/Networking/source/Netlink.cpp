@@ -890,37 +890,6 @@ bool Netlink::setIfaceRouteLocalNet(const std::string& ifaceName, bool enable)
 
 // -----------------------------------------------------------------------------
 /**
- *  @brief Sets the proxy_ndp flag on the interface.
-
- *  This is the equivalent of the following on the command line
- *
- *      echo "1" > /proc/sys/net/ipv6/conf/<ifaceName>/proxy_ndp
- *  Or
- *      echo "0" > /proc/sys/net/ipv6/conf/<ifaceName>/proxy_ndp
- *
- *  This is used to enable the proxy NDP feature to pass the neighbor discovery
- *  solicitation protocol to the container's interface from the host.
- *
- *  @see https://mescanef.net/blog/2015/05/libvirt-and-ipv6-net-block-attaching-ip6-addresses-among-the-virtual-machines/
- *
- *  @param[in]  utils       Instance of the DobbyRdkPluginUtils class.
- *  @param[in]  ifaceName   The name of the interface to set the config on.
- *  @param[in]  enable      true to enable, false to disable.
- *
- *  @return true on success, false on failure.
- */
-bool Netlink::setIfaceProxyNdp(const std::shared_ptr<DobbyRdkPluginUtils> &utils,
-                               const std::string& ifaceName, bool enable)
-{
-    // libnl doesn't have an API for editing IPv6 devconf values, so we have
-    // to write it manually
-    std::string path = "/proc/sys/net/ipv6/conf/" + ifaceName + "/proxy_ndp";
-
-    return utils->writeTextFile(path, enable ? "1" : "0", O_TRUNC, 0);
-}
-
-// -----------------------------------------------------------------------------
-/**
  *  @brief Sets the accept_ra flag on the interface.
 
  *  This is the equivalent of the following on the command line
