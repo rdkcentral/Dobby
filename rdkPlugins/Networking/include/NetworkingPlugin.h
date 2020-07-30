@@ -63,7 +63,7 @@ private:
 private:
     bool mValid;
     std::shared_ptr<rt_dobby_schema> mContainerConfig;
-    rt_defs_plugins_networking_data *mPluginData;
+    const rt_defs_plugins_networking_data *mPluginData;
     const std::shared_ptr<DobbyRdkPluginUtils> mUtils;
     const std::string mName;
     const std::string mRootfsPath;

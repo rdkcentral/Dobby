@@ -100,6 +100,8 @@ The `holes` data field can be used to punch holes in the firewall to enable port
 
 The `protocol` field can be omitted in which case TCP will be specified.
 
+Only usable with network type 'nat'.
+
 ```json
     "data": {
         "holes": [
