@@ -72,8 +72,7 @@ endif()
 # Add defines for DBUS path
 add_definitions( -DDBUS_SYSTEM_ADDRESS="unix:path=/var/run/dbus/system_bus_socket" )
 
-# Enable Dobby legacy components, off by default
-set ( LEGACY_COMPONENTS ON )
+option(LEGACY_COMPONENTS "Enable Dobby legacy components" ON)
 
 # Enable C++14 support. The following tells cmake to always add the -std=c++14
 # flag (nb - if CMAKE_CXX_EXTENSIONS is ON then we'll get -std=gnu++14 instead)
