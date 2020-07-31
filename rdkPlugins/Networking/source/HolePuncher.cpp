@@ -54,7 +54,7 @@ bool HolePuncher::punchHoles(const std::shared_ptr<Netfilter> &netfilter,
         }
 
         std::string prot = holes[i]->protocol;
-        if (strcmp(prot, "tcp") == 0 || strcmp(prot, "udp") == 0)
+        if (strcmp(prot.c_str(), "tcp") == 0 || strcmp(prot.c_str(), "udp") == 0)
         {
             continue;
         }
@@ -287,26 +287,30 @@ std::string createPreroutingRule(const std::string& id,
                         "-m %s "                            // protocol
                         "--dport %s "                       // port number
                         "-m comment --comment %s "          // container id
-                        "-j DNAT --to-destination %s:%s");  // target address
+                        "-j DNAT --to-destination %s");     // target address
+
+    std::string destination;
 
     // construct the rule
     if (ipVersion == AF_INET)
     {
+        destination = ipAddress + ":" + portNumber;
         snprintf(buf, sizeof(buf), natRule.c_str(),
                  protocol.c_str(),
                  protocol.c_str(),
                  portNumber.c_str(),
                  id.c_str(),
-                 ipAddress.c_str(), portNumber.c_str());
+                 destination.c_str());
     }
     else if (ipVersion == AF_INET6)
     {
+        destination = "[" + ipAddress + "]:" + portNumber;
         snprintf(buf, sizeof(buf), natRule.c_str(),
                  protocol.c_str(),
                  protocol.c_str(),
                  portNumber.c_str(),
                  id.c_str(),
-                 ipAddress.c_str(), portNumber.c_str());
+                 destination.c_str());
     }
     else
     {
@@ -337,7 +341,7 @@ std::string createForwardingRule(const std::string &id,
     char buf[256];
 
     std::string filterRule("FORWARD "
-                           "-d %s/32 "                  // container ip address
+                           "-d %s/%s "                  // container ip address/mask
                            "! -i " BRIDGE_NAME " "
                            "-o " BRIDGE_NAME " "
                            "-p %s "                     // protocol
@@ -349,9 +353,8 @@ std::string createForwardingRule(const std::string &id,
     // construct the rule
     if (ipVersion == AF_INET)
     {
-
         snprintf(buf, sizeof(buf), filterRule.c_str(),
-                 ipAddress.c_str(),
+                 ipAddress.c_str(), "32",
                  protocol.c_str(),
                  protocol.c_str(),
                  portNumber.c_str(),
@@ -360,7 +363,7 @@ std::string createForwardingRule(const std::string &id,
     else if (ipVersion == AF_INET6)
     {
         snprintf(buf, sizeof(buf), filterRule.c_str(),
-                 ipAddress.c_str(),
+                 ipAddress.c_str(), "128",
                  protocol.c_str(),
                  protocol.c_str(),
                  portNumber.c_str(),
