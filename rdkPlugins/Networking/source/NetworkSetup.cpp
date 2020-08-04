@@ -130,7 +130,6 @@ void expandRuleSetForExtIfaces(Netfilter::RuleSet *ruleSet, const std::vector<st
             }
         }
     }
-
 }
 
 
@@ -222,12 +221,12 @@ std::vector<Netfilter::RuleSet> constructBridgeRules(const std::shared_ptr<Netfi
             return std::vector<Netfilter::RuleSet>();
         }
 
-        // add POSTROUTING RETURN rule to the front of the NAT table
-        Netfilter::RuleSet::iterator appendNatRules = appendRuleSet.find(Netfilter::TableType::Nat);
-        appendNatRules->second.emplace_front("POSTROUTING -s %y -d ff02::/16 ! -o " BRIDGE_NAME " -j RETURN");
-
-        // reject with "icmp6-port-unreachable" if not ACCEPTed by the
         Netfilter::RuleSet::iterator appendFilterRules = appendRuleSet.find(Netfilter::TableType::Filter);
+
+        // add DobbyInputChain rule to accept solicited-node multicast requests from containers
+        appendFilterRules->second.emplace_front("DobbyInputChain -s %y -d ff02::1:ff40:b01 -i " BRIDGE_NAME " -j ACCEPT");
+
+        // reject with "icmp6-port-unreachable" if not ACCEPTed by now
         appendFilterRules->second.emplace_back("FORWARD -o " BRIDGE_NAME " -j REJECT --reject-with icmp6-port-unreachable");
         appendFilterRules->second.emplace_back("FORWARD -i " BRIDGE_NAME " -j REJECT --reject-with icmp6-port-unreachable");
 
