@@ -916,12 +916,9 @@ bool NetworkSetup::removeVethPair(const std::shared_ptr<Netfilter> &netfilter,
         }
     }
 
-    if (!netlink->delIfaceFromBridge(BRIDGE_NAME, vethName))
-    {
-        AI_LOG_ERROR("failed to delete interface '%s' from bridge interface",
-                     vethName.c_str());
-        success = false;
-    }
+    // delete veth from bridge if it's still up. No error checking needed
+    // because failing to get the interface means that it's already deleted.
+    netlink->delIfaceFromBridge(BRIDGE_NAME, vethName);
 
     AI_LOG_FN_EXIT();
     return success;
