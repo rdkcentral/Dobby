@@ -77,8 +77,7 @@ std::string createForwardingRule(const std::string &id,
                                  const std::string &portNumber,
                                  const int ipVersion);
 
-std::vector<Netfilter::RuleSet> constructRules(const std::shared_ptr<Netfilter> &netfilter,
-                                               const std::shared_ptr<NetworkingHelper> &helper,
+std::vector<Netfilter::RuleSet> constructRules(const std::shared_ptr<NetworkingHelper> &helper,
                                                const std::string &containerId,
                                                rt_defs_plugins_networking_data_holes_element **holes,
                                                const size_t len,

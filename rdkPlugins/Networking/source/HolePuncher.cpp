@@ -70,7 +70,7 @@ bool HolePuncher::punchHoles(const std::shared_ptr<Netfilter> &netfilter,
     // add IPv4 rules to iptables if needed
     if (helper->ipv4())
     {
-        std::vector<Netfilter::RuleSet> ipv4Rules = constructRules(netfilter, helper, containerId, holes, len, AF_INET);
+        std::vector<Netfilter::RuleSet> ipv4Rules = constructRules(helper, containerId, holes, len, AF_INET);
 
         // append constructed rules to iptables
         if (!netfilter->appendRules(ipv4Rules[0], AF_INET))
@@ -90,7 +90,7 @@ bool HolePuncher::punchHoles(const std::shared_ptr<Netfilter> &netfilter,
     // add IPv6 rules to iptables if needed
     if (helper->ipv6())
     {
-        std::vector<Netfilter::RuleSet> ipv6Rules = constructRules(netfilter, helper, containerId, holes, len, AF_INET6);
+        std::vector<Netfilter::RuleSet> ipv6Rules = constructRules(helper, containerId, holes, len, AF_INET6);
 
         // append constructed rules to ip6tables
         if (!netfilter->appendRules(ipv6Rules[0], AF_INET6))
@@ -134,7 +134,7 @@ bool HolePuncher::removeHoles(const std::shared_ptr<Netfilter> &netfilter,
     // delete IPv4 rules to ip6tables if needed
     if (helper->ipv4())
     {
-        std::vector<Netfilter::RuleSet> ipv4Rules = constructRules(netfilter, helper, containerId, holes, len, AF_INET);
+        std::vector<Netfilter::RuleSet> ipv4Rules = constructRules(helper, containerId, holes, len, AF_INET);
 
         // delete constructed rulesets
         if (!netfilter->deleteRules(ipv4Rules[0], AF_INET))
@@ -153,7 +153,7 @@ bool HolePuncher::removeHoles(const std::shared_ptr<Netfilter> &netfilter,
     // delete IPv6 rules to ip6tables if needed
     if (helper->ipv6())
     {
-        std::vector<Netfilter::RuleSet> ipv6Rules = constructRules(netfilter, helper, containerId, holes, len, AF_INET6);
+        std::vector<Netfilter::RuleSet> ipv6Rules = constructRules(helper, containerId, holes, len, AF_INET6);
 
         // delete constructed rulesets
         if (!netfilter->deleteRules(ipv6Rules[0], AF_INET6))
@@ -190,7 +190,6 @@ bool HolePuncher::removeHoles(const std::shared_ptr<Netfilter> &netfilter,
  *               --destination <CONTAINER_IP> -p <PROTOCOL> --dport <PORT_NUMBER>
  *               -j ACCEPT
  *
- *  @param[in]  netfilter           Instance of Netfilter class.
  *  @param[in]  helper              Instance of NetworkingHelper.
  *  @param[in]  containerId         Container identifier.
  *  @param[in]  holes               libocispec structs containing holes to punch.
@@ -199,8 +198,7 @@ bool HolePuncher::removeHoles(const std::shared_ptr<Netfilter> &netfilter,
  *
  *  @return always returns true.
  */
-std::vector<Netfilter::RuleSet> constructRules(const std::shared_ptr<Netfilter> &netfilter,
-                                               const std::shared_ptr<NetworkingHelper> &helper,
+std::vector<Netfilter::RuleSet> constructRules(const std::shared_ptr<NetworkingHelper> &helper,
                                                const std::string &containerId,
                                                rt_defs_plugins_networking_data_holes_element **holes,
                                                const size_t len,
