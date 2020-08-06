@@ -624,8 +624,8 @@ bool DobbyRunC::destroy(const ContainerId& id, const std::shared_ptr<const IDobb
 
     std::string containerDir = mWorkingDir + "/" + id.str();
 
-    // forcefully delete the container directory if the delete command
-    // unable to do it properly (NGDEV-78431).
+    // forcefully delete the container directory if the delete command is unable
+    // to do it properly
     if (AICommon::exists(containerDir))
     {
         AI_LOG_ERROR("container directory not deleted - remove forcefully [%s]",
