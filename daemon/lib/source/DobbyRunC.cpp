@@ -601,7 +601,6 @@ bool DobbyRunC::destroy(const ContainerId& id, const std::shared_ptr<const IDobb
     {
         AI_LOG_WARN("Container '%s' could not be deleted - force deleting", id.c_str());
 
-        // Start by being nice and issuing a "normal" delete
         pid = forkExecRunC({ "delete", "-f", id.c_str() },
                             { }, {}, console, console);
         if (pid <= 0)
