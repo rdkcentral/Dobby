@@ -193,7 +193,7 @@ std::pair<pid_t, pid_t> DobbyRunC::create(const ContainerId &id,
     }
     else if (WEXITSTATUS(status) != EXIT_SUCCESS)
     {
-        AI_LOG_ERROR_EXIT("created failed with status %d", WEXITSTATUS(status));
+        AI_LOG_ERROR_EXIT("create failed with status %d", WEXITSTATUS(status));
         return {-1,-1};
     }
 
@@ -566,9 +566,6 @@ std::pair<pid_t, pid_t> DobbyRunC::exec(const ContainerId& id, const std::string
  *  This command will delete any cruft that the runc tool has left behind,
  *  things like cgroups, log and or pid files, etc.
  *
- *  This function (actually runc) will return true even if there was nothing
- *  to delete.
- *
  *  @param[in]  id      The id / name of the container to create.
  *
  *  @return true or false based on the return code of the runc tool.
@@ -577,7 +574,7 @@ bool DobbyRunC::destroy(const ContainerId& id, const std::shared_ptr<const IDobb
 {
     AI_LOG_FN_ENTRY();
 
-    // run the following command "runc delete <id>"
+    // Start by being nice and issuing a "normal" delete
     pid_t pid = forkExecRunC({ "delete", id.c_str() },
                              { }, {}, console, console);
     if (pid <= 0)
@@ -599,10 +596,36 @@ bool DobbyRunC::destroy(const ContainerId& id, const std::shared_ptr<const IDobb
         return false;
     }
 
+    // If we failed to delete the container, try again with --force
+    if (WEXITSTATUS(status) != EXIT_SUCCESS)
+    {
+        AI_LOG_WARN("Container '%s' could not be deleted - force deleting", id.c_str());
+
+        pid = forkExecRunC({ "delete", "-f", id.c_str() },
+                            { }, {}, console, console);
+        if (pid <= 0)
+        {
+            AI_LOG_ERROR_EXIT("failed to execute runc tool");
+            return false;
+        }
+
+        // block waiting for the forked process to complete
+        if (TEMP_FAILURE_RETRY(waitpid(pid, &status, 0)) < 0)
+        {
+            AI_LOG_SYS_ERROR_EXIT(errno, "waitpid failed");
+            return false;
+        }
+        if (!WIFEXITED(status))
+        {
+            AI_LOG_ERROR_EXIT("runc didn't exit?  status=0x%08x", status);
+            return false;
+        }
+    }
+
     std::string containerDir = mWorkingDir + "/" + id.str();
 
-    // forcefully delete the container directory if the "runc delete" command
-    // unable to do it properly (NGDEV-78431).
+    // forcefully delete the container directory if the delete command is unable
+    // to do it properly
     if (AICommon::exists(containerDir))
     {
         AI_LOG_ERROR("container directory not deleted - remove forcefully [%s]",
