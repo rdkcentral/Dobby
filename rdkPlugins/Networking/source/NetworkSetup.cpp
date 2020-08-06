@@ -224,7 +224,7 @@ std::vector<Netfilter::RuleSet> constructBridgeRules(const std::shared_ptr<Netfi
         Netfilter::RuleSet::iterator appendFilterRules = appendRuleSet.find(Netfilter::TableType::Filter);
 
         // add DobbyInputChain rule to accept solicited-node multicast requests from containers
-        appendFilterRules->second.emplace_front("DobbyInputChain -s %y -d ff02::1:ff40:b01 -i " BRIDGE_NAME " -j ACCEPT");
+        appendFilterRules->second.emplace_front("DobbyInputChain -s %y -d ff02::1:ff40:b01/128 -i " BRIDGE_NAME " -j ACCEPT");
 
         // reject with "icmp6-port-unreachable" if not ACCEPTed by now
         appendFilterRules->second.emplace_back("FORWARD -o " BRIDGE_NAME " -j REJECT --reject-with icmp6-port-unreachable");

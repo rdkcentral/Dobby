@@ -136,3 +136,15 @@ The first external interface listed will be used for creating virtual ethernet d
 With some libnl versions, creating a bridge interface causes issues (see `BridgeInterface.cpp`). To fix this, uncomment the line in `./CMakeLists.txt` to add `ENABLE_LIBNL_BRIDGE_WORKAROUND` compile definition to use workaround functions when using libnl v3.3.x - 3.4.x.
 
 The issue has been fixed in versions 3.5.0 and onwards.
+
+### Failed to resolve host (IPv6 only)
+
+If the container is configured only to IPv6, i.e. `"ipv6": true, "ipv4": false`, the host machine needs to be able to resolve host addresses with IPv6 only.
+
+On some machines, there is no IPv6 DNS support and to resolve host names, IPv4 may need to be enabled as well.
+
+### No route to host (IPv6)
+
+On some machines, it may take a couple of seconds for IPv6 routing to be set up after launching a container, causing routing failures if attempting to send packets via IPv6 for the first couple of seconds.
+
+A delay of ~2 seconds may be needed before attempting to connect anything outside the container via the IPv6 protocol.

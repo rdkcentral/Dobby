@@ -1372,9 +1372,8 @@ bool Netlink::delIfaceFromBridge(const std::string& bridgeName,
     int ret = rtnl_link_get_kernel(mSocket, -1, ifaceName.c_str(), &iface);
     if ((ret != 0) || (iface == nullptr))
     {
-        AI_LOG_ERROR_EXIT("failed to get interface '%s' (%d)",
-                          ifaceName.c_str(), ret);
-        return false;
+        // couldn't find interface, no need to delete
+        return true;
     }
 
     // pessimistic
