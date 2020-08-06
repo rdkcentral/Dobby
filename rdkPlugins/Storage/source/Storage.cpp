@@ -47,7 +47,8 @@ Storage::Storage(std::shared_ptr<rt_dobby_schema> &containerSpec,
       mRootfsPath(rootfsPath),
       mUtils(utils)
 {
-    AI_LOG_INFO("Storage Plugin loaded");
+    AI_LOG_FN_ENTRY();
+    AI_LOG_FN_EXIT();
 }
 
 /**

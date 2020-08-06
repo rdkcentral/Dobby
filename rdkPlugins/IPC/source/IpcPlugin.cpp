@@ -58,7 +58,8 @@ IpcPlugin::IpcPlugin(std::shared_ptr<rt_dobby_schema> &containerConfig,
       mDbusSessionEnvVar("DBUS_SESSION_BUS_ADDRESS=unix:path=/" + mDbusSessionSocketPath),
       mDbusDebugEnvVar("DBUS_DEBUG_BUS_ADDRESS=unix:path=/" + mDbusDebugSocketPath)
 {
-    AI_LOG_INFO("IPC Plugin loaded");
+    AI_LOG_FN_ENTRY();
+    AI_LOG_FN_EXIT();
 }
 
 /**
