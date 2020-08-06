@@ -380,10 +380,10 @@ bool DobbyManager::createAndStart(const ContainerId &id,
     {
         AI_LOG_ERROR("Failed to create container - see crun log for more details");
 
-        // Dump the create hook logs even if the container failed to start
+        // Dump the runtime output to a new file even if the container failed to start
         if (loggingPlugin)
         {
-            mLogger->DumpBuffer(createBuffer->getMemFd(), container->containerPid, loggingPlugin, true);
+            mLogger->DumpBuffer(createBuffer->getMemFd(), -1, loggingPlugin, true);
         }
 
         return false;
@@ -401,14 +401,23 @@ bool DobbyManager::createAndStart(const ContainerId &id,
     std::shared_ptr<DobbyBufferStream> startBuffer = std::make_shared<DobbyBufferStream>();
     bool started = mRunc->start(id, startBuffer);
 
-    // Dump the hook logs and start the main logging thread. Have to wait until
+    if (!started)
+    {
+        AI_LOG_ERROR("Failed to start container '%s'", id.c_str());
+    }
+
+    // Dump the hook logs and start the main logging thread if started. Have to wait until
     // now since the startContainer logs are tied to the create process
     if (loggingPlugin)
     {
-        // First log entry for this container so start a new file
+        // Dump the contents of the buffers even if the container didn't start
         mLogger->DumpBuffer(createBuffer->getMemFd(), container->containerPid, loggingPlugin, true);
         mLogger->DumpBuffer(startBuffer->getMemFd(), container->containerPid, loggingPlugin, false);
-        mLogger->StartContainerLogging(id.str(), pids.first, pids.second, loggingPlugin, false);
+
+        if (started)
+        {
+            mLogger->StartContainerLogging(id.str(), pids.first, pids.second, loggingPlugin, false);
+        }
     }
 
     AI_LOG_FN_EXIT();
@@ -524,6 +533,8 @@ bool DobbyManager::createAndStartContainer(const ContainerId &id,
         return true;
     }
 
+    AI_LOG_WARN("Something went wrong when creating/starting '%s', cleaning up", id.c_str());
+
     // Something went wrong during container start, clean up everything
     // kill the container created
     if (!mRunc->kill(id, SIGKILL))
@@ -538,9 +549,6 @@ bool DobbyManager::createAndStartContainer(const ContainerId &id,
         AI_LOG_SYS_ERROR(errno, "error waiting for the container '%s' to terminate",
                          id.c_str());
     }
-
-    // clear the pid now it's been killed
-    container->containerPid = -1;
 
     // either the container failed to start, or one of the preStart hooks
     // failed, either way we want to call the postStop hook
@@ -565,6 +573,9 @@ bool DobbyManager::createAndStartContainer(const ContainerId &id,
     {
         mLogger->DumpBuffer(destroyBuffer->getMemFd(), container->containerPid, loggingPlugin, false);
     }
+
+    // clear the pid now it's been killed
+    container->containerPid = -1;
 
     AI_LOG_FN_EXIT();
     return false;
