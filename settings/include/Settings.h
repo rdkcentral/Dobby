@@ -35,7 +35,6 @@
 #include <memory>
 
 
-
 // -----------------------------------------------------------------------------
 /**
  *  @class Settings
@@ -78,7 +77,9 @@ public:
     bool gpuHasExtraMounts() const override;
     std::list<GpuExtraMount> gpuExtraMounts() const override;
 
-    std::set<std::string> externalInterfaces() const override;
+    std::vector<std::string> externalInterfaces() const override;
+    std::string addressRangeStr() const override;
+    in_addr_t addressRange() const override;
 
     void dump(int aiLogLevel = -1) const;
 
@@ -117,7 +118,8 @@ private:
     std::list<std::string> mGpuDevNodes;
     std::list<GpuExtraMount> mGpuExtraMounts;
 
-    std::set<std::string> mExternalInterfaces;
+    std::vector<std::string> mExternalInterfaces;
+    std::pair<std::string, in_addr_t> mAddressRange;
 };
 
 #endif // !defined(SETTINGS_H)

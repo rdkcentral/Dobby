@@ -187,6 +187,12 @@
                         "type": {
                             "type": "string"
                         },
+                        "ipv4": {
+                            "type": "boolean"
+                        },
+                        "ipv6": {
+                            "type": "boolean"
+                        },
                         "dnsmasq": {
                             "type": "boolean"
                         },

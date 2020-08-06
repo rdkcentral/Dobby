@@ -37,7 +37,18 @@
 #include <signal.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
+#include <netinet/in.h>
 
+#define IPTABLES_SAVE_PATH "/usr/sbin/iptables-save"
+#define IPTABLES_RESTORE_PATH "/usr/sbin/iptables-restore"
+
+#if defined(DEV_VM)
+    #define IP6TABLES_SAVE_PATH "/sbin/ip6tables-save"
+    #define IP6TABLES_RESTORE_PATH "/sbin/ip6tables-restore"
+#else
+    #define IP6TABLES_SAVE_PATH "/usr/sbin/ip6tables-save"
+    #define IP6TABLES_RESTORE_PATH "/usr/sbin/ip6tables-restore"
+#endif
 
 // -----------------------------------------------------------------------------
 /**
@@ -128,8 +139,8 @@ Netfilter::Netfilter()
  *
  *  @return true on success, false on failure.
  */
-bool Netfilter::forkExec(const std::string& execFile,
-                         const std::list<std::string>& args,
+bool Netfilter::forkExec(const std::string &execFile,
+                         const std::list<std::string> &args,
                          int stdinFd, int stdoutFd, int stderrFd) const
 {
     AI_LOG_FN_ENTRY();
@@ -259,9 +270,11 @@ bool Netfilter::forkExec(const std::string& execFile,
  *
  *  Each list of rules is grouped by the table they belong to.
  *
+ *  @param[in]  ipVersion       iptables version to use.
+ *
  *  @return an list of all the rules read (ruleset)
  */
-Netfilter::RuleSet Netfilter::getRuleSet() const
+Netfilter::RuleSet Netfilter::getRuleSet(const int ipVersion) const
 {
     AI_LOG_FN_ENTRY();
 
@@ -278,13 +291,31 @@ Netfilter::RuleSet Netfilter::getRuleSet() const
     StdErrPipe stdErrPipe;
 
     // exec the iptables-save function, passing in the pipe for stdout
-    if (!forkExec("/usr/sbin/iptables-save", { }, -1, pipeFds[1], stdErrPipe.writeFd()))
+    if (ipVersion == AF_INET)
+    {
+        if (!forkExec(IPTABLES_SAVE_PATH, { }, -1, pipeFds[1], stdErrPipe.writeFd()))
+        {
+            close(pipeFds[0]);
+            close(pipeFds[1]);
+            return RuleSet();
+        }
+    }
+    else if (ipVersion == AF_INET6)
+    {
+        if (!forkExec(IP6TABLES_SAVE_PATH, { }, -1, pipeFds[1], stdErrPipe.writeFd()))
+        {
+            close(pipeFds[0]);
+            close(pipeFds[1]);
+            return RuleSet();
+        }
+    }
+    else
     {
         close(pipeFds[0]);
         close(pipeFds[1]);
+        AI_LOG_ERROR_EXIT("netfilter only supports AF_INET or AF_INET6");
         return RuleSet();
     }
-
 
     // close the write side of the pipe
     if (close(pipeFds[1]) != 0)
@@ -399,11 +430,13 @@ Netfilter::RuleSet Netfilter::getRuleSet() const
  *  All rules are appended, so care must be taken to ensure that you don't
  *  end up with duplicated iptables rules.
  *
- *  @param[in]  ruleSet     The ruleset to apply.
+ *  @param[in]  operation       Operation to set (set/append/insert/delete)
+ *  @param[in]  ruleSet         The ruleset to apply.
+ *  @param[in]  ipVersion       iptables version to use.
  *
  *  @return true on success, false on failure.
  */
-bool Netfilter::applyRuleSet(Operation operation, const RuleSet &ruleSet)
+bool Netfilter::applyRuleSet(Operation operation, const RuleSet &ruleSet, const int ipVersion)
 {
     AI_LOG_FN_ENTRY();
 
@@ -420,7 +453,6 @@ bool Netfilter::applyRuleSet(Operation operation, const RuleSet &ruleSet)
 
     // positive attitude
     bool success = true;
-
 
     // fill the pipe with the iptables rules
     const TableType tables[] = { TableType::Raw,     TableType::Nat,
@@ -481,6 +513,9 @@ bool Netfilter::applyRuleSet(Operation operation, const RuleSet &ruleSet)
 
             line += rule;
             line += '\n';
+
+            AI_LOG_DEBUG("applying rule '%s'", line.c_str());
+
             if (!writeString(pipeFds[1], line))
             {
                 AI_LOG_SYS_ERROR(errno, "failed to write into pipe");
@@ -520,8 +555,22 @@ bool Netfilter::applyRuleSet(Operation operation, const RuleSet &ruleSet)
         // content of the pipe if not empty)
         StdErrPipe stdErrPipe;
 
-        success = forkExec("/usr/sbin/iptables-restore", args,
-                           pipeFds[0], -1, stdErrPipe.writeFd());
+        if (ipVersion == AF_INET)
+        {
+            success = forkExec(IPTABLES_RESTORE_PATH, args,
+                               pipeFds[0], -1, stdErrPipe.writeFd());
+        }
+        else if (ipVersion == AF_INET6)
+        {
+            success = forkExec(IP6TABLES_RESTORE_PATH, args,
+                               pipeFds[0], -1, stdErrPipe.writeFd());
+        }
+        else
+        {
+            AI_LOG_ERROR_EXIT("netfilter only supports AF_INET or AF_INET6");
+            return false;
+        }
+
     }
 
     // can now close the read side of the pipe
@@ -545,7 +594,7 @@ bool Netfilter::applyRuleSet(Operation operation, const RuleSet &ruleSet)
  *
  *  @return true if the entire string was written, otherwise false.
  */
-bool Netfilter::writeString(int fd, const std::string& str) const
+bool Netfilter::writeString(int fd, const std::string &str) const
 {
     const char* s = str.data();
     ssize_t n = str.size();
@@ -574,14 +623,13 @@ bool Netfilter::writeString(int fd, const std::string& str) const
 /**
  *  @brief Returns the current iptables ruleset.
  *
- *
+ *  @param[in]  ipVersion       iptables version to use.
  *
  *  @return an list of all the rules read (ruleset)
  */
-Netfilter::RuleSet Netfilter::rules() const
+Netfilter::RuleSet Netfilter::rules(const int ipVersion) const
 {
-    std::lock_guard<std::mutex> locker(mLock);
-    return getRuleSet();
+    return getRuleSet(ipVersion);
 }
 
 // -----------------------------------------------------------------------------
@@ -592,17 +640,17 @@ Netfilter::RuleSet Netfilter::rules() const
  *  Beware this is probably not what you want as it will clear other rules setup
  *  by the system.
  *
+ *  @param[in]  ruleSet         The ruleset to apply.
+ *  @param[in]  ipVersion       iptables version to use.
  *
  *  @return true on success, false on failure.
  */
-bool Netfilter::setRules(const RuleSet &ruleSet)
+bool Netfilter::setRules(const RuleSet &ruleSet, const int ipVersion)
 {
     AI_LOG_FN_ENTRY();
 
-    std::lock_guard<std::mutex> locker(mLock);
-
     // finally apply the rules
-    bool success = applyRuleSet(Operation::Set, ruleSet);
+    bool success = applyRuleSet(Operation::Set, ruleSet, ipVersion);
     if (!success)
     {
         AI_LOG_ERROR("failed to set all iptables rules");
@@ -618,7 +666,6 @@ bool Netfilter::setRules(const RuleSet &ruleSet)
  *
  *  Both rule and the contents of rulesList are strings, however they are
  *  parsed as if they are command line args to the iptables tool.
- *
  *
  *  @return true if the rule exists in the list, otherwise false.
  */
@@ -647,20 +694,17 @@ bool Netfilter::ruleInList(const std::string &rule,
  *
  *  @see https://bani.com.br/2012/05/programmatically-managing-iptables-rules-in-c-iptc
  *
+ *  @param[in]  ruleSet         The ruleset to apply.
+ *  @param[in]  ipVersion       iptables version to use.
+ *
  *  @return true on success, false on failure.
  */
-bool Netfilter::appendRules(const RuleSet& ruleSet)
+bool Netfilter::appendRules(const RuleSet &ruleSet, const int ipVersion)
 {
     AI_LOG_FN_ENTRY();
 
-    // dump(ruleSet, "APPEND");
-
-    std::lock_guard<std::mutex> locker(mLock);
-
     // get the existing iptables rules
-    RuleSet existing = getRuleSet();
-
-    // dump(existing, "EXISTING");
+    RuleSet existing = getRuleSet(ipVersion);
 
     // create a rule set from entries in the supplied argument that are not
     // not in the existing rules
@@ -685,8 +729,6 @@ bool Netfilter::appendRules(const RuleSet& ruleSet)
         }
     }
 
-    // dump(actual, "ACTUAL");
-
     if (actual.empty())
     {
         AI_LOG_INFO("all iptables rules are already set");
@@ -694,9 +736,8 @@ bool Netfilter::appendRules(const RuleSet& ruleSet)
         return true;
     }
 
-
     // finally apply the rules
-    bool success = applyRuleSet(Operation::Append, actual);
+    bool success = applyRuleSet(Operation::Append, actual, ipVersion);
     if (!success)
     {
         AI_LOG_ERROR("failed to append all iptables rules");
@@ -719,16 +760,17 @@ bool Netfilter::appendRules(const RuleSet& ruleSet)
  *  @warning This doesn't re-insert already existing rules.  If the rule already
  *  existed in the table then it's position is left unchanged.
  *
+ *  @param[in]  ruleSet         The ruleset to apply.
+ *  @param[in]  ipVersion       iptables version to use.
+ *
  *  @return true on success, false on failure.
  */
-bool Netfilter::insertRules(const RuleSet& ruleSet)
+bool Netfilter::insertRules(const RuleSet &ruleSet, const int ipVersion)
 {
     AI_LOG_FN_ENTRY();
 
-    std::lock_guard<std::mutex> locker(mLock);
-
     // get the existing iptables rules
-    RuleSet existing = getRuleSet();
+    RuleSet existing = getRuleSet(ipVersion);
 
     // create a rule set from entries in the supplied argument that are not
     // not in the existing rules
@@ -760,9 +802,8 @@ bool Netfilter::insertRules(const RuleSet& ruleSet)
         return true;
     }
 
-
     // finally apply the rules
-    bool success = applyRuleSet(Operation::Insert, actual);
+    bool success = applyRuleSet(Operation::Insert, actual, ipVersion);
     if (!success)
     {
         AI_LOG_ERROR("failed to insert all iptables rules");
@@ -782,16 +823,17 @@ bool Netfilter::insertRules(const RuleSet& ruleSet)
  *  This is equivalent to running the following for all the rules
  *     iptables -t <table> -D <rule>
  *
+ *  @param[in]  ruleSet         The ruleset to apply.
+ *  @param[in]  ipVersion       iptables version to use.
+ *
  *  @return true on success, false on failure.
  */
-bool Netfilter::deleteRules(const RuleSet& ruleSet)
+bool Netfilter::deleteRules(const RuleSet &ruleSet, const int ipVersion)
 {
     AI_LOG_FN_ENTRY();
 
-    std::lock_guard<std::mutex> locker(mLock);
-
     // get the existing iptables rules
-    RuleSet existing = getRuleSet();
+    RuleSet existing = getRuleSet(ipVersion);
 
     // create a rule set from entries in the supplied argument that are in the
     // existing rules, we need this because iptables-restore throw an error
@@ -816,7 +858,7 @@ bool Netfilter::deleteRules(const RuleSet& ruleSet)
             }
             else
             {
-                AI_LOG_INFO("failed to find rule '%s' to delete", rule.c_str());
+                AI_LOG_WARN("failed to find rule '%s' to delete", rule.c_str());
             }
         }
     }
@@ -828,9 +870,8 @@ bool Netfilter::deleteRules(const RuleSet& ruleSet)
         return true;
     }
 
-
     // finally apply the rules
-    bool success = applyRuleSet(Operation::Delete, actual);
+    bool success = applyRuleSet(Operation::Delete, actual, ipVersion);
     if (!success)
     {
         AI_LOG_ERROR("failed to delete all iptables rules");
@@ -850,14 +891,17 @@ bool Netfilter::deleteRules(const RuleSet& ruleSet)
  *  This is equivalent to running the following for all the rules
  *     iptables -t <table> -N <name>
  *
+ *  @param[in]  table           The ruleset to apply.
+ *  @param[in]  name            Name of the chain to add.
+ *  @param[in]  withDropRule    Add drop rule if true.
+ *  @param[in]  ipVersion       iptables version to use.
+ *
  *  @return true on success, false on failure.
  */
-bool Netfilter::createNewChain(TableType table, const std::string& name,
-                               bool withDropRule)
+bool Netfilter::createNewChain(TableType table, const std::string &name,
+                               bool withDropRule, const int ipVersion)
 {
     AI_LOG_FN_ENTRY();
-
-    std::lock_guard<std::mutex> locker(mLock);
 
     // create the initial ruleset to create the table
     RuleSet newChainRuleSet =
@@ -865,7 +909,7 @@ bool Netfilter::createNewChain(TableType table, const std::string& name,
             {   table,
                 {
                     // create the table
-                    ":" + name + " - [0:0]",
+                    ":" + name + " - [0:0]"
                 }
             },
         };
@@ -878,7 +922,7 @@ bool Netfilter::createNewChain(TableType table, const std::string& name,
     }
 
     // finally apply the rules
-    bool success = applyRuleSet(Operation::Unchanged, newChainRuleSet);
+    bool success = applyRuleSet(Operation::Unchanged, newChainRuleSet, ipVersion);
     if (!success)
     {
         AI_LOG_ERROR("failed to append all iptables rules");

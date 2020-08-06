@@ -23,8 +23,11 @@
 #ifndef NETLINK_H
 #define NETLINK_H
 
+#include <DobbyRdkPluginUtils.h>
+
 #include <string>
 #include <mutex>
+#include <memory>
 
 #include <arpa/inet.h>
 
@@ -61,12 +64,18 @@ public:
     bool ifaceIsUp(const std::string& ifaceName) const;
 
     bool setIfaceAddress(const std::string& ifaceName,
-                         in_addr_t address, in_addr_t netmask);
-    bool setIfaceForwarding(const std::string& ifaceName,
-                            bool enable);
+                         const in_addr_t address, const in_addr_t netmask);
+    bool setIfaceAddress(const std::string& ifaceName,
+                         const struct in6_addr address, const int netmask);
 
-    bool setIfaceRouteLocalNet(const std::string& ifaceName,
-                               bool enable);
+    bool setIfaceForwarding(const std::string& ifaceName, bool enable);
+    bool setIfaceForwarding6(const std::shared_ptr<DobbyRdkPluginUtils> &utils,
+                             const std::string& ifaceName, bool enable);
+
+    bool setIfaceRouteLocalNet(const std::string& ifaceName, bool enable);
+
+    bool setIfaceAcceptRa(const std::shared_ptr<DobbyRdkPluginUtils> &utils,
+                          const std::string& ifaceName, int value);
 
 public:
     bool createBridge(const std::string& bridgeName);
@@ -82,20 +91,23 @@ public:
                            pid_t peerPid);
     bool checkVeth(const std::string& vethName);
 
-
 public:
-    bool addRoute(const std::string& iface, in_addr_t destination,
-                  in_addr_t gateway, in_addr_t netmask);
+    bool addRoute(const std::string& iface, const in_addr_t destination,
+                  const in_addr_t netmask, const in_addr_t gateway);
+    bool addRoute(const std::string& iface, const struct in6_addr destination,
+                  const int netmask, const struct in6_addr gateway);
 
 private:
     bool applyChangesToLink(const std::string& ifaceName,
                             const NlLink& changes);
 
     bool setLinkAddress(const NlLink& link,
-                        in_addr_t address, in_addr_t netmask);
+                        const in_addr_t address, const in_addr_t netmask);
+    bool setLinkAddress(const NlLink& link,
+                        const struct in6_addr address, const int netmask);
 
-    bool setIfaceConfig(const std::string& ifaceName, unsigned int configId,
-                        uint32_t value);
+    bool setIfaceConfig(const std::string& ifaceName, const unsigned int configId,
+                        const uint32_t value);
 
 
     std::string getAvailableVethName(const int startIndex) const;

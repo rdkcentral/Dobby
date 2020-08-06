@@ -24,7 +24,7 @@
 #include <DobbyProtocol.h>
 #include <DobbyRdkPluginProxy.h>
 #include "Netfilter.h"
-#include "NetworkingPluginCommon.h"
+#include "NetworkingHelper.h"
 #include "IpcFactory.h"
 
 #include <sys/types.h>
@@ -63,6 +63,7 @@ private:
 private:
     bool mValid;
     std::shared_ptr<rt_dobby_schema> mContainerConfig;
+    rt_defs_plugins_networking_data *mPluginData;
     const std::shared_ptr<DobbyRdkPluginUtils> mUtils;
     const std::string mName;
     const std::string mRootfsPath;
@@ -72,6 +73,7 @@ private:
 
     std::shared_ptr<DobbyRdkPluginProxy> mDobbyProxy;
     std::shared_ptr<AI_IPC::IIpcService> mIpcService;
+    std::shared_ptr<NetworkingHelper> mHelper;
 };
 
 #endif // !defined(NETWORKINGPLUGIN_H)

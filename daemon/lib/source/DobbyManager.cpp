@@ -98,7 +98,7 @@ DobbyManager::DobbyManager(const std::shared_ptr<IDobbyEnv> &env,
     , mSettings(settings)
     , mRunc(new DobbyRunC(utils, settings))
     , mPlugins(new DobbyPluginManager(env, utils))
-    , mState(std::make_shared<DobbyState>())
+    , mState(std::make_shared<DobbyState>(settings))
     , mRuncMonitorTerminate(false)
 {
     AI_LOG_FN_ENTRY();
@@ -1649,7 +1649,7 @@ bool DobbyManager::freeIpAddress(uint32_t address)
  *
  *  @return external interfaces defined in dobby settings
  */
-std::set<std::string> DobbyManager::getExtIfaces()
+std::vector<std::string> DobbyManager::getExtIfaces()
 {
     return mSettings->externalInterfaces();
 }

@@ -542,6 +542,7 @@ bool DobbyRootfs::createStandardMountPoints(int dirfd) const
  *     │   ├── ld.so.preload
  *     │   ├── nsswitch.conf
  *     │   ├── passwd
+ *     │   ├── resolv.conf
  *     │   └── services
  *     ├── home
  *     │   └── private
@@ -565,7 +566,7 @@ bool DobbyRootfs::createStandardMountPoints(int dirfd) const
  *
  *   /etc/hosts              "127.0.0.1\tlocalhost\n"
  *
- *  The rest of the etc files are either empty.
+ *  The rest of the etc files are empty.
  *
  *
  */
@@ -639,6 +640,13 @@ bool DobbyRootfs::constructRootfs(int dirfd,
     static const std::string nsswitchConf("hosts:     files mdns4_minimal [NOTFOUND=return] dns mdns4\n"
                                           "protocols: files\n");
     if (!createAndWriteFileAt(dirfd, "etc/nsswitch.conf", nsswitchConf))
+    {
+        AI_LOG_FN_EXIT();
+        return false;
+    }
+
+    // write empty /etc/resolv.conf file in case we want to mount it from the host
+    if (!createAndWriteFileAt(dirfd, "etc/resolv.conf", std::string()))
     {
         AI_LOG_FN_EXIT();
         return false;

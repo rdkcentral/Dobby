@@ -23,6 +23,7 @@
 #include "Netlink.h"
 
 #include <Logging.h>
+#include "NetworkingHelper.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -42,6 +43,7 @@
 #include <netlink/route/link/inet.h>
 #include <netlink/route/link/veth.h>
 #include <netlink/route/link/bridge.h>
+#include <netlink/route/neighbour.h>
 
 
 #define AI_LOG_NL_ERROR(err, fmt, args...) \
@@ -68,7 +70,13 @@ public:
     { }
 
     explicit NlAddress(in_addr_t address, in_addr_t netmask = 0xffffffff)
-        : mAddress(fromIpv4(address, netmask))
+        : mAddress(fromIpv4(address, netmask)),
+        mAddressFamily(AF_INET)
+    { }
+
+    explicit NlAddress(struct in6_addr address, int netmask = 128)
+        : mAddress(fromIpv6(address, netmask)),
+        mAddressFamily(AF_INET6)
     { }
 
     ~NlAddress()
@@ -126,7 +134,34 @@ private:
     }
 
 private:
+    static struct nl_addr* fromIpv6(struct in6_addr address, int netmask)
+    {
+        struct nl_addr* addr = nullptr;
+
+        // if the netmask is zero then just create an empty addr
+        if (netmask == 0)
+        {
+            addr = nl_addr_alloc(0);
+            if (addr != nullptr)
+            {
+                nl_addr_set_family(addr, AF_INET6);
+            }
+        }
+        else
+        {
+            addr = nl_addr_build(AF_INET6, &address, sizeof(struct in6_addr));
+            if (addr != nullptr)
+            {
+                nl_addr_set_prefixlen(addr, netmask);
+            }
+        }
+
+        return addr;
+    }
+
+private:
     struct nl_addr* const mAddress;
+    int mAddressFamily;
 };
 
 
@@ -142,7 +177,13 @@ class NlRouteAddress
 {
 public:
     explicit NlRouteAddress(in_addr_t address, in_addr_t netmask = 0xffffffff)
-        : mAddress(fromIpv4(address, netmask))
+        : mAddress(fromIpv4(address, netmask)),
+        mAddressFamily(AF_INET)
+    { }
+
+    explicit NlRouteAddress(struct in6_addr address, int netmask = 128)
+        : mAddress(fromIpv6(address, netmask)),
+        mAddressFamily(AF_INET6)
     { }
 
     ~NlRouteAddress()
@@ -217,8 +258,40 @@ private:
         return addr;
     }
 
+    static struct rtnl_addr* fromIpv6(struct in6_addr address, int netmask)
+    {
+        // sanity check we have a valid netmask
+        if (netmask == 0)
+        {
+            AI_LOG_ERROR("invalid netmask");
+            return nullptr;
+        }
+
+        NlAddress local(address);
+        if (!local)
+        {
+            AI_LOG_ERROR("failed to create ipv6 nl address");
+            return nullptr;
+        }
+
+        // create the actual route address
+        struct rtnl_addr* addr = rtnl_addr_alloc();
+        if (addr == nullptr)
+        {
+            AI_LOG_ERROR("failed to create route address");
+            return nullptr;
+        }
+
+        rtnl_addr_set_family(addr, AF_INET6);
+        rtnl_addr_set_local(addr, local);
+        rtnl_addr_set_prefixlen(addr, netmask);
+
+        return addr;
+    }
+
 private:
     struct rtnl_addr* const mAddress;
+    int mAddressFamily;
 };
 
 
@@ -272,6 +345,59 @@ public:
 
 private:
     struct rtnl_route* const mRoute;
+};
+
+
+// -----------------------------------------------------------------------------
+/**
+ *  @class NlNeigh
+ *  @brief Wrapper around the rtnl_neigh object
+ *
+ *  Simple wrapper used to handle construction and safe destruction of a rtnl
+ *  neigh object.
+ */
+class NlNeigh
+{
+public:
+    NlNeigh()
+        : mNeigh(rtnl_neigh_alloc())
+    { }
+
+    ~NlNeigh()
+    {
+        if (mNeigh != nullptr)
+            rtnl_neigh_put(mNeigh);
+    }
+
+public:
+    explicit operator bool() const noexcept
+    {
+        return (mNeigh != nullptr);
+    }
+
+    operator struct rtnl_neigh*() const noexcept
+    {
+        return mNeigh;
+    }
+
+public:
+    std::string toString() const
+    {
+        if (mNeigh == nullptr)
+            return std::string("null");
+
+        char buf[128];
+        nl_object_dump_buf(OBJ_CAST(mNeigh), buf, sizeof(buf));
+
+        std::string str(buf);
+        if (str.back() == '\n')
+            str.pop_back();
+
+        return str;
+    }
+
+private:
+    struct rtnl_neigh* const mNeigh;
 };
 
 
@@ -446,20 +572,21 @@ bool Netlink::applyChangesToLink(const std::string& ifaceName,
 
 // -----------------------------------------------------------------------------
 /**
- *  @brief Sets the ip address and netmask of the bridge interface
+ *  @brief Sets the ip address and netmask of an interface (IPv4)
  *
  *  This is the equivalent of the following on the command line
  *
  *      ifconfig <ifaceName> <address> netmask <netmask>
  *
+ *  @param[in]  link        Instance of NlLink (rtnl_link wrapper)
  *  @param[in]  address     The address to set, the netmask will be applied to
  *                          this before setting on the iface
  *  @param[in]  netmask     The netmask to apply.
  *
  *  @return true on success, false on failure.
  */
-bool Netlink::setLinkAddress(const NlLink& link,
-                             in_addr_t address, in_addr_t netmask)
+bool Netlink::setLinkAddress(const NlLink& link, const in_addr_t address,
+                             const in_addr_t netmask)
 {
     AI_LOG_FN_ENTRY();
 
@@ -490,7 +617,52 @@ bool Netlink::setLinkAddress(const NlLink& link,
 
 // -----------------------------------------------------------------------------
 /**
- *  @brief Sets the ip address and netmask of the bridge interface
+ *  @brief Sets the ip address and netmask of an interface (IPv6)
+ *
+ *  This is the equivalent of the following on the command line
+ *
+ *      ifconfig <ifaceName> inet6 add <address>/<netmask>
+ *
+ *  @param[in]  link        Instance of NlLink (rtnl_link wrapper)
+ *  @param[in]  address     The address to set, the netmask will be applied to
+ *                          this before setting on the iface
+ *  @param[in]  netmask     The netmask to apply.
+ *
+ *  @return true on success, false on failure.
+ */
+bool Netlink::setLinkAddress(const NlLink& link, const struct in6_addr address,
+                             const int netmask)
+{
+    AI_LOG_FN_ENTRY();
+
+    // create the link route address
+    NlRouteAddress addr(address, netmask);
+    if (!addr)
+    {
+        AI_LOG_ERROR_EXIT("failed to create route address object");
+        return false;
+    }
+
+    AI_LOG_INFO("setting link address to '%s'", addr.toString().c_str());
+
+    // set the link index
+    rtnl_addr_set_link(addr, link);
+
+    // add the address
+    int ret = rtnl_addr_add(mSocket, addr, 0);
+    if ((ret != 0) && (ret != -NLE_EXIST))
+    {
+        AI_LOG_NL_ERROR_EXIT(ret, "failed to add new link address");
+        return false;
+    }
+
+    AI_LOG_FN_EXIT();
+    return true;
+}
+
+// -----------------------------------------------------------------------------
+/**
+ *  @brief Sets the ip address and netmask of an interface (IPv4)
  *
  *  This is the equivalent of the following on the command line
  *
@@ -504,7 +676,50 @@ bool Netlink::setLinkAddress(const NlLink& link,
  *  @return true on success, false on failure.
  */
 bool Netlink::setIfaceAddress(const std::string& ifaceName,
-                              in_addr_t address, in_addr_t netmask)
+                              const in_addr_t address, const in_addr_t netmask)
+{
+    AI_LOG_FN_ENTRY();
+
+    std::lock_guard<std::mutex> locker(mLock);
+
+    if (mSocket == nullptr)
+    {
+        AI_LOG_ERROR_EXIT("invalid socket");
+        return false;
+    }
+
+    // get the link with the given name
+    NlLink link(mSocket, ifaceName);
+    if (!link)
+    {
+        AI_LOG_ERROR_EXIT("failed to get link with name '%s'", ifaceName.c_str());
+        return false;
+    }
+
+    // set the address on the link
+    bool success = setLinkAddress(link, address, netmask);
+
+    AI_LOG_FN_EXIT();
+    return success;
+}
+
+// -----------------------------------------------------------------------------
+/**
+ *  @brief Sets the ip address and netmask of an interface (IPv6)
+ *
+ *  This is the equivalent of the following on the command line
+ *
+ *      ifconfig <ifaceName> inet6 add <address>/<netmask>
+ *
+ *  @param[in]  ifaceName   The name of the interface to set the address on
+ *  @param[in]  address     The IPv6 address to set, the netmask will be applied
+ *                          to this before setting on the iface
+ *  @param[in]  netmask     The netmask to apply.
+ *
+ *  @return true on success, false on failure.
+ */
+bool Netlink::setIfaceAddress(const std::string& ifaceName,
+                              const struct in6_addr address, const int netmask)
 {
     AI_LOG_FN_ENTRY();
 
@@ -543,8 +758,8 @@ bool Netlink::setIfaceAddress(const std::string& ifaceName,
  *
  *  @return true on success, false on failure.
  */
-bool Netlink::setIfaceConfig(const std::string& ifaceName, unsigned int configId,
-                             uint32_t value)
+bool Netlink::setIfaceConfig(const std::string& ifaceName, const unsigned int configId,
+                             const uint32_t value)
 {
     AI_LOG_FN_ENTRY();
 
@@ -581,7 +796,7 @@ bool Netlink::setIfaceConfig(const std::string& ifaceName, unsigned int configId
 
 // -----------------------------------------------------------------------------
 /**
- *  @brief Enables or disables forwarding on the given interface
+ *  @brief Enables or disables IPv4 forwarding on the given interface
  *
  *  This is the equivalent of the following on the command line
  *
@@ -594,8 +809,7 @@ bool Netlink::setIfaceConfig(const std::string& ifaceName, unsigned int configId
  *
  *  @return true on success, false on failure.
  */
-bool Netlink::setIfaceForwarding(const std::string& ifaceName,
-                                 bool enable)
+bool Netlink::setIfaceForwarding(const std::string& ifaceName, bool enable)
 {
     // the IPV4_DEVCONF_FORWARDING value is not defined in our toolchain,
     // however happily libnl has provided us a rtnl_link_inet_str2devconf()
@@ -608,6 +822,31 @@ bool Netlink::setIfaceForwarding(const std::string& ifaceName,
     }
 
     return setIfaceConfig(ifaceName, devConf, enable ? 1 : 0);
+}
+
+// -----------------------------------------------------------------------------
+/**
+ *  @brief Enables or disables IPv6 forwarding on the given interface
+ *
+ *  This is the equivalent of the following on the command line
+ *
+ *      echo "1" > /proc/sys/net/ipv6/conf/<ifaceName>/forwarding
+ *  Or
+ *      echo "0" > /proc/sys/net/ipv6/conf/<ifaceName>/forwarding
+ *
+ *  @param[in]  utils       Instance of the DobbyRdkPluginUtils class.
+ *  @param[in]  ifaceName   The name of the interface to set the config on.
+ *  @param[in]  enable      true to enable, false to disable.
+ *
+ *  @return true on success, false on failure.
+ */
+bool Netlink::setIfaceForwarding6(const std::shared_ptr<DobbyRdkPluginUtils> &utils,
+                                  const std::string &ifaceName, bool enable)
+{
+    // IPv6 forwarding enable/disable has no API in libnl, change manually
+    const std::string ipv6FwdPath = "/proc/sys/net/ipv6/conf/" + ifaceName + "/forwarding";
+
+    return utils->writeTextFile(ipv6FwdPath, enable ? "1" : "0", O_TRUNC, 0);
 }
 
 // -----------------------------------------------------------------------------
@@ -629,13 +868,12 @@ bool Netlink::setIfaceForwarding(const std::string& ifaceName,
  *  to local host.  The main usage is for connecting specific ports like dns, as
  *  to the localhost interface.
  *
- *  @param[in]  ifaceName   The name of the interface to bring up.
+ *  @param[in]  ifaceName   The name of the interface to set the config on.
  *  @param[in]  enable      true to enable, false to disable.
  *
  *  @return true on success, false on failure.
  */
-bool Netlink::setIfaceRouteLocalNet(const std::string& ifaceName,
-                                    bool enable)
+bool Netlink::setIfaceRouteLocalNet(const std::string& ifaceName, bool enable)
 {
     // the IPV4_DEVCONF_ROUTE_LOCALNET value is not defined in our toolchain,
     // however happily libnl has provided us a rtnl_link_inet_str2devconf()
@@ -650,6 +888,53 @@ bool Netlink::setIfaceRouteLocalNet(const std::string& ifaceName,
     return setIfaceConfig(ifaceName, devConf, enable ? 1 : 0);
 }
 
+// -----------------------------------------------------------------------------
+/**
+ *  @brief Sets the accept_ra flag on the interface.
+
+ *  This is the equivalent of the following on the command line
+ *
+ *      echo "2" > /proc/sys/net/ipv6/conf/<ifaceName>/accept_ra
+ *  Or
+ *      echo "1" > /proc/sys/net/ipv6/conf/<ifaceName>/accept_ra
+ *  Or
+ *      echo "0" > /proc/sys/net/ipv6/conf/<ifaceName>/accept_ra
+ *
+ *  This is used to set accept_ra to "2" so that router advertisements are
+ *  accepted on the interface even with forwarding enabled.
+ *
+ *  @param[in]  utils       Instance of the DobbyRdkPluginUtils class.
+ *  @param[in]  ifaceName   The name of the interface to set the config on.
+ *  @param[in]  enable      true to enable, false to disable.
+ *
+ *  @return true on success, false on failure.
+ */
+bool Netlink::setIfaceAcceptRa(const std::shared_ptr<DobbyRdkPluginUtils> &utils,
+                               const std::string& ifaceName, int value)
+{
+    // libnl doesn't have an API for editing IPv6 devconf values, so we have
+    // to write it manually
+    std::string path = "/proc/sys/net/ipv6/conf/" + ifaceName + "/accept_ra";
+    std::string writeValue;
+
+    switch (value)
+    {
+        case 2:
+            writeValue = "2";
+            break;
+        case 1:
+            writeValue = "1";
+            break;
+        case 0:
+            writeValue = "0";
+            break;
+        default:
+            AI_LOG_ERROR("accept_ra can only be set to values 2, 1 or 0");
+            return false;
+    }
+
+    return utils->writeTextFile(path, writeValue, O_TRUNC, 0);;
+}
 // -----------------------------------------------------------------------------
 /**
  *  @brief Brings an interface up
@@ -812,7 +1097,7 @@ std::string Netlink::getAvailableVethName(const int startIndex) const
  *  On failure an empty string is returned.
  */
 std::string Netlink::createVeth(const std::string& peerVethName,
-                                pid_t peerPid)
+                                const pid_t peerPid)
 {
     AI_LOG_FN_ENTRY();
 
@@ -863,6 +1148,14 @@ std::string Netlink::createVeth(const std::string& peerVethName,
             // Alternatively, we could try to use rtnl_link_veth_release to release the link that
             // exists even though the device doesn't, but that seems risky...
             vethNameStartIndex = std::stoi(vethName.erase(0, 4)) + 1;
+
+            // surely if we've tried over 300 names by now, we won't find one
+            if (vethNameStartIndex > 300)
+            {
+                AI_LOG_ERROR_EXIT("failed to find free veth device");
+                return std::string();
+            }
+
             continue;
         }
         else if (ret != 0)
@@ -1059,7 +1352,6 @@ bool Netlink::addIfaceToBridge(const std::string& bridgeName,
  *
  *      brctl delif <bridgeName> <ifaceName>
  *
- *
  *  @return true on success, false on failure.
  */
 bool Netlink::delIfaceFromBridge(const std::string& bridgeName,
@@ -1080,9 +1372,8 @@ bool Netlink::delIfaceFromBridge(const std::string& bridgeName,
     int ret = rtnl_link_get_kernel(mSocket, -1, ifaceName.c_str(), &iface);
     if ((ret != 0) || (iface == nullptr))
     {
-        AI_LOG_ERROR_EXIT("failed to get interface '%s' (%d)",
-                          ifaceName.c_str(), ret);
-        return false;
+        // couldn't find interface, no need to delete
+        return true;
     }
 
     // pessimistic
@@ -1141,7 +1432,7 @@ bool Netlink::delIfaceFromBridge(const std::string& bridgeName,
 
 // -----------------------------------------------------------------------------
 /**
- *  @brief Adds a new route to the routing table
+ *  @brief Adds a new route to the routing table (IPv4)
  *
  *  This is equivalent of the performing the following on the command line
  *
@@ -1149,13 +1440,13 @@ bool Netlink::delIfaceFromBridge(const std::string& bridgeName,
  *
  *  @param[in]  iface       The name of the iface to route to
  *  @param[in]  destination The destination ip address
- *  @param[in]  gateway     The ip address of the gateway
  *  @param[in]  netmask     The netmask for the destination ip address
+ *  @param[in]  gateway     The ip address of the gateway
  *
  *  @return true on success, false on failure.
  */
-bool Netlink::addRoute(const std::string& iface, in_addr_t destination,
-                       in_addr_t gateway, in_addr_t netmask)
+bool Netlink::addRoute(const std::string &iface, const in_addr_t destination,
+                       const in_addr_t netmask, const in_addr_t gateway)
 {
     AI_LOG_FN_ENTRY();
 
@@ -1229,6 +1520,139 @@ bool Netlink::addRoute(const std::string& iface, in_addr_t destination,
     // and finally add the route to the table
     AI_LOG_INFO("adding route '%s'", route.toString().c_str());
     ret = rtnl_route_add(mSocket, route, 0);
+    if (ret == -NLE_EXIST)
+    {
+        // failing to add a route that already exists isn't harmful for
+        // operation, but indicates that there may have been a failed cleanup
+        AI_LOG_WARN("failed to add route because it already exists");
+        AI_LOG_FN_EXIT();
+        return true;
+    }
+
+    if (ret != 0)
+    {
+        AI_LOG_NL_ERROR_EXIT(ret, "failed to add route");
+        return false;
+    }
+
+    AI_LOG_FN_EXIT();
+    return true;
+}
+
+// -----------------------------------------------------------------------------
+/**
+ *  @brief Adds a new route to the routing table (IPv6)
+ *
+ *  This is equivalent of the performing the following on the command line
+ *
+ *      ip -6 route add <destination>/<netmask> via <gateway> dev <ifname>
+ *
+ *  @param[in]  iface       The name of the iface to route to
+ *  @param[in]  destination The destination ip address
+ *  @param[in]  netmask     The netmask for the destination ip address
+ *  @param[in]  gateway     The ip address of the gateway, if null, we don't set
+ *                          a gateway for the route.
+ *
+ *  @return true on success, false on failure.
+ */
+bool Netlink::addRoute(const std::string &iface, const struct in6_addr destination,
+                       const int netmask, const struct in6_addr gateway)
+{
+    AI_LOG_FN_ENTRY();
+
+    std::lock_guard<std::mutex> locker(mLock);
+
+    if (mSocket == nullptr)
+    {
+        AI_LOG_ERROR_EXIT("invalid socket");
+        return false;
+    }
+
+    // create the destination and gateway addresses
+    NlAddress dstAddress(destination, netmask);
+    if (!dstAddress)
+    {
+        AI_LOG_ERROR_EXIT("failed to create destination address");
+        return false;
+    }
+
+    // get the link we want to route to
+    NlLink link(mSocket, iface);
+    if (!link)
+    {
+        AI_LOG_ERROR_EXIT("failed to get link '%s'", iface.c_str());
+        return false;
+    }
+
+    // create the route
+    NlRoute route;
+    if (!route)
+    {
+        AI_LOG_ERROR_EXIT("failed to create empty route");
+        return false;
+    }
+
+    // set parameters
+    rtnl_route_set_scope(route, RT_SCOPE_UNIVERSE);
+    rtnl_route_set_table(route, RT_TABLE_MAIN);
+    rtnl_route_set_protocol(route, RTPROT_STATIC);
+
+    int ret = rtnl_route_set_family(route, AF_INET6);
+    if (ret != 0)
+    {
+        AI_LOG_NL_ERROR_EXIT(ret, "failed to set the route family");
+        return false;
+    }
+    ret = rtnl_route_set_dst(route, dstAddress);
+    if (ret != 0)
+    {
+        AI_LOG_NL_ERROR_EXIT(ret, "failed to set the route destination");
+        return false;
+    }
+
+    // create a 'next hop' object (nb once assigned to the route it'll be
+    // freed when the route is destructed).
+    struct rtnl_nexthop* nextHop = rtnl_route_nh_alloc();
+    if (nextHop == nullptr)
+    {
+        AI_LOG_ERROR_EXIT("failed to create empty next hop");
+        return false;
+    }
+
+    // set the next hop interface
+    rtnl_route_nh_set_ifindex(nextHop, rtnl_link_get_ifindex(link));
+
+    // add nexthop gateway only if it's not ::0
+    if (memcmp(&gateway, &IN6ADDR_ANY, sizeof(struct in6_addr)) != 0)
+    {
+        NlAddress gwAddress(gateway);
+        if (!gwAddress)
+        {
+            AI_LOG_ERROR_EXIT("failed to create gateway address");
+            return false;
+        }
+
+        // set the next hop gateway
+        rtnl_route_nh_set_gateway(nextHop, gwAddress);
+    }
+
+    // add the next hop to the route
+    rtnl_route_add_nexthop(route, nextHop);
+
+    // and finally add the route to the table
+    AI_LOG_INFO("adding route '%s'", route.toString().c_str());
+    ret = rtnl_route_add(mSocket, route, 0);
+
+
+    if (ret == -NLE_EXIST)
+    {
+        // failing to add a route that already exists isn't harmful for
+        // operation, but indicates that there may have been a failed cleanup
+        AI_LOG_WARN("failed to add route because it already exists");
+        AI_LOG_FN_EXIT();
+        return true;
+    }
+
     if (ret != 0)
     {
         AI_LOG_NL_ERROR_EXIT(ret, "failed to add route");

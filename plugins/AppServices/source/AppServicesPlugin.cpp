@@ -354,7 +354,7 @@ bool AppServicesPlugin::preStart(const ContainerId& id,
     ruleSet[Netfilter::TableType::Nat] = std::move(natRules);
 
     // try and apply the changes
-    if (!mNetfilter->insertRules(ruleSet))
+    if (!mNetfilter->insertRules(ruleSet, AF_INET))
     {
         AI_LOG_ERROR_EXIT("failed to apply DNAT rules for '%s''", id.c_str());
         return false;
@@ -398,7 +398,7 @@ bool AppServicesPlugin::postStop(const ContainerId& id,
     }
 
     // delete the rule set
-    if (!mNetfilter->deleteRules(it->second.nfRuleSet))
+    if (!mNetfilter->deleteRules(it->second.nfRuleSet, AF_INET))
     {
         AI_LOG_ERROR("failed to remove iptables rules for '%s'", id.c_str());
     }

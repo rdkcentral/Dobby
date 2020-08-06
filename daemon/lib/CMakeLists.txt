@@ -53,7 +53,6 @@ target_include_directories( DobbyDaemonLib
         $<TARGET_PROPERTY:IpcService,INTERFACE_INCLUDE_DIRECTORIES>
 
         ../../protocol/include
-        ../../rdkPlugins/Networking/include/
 )
 
 target_link_libraries(DobbyDaemonLib

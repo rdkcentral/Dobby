@@ -26,6 +26,7 @@ add_library( ${PROJECT_NAME}
         source/Netlink.cpp
         source/Netfilter.cpp
         source/DnsmasqSetup.cpp
+        source/NetworkingHelper.cpp
 
         # proxy to talk to DobbyDaemon
         ../Common/source/DobbyRdkPluginProxy.cpp

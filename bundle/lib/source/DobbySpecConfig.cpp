@@ -567,7 +567,7 @@ bool DobbySpecConfig::parseSpec(ctemplate::TemplateDictionary* dictionary,
         }
     }
 
-    // step 4 - if successiful check if all the mandatory fields were present
+    // step 4 - if successful check if all the mandatory fields were present
     // in the supplied json
     if (success)
     {
@@ -1407,25 +1407,12 @@ bool DobbySpecConfig::processGpu(const Json::Value& value,
  *
  *      "network": "nat"
  *      "network": "open"
- *      "network": "none"
+ *      "network": "private"
  *
- *  The network can be either 'nat', 'open' or 'none', the default is none.
+ *  The network can be either 'nat', 'open' or 'private', the default is
+ *  private. 'private' is translated to 'none' to match Networking plugin.
  *
- *  A 'nat' network is one where inside the container there is an interface
- *  called eth0 which is attached to a NAT-bridge outside the container.
- *
- *  An 'open' network is where the network is shared with the system network,
- *  this should be avoided where possible.  In most (all) cases an open
- *  network is not required, even for things like servers as you can pass
- *  in already bound and listening socket at creation time, then the server
- *  can use that to accept connections on.  The advantage with this approach
- *  is that even if the server is compromised it can't create extra connections
- *  and start spanning as it can only see it's own network sandbox.
- *
- *  A 'none' network is one where the container will only see a loopback
- *  device.  This loopback device will only loopback to the container, it can't
- *  be used to talk to the system loopback device.  This is the default if
- *  not specified.
+ *  @see refer to the Networking plugin for more details.
  *
  *  @param[in]  value       The json spec document from the client
  *  @param[in]  dictionary  Pointer to the OCI dictionary to populate
@@ -1453,18 +1440,19 @@ bool DobbySpecConfig::processNetwork(const Json::Value& value,
     if (type == "nat")
     {
         rdkPluginData["type"] = "nat";
-#if defined(RDK)
+#if !defined(DEV_VM)
         rdkPluginData["dnsmasq"] = true;
 #endif
+        rdkPluginData["ipv4"] = true;
     }
     else if (type == "open")
     {
         rdkPluginData["type"] = "open";
-#if defined(RDK)
+#if !defined(DEV_VM)
         rdkPluginData["dnsmasq"] = true;
 #endif
     }
-    else if (type == "none")
+    else if (type == "private")
     {
         rdkPluginData["type"] = "none";
     }

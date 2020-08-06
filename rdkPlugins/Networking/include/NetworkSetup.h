@@ -21,7 +21,7 @@
 #define NETWORKSETUP_H
 
 #include "Netfilter.h"
-#include "NetworkingPluginCommon.h"
+#include "NetworkingHelper.h"
 #include "rt_dobby_schema.h"
 #include <DobbyRdkPluginProxy.h>
 #include <DobbyRdkPluginUtils.h>
@@ -48,27 +48,37 @@ namespace NetworkSetup
                            const std::shared_ptr<Netfilter> &netfilter,
                            const std::vector<std::string> &extIfaces);
 
+    bool createNetns(const std::string &containerId);
+
     bool setupVeth(const std::shared_ptr<DobbyRdkPluginUtils> &utils,
                    const std::shared_ptr<Netfilter> &netfilter,
                    const std::shared_ptr<DobbyRdkPluginProxy> &dobbyProxy,
+                   const std::shared_ptr<NetworkingHelper> &helper,
                    const std::string &rootfsPath,
                    const std::string &containerId,
                    const NetworkType networkType);
 
     bool removeVethPair(const std::shared_ptr<Netfilter> &netfilter,
-                        const std::string ipAddressStr,
-                        const std::string vethName,
-                        const NetworkType networkType);
+                        const std::shared_ptr<NetworkingHelper> &helper,
+                        const std::string &vethName,
+                        const NetworkType networkType,
+                        const std::string &containerId);
 
     bool removeBridgeDevice(const std::shared_ptr<Netfilter> &netfilter,
                             const std::vector<std::string> &extIfaces);
 
     void addSysfsMount(const std::shared_ptr<DobbyRdkPluginUtils> &utils,
                        const std::shared_ptr<rt_dobby_schema> &cfg);
+    void addResolvMount(const std::shared_ptr<DobbyRdkPluginUtils> &utils,
+                        const std::shared_ptr<rt_dobby_schema> &cfg);
 
     void addNetworkNamespace(const std::shared_ptr<rt_dobby_schema> &cfg);
 };
 
-bool setupContainerNet(const in_addr_t address);
+bool setupContainerNet(const std::shared_ptr<NetworkingHelper> &helper);
+
+pid_t spawnNetnsOwner(const std::string &containerId);
+
+void deleteNetns(const std::string &containerId);
 
 #endif // !defined(NETWORKSETUP_H)

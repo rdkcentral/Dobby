@@ -124,7 +124,7 @@ public:
     uint32_t getBridgeConnections();
     uint32_t getIpAddress(const std::string &vethName);
     bool freeIpAddress(in_addr_t address);
-    std::set<std::string> getExtIfaces();
+    std::vector<std::string> getExtIfaces();
 
 public:
     std::string specOfContainer(int32_t cd) const;

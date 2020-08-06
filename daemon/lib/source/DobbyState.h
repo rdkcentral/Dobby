@@ -20,9 +20,12 @@
 #ifndef DOBBYSTATE_H
 #define DOBBYSTATE_H
 
+#include <IDobbySettings.h>
+
 #include <mutex>
 #include <queue>
 #include <map>
+#include <memory>
 #include <netinet/in.h>
 
 // -----------------------------------------------------------------------------
@@ -39,7 +42,7 @@
 class DobbyState
 {
 public:
-    DobbyState();
+    DobbyState(const std::shared_ptr<const IDobbySettings> &settings);
     ~DobbyState();
 
 public:
@@ -48,6 +51,8 @@ public:
     bool freeIpAddress(in_addr_t address);
 
 private:
+    const std::shared_ptr<const IDobbySettings> mSettings;
+
     std::queue<in_addr_t> mAddressPool;
     std::map<in_addr_t, std::string> mRegisteredAddresses;
     mutable std::mutex mLock;

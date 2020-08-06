@@ -25,8 +25,10 @@
 
 #include <string>
 #include <list>
+#include <vector>
 #include <map>
 #include <set>
+#include <netinet/in.h>
 
 // -----------------------------------------------------------------------------
 /**
@@ -162,7 +164,25 @@ public:
      *  On every RDK platform this is { "eth0", "wlan0" } but it may change.
      *
      */
-    virtual std::set<std::string> externalInterfaces() const = 0;
+    virtual std::vector<std::string> externalInterfaces() const = 0;
+
+    // -------------------------------------------------------------------------
+    /**
+     *  @brief Returns the Dobby network address range in string format
+     *
+     *  IPv4 address, masked with /24, i.e. address can be nnn.nnn.nnn.0
+     *
+     */
+    virtual std::string addressRangeStr() const = 0;
+
+    // -------------------------------------------------------------------------
+    /**
+     *  @brief Returns the Dobby network address range in in_addr_t format
+     *
+     *  IPv4 address, masked with /24, i.e. address can be nnn.nnn.nnn.0
+     *
+     */
+    virtual in_addr_t addressRange() const = 0;
 
 };
 

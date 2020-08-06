@@ -504,7 +504,6 @@ bool DobbyRdkPluginManager::executeHook(const std::string &pluginName,
  * Returns true if all required plugins execute successfully. If non-required plugins
  * fail or are not loaded, then it logs an error but continues running other plugins
  *
- * @param[in]   plugins     Plugins to run, with their JSON data
  * @param[in]   hookPoint   Which hook point to execute
  *
  * @return True if all required plugins ran successfully

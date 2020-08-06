@@ -1834,17 +1834,10 @@ void Dobby::getExtIfaces(std::shared_ptr<AI_IPC::IAsyncReplySender> replySender)
         [manager = mManager, replySender]()
         {
             // Try and get external interfaces
-            std::set<std::string> extIfaces = manager->getExtIfaces();
-            std::vector<std::string> extIfacesOut;
-
-            // convert to vector of strings to pass through ipc
-            for (const std::string &extIface : extIfaces)
-            {
-                extIfacesOut.emplace_back(extIface);
-            }
+            std::vector<std::string> extIfaces = manager->getExtIfaces();
 
             // Fire off the reply
-            replySender->sendReply({ extIfacesOut });
+            replySender->sendReply({ extIfaces });
         };
 
     // Queue the work, if successful then we're done
