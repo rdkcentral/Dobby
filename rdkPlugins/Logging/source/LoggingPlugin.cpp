@@ -46,7 +46,8 @@ LoggingPlugin::LoggingPlugin(std::shared_ptr<rt_dobby_schema> &containerConfig,
       mContainerConfig(containerConfig),
       mUtils(utils)
 {
-    AI_LOG_INFO("Logging Plugin loaded");
+    AI_LOG_FN_ENTRY();
+    AI_LOG_FN_EXIT();
 }
 
 /**
@@ -405,7 +406,7 @@ void LoggingPlugin::FileSink(const ContainerInfo &containerInfo, bool exitEof, b
         }
     }
 
-    AI_LOG_INFO("starting logger for container '%s' to write to '%s' (limit %zd bytes)",
+    AI_LOG_DEBUG("starting logger for container '%s' to write to '%s' (limit %zd bytes)",
                 mContainerConfig->hostname, pathName.c_str(), limit);
 
     // TODO:: Replace with splice/sendfile to avoid copying data in and out of

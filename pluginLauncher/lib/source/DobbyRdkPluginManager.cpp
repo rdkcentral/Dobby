@@ -182,7 +182,7 @@ void DobbyRdkPluginManager::loadPlugins()
         if (!isPlugin && !isLogger)
         {
             dlclose(libHandle);
-            AI_LOG_WARN("%s does not contain create/destroy functions, skipping...\n", entry->d_name);
+            AI_LOG_DEBUG("%s does not contain create/destroy functions, skipping...\n", entry->d_name);
             continue;
         }
 
@@ -253,7 +253,7 @@ void DobbyRdkPluginManager::loadPlugins()
                  std::shared_ptr<IDobbyRdkPlugin>>>::iterator it = mPlugins.find(pluginName);
         if (it != mPlugins.end())
         {
-            AI_LOG_INFO("already had a plugin called '%s', replacing with new "
+            AI_LOG_WARN("already had a plugin called '%s', replacing with new "
                         "one from '%s'",
                         pluginName.c_str(), libPath);
 
@@ -268,7 +268,7 @@ void DobbyRdkPluginManager::loadPlugins()
             mLoggers[pluginName] = std::make_pair(libHandle, logger);
         }
 
-        AI_LOG_INFO("Successfully loaded plugin '%s' from '%s'\n", pluginName.c_str(), libPath);
+        AI_LOG_INFO("Loaded plugin '%s' from '%s'\n", pluginName.c_str(), libPath);
     }
 
     closedir(dir);
@@ -493,14 +493,9 @@ bool DobbyRdkPluginManager::executeHook(const std::string &pluginName,
     case IDobbyRdkPlugin::HintFlags::PostStopFlag:
         return plugin->postStop();
     default:
-        AI_LOG_ERROR("Could not work out which hook method to call\n");
-        AI_LOG_FN_EXIT();
+        AI_LOG_ERROR_EXIT("Could not work out which hook method to call");
         return false;
     }
-
-    AI_LOG_INFO("Plugin %s does not implement required hook\n", pluginName.c_str());
-    AI_LOG_FN_EXIT();
-    return false;
 }
 
 // -----------------------------------------------------------------------------
@@ -548,7 +543,7 @@ bool DobbyRdkPluginManager::runPlugins(const IDobbyRdkPlugin::HintFlags &hookPoi
         hookName = "postStop";
         break;
     default:
-        AI_LOG_ERROR("Unknown Hook Point");
+        AI_LOG_ERROR_EXIT("Unknown Hook Point");
         return false;
     }
 
@@ -557,8 +552,7 @@ bool DobbyRdkPluginManager::runPlugins(const IDobbyRdkPlugin::HintFlags &hookPoi
     // Get all the plugins listed in the container config
     if (mContainerConfig == nullptr || mContainerConfig->rdk_plugins == nullptr)
     {
-        AI_LOG_ERROR("Container spec is null");
-        AI_LOG_FN_EXIT();
+        AI_LOG_ERROR_EXIT("Container spec is null");
         return false;
     }
 
@@ -579,8 +573,7 @@ bool DobbyRdkPluginManager::runPlugins(const IDobbyRdkPlugin::HintFlags &hookPoi
             // If the plugin is required, but isn't loaded, then fail early and don't
             // run any more plugins
             // TODO:: Implement a more graceful fallback to default plugin implementation
-            AI_LOG_ERROR("Required plugin %s isn't loaded", pluginName.c_str());
-            AI_LOG_FN_EXIT();
+            AI_LOG_ERROR_EXIT("Required plugin %s isn't loaded", pluginName.c_str());
             return false;
         }
         else if (!isLoaded(pluginName))
@@ -597,7 +590,7 @@ bool DobbyRdkPluginManager::runPlugins(const IDobbyRdkPlugin::HintFlags &hookPoi
         }
 
         // Everything looks good, run the plugin
-        AI_LOG_INFO("Running plugin %s %s hook", pluginName.c_str(), hookName.c_str());
+        AI_LOG_INFO("Running %s plugin", pluginName.c_str());
         success = executeHook(pluginName,
                               hookPoint);
 

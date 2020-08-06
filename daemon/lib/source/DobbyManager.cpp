@@ -652,7 +652,7 @@ int32_t DobbyManager::startContainerFromSpec(const ContainerId &id,
 
     // Load the RDK plugins from disk (if necessary)
     std::map<std::string, Json::Value> rdkPlugins = config->rdkPlugins();
-    AI_LOG_INFO("There are %zd rdk plugins to run", rdkPlugins.size());
+    AI_LOG_DEBUG("There are %zd rdk plugins to run", rdkPlugins.size());
 
     std::unique_ptr<DobbyContainer> container;
     if (rdkPlugins.size() > 0)
@@ -665,7 +665,7 @@ int32_t DobbyManager::startContainerFromSpec(const ContainerId &id,
             std::make_shared<DobbyRdkPluginManager>(containerConfig, rootfsPath, PLUGIN_PATH, rdkPluginUtils);
 
         std::vector<std::string> loadedPlugins = rdkPluginManager->listLoadedPlugins();
-        AI_LOG_INFO("Loaded %zd RDK plugins\n", loadedPlugins.size());
+        AI_LOG_DEBUG("Loaded %zd RDK plugins\n", loadedPlugins.size());
 
         // Create the container wrapper
         std::unique_ptr<DobbyContainer> dobbyContainer(new DobbyContainer(bundle, config, rootfs, rdkPluginManager));
@@ -823,7 +823,7 @@ int32_t DobbyManager::startContainerFromBundle(const ContainerId &id,
 
     // Load the RDK plugins from disk (if necessary)
     std::map<std::string, Json::Value> rdkPlugins = config->rdkPlugins();
-    AI_LOG_INFO("There are %zd rdk plugins to run", rdkPlugins.size());
+    AI_LOG_DEBUG("There are %zd rdk plugins to run", rdkPlugins.size());
 
     std::unique_ptr<DobbyContainer> container;
     if (rdkPlugins.size() > 0)
@@ -836,7 +836,7 @@ int32_t DobbyManager::startContainerFromBundle(const ContainerId &id,
             std::make_shared<DobbyRdkPluginManager>(containerConfig, rootfsPath, PLUGIN_PATH, rdkPluginUtils);
 
         std::vector<std::string> loadedPlugins = rdkPluginManager->listLoadedPlugins();
-        AI_LOG_INFO("Loaded %zd RDK plugins\n", loadedPlugins.size());
+        AI_LOG_DEBUG("Loaded %zd RDK plugins\n", loadedPlugins.size());
 
         // Create the container wrapper
         std::unique_ptr<DobbyContainer> dobbyContainer(new DobbyContainer(bundle, config, rootfs, rdkPluginManager));
