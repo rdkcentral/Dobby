@@ -161,7 +161,7 @@ IDobbyRdkPlugin::HintFlags determineHookPoint(const std::string &hookName)
  */
 bool runPlugins(const IDobbyRdkPlugin::HintFlags &hookPoint, std::shared_ptr<rt_dobby_schema> containerConfig, const std::string &rootfsPath)
 {
-    AI_LOG_INFO("Loading plugins from %s", PLUGIN_PATH);
+    AI_LOG_DEBUG("Loading plugins from %s", PLUGIN_PATH);
 
     // Create an instance of pluginManager to load the plugins
     std::shared_ptr<DobbyRdkPluginUtils> rdkPluginUtils = std::make_shared<DobbyRdkPluginUtils>();
@@ -219,12 +219,12 @@ int main(int argc, char *argv[])
     if (hookName.empty())
     {
         AI_LOG_ERROR_EXIT("Must give a hook name to execute");
-        exit(EXIT_FAILURE);
+        return EXIT_FAILURE;
     }
     if (configPath.empty())
     {
-        AI_LOG_ERROR("Path to container's OCI config is required");
-        exit(EXIT_FAILURE);
+        AI_LOG_ERROR_EXIT("Path to container's OCI config is required");
+        return EXIT_FAILURE;
     }
 
     AI_LOG_INFO("Running hook %s", hookName.c_str());
@@ -235,7 +235,7 @@ int main(int argc, char *argv[])
     if (hookPoint == IDobbyRdkPlugin::Unknown)
     {
         AI_LOG_ERROR("Unknown hook point %s", hookName.c_str());
-        exit(EXIT_FAILURE);
+        return EXIT_FAILURE;
     }
 
     // Create a libocispec object for the container's config
@@ -243,10 +243,10 @@ int main(int argc, char *argv[])
     if (absPath == nullptr)
     {
         AI_LOG_ERROR("Couldn't find config at %s", configPath.c_str());
-        exit(EXIT_FAILURE);
+        return EXIT_FAILURE;
     }
     configPath = std::string(absPath);
-    AI_LOG_INFO("Loading container config from file: '%s'", configPath.c_str());
+    AI_LOG_DEBUG("Loading container config from file: '%s'", configPath.c_str());
 
     parser_error err;
     std::shared_ptr<rt_dobby_schema> containerConfig(
@@ -257,7 +257,7 @@ int main(int argc, char *argv[])
     if (containerConfig == nullptr)
     {
         AI_LOG_ERROR("Failed to parse OCI config with error: %s", err);
-        exit(EXIT_FAILURE);
+        return EXIT_FAILURE;
     }
 
     // Get the path of the container rootfs to give to plugins
@@ -268,26 +268,28 @@ int main(int argc, char *argv[])
     // Nothing to do
     if (rdkPluginCount == 0)
     {
-        AI_LOG_WARN("No plugins listed in config to run");
-        exit(EXIT_SUCCESS);
+        AI_LOG_WARN("No plugins listed in config - nothing to do");
+        return EXIT_SUCCESS;
     }
 
+#ifdef DEBUG
     AI_LOG_DEBUG("The following plugins are specified in the container config:");
     const auto pluginsInConfig = containerConfig->rdk_plugins->names_of_plugins;
     for (size_t i = 0; i < rdkPluginCount; i++)
     {
         AI_LOG_DEBUG("\t %s", pluginsInConfig[i]);
     }
+#endif // DEBUG
 
     // Everything looks good, try to run the plugins
     bool success = runPlugins(hookPoint, containerConfig, rootfsPath);
 
     if (success)
     {
-        AI_LOG_INFO("Plugins run successfully");
+        AI_LOG_INFO("Hook %s completed", hookName.c_str());
         return EXIT_SUCCESS;
     }
 
-    AI_LOG_WARN("Plugins ran with errors");
+    AI_LOG_WARN("Hook %s failed - plugin(s) ran with errors", hookName.c_str());
     return EXIT_FAILURE;
 }

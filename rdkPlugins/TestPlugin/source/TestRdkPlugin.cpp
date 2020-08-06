@@ -41,7 +41,8 @@ TestRdkPlugin::TestRdkPlugin(std::shared_ptr<rt_dobby_schema> &containerConfig,
       mRootfsPath(rootfsPath),
       mUtils(utils)
 {
-    AI_LOG_INFO("Test RDK Plugin loaded");
+    AI_LOG_FN_ENTRY();
+    AI_LOG_FN_EXIT();
 }
 
 /**
