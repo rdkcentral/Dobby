@@ -19,6 +19,7 @@
 
 #include "HolePuncher.h"
 
+#include <algorithm>
 #include <Logging.h>
 
 
@@ -44,33 +45,15 @@ bool HolePuncher::punchHoles(const std::shared_ptr<Netfilter> &netfilter,
 {
     AI_LOG_FN_ENTRY();
 
-    // check that we have an accepted protocol specified for each hole
-    for (int i = 0; i < len; i++)
-    {
-        // accept empty protocol which is defaulted to tcp later on
-        if (holes[i]->protocol == nullptr)
-        {
-            continue;
-        }
-
-        std::string prot = holes[i]->protocol;
-        if (strcmp(prot.c_str(), "tcp") == 0 || strcmp(prot.c_str(), "udp") == 0)
-        {
-            continue;
-        }
-        else
-        {
-            AI_LOG_ERROR_EXIT("invalid protocol value '%s' for hole %d",
-                              prot.c_str(), i);
-            return false;
-        }
-    }
-
-
     // add IPv4 rules to iptables if needed
     if (helper->ipv4())
     {
         std::vector<Netfilter::RuleSet> ipv4Rules = constructRules(helper, containerId, holes, len, AF_INET);
+        if (ipv4Rules.empty())
+        {
+            AI_LOG_ERROR_EXIT("failed to construct holepunch rules");
+            return false;
+        }
 
         // append constructed rules to iptables
         if (!netfilter->appendRules(ipv4Rules[0], AF_INET))
@@ -91,6 +74,11 @@ bool HolePuncher::punchHoles(const std::shared_ptr<Netfilter> &netfilter,
     if (helper->ipv6())
     {
         std::vector<Netfilter::RuleSet> ipv6Rules = constructRules(helper, containerId, holes, len, AF_INET6);
+        if (ipv6Rules.empty())
+        {
+            AI_LOG_ERROR_EXIT("failed to construct holepunch rules");
+            return false;
+        }
 
         // append constructed rules to ip6tables
         if (!netfilter->appendRules(ipv6Rules[0], AF_INET6))
@@ -135,6 +123,11 @@ bool HolePuncher::removeHoles(const std::shared_ptr<Netfilter> &netfilter,
     if (helper->ipv4())
     {
         std::vector<Netfilter::RuleSet> ipv4Rules = constructRules(helper, containerId, holes, len, AF_INET);
+        if (ipv4Rules.empty())
+        {
+            AI_LOG_ERROR_EXIT("failed to construct holepunch rules");
+            return false;
+        }
 
         // delete constructed rulesets
         if (!netfilter->deleteRules(ipv4Rules[0], AF_INET))
@@ -154,6 +147,11 @@ bool HolePuncher::removeHoles(const std::shared_ptr<Netfilter> &netfilter,
     if (helper->ipv6())
     {
         std::vector<Netfilter::RuleSet> ipv6Rules = constructRules(helper, containerId, holes, len, AF_INET6);
+        if (ipv6Rules.empty())
+        {
+            AI_LOG_ERROR_EXIT("failed to construct holepunch rules");
+            return false;
+        }
 
         // delete constructed rulesets
         if (!netfilter->deleteRules(ipv6Rules[0], AF_INET6))
@@ -215,7 +213,7 @@ std::vector<Netfilter::RuleSet> constructRules(const std::shared_ptr<NetworkingH
     }
     else
     {
-        AI_LOG_ERROR_EXIT("supported ip address families are AF_INET or AF_INET6");
+        AI_LOG_ERROR("supported ip address families are AF_INET or AF_INET6");
         return std::vector<Netfilter::RuleSet>();
     }
 
@@ -226,11 +224,24 @@ std::vector<Netfilter::RuleSet> constructRules(const std::shared_ptr<NetworkingH
     for (int i = 0; i < len; i++)
     {
         std::string port = std::to_string(holes[i]->port);
+
         // default to tcp if no protocol is set
         std::string protocol;
+
         if (holes[i]->protocol)
         {
             protocol = holes[i]->protocol;
+
+            // transform to lower case to allow both upper and lower case entries
+            std::transform(protocol.begin(), protocol.end(), protocol.begin(), ::tolower);
+
+            // check for accepted protocol values
+            if (strcmp(protocol.c_str(), "tcp") != 0 && strcmp(protocol.c_str(), "udp") != 0)
+            {
+                AI_LOG_ERROR("invalid protocol value '%s' for hole %d",
+                             holes[i]->protocol, i);
+                return std::vector<Netfilter::RuleSet>();
+            }
         }
         else
         {
