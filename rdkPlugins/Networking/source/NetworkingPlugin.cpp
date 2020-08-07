@@ -19,6 +19,7 @@
 
 #include "NetworkingPlugin.h"
 #include "DnsmasqSetup.h"
+#include "HolePuncher.h"
 #include "NetworkSetup.h"
 
 #include <fcntl.h>
@@ -217,6 +218,17 @@ bool NetworkingPlugin::createRuntime()
         }
     }
 
+    // punch holes in firewall if any have been configured
+    if (mPluginData->holes_len)
+    {
+        if (!HolePuncher::punchHoles(mNetfilter, mHelper, mContainerId,
+                                     mPluginData->holes, mPluginData->holes_len))
+        {
+            AI_LOG_ERROR_EXIT("failed to setup container for dnsmasq use");
+            return false;
+        }
+    }
+
     AI_LOG_FN_EXIT();
     return true;
 }
@@ -318,6 +330,16 @@ bool NetworkingPlugin::postHalt()
     if (mNetworkType != NetworkType::None && mPluginData->dnsmasq)
     {
         if (!DnsmasqSetup::removeRules(mNetfilter, mHelper, mContainerId))
+        {
+            success = false;
+        }
+    }
+
+    // if holepuncher rules were set up for container, "uninstall" them
+    if (mPluginData->holes_len)
+    {
+        if (!HolePuncher::removeHoles(mNetfilter, mHelper, mContainerId,
+                                      mPluginData->holes, mPluginData->holes_len))
         {
             success = false;
         }
