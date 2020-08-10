@@ -98,6 +98,8 @@ Only usable with network types 'open' and 'nat'.
 
 The `holes` data field can be used to punch holes in the firewall to enable port forwarding to allow containered processes to run servers.
 
+Forwards incoming packets to specified port(s) on the host in to the container.
+
 The `protocol` field can be omitted in which case TCP will be specified.
 
 Only usable with network types 'nat' and 'none'.
@@ -105,6 +107,29 @@ Only usable with network types 'nat' and 'none'.
 ```json
     "data": {
         "holes": [
+            {
+                "port": 1234,
+                "protocol": "tcp"
+            },
+            {
+                "port": 5678,
+                "protocol": "udp"
+            }
+        ]
+    }
+```
+
+### Localhost port forwarding
+
+The `loports` data field can be used to enable port forwarding to the host's localhost address.
+
+Adds firewall rules to allow containers to access the specified port(s) on the host via the bridge device.
+
+Only usable with network types 'nat' and 'none'.
+
+```json
+    "data": {
+        "loports": [
             {
                 "port": 1234,
                 "protocol": "tcp"

@@ -77,15 +77,22 @@ std::string NetworkingHelper::ipv6AddrStr() const
     return mIpv6AddrStr;
 }
 
+std::string NetworkingHelper::vethName() const
+{
+    return mVethName;
+}
+
 // -----------------------------------------------------------------------------
 /**
- *  @brief Constructs addresses for the container based on input address.
+ *  @brief Constructs addresses for the container based on input address. Also
+ *  stores the veth device used for the container.
  *
- *  @param[in]  addr                IPv4 address to construct addresses from.
+ *  @param[in]  addr        IPv4 address to construct addresses from.
+ *  @param[in]  vethName    Name of the veth device reserved for the container.
  *
  *  @return true if successful, otherwise false
  */
-bool NetworkingHelper::setAddresses(in_addr_t addr)
+bool NetworkingHelper::storeContainerInterface(in_addr_t addr, const std::string &vethName)
 {
     // store IPv4 address in binary form
     mIpv4Addr = addr;
@@ -111,6 +118,8 @@ bool NetworkingHelper::setAddresses(in_addr_t addr)
         return false;
     }
     mIpv6AddrStr = ipv6AddressStr;
+
+    mVethName = vethName;
 
     return true;
 }

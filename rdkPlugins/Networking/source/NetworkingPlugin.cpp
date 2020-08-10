@@ -20,6 +20,7 @@
 #include "NetworkingPlugin.h"
 #include "DnsmasqSetup.h"
 #include "HolePuncher.h"
+#include "LoPorts.h"
 #include "NetworkSetup.h"
 
 #include <fcntl.h>
@@ -229,6 +230,17 @@ bool NetworkingPlugin::createRuntime()
         }
     }
 
+    // add port forwarding to host if any have been configured
+    if (mPluginData->loports_len)
+    {
+        if (!LoPorts::addLoPorts(mNetfilter, mHelper, mContainerId,
+                                     mPluginData->loports, mPluginData->loports_len))
+        {
+            AI_LOG_ERROR_EXIT("failed to setup container for dnsmasq use");
+            return false;
+        }
+    }
+
     AI_LOG_FN_EXIT();
     return true;
 }
@@ -280,7 +292,7 @@ bool NetworkingPlugin::postHalt()
         const std::string vethName = addressFileStr.substr(addressStr.length() + 1, addressFileStr.length());
         in_addr_t ipAddress;
         inet_pton(AF_INET, addressStr.c_str(), &ipAddress);
-        mHelper->setAddresses(htonl(ipAddress));
+        mHelper->storeContainerInterface(htonl(ipAddress), vethName);
 
         // delete the veth pair for the container
         if (!NetworkSetup::removeVethPair(mNetfilter, mHelper, vethName, mNetworkType, mContainerId))
@@ -340,6 +352,16 @@ bool NetworkingPlugin::postHalt()
     {
         if (!HolePuncher::removeHoles(mNetfilter, mHelper, mContainerId,
                                       mPluginData->holes, mPluginData->holes_len))
+        {
+            success = false;
+        }
+    }
+
+    // if localhost port forwarding rules were set up for container, "uninstall" them
+    if (mPluginData->loports_len)
+    {
+        if (!LoPorts::removeLoPorts(mNetfilter, mHelper, mContainerId,
+                                    mPluginData->loports, mPluginData->loports_len))
         {
             success = false;
         }
