@@ -45,7 +45,7 @@ execute_process(
 )
 
 # Get a list of all the JSON customs schema files and copy them into libocispec
-file(GLOB CUSTOM_SCHEMA_FILES "${SCHEMAS_DIR}/*.json" CONFIGURE_DEPENDS)
+file(GLOB CUSTOM_SCHEMA_FILES CONFIGURE_DEPENDS "${SCHEMAS_DIR}/*.json")
 file(COPY ${CUSTOM_SCHEMA_FILES} DESTINATION ${LIBOCISPEC_DIR}/runtime-spec/schema/)
 
 # Get the add_plugin_tables.py script and copy it into libocispec
