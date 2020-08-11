@@ -498,8 +498,8 @@ std::string DobbyManager::createCustomConfig(const std::unique_ptr<DobbyContaine
             }
 
             // Display is always mounted as /tmp/westeros into the container
-            newMount->destination = "/tmp/westeros";
-            newMount->type = "bind";
+            newMount->destination = strdup("/tmp/westeros");
+            newMount->type = strdup("bind");
             newMount->source = strdup(displaySocket.c_str());
 
             // allocate memory for new mount and place it in the config struct
