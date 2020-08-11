@@ -435,32 +435,77 @@ bool DobbyManager::createAndStart(const ContainerId &id,
  * @param[in] command     The custom command to run instead of the args in the
  *                        config file
  */
-std::string DobbyManager::createCustomArgsConfig(const std::unique_ptr<DobbyContainer> &container,
-                                                 const std::string &command)
+std::string DobbyManager::createCustomConfig(const std::unique_ptr<DobbyContainer> &container,
+                                             const std::string &command,
+                                             const std::string &displaySocket)
 {
     AI_LOG_FN_ENTRY();
     auto cfg = container->config->config();
 
-    std::vector<std::string> cmd;
-
-    // Always use DobbyInit
-    cmd.push_back("/usr/libexec/DobbyInit");
-
-    // Insert space delimited command string into a vector
-    std::stringstream ss_cmd(command);
-    std::string tmp;
-    while (getline(ss_cmd, tmp, ' '))
+    // If we've been given a custom command, replace args[] with the custom command
+    if (!command.empty())
     {
-        cmd.push_back(tmp);
+        AI_LOG_DEBUG("Adding custom command %s to config", command.c_str());
+        std::vector<std::string> cmd;
+
+        // Always use DobbyInit
+        cmd.push_back("/usr/libexec/DobbyInit");
+
+        // Insert space delimited command string into a vector
+        std::stringstream ss_cmd(command);
+        std::string tmp;
+        while (getline(ss_cmd, tmp, ' '))
+        {
+            cmd.push_back(tmp);
+        }
+
+        // Add the args to the config
+        cfg->process->args = (char **)realloc(cfg->process->args, sizeof(char *) * cmd.size());
+        cfg->process->args_len = cmd.size();
+
+        for (int i = 0; i < cmd.size(); i++)
+        {
+            cfg->process->args[i] = strdup(cmd[i].c_str());
+        }
     }
 
-    // Add the args to the config
-    cfg->process->args = (char **)realloc(cfg->process->args, sizeof(char *) * cmd.size());
-    cfg->process->args_len = cmd.size();
-
-    for (int i = 0; i < cmd.size(); i++)
+    // If we've been given a displaySocket, then add the mount it into the container
+    // Will always be mounted to /tmp/westeros in container
+    if (!displaySocket.empty())
     {
-        cfg->process->args[i] = strdup(cmd[i].c_str());
+            AI_LOG_DEBUG("Adding westeors socket bind mount %s -> /tmp/westeros to config", displaySocket.c_str());
+
+            // Mount options
+            std::vector<std::string> mountOptions = {
+                "bind",
+                "rw",
+                "nosuid",
+                "nodev",
+                "noexec"
+            };
+
+            // allocate memory for mount
+            rt_defs_mount *newMount = (rt_defs_mount*)calloc(1, sizeof(rt_defs_mount));
+            newMount->options_len = mountOptions.size();
+            newMount->options = (char**)calloc(newMount->options_len, sizeof(char*));
+
+            // add mount options to bundle config
+            int i = 0;
+            for (const std::string &mountOption : mountOptions)
+            {
+                newMount->options[i] = strdup(mountOption.c_str());
+                i++;
+            }
+
+            // Display is always mounted as /tmp/westeros into the container
+            newMount->destination = "/tmp/westeros";
+            newMount->type = "bind";
+            newMount->source = strdup(displaySocket.c_str());
+
+            // allocate memory for new mount and place it in the config struct
+            cfg->mounts_len++;
+            cfg->mounts = (rt_defs_mount**)realloc(cfg->mounts, sizeof(rt_defs_mount*) * cfg->mounts_len);
+            cfg->mounts[cfg->mounts_len-1] = newMount;
     }
 
     // Write the config to a temp file that is only used for this container launch
@@ -480,7 +525,7 @@ std::string DobbyManager::createCustomArgsConfig(const std::unique_ptr<DobbyCont
 
 // -----------------------------------------------------------------------------
 /**
- *  @brief Creates and attempts to start the container
+ *  @brief Creates and attempts to start the container.
  *
  *
  *  @param[in]  id          The id string for the container.
@@ -494,22 +539,21 @@ std::string DobbyManager::createCustomArgsConfig(const std::unique_ptr<DobbyCont
 bool DobbyManager::createAndStartContainer(const ContainerId &id,
                                            const std::unique_ptr<DobbyContainer> &container,
                                            const std::list<int> &files,
-                                           const std::string &command)
+                                           const std::string &command,
+                                           const std::string& displaySocket)
 {
     AI_LOG_FN_ENTRY();
 
-    bool containerRunning = false;
-
-    // Create a custom config file for this container with the arguments given
-    // instead of the original args
-    if (!command.empty())
+    // Create a custom config file for this container with custom options
+    // Will be deleted when the container is destroyed
+    if (!command.empty() || !displaySocket.empty())
     {
-        container->customConfigFilePath = createCustomArgsConfig(container, command);
-        AI_LOG_INFO("Created custom config for container '%s'", id.c_str());
+        container->customConfigFilePath = createCustomConfig(container, command, displaySocket);
+        AI_LOG_DEBUG("Created custom config for container '%s' at %s", id.c_str(), container->customConfigFilePath.c_str());
 
         if (container->customConfigFilePath.empty())
         {
-            AI_LOG_ERROR_EXIT("Could not start container with custom arguments");
+            AI_LOG_ERROR_EXIT("Could not create temporary custom config for container '%s'", id.c_str());
             return false;
         }
     }
@@ -599,7 +643,8 @@ bool DobbyManager::createAndStartContainer(const ContainerId &id,
 int32_t DobbyManager::startContainerFromSpec(const ContainerId &id,
                                              const std::string &jsonSpec,
                                              const std::list<int> &files,
-                                             const std::string &command)
+                                             const std::string &command,
+                                             const std::string &displaySocket)
 {
     AI_LOG_FN_ENTRY();
 
@@ -722,7 +767,7 @@ int32_t DobbyManager::startContainerFromSpec(const ContainerId &id,
                 }
 
                 // try and create and start the container
-                if (createAndStartContainer(id, container, startState->files(), command))
+                if (createAndStartContainer(id, container, startState->files(), command, displaySocket))
                 {
                     // get the descriptor of the container and return that to the
                     // caller (need to do this before we move into the map)
@@ -770,7 +815,8 @@ int32_t DobbyManager::startContainerFromSpec(const ContainerId &id,
 int32_t DobbyManager::startContainerFromBundle(const ContainerId &id,
                                                const std::string &bundlePath,
                                                const std::list<int> &files,
-                                               const std::string &command)
+                                               const std::string &command,
+                                               const std::string &displaySocket)
 {
     AI_LOG_FN_ENTRY();
 
@@ -902,7 +948,7 @@ int32_t DobbyManager::startContainerFromBundle(const ContainerId &id,
                 }
 
                 // try and create and start the container
-                if (createAndStartContainer(id, container, startState->files(), command))
+                if (createAndStartContainer(id, container, startState->files(), command, displaySocket))
                 {
                     // get the descriptor of the container and return that to the
                     // caller (need to do this before we move into the map)
