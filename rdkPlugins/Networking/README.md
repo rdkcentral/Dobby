@@ -94,53 +94,64 @@ Only usable with network types 'open' and 'nat'.
     }
 ```
 
-### Holepuncher
+### Port forwarding
 
-The `holes` data field can be used to punch holes in the firewall to enable port forwarding to allow containered processes to run servers.
+The `portForwarding` data field can be used to enable port forwarding for the container.
 
-Forwards incoming packets to specified port(s) on the host in to the container.
+Ports can be forwarded either from host to container with `hostToContainer` or conversely from container to host with `containerToHost`.
 
-The `protocol` field can be omitted in which case TCP will be specified.
-
-Only usable with network types 'nat' and 'none'.
-
-```json
-    "data": {
-        "holes": [
-            {
-                "port": 1234,
-                "protocol": "tcp"
-            },
-            {
-                "port": 5678,
-                "protocol": "udp"
-            }
-        ]
-    }
-```
-
-### Localhost port forwarding
-
-The `loports` data field can be used to enable port forwarding to the host's localhost address.
-
-Adds firewall rules to allow containers to access the specified port(s) on the host via the bridge device.
+The `protocol` field can be omitted, in which case TCP will be specified.
 
 Only usable with network types 'nat' and 'none'.
 
+
+##### Host to container port forwarding
+
+Host to container port forwarding can be used to allow containered processes to run servers.
+
+`hostToContainer` forwards incoming packets to specified port(s) on the host to the container instead.
+
 ```json
     "data": {
-        "loports": [
-            {
-                "port": 1234,
-                "protocol": "tcp"
-            },
-            {
-                "port": 5678,
-                "protocol": "udp"
-            }
-        ]
+        "portForwarding": {
+            "hostToContainer": [
+                {
+                    "port": 1234,
+                    "protocol": "tcp"
+                },
+                {
+                    "port": 5678,
+                    "protocol": "udp"
+                }
+            ]
+        }
     }
 ```
+
+
+##### Container to host port forwarding
+
+Container to host port forwarding can be used to allow containers access to the host over certain ports.
+
+`containerToHost` adds firewall rules to allow containers to access the specified port(s) on the host via the bridge device.
+
+```json
+    "data": {
+        "portForwarding": {
+            "containerToHost": [
+                {
+                    "port": 1234,
+                    "protocol": "tcp"
+                },
+                {
+                    "port": 5678,
+                    "protocol": "udp"
+                }
+            ]
+        }
+    }
+```
+
 
 ## Settings
 

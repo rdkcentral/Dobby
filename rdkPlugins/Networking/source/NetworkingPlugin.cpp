@@ -19,8 +19,7 @@
 
 #include "NetworkingPlugin.h"
 #include "DnsmasqSetup.h"
-#include "HolePuncher.h"
-#include "LoPorts.h"
+#include "PortForwarding.h"
 #include "NetworkSetup.h"
 
 #include <fcntl.h>
@@ -219,24 +218,12 @@ bool NetworkingPlugin::createRuntime()
         }
     }
 
-    // punch holes in firewall if any have been configured
-    if (mPluginData->holes_len)
+    // add port forwards if any have been configured
+    if (mPluginData->port_forwarding != nullptr)
     {
-        if (!HolePuncher::punchHoles(mNetfilter, mHelper, mContainerId,
-                                     mPluginData->holes, mPluginData->holes_len))
+        if (!PortForwarding::addPortForwards(mNetfilter, mHelper, mContainerId, mPluginData->port_forwarding))
         {
-            AI_LOG_ERROR_EXIT("failed to setup container for dnsmasq use");
-            return false;
-        }
-    }
-
-    // add port forwarding to host if any have been configured
-    if (mPluginData->loports_len)
-    {
-        if (!LoPorts::addLoPorts(mNetfilter, mHelper, mContainerId,
-                                     mPluginData->loports, mPluginData->loports_len))
-        {
-            AI_LOG_ERROR_EXIT("failed to setup container for dnsmasq use");
+            AI_LOG_ERROR_EXIT("failed to add port forwards");
             return false;
         }
     }
@@ -347,21 +334,10 @@ bool NetworkingPlugin::postHalt()
         }
     }
 
-    // if holepuncher rules were set up for container, "uninstall" them
-    if (mPluginData->holes_len)
+    // remove port forwards if any have been configured
+    if (mPluginData->port_forwarding != nullptr)
     {
-        if (!HolePuncher::removeHoles(mNetfilter, mHelper, mContainerId,
-                                      mPluginData->holes, mPluginData->holes_len))
-        {
-            success = false;
-        }
-    }
-
-    // if localhost port forwarding rules were set up for container, "uninstall" them
-    if (mPluginData->loports_len)
-    {
-        if (!LoPorts::removeLoPorts(mNetfilter, mHelper, mContainerId,
-                                    mPluginData->loports, mPluginData->loports_len))
+        if (!PortForwarding::removePortForwards(mNetfilter, mHelper, mContainerId, mPluginData->port_forwarding))
         {
             success = false;
         }

@@ -63,18 +63,24 @@ def execute_test():
 
     # We use a preconfigured tarball bundle for this test, the container has the following arg:
     #
-    #   echo 1 | netcat 100.64.11.1 7357
+    #   echo DOBBY_TEST | netcat 100.64.11.1 7357
     #
-    # This will send '1' to the dobby0 bridge device at port 7357. We're expecting this to be
-    # received on the listening port 7357 on the localhost because of the added networking
-    # configuration in the bundle config:
+    # This will send 'DOBBY_TEST' to the dobby0 bridge device at port 7357. We're expecting
+    # this to be received on the listening port 7357 on the localhost because of the added
+    # networking configuration in the bundle config:
     #
-    #   "loports": [
-    #       {
-    #           "port": 7357,
-    #           "protocol": "tcp"
-    #       }
-    #   ]
+    #   "portForwarding": {
+    #       "containerToHost": [
+    #           {
+    #               "port": 7357,
+    #               "protocol": "udp"
+    #           },
+    #           {
+    #               "port": 7357,
+    #               "protocol": "tcp"
+    #           }
+    #       ]
+    #   }
     #
 
     output_table = []
