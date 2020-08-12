@@ -18,11 +18,12 @@
 import test_utils
 
 container_name = "sleepy-thunder"
+hook_name = "createRuntime"
 
 tests = (
     test_utils.Test("Run plugin launcher",
                     container_name,
-                    "Plugins run successfully",
+                    "Hook %s completed" % hook_name,
                     "Runs plugins launcher and check if it runned properly"),
 )
 
@@ -33,11 +34,16 @@ def execute_test():
 
     with test_utils.dobby_daemon(), test_utils.untar_bundle(container_name) as bundle_path:
 
+        # createRuntime fails with the networking plugin without a container present with
+        # permission issues. The networking plugin is not designed to work with standalone
+        # DobbyPluginLauncher at the moment, so we can ignore the message. The test will
+        # succeed because the networking plugin is set to required=false in the bundle config.
+
         # Test 0
         test = tests[0]
         command = ["DobbyPluginLauncher",
                    "-v",
-                   "-h", "createRuntime",
+                   "-h", hook_name,
                    "-c", bundle_path + "/config.json"]
 
         status = test_utils.run_command_line(command)
