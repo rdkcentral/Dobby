@@ -25,7 +25,7 @@ container_name = "network1"
 tests = (
     test_utils.Test("Test communication to host",
                     container_name,
-                    "1",
+                    "DOBBY_TEST",
                     "Tests port forwarding from container to host."),
 )
 
@@ -41,10 +41,11 @@ class netcat_listener:
                                          "7357"
                                         ],
                                         universal_newlines=True,
-                                        stdout=subprocess.PIPE)
+                                        stdout=subprocess.PIPE,
+                                        stderr=subprocess.PIPE)
 
     def __enter__(self):
-        return self.subproc
+        return self
 
     def __exit__(self, etype, value, traceback):
         self.subproc.kill()
@@ -55,7 +56,7 @@ class netcat_listener:
 
         # read stdout and return it
         output = self.subproc.communicate()
-        return output
+        return output[0]
 
 
 def execute_test():
@@ -78,16 +79,13 @@ def execute_test():
 
     output_table = []
 
-    with test_utils.dobby_daemon(), test_utils.untar_bundle(container_name) as bundle_path:
-        # start the netcat listener
-        nc = netcat_listener()
-
+    with test_utils.dobby_daemon(), netcat_listener() as nc, test_utils.untar_bundle(container_name) as bundle_path:
         # Test 0
         test = tests[0]
         command = ["DobbyTool",
                    "start",
                    container_name,
-                   test_utils.get_bundle_path(test.container_id)]
+                   bundle_path]
 
         status = test_utils.run_command_line(command)
 
@@ -95,13 +93,13 @@ def execute_test():
         result = True
 
         # give container time to start and send message before checking netcat listener
-        sleep(3)
+        sleep(2)
 
-        nc_message = nc.get_output()[0]
+        nc_message = nc.get_output().rstrip("\n")
 
         # check if netcat listener received message
-        if test.expected_output.lower() not in nc_message:
-            message = "Received '%s' from container, expected '%s'" % (nc_message, test.expected_output.lower())
+        if test.expected_output.lower() not in nc_message.lower():
+            message = "Received '%s' from container, expected '%s'" % (nc_message.lower(), test.expected_output.lower())
             result = False
         else:
             message = "Successfully received message '%s' from container" % nc_message
@@ -115,4 +113,10 @@ def execute_test():
 
 if __name__ == "__main__":
     test_utils.parse_arguments(__file__)
+
+    # netcat is not available on RDK builds, skip test
+    if test_utils.selected_platform == test_utils.Platforms.xi_6:
+        test_utils.print_log("netcat not available, skipping test", test_utils.Severity.warning)
+        exit()
+
     execute_test()
