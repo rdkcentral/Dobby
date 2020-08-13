@@ -534,6 +534,10 @@ bool DobbyProxy::setLogLevel(int level) const
  *                              container spec.
  *  @param[in]  files           An array of file descriptors to pass into the
  *                              container construction, can be empty.
+ *  @param[in]  command         Custom command to run inside the container,
+ *                              overriding the args in the config file
+ *  @param[in]  displaySocket   Path to the westeros display socket to mount into
+ *                              the container
  *
  *  @return on success a container descriptor which is a number greater than
  *  0, on failure a negative error code.
@@ -541,7 +545,8 @@ bool DobbyProxy::setLogLevel(int level) const
 int32_t DobbyProxy::startContainerFromSpec(const std::string& id,
                                            const std::string& jsonSpec,
                                            const std::list<int>& files /*= std::list<int>()*/,
-                                           const std::string& command /*= ""*/) const
+                                           const std::string& command /*= ""*/,
+                                           const std::string& displaySocket /*= ""*/) const
 {
     AI_LOG_FN_ENTRY();
 
@@ -553,7 +558,7 @@ int32_t DobbyProxy::startContainerFromSpec(const std::string& id,
     }
 
     // send off the request
-    const AI_IPC::VariantList params = { id, jsonSpec, fds, command };
+    const AI_IPC::VariantList params = { id, jsonSpec, fds, command, displaySocket };
     AI_IPC::VariantList returns;
 
     int32_t result = -1;
@@ -586,6 +591,10 @@ int32_t DobbyProxy::startContainerFromSpec(const std::string& id,
  *                              a string before being sent to the daemon.
  *  @param[in]  files           An array of file descriptors to pass into the
  *                              container construction, can be empty.
+ *  @param[in]  command         Custom command to run inside the container,
+ *                              overriding the args in the config file
+ *  @param[in]  displaySocket   Path to the westeros display socket to mount into
+ *                              the container
  *
  *  @return on success a container descriptor which is a number greater than
  *  0, on failure a negative error code.
@@ -593,14 +602,15 @@ int32_t DobbyProxy::startContainerFromSpec(const std::string& id,
 int32_t DobbyProxy::startContainerFromSpec(const std::string& id,
                                            const Json::Value& spec,
                                            const std::list<int>& files /*= std::list<int>()*/,
-                                           const std::string& command /*= ""*/) const
+                                           const std::string& command /*= ""*/,
+                                           const std::string& displaySocket /*= ""*/) const
 {
     // convert the json spec to a string
     Json::FastWriter writer;
     const std::string specString = writer.write(spec);
 
     // and then just call start container with the string
-    return startContainerFromSpec(id, specString, files, command);
+    return startContainerFromSpec(id, specString, files, command, displaySocket);
 }
 
 // -----------------------------------------------------------------------------
@@ -615,6 +625,10 @@ int32_t DobbyProxy::startContainerFromSpec(const std::string& id,
  *  @param[in]  bundlePath      Path to the container bundle.
  *  @param[in]  files           An array of file descriptors to pass into the
  *                              container construction, can be empty.
+ *  @param[in]  command         Custom command to run inside the container,
+ *                              overriding the args in the config file
+ *  @param[in]  displaySocket   Path to the westeros display socket to mount into
+ *                              the container
  *
  *  @return on success a container descriptor which is a number greater than
  *  0, on failure a negative error code.
@@ -622,7 +636,8 @@ int32_t DobbyProxy::startContainerFromSpec(const std::string& id,
 int32_t DobbyProxy::startContainerFromBundle(const std::string& id,
                                              const std::string& bundlePath,
                                              const std::list<int>& files,
-                                             const std::string& command /*= ""*/) const
+                                             const std::string& command /*= ""*/,
+                                             const std::string& displaySocket /*= ""*/) const
 {
     AI_LOG_FN_ENTRY();
 
@@ -634,7 +649,7 @@ int32_t DobbyProxy::startContainerFromBundle(const std::string& id,
     }
 
     // send off the request
-    const AI_IPC::VariantList params = { id, bundlePath, fds, command };
+    const AI_IPC::VariantList params = { id, bundlePath, fds, command, displaySocket };
     AI_IPC::VariantList returns;
 
     int32_t result = -1;

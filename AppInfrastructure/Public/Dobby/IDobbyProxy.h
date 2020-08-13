@@ -124,18 +124,21 @@ public:
     virtual int32_t startContainerFromSpec(const std::string& id,
                                            const std::string& jsonSpec,
                                            const std::list<int>& files,
-                                           const std::string& command = "") const = 0;
+                                           const std::string& command = "",
+                                           const std::string& displaySocket = "") const = 0;
 
     virtual int32_t startContainerFromSpec(const std::string& id,
                                            const Json::Value& spec,
                                            const std::list<int>& files,
-                                           const std::string& command = "") const = 0;
+                                           const std::string& command = "",
+                                           const std::string& displaySocket = "") const = 0;
 
 
     virtual int32_t startContainerFromBundle(const std::string& id,
                                              const std::string& bundlePath,
                                              const std::list<int>& files,
-                                             const std::string& command = "") const = 0;
+                                             const std::string& command = "",
+                                             const std::string& displaySocket = "") const = 0;
 
     virtual bool stopContainer(int32_t descriptor,
                                bool withPrejudice) const = 0;
