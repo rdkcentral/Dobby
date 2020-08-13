@@ -13,16 +13,28 @@ Add the following section to your OCI runtime configuration `config.json` file t
                 "ipv4": "true",
                 "ipv6": "true",
                 "dnsmasq": "true",
-                "holes": [
-                    {
-                        "port": 1234,
-                        "protocol": "tcp"
-                    },
-                    {
-                        "port": 5678,
-                        "protocol": "udp"
-                    }
-                ]
+                "portForwarding": {
+                    "hostToContainer": [
+                        {
+                            "port": 1234,
+                            "protocol": "tcp"
+                        },
+                        {
+                            "port": 5678,
+                            "protocol": "udp"
+                        }
+                    ],
+                    "containerToHost": [
+                        {
+                            "port": 1234,
+                            "protocol": "tcp"
+                        },
+                        {
+                            "port": 5678,
+                            "protocol": "udp"
+                        }
+                    ]
+                }
             }
         }
     }

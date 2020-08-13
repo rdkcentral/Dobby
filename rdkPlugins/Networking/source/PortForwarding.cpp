@@ -32,7 +32,7 @@
  *  @param[in]  netfilter           Instance of Netfilter class.
  *  @param[in]  helper              Instance of NetworkingHelper.
  *  @param[in]  containerId         Container identifier.
- *  @param[in]  portForwards        libocispec structs containing ports to
+ *  @param[in]  portsConfig         libocispec structs containing ports to
  *                                  forward.
  *
  *  @return true on success, otherwise false.
@@ -40,9 +40,17 @@
 bool PortForwarding::addPortForwards(const std::shared_ptr<Netfilter> &netfilter,
                                      const std::shared_ptr<NetworkingHelper> &helper,
                                      const std::string &containerId,
-                                     rt_defs_plugins_networking_data_port_forwarding *portForwards)
+                                     rt_defs_plugins_networking_data_port_forwarding *portsConfig)
 {
     AI_LOG_FN_ENTRY();
+
+    // parse the libocispec struct data
+    PortForwards portForwards = parsePortsConfig(portsConfig);
+    if (!portForwards.isValid)
+    {
+        AI_LOG_ERROR_EXIT("failed to parse port configurations");
+        return false;
+    }
 
     // add IPv4 rules to iptables if needed
     if (helper->ipv4())
@@ -118,7 +126,7 @@ bool PortForwarding::addPortForwards(const std::shared_ptr<Netfilter> &netfilter
  *  @param[in]  netfilter           Instance of Netfilter class.
  *  @param[in]  helper              Instance of NetworkingHelper.
  *  @param[in]  containerId         Container identifier.
- *  @param[in]  portForwards        libocispec structs containing ports to
+ *  @param[in]  portsConfig         libocispec structs containing ports to
  *                                  forward.
  *
  *  @return true on success, otherwise false.
@@ -126,9 +134,17 @@ bool PortForwarding::addPortForwards(const std::shared_ptr<Netfilter> &netfilter
 bool PortForwarding::removePortForwards(const std::shared_ptr<Netfilter> &netfilter,
                                         const std::shared_ptr<NetworkingHelper> &helper,
                                         const std::string &containerId,
-                                        rt_defs_plugins_networking_data_port_forwarding *portForwards)
+                                        rt_defs_plugins_networking_data_port_forwarding *portsConfig)
 {
     AI_LOG_FN_ENTRY();
+
+    // parse the libocispec struct data
+    PortForwards portForwards = parsePortsConfig(portsConfig);
+    if (!portForwards.isValid)
+    {
+        AI_LOG_ERROR_EXIT("failed to parse port configurations");
+        return false;
+    }
 
     // delete IPv4 rules from ip6tables if needed
     if (helper->ipv4())
@@ -189,19 +205,108 @@ bool PortForwarding::removePortForwards(const std::shared_ptr<Netfilter> &netfil
 
 // -----------------------------------------------------------------------------
 /**
+ *  @brief Takes the 'protocol' string from a port forwarding entry in the
+ *  bundle config, transforms it to lower case and checks for validity. If the
+ *  'protocol' field was empty, we default to tcp.
+ *
+ *  @param[in]  protocol            Protocol string from config.
+ *
+ *  @return returns protocol string, or empty on failure.
+ */
+std::string parseProtocol(char *protocol)
+{
+    // if no protocol was set, default to tcp
+    if (protocol == nullptr || std::string(protocol).empty())
+    {
+        return std::string("tcp");
+    }
+
+    std::string protocolStr = std::string(protocol);
+
+    // transform to lower case to allow both upper and lower case entries
+    std::transform(protocolStr.begin(), protocolStr.end(),
+                   protocolStr.begin(), ::tolower);
+
+    // check for accepted protocol values
+    if (strcmp(protocolStr.c_str(), "tcp") != 0 &&
+        strcmp(protocolStr.c_str(), "udp") != 0)
+    {
+        // not an accepted protocol value, return empty string
+        return std::string();
+    }
+
+    return protocolStr;
+}
+
+
+// -----------------------------------------------------------------------------
+/**
+ *  @brief Parse the libocispec struct formatted port forwarding data into a
+ *  PortForwards type struct.
+ *
+ *  @param[in]  portsConfig         port forwarding configuration data structs.
+ *
+ *  @return parsed data structure.
+ */
+PortForwards parsePortsConfig(rt_defs_plugins_networking_data_port_forwarding *portsConfig)
+{
+    PortForwards portForwards;
+    portForwards.isValid = false;
+
+    for (int i = 0; i < portsConfig->host_to_container_len; i++)
+    {
+        PortForward pf;
+        pf.port = std::to_string(portsConfig->host_to_container[i]->port);
+
+        // validate the protocol input
+        pf.protocol = parseProtocol(portsConfig->host_to_container[i]->protocol);
+        if (pf.protocol.empty())
+        {
+            AI_LOG_ERROR("invalid protocol value '%s' for port at index %d",
+                        portsConfig->host_to_container[i]->protocol, i);
+            return portForwards;
+        }
+
+        portForwards.hostToContainer.emplace_back(pf);
+    }
+
+    for (int i = 0; i < portsConfig->container_to_host_len; i++)
+    {
+        PortForward pf;
+        pf.port = std::to_string(portsConfig->container_to_host[i]->port);
+
+        // validate the protocol input
+        pf.protocol = parseProtocol(portsConfig->container_to_host[i]->protocol);
+        if (pf.protocol.empty())
+        {
+            AI_LOG_ERROR("invalid protocol value '%s' for port at index %d",
+                        portsConfig->container_to_host[i]->protocol, i);
+            return portForwards;
+        }
+        portForwards.containerToHost.emplace_back(pf);
+    }
+
+    // parsed all port configurations correctly, set valid object
+    portForwards.isValid = true;
+
+    return portForwards;
+}
+
+
+// -----------------------------------------------------------------------------
+/**
  *  @brief Construct the rules based on input in the bundle config.
  *
  *  @param[in]  helper              Instance of NetworkingHelper.
  *  @param[in]  containerId         Container identifier.
- *  @param[in]  portForwards        libocispec structs containing ports to
- *                                  forward.
+ *  @param[in]  portForwards        structs containing ports to forward.
  *  @param[in]  ipVersion           IPv family version (AF_INET/AF_INET6).
  *
  *  @return always returns true.
  */
 std::vector<Netfilter::RuleSet> constructRules(const std::shared_ptr<NetworkingHelper> &helper,
                                                const std::string &containerId,
-                                               rt_defs_plugins_networking_data_port_forwarding *portForwards,
+                                               const PortForwards &portForwards,
                                                const int ipVersion)
 {
     std::vector<Netfilter::RuleSet> ruleSets;
@@ -221,14 +326,12 @@ std::vector<Netfilter::RuleSet> constructRules(const std::shared_ptr<NetworkingH
         return std::vector<Netfilter::RuleSet>();
     }
 
-
     // check if we have ports to forward from host to container
-    if (portForwards->host_to_container != nullptr)
+    if (!portForwards.hostToContainer.empty())
     {
         if (!constructHostToContainerRules(ruleSets, containerId,
                                            containerAddress,
-                                           portForwards->host_to_container,
-                                           portForwards->host_to_container_len,
+                                           portForwards.hostToContainer,
                                            ipVersion))
         {
             AI_LOG_ERROR("failed to construct host to container rules");
@@ -237,13 +340,12 @@ std::vector<Netfilter::RuleSet> constructRules(const std::shared_ptr<NetworkingH
     }
 
     // check if we have ports to forward from container to host
-    if (portForwards->container_to_host != nullptr)
+    if (!portForwards.containerToHost.empty())
     {
         if (!constructContainerToHostRules(ruleSets, containerId,
                                            containerAddress,
                                            helper->vethName(),
-                                           portForwards->container_to_host,
-                                           portForwards->container_to_host_len,
+                                           portForwards.containerToHost,
                                            ipVersion))
         {
             AI_LOG_ERROR("failed to construct host to container rules");
@@ -267,8 +369,7 @@ std::vector<Netfilter::RuleSet> constructRules(const std::shared_ptr<NetworkingH
  *  @param[in]  ruleSets            Vector to place new rulesets in.
  *  @param[in]  containerId         Container identifier.
  *  @param[in]  containerAddress    IP address of the container.
- *  @param[in]  ports               ports to forward
- *  @param[in]  len                 Number of ports/protocol combinations.
+ *  @param[in]  ports               ports to forward.
  *  @param[in]  ipVersion           IPv family version (AF_INET/AF_INET6).
  *
  *  @return returns true on success, otherwise false.
@@ -276,50 +377,23 @@ std::vector<Netfilter::RuleSet> constructRules(const std::shared_ptr<NetworkingH
 bool constructHostToContainerRules(std::vector<Netfilter::RuleSet> &ruleSets,
                                    const std::string &containerId,
                                    const std::string &containerAddress,
-                                   rt_defs_plugins_networking_data_port_forwarding_host_to_container_element **ports,
-                                   size_t len, const int ipVersion)
+                                   const std::vector<struct PortForward> &ports,
+                                   const int ipVersion)
 {
     std::list<std::string> appendRules;
     std::list<std::string> insertRules;
 
     // construct rules for each port
-    for (int i = 0; i < len; i++)
+    for (int i = 0; i < ports.size(); i++)
     {
-        std::string port = std::to_string(ports[i]->port);
-
-        // default to tcp if no protocol is set
-        std::string protocol;
-
-        if (ports[i]->protocol)
-        {
-            protocol = ports[i]->protocol;
-
-            // transform to lower case to allow both upper and lower case entries
-            std::transform(protocol.begin(), protocol.end(), protocol.begin(), ::tolower);
-
-            // check for accepted protocol values
-            if (strcmp(protocol.c_str(), "tcp") != 0 && strcmp(protocol.c_str(), "udp") != 0)
-            {
-                AI_LOG_ERROR("invalid protocol value '%s' for port at index %d",
-                             ports[i]->protocol, i);
-                return false;
-            }
-        }
-        else
-        {
-            protocol = "tcp";
-        }
-
         // construct forwarding rule to insert to iptables
         std::string forwardingRule =
-            createForwardingRule(containerId, protocol,
-                                 containerAddress, port, ipVersion);
+            createForwardingRule(ports[i], containerId, containerAddress, ipVersion);
         insertRules.emplace_back(forwardingRule);
 
         // construct prerouting rule to append to iptables
         const std::string preroutingRule =
-            createPreroutingRule(containerId, protocol,
-                                 containerAddress, port, ipVersion);
+            createPreroutingRule(ports[i], containerId, containerAddress, ipVersion);
         appendRules.emplace_back(preroutingRule);
     }
 
@@ -343,22 +417,22 @@ bool constructHostToContainerRules(std::vector<Netfilter::RuleSet> &ruleSets,
  *      iptables -t nat -A PREROUTING ! -i <BRIDGE_NAME> -p <PROTOCOL>
  *               --dport <PORT_NUMBER> -j DNAT --to <CONTAINER_IP>:<PORT_NUMBER>
  *
+ *  @param[in]  portForward The protocol and port to forward.
  *  @param[in]  id          The id of the container making the request.
- *  @param[in]  protocol    The name of protocol for the rule.
  *  @param[in]  ipAddress   The ip address of the container.
- *  @param[in]  portNumber  The port number to forward.
  *  @param[in]  ipVersion   IPv family version (AF_INET/AF_INET6).
  *
  *  @return returns the created rule.
  */
-std::string createPreroutingRule(const std::string &id,
-                                 const std::string &protocol,
+std::string createPreroutingRule(const PortForward &portForward,
+                                 const std::string &id,
                                  const std::string &ipAddress,
-                                 const std::string &portNumber,
                                  const int ipVersion)
 {
     char buf[256];
 
+    // We need to add -m <PROTOCOL> because it's automatically added by
+    // iptables. If omitted, we won't be able to match the rule for deletion.
     std::string baseRule("PREROUTING "
                          "! -i " BRIDGE_NAME " "
                          "-p %s "                           // protocol
@@ -372,21 +446,21 @@ std::string createPreroutingRule(const std::string &id,
     // populate '%s' fields in base rule
     if (ipVersion == AF_INET)
     {
-        destination = ipAddress + ":" + portNumber;
+        destination = ipAddress + ":" + portForward.port;
         snprintf(buf, sizeof(buf), baseRule.c_str(),
-                 protocol.c_str(),
-                 protocol.c_str(),
-                 portNumber.c_str(),
+                 portForward.protocol.c_str(),
+                 portForward.protocol.c_str(),
+                 portForward.port.c_str(),
                  id.c_str(),
                  destination.c_str());
     }
     else if (ipVersion == AF_INET6)
     {
-        destination = "[" + ipAddress + "]:" + portNumber;
+        destination = "[" + ipAddress + "]:" + portForward.port;
         snprintf(buf, sizeof(buf), baseRule.c_str(),
-                 protocol.c_str(),
-                 protocol.c_str(),
-                 portNumber.c_str(),
+                 portForward.protocol.c_str(),
+                 portForward.protocol.c_str(),
+                 portForward.port.c_str(),
                  id.c_str(),
                  destination.c_str());
     }
@@ -408,22 +482,22 @@ std::string createPreroutingRule(const std::string &id,
  *               --destination <CONTAINER_IP> -p <PROTOCOL> --dport <PORT_NUMBER>
  *               -j ACCEPT
  *
+ *  @param[in]  portForward The protocol and port to forward.
  *  @param[in]  id          The id of the container making the request.
- *  @param[in]  protocol    The name of protocol for the rule.
  *  @param[in]  ipAddress   The ip address of the container.
- *  @param[in]  portNumber  The port number to forward.
  *  @param[in]  ipVersion   IPv family version (AF_INET/AF_INET6).
  *
  *  @return returns the created rule.
  */
-std::string createForwardingRule(const std::string &id,
-                                 const std::string &protocol,
+std::string createForwardingRule(const PortForward &portForward,
+                                 const std::string &id,
                                  const std::string &ipAddress,
-                                 const std::string &portNumber,
                                  const int ipVersion)
 {
     char buf[256];
 
+    // We need to add -m <PROTOCOL> because it's automatically added by
+    // iptables. If omitted, we won't be able to match the rule for deletion.
     std::string baseRule("FORWARD "
                          "-d %s/%s "                // container ip address/mask
                          "! -i " BRIDGE_NAME " "
@@ -439,18 +513,18 @@ std::string createForwardingRule(const std::string &id,
     {
         snprintf(buf, sizeof(buf), baseRule.c_str(),
                  ipAddress.c_str(), "32",
-                 protocol.c_str(),
-                 protocol.c_str(),
-                 portNumber.c_str(),
+                 portForward.protocol.c_str(),
+                 portForward.protocol.c_str(),
+                 portForward.port.c_str(),
                  id.c_str());
     }
     else if (ipVersion == AF_INET6)
     {
         snprintf(buf, sizeof(buf), baseRule.c_str(),
                  ipAddress.c_str(), "128",
-                 protocol.c_str(),
-                 protocol.c_str(),
-                 portNumber.c_str(),
+                 portForward.protocol.c_str(),
+                 portForward.protocol.c_str(),
+                 portForward.port.c_str(),
                  id.c_str());
     }
     else
@@ -476,7 +550,6 @@ std::string createForwardingRule(const std::string &id,
  *  @param[in]  containerAddress    IP address of the container.
  *  @param[in]  vethName            The container's assigned veth device name.
  *  @param[in]  ports               Ports to forward.
- *  @param[in]  len                 Number of ports/protocol combinations.
  *  @param[in]  ipVersion           IPv family version (AF_INET/AF_INET6).
  *
  *  @return returns true on success, otherwise false.
@@ -485,49 +558,24 @@ bool constructContainerToHostRules(std::vector<Netfilter::RuleSet> &ruleSets,
                                    const std::string &containerId,
                                    const std::string &containerAddress,
                                    const std::string &vethName,
-                                   rt_defs_plugins_networking_data_port_forwarding_container_to_host_element **ports,
-                                   size_t len, const int ipVersion)
+                                   const std::vector<struct PortForward> &ports,
+                                   const int ipVersion)
 {
     std::list<std::string> natRules;
     std::list<std::string> filterRules;
 
     // construct rules for each port to enable forwarding on
-    for (int i = 0; i < len; i++)
+    for (int i = 0; i < ports.size(); i++)
     {
-        std::string port = std::to_string(ports[i]->port);
-
-        // default to tcp if no protocol is set
-        std::string protocol;
-        if (ports[i]->protocol)
-        {
-            protocol = ports[i]->protocol;
-
-            // transform to lower case to allow both upper and lower case entries
-            std::transform(protocol.begin(), protocol.end(), protocol.begin(), ::tolower);
-
-            // check for accepted protocol values
-            if (strcmp(protocol.c_str(), "tcp") != 0 && strcmp(protocol.c_str(), "udp") != 0)
-            {
-                AI_LOG_ERROR("invalid protocol value '%s' for port at index %d",
-                             ports[i]->protocol, i);
-                return false;
-            }
-        }
-        else
-        {
-            protocol = "tcp";
-        }
-
         // construct dnat rule to insert to iptables
         const std::string dnatRule =
-            createDnatRule(containerId, protocol, containerAddress,
-                           port, ipVersion);
+            createDnatRule(ports[i], containerId, containerAddress, ipVersion);
         natRules.emplace_back(dnatRule);
 
         // construct accept rule to insert to iptables
         const std::string acceptRule =
-            createAcceptRule(containerId, protocol, containerAddress,
-                             vethName, port, ipVersion);
+            createAcceptRule(ports[i], containerId, containerAddress, vethName,
+                             ipVersion);
         filterRules.emplace_back(acceptRule);
     }
 
@@ -567,18 +615,16 @@ bool constructContainerToHostRules(std::vector<Netfilter::RuleSet> &ruleSets,
  *               --dport <PORT_NUMBER> -j DNAT
  *               --to-destination 127.0.0.1:<PORT_NUMBER>
  *
+ *  @param[in]  portForward The protocol and port to forward.
  *  @param[in]  id          The id of the container making the request.
- *  @param[in]  protocol    The name of protocol to create the rule for.
  *  @param[in]  ipAddress   The ip address of the container.
- *  @param[in]  portNumber  The port number to forward.
  *  @param[in]  ipVersion   IPv family version (AF_INET/AF_INET6).
  *
  *  @return returns the created rule.
  */
-std::string createDnatRule(const std::string &id,
-                           const std::string &protocol,
+std::string createDnatRule(const PortForward &portForward,
+                           const std::string &id,
                            const std::string &ipAddress,
-                           const std::string &portNumber,
                            const int ipVersion)
 {
     char buf[256];
@@ -587,6 +633,8 @@ std::string createDnatRule(const std::string &id,
     std::string bridgeAddr;
     std::string destination;
 
+    // We need to add -m <PROTOCOL> because it's automatically added by
+    // iptables. If omitted, we won't be able to match the rule for deletion.
     std::string baseRule("PREROUTING "
                          "-s %s "                       // container address
                          "-d %s "                       // bridge address
@@ -603,21 +651,22 @@ std::string createDnatRule(const std::string &id,
     {
         sourceAddr = std::string() + ipAddress + "/32";
         bridgeAddr = std::string() + BRIDGE_ADDRESS + "/32";
-        destination = "127.0.0.1:" + portNumber;
+        destination = "127.0.0.1:" + portForward.port;
     }
     else
     {
         sourceAddr = std::string() + ipAddress + "/128";
         bridgeAddr = std::string() + BRIDGE_ADDRESS_IPV6 + "/128";
-        destination = "[::1]:" + portNumber;
+        destination = "[::1]:" + portForward.port;
     }
 
     // populate '%s' fields in base rule
     snprintf(buf, sizeof(buf), baseRule.c_str(),
              sourceAddr.c_str(),
              bridgeAddr.c_str(),
-             protocol.c_str(), protocol.c_str(),
-             portNumber.c_str(),
+             portForward.protocol.c_str(),
+             portForward.protocol.c_str(),
+             portForward.port.c_str(),
              id.c_str(),
              destination.c_str());
 
@@ -635,21 +684,19 @@ std::string createDnatRule(const std::string &id,
  *               --dport <PORT_NUMBER> -m physdev --physdev-in <VETH_NAME>
  *               -j ACCEPT
  *
+ *  @param[in]  portForward The protocol and port to forward.
  *  @param[in]  id          The id of the container making the request.
- *  @param[in]  protocol    The string name of protocol to create the rule for.
  *  @param[in]  ipAddress   The ip address of the container.
  *  @param[in]  vethName    The name of the veth device that belongs to the
  *                          container.
- *  @param[in]  portNumber  The port number to forward.
  *  @param[in]  ipVersion   IPv family version (AF_INET/AF_INET6).
  *
  *  @return returns the created rule.
  */
-std::string createAcceptRule(const std::string &id,
-                             const std::string &protocol,
+std::string createAcceptRule(const PortForward &portForward,
+                             const std::string &id,
                              const std::string &ipAddress,
                              const std::string &vethName,
-                             const std::string &portNumber,
                              const int ipVersion)
 {
     char buf[256];
@@ -657,6 +704,8 @@ std::string createAcceptRule(const std::string &id,
     std::string sourceAddr;
     std::string loAddr;
 
+    // We need to add -m <PROTOCOL> because it's automatically added by
+    // iptables. If omitted, we won't be able to match the rule for deletion.
     std::string baseRule("DobbyInputChain "
                          "-s %s "                       // container address
                          "-d %s "                       // localhost address
@@ -684,8 +733,9 @@ std::string createAcceptRule(const std::string &id,
     snprintf(buf, sizeof(buf), baseRule.c_str(),
              sourceAddr.c_str(),
              loAddr.c_str(),
-             protocol.c_str(), protocol.c_str(),
-             portNumber.c_str(),
+             portForward.protocol.c_str(),
+             portForward.protocol.c_str(),
+             portForward.port.c_str(),
              vethName.c_str(),
              id.c_str());
 

@@ -36,10 +36,15 @@
 
 // -----------------------------------------------------------------------------
 /**
- *  @namespace PortForwarding TODO: add loports
+ *  @namespace PortForwarding
  *
- *  @brief Used to add iptables firewall rules to allow containered processes
- *  to run servers.
+ *  @brief Used to add iptables firewall rules to allow port forwarding between
+ *  the container and the host.
+ *
+ *  Has the ability to both add rules to forward ports from container to host
+ *  and from host to container.
+ *
+ *  @see the plugin's README.md for more details on usage.
  *
  *  This adds the necessary rules to iptables when the container is started and
  *  deletes them again when the container is stopped.  All the rules are tagged
@@ -52,55 +57,67 @@ namespace PortForwarding
 bool addPortForwards(const std::shared_ptr<Netfilter> &netfilter,
                      const std::shared_ptr<NetworkingHelper> &helper,
                      const std::string &containerId,
-                     rt_defs_plugins_networking_data_port_forwarding *portForwards);
+                     rt_defs_plugins_networking_data_port_forwarding *portsConfig);
 
 bool removePortForwards(const std::shared_ptr<Netfilter> &netfilter,
                         const std::shared_ptr<NetworkingHelper> &helper,
                         const std::string &containerId,
-                        rt_defs_plugins_networking_data_port_forwarding *portForwards);
+                        rt_defs_plugins_networking_data_port_forwarding *portsConfig);
 };
+
+typedef struct PortForward
+{
+    std::string protocol;
+    std::string port;
+} PortForward;
+
+typedef struct PortForwards
+{
+    std::vector<struct PortForward> hostToContainer;
+    std::vector<struct PortForward> containerToHost;
+    bool isValid;
+} PortForwards;
+
+std::string parseProtocol(const std::string &protocol);
+PortForwards parsePortsConfig(rt_defs_plugins_networking_data_port_forwarding *portsConfig);
 
 std::vector<Netfilter::RuleSet> constructRules(const std::shared_ptr<NetworkingHelper> &helper,
                                                const std::string &containerId,
-                                               rt_defs_plugins_networking_data_port_forwarding *portForwards,
+                                               const PortForwards &portForwards,
                                                const int ipVersion);
 
 bool constructHostToContainerRules(std::vector<Netfilter::RuleSet> &ruleSets,
                                    const std::string &containerId,
                                    const std::string &containerAddress,
-                                   rt_defs_plugins_networking_data_port_forwarding_host_to_container_element **ports,
-                                   size_t len, const int ipVersion);
+                                   const std::vector<struct PortForward> &ports,
+                                   const int ipVersion);
 
-std::string createPreroutingRule(const std::string &id,
-                                 const std::string &protocol,
+std::string createPreroutingRule(const PortForward &portForward,
+                                 const std::string &id,
                                  const std::string &ipAddress,
-                                 const std::string &portNumber,
                                  const int ipVersion);
 
-std::string createForwardingRule(const std::string &id,
-                                 const std::string &protocol,
+std::string createForwardingRule(const PortForward &portForward,
+                                 const std::string &id,
                                  const std::string &ipAddress,
-                                 const std::string &portNumber,
                                  const int ipVersion);
 
 bool constructContainerToHostRules(std::vector<Netfilter::RuleSet> &ruleSets,
                                    const std::string &containerId,
                                    const std::string &containerAddress,
                                    const std::string &vethName,
-                                   rt_defs_plugins_networking_data_port_forwarding_container_to_host_element **ports,
-                                   size_t len, const int ipVersion);
+                                   const std::vector<struct PortForward> &ports,
+                                   const int ipVersion);
 
-std::string createDnatRule(const std::string &id,
-                           const std::string &protocol,
+std::string createDnatRule(const PortForward &portForward,
+                           const std::string &id,
                            const std::string &ipAddress,
-                           const std::string &portNumber,
                            const int ipVersion);
 
-std::string createAcceptRule(const std::string &id,
-                             const std::string &protocol,
+std::string createAcceptRule(const PortForward &portForward,
+                             const std::string &id,
                              const std::string &ipAddress,
                              const std::string &vethName,
-                             const std::string &portNumber,
                              const int ipVersion);
 
 #endif // !defined(PORTFORWARDING_H)

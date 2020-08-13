@@ -18,6 +18,7 @@
 import test_utils
 from time import sleep
 import subprocess
+from os.path import basename
 
 # in case we would like to change container name
 container_name = "network1"
@@ -83,6 +84,10 @@ def execute_test():
     #   }
     #
 
+    # netcat is not available on RDK builds, skip test
+    if test_utils.selected_platform == test_utils.Platforms.xi_6:
+        return test_utils.print_unsupported_platform(basename(__file__), test_utils.selected_platform)
+
     output_table = []
 
     with test_utils.dobby_daemon(), netcat_listener() as nc, test_utils.untar_bundle(container_name) as bundle_path:
@@ -119,10 +124,5 @@ def execute_test():
 
 if __name__ == "__main__":
     test_utils.parse_arguments(__file__)
-
-    # netcat is not available on RDK builds, skip test
-    if test_utils.selected_platform == test_utils.Platforms.xi_6:
-        test_utils.print_log("netcat not available, skipping test", test_utils.Severity.warning)
-        exit()
 
     execute_test()

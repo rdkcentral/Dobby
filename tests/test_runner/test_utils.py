@@ -76,7 +76,8 @@ class dobby_daemon:
                                          "--noconsole"
                                         ],
                                         universal_newlines=True,
-                                        stdout=subprocess.PIPE)
+                                        stdout=subprocess.PIPE,
+                                        stderr=subprocess.PIPE)
         sleep(1) # give DobbyDaemon time to initialise
 
     def __enter__(self):
