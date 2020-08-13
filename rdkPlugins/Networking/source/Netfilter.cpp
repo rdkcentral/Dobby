@@ -858,7 +858,7 @@ bool Netfilter::deleteRules(const RuleSet &ruleSet, const int ipVersion)
             }
             else
             {
-                AI_LOG_WARN("failed to find rule '%s' to delete", rule.c_str());
+                AI_LOG_DEBUG("failed to find rule '%s' to delete", rule.c_str());
             }
         }
     }

@@ -37,7 +37,7 @@ public:
     ~NetworkingHelper();
 
 public:
-    bool setAddresses(in_addr_t addr);
+    bool storeContainerInterface(in_addr_t addr, const std::string &vethName);
 
     bool ipv4() const;
     in_addr_t ipv4Addr() const;
@@ -46,6 +46,8 @@ public:
     bool ipv6() const;
     struct in6_addr ipv6Addr() const;
     std::string ipv6AddrStr() const;
+
+    std::string vethName() const;
 
 public:
     static struct in6_addr in6addrCreate(const in_addr_t inaddr);
@@ -58,6 +60,8 @@ private:
     bool mIpv6Enabled;
     struct in6_addr mIpv6Addr;
     std::string mIpv6AddrStr;
+
+    std::string mVethName;
 };
 
 // -----------------------------------------------------------------------------

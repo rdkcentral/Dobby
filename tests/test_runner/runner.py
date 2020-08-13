@@ -24,6 +24,7 @@ import bundle_generation
 import plugin_launcher
 import thunder_plugin
 import gui_containers
+import network_tests
 
 from time import sleep
 
@@ -34,7 +35,8 @@ supported_tests = [basic_sanity_tests,
                    bundle_generation,
                    plugin_launcher,
                    thunder_plugin,
-                   gui_containers]
+                   gui_containers,
+                   network_tests]
 
 
 def run_all_tests():

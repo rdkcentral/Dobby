@@ -27,7 +27,7 @@ add_library( ${PROJECT_NAME}
         source/Netfilter.cpp
         source/DnsmasqSetup.cpp
         source/NetworkingHelper.cpp
-        source/HolePuncher.cpp
+        source/PortForwarding.cpp
 
         # proxy to talk to DobbyDaemon
         ../Common/source/DobbyRdkPluginProxy.cpp

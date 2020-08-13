@@ -196,19 +196,41 @@
                         "dnsmasq": {
                             "type": "boolean"
                         },
-                        "holes": {
-                            "type": "array",
-                            "items": {
-                                "type": "object",
-                                "required": [
-                                    "port"
-                                ],
-                                "properties": {
-                                    "port": {
-                                        "$ref": "defs.json#/definitions/uint16"
-                                    },
-                                    "protocol": {
-                                        "type": "string"
+                        "portForwarding": {
+                            "type": "object",
+                            "properties": {
+                                "hostToContainer": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "object",
+                                        "required": [
+                                            "port"
+                                        ],
+                                        "properties": {
+                                            "port": {
+                                                "$ref": "defs.json#/definitions/uint16"
+                                            },
+                                            "protocol": {
+                                                "type": "string"
+                                            }
+                                        }
+                                    }
+                                },
+                                "containerToHost": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "object",
+                                        "required": [
+                                            "port"
+                                        ],
+                                        "properties": {
+                                            "port": {
+                                                "$ref": "defs.json#/definitions/uint16"
+                                            },
+                                            "protocol": {
+                                                "type": "string"
+                                            }
+                                        }
                                     }
                                 }
                             }

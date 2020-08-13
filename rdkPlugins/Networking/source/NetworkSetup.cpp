@@ -524,8 +524,8 @@ bool saveContainerAddress(const std::shared_ptr<DobbyRdkPluginUtils> &utils,
         return false;
     }
 
-    // set addresses in helper
-    if (!helper->setAddresses(ipAddress))
+    // store addresses and veth name in helper
+    if (!helper->storeContainerInterface(ipAddress, vethName))
     {
         AI_LOG_ERROR_EXIT("failed to set ip addresses");
         return false;
