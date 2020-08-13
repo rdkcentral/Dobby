@@ -101,11 +101,15 @@ public:
     int32_t startContainerFromSpec(const ContainerId& id,
                                    const std::string& jsonSpec,
                                    const std::list<int>& files,
-                                    const std::string& command = "");
+                                   const std::string& command,
+                                   const std::string& displaySocket);
+
     int32_t startContainerFromBundle(const ContainerId& id,
                                      const std::string& bundlePath,
                                      const std::list<int>& files,
-                                    const std::string& command = "");
+                                     const std::string& command,
+                                     const std::string& displaySocket);
+
     bool stopContainer(int32_t cd, bool withPrejudice);
 
     bool pauseContainer(int32_t cd);
@@ -144,13 +148,15 @@ private:
                         const std::unique_ptr<DobbyContainer> &container,
                         const std::list<int> &files);
 
-    std::string createCustomArgsConfig(const std::unique_ptr<DobbyContainer> &container,
-                                       const std::string &command);
+    std::string createCustomConfig(const std::unique_ptr<DobbyContainer> &container,
+                                   const std::string &command,
+                                   const std::string &displaySocket);
 
     bool createAndStartContainer(const ContainerId& id,
                                  const std::unique_ptr<DobbyContainer>& container,
                                  const std::list<int>& files,
-                                 const std::string& command = "");
+                                 const std::string& command = "",
+                                 const std::string& displaySocket = "");
 
     bool restartContainer(const ContainerId& id,
                           const std::unique_ptr<DobbyContainer>& container);

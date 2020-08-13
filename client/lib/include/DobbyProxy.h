@@ -75,18 +75,21 @@ public:
     int32_t startContainerFromSpec(const std::string& id,
                                    const std::string& jsonSpec,
                                    const std::list<int>& files,
-                                    const std::string& command = "") const override;
+                                   const std::string& command = "",
+                                   const std::string& displaySocket = "") const override;
 
     int32_t startContainerFromSpec(const std::string& id,
                                    const Json::Value& spec,
                                    const std::list<int>& files,
-                                   const std::string& command = "") const override;
+                                   const std::string& command = "",
+                                   const std::string& displaySocket = "") const override;
 
 
     int32_t startContainerFromBundle(const std::string& id,
                                      const std::string& bundlePath,
                                      const std::list<int>& files,
-                                     const std::string& command = "") const override;
+                                     const std::string& command = "",
+                                     const std::string& displaySocket = "") const override;
 
     bool stopContainer(int32_t cd, bool withPrejudice) const override;
 

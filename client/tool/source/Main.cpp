@@ -65,27 +65,6 @@ static std::string gDBusService("com.sky.dobby.test");
 static char** gCmdlineArgv = NULL;
 static int gCmdlineArgc = 0;
 
-
-// -----------------------------------------------------------------------------
-/**
- * @brief Opens the current network namespace
- *
- *
- *
- */
-static int openHostNetworkNamespace(const std::shared_ptr<const IReadLineContext>& readLine)
-{
-    int netns = open("/proc/self/ns/net", O_CLOEXEC | O_RDONLY);
-    if (netns < 0)
-    {
-        readLine->printLnError("failed to open netns (%d - %s)", errno,
-                               strerror(errno));
-        return -1;
-    }
-
-    return netns;
-}
-
 // -----------------------------------------------------------------------------
 /**
  * @brief Opens a connection to the Hamiltron WindowManager
@@ -209,9 +188,9 @@ static void stopCommand(const std::shared_ptr<IDobbyProxy>& dobbyProxy,
  *
  *
  */
-static void startCommand(const std::shared_ptr<IDobbyProxy>& dobbyProxy,
-                         const std::shared_ptr<const IReadLineContext>& readLine,
-                         const std::vector<std::string>& args)
+static void startCommand(const std::shared_ptr<IDobbyProxy> &dobbyProxy,
+                         const std::shared_ptr<const IReadLineContext> &readLine,
+                         const std::vector<std::string> &args)
 {
     if (args.size() < 2 || args[0].empty() || args[1].empty())
     {
@@ -221,25 +200,31 @@ static void startCommand(const std::shared_ptr<IDobbyProxy>& dobbyProxy,
 
     int i = 0;
     std::list<int> files;
+    std::string displaySocketPath;
 
-    // Extract any options
+    // Command will be in the form "start --<option1> --<optionN> <id> <specfile> <commands>"
     while (i < args.size() && args[i].c_str()[0] == '-')
     {
         if (args[i] == "--hamiltron")
         {
-            int fd = openHamiltronConnection(readLine);
-            if (fd < 0)
+            int hamiltronFd = openHamiltronConnection(readLine);
+            if (hamiltronFd < 0)
                 return;
-
-            files.push_back(fd);
+            files.push_back(hamiltronFd);
         }
-        else if (args[i] == "--netns")
+        else if (args[i] == "--westeros-socket")
         {
-            int fd = openHostNetworkNamespace(readLine);
-            if (fd < 0)
-                return;
+            // TODO:: This won't work if the arg is in the form --westeros-socket=/path/to/socket
+            // The next arg should be the path to socket
+            i++;
 
-            files.push_back(fd);
+            char *westerosPath = realpath(args[i].c_str(), NULL);
+            if (westerosPath == nullptr)
+            {
+                readLine->printLnError("Path '%s' does not exist", args[i].c_str());
+                return;
+            }
+            displaySocketPath = westerosPath;
         }
         else
         {
@@ -304,17 +289,16 @@ static void startCommand(const std::shared_ptr<IDobbyProxy>& dobbyProxy,
         ssize_t length = file.tellg();
         file.seekg(0, std::ifstream::beg);
 
-        char* buffer = new char[length];
+        char *buffer = new char[length];
         file.read(buffer, length);
 
         std::string jsonSpec(buffer, length);
-        delete [] buffer;
-
-        cd = dobbyProxy->startContainerFromSpec(id, jsonSpec, files, command);
+        delete[] buffer;
+        cd = dobbyProxy->startContainerFromSpec(id, jsonSpec, files, command, displaySocketPath);
     }
     else
     {
-        cd = dobbyProxy->startContainerFromBundle(id, path, files, command);
+        cd = dobbyProxy->startContainerFromBundle(id, path, files, command, displaySocketPath);
     }
 
     if (cd < 0)
@@ -773,7 +757,8 @@ static void initCommands(const std::shared_ptr<IReadLine>& readLine,
                          "Starts a container using the given spec file or bundle path. Can optionally "
                          "specify the command to run inside the contianer. Any arguments after command "
                          "are treated as arguments to the command.\n",
-                         "  --hamiltron    Create a container with a hamiltron connection.\n");
+                         "  --hamiltron          Create a container with a hamiltron connection.\n"
+                         "  --westeros-socket    Mount the specified westeros socket into the container\n");
 
     readLine->addCommand("stop",
                          std::bind(stopCommand, dobbyProxy, std::placeholders::_1, std::placeholders::_2),
