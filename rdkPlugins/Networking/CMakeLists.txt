@@ -19,7 +19,7 @@ project(NetworkingPlugin)
 
 
 add_library( ${PROJECT_NAME}
-        MODULE
+        SHARED
         source/NetworkingPlugin.cpp
         source/NetworkSetup.cpp
         source/BridgeInterface.cpp
@@ -36,6 +36,7 @@ add_library( ${PROJECT_NAME}
 install(
         TARGETS ${PROJECT_NAME}
         LIBRARY DESTINATION lib/plugins/dobby
+        NAMELINK_SKIP
 )
 
 target_link_libraries( ${PROJECT_NAME}
@@ -59,6 +60,8 @@ target_include_directories( ${PROJECT_NAME}
         $<TARGET_PROPERTY:IpcService,INTERFACE_INCLUDE_DIRECTORIES>
 
 )
+
+set_target_properties( ${PROJECT_NAME} PROPERTIES SOVERSION 1 )
 
 # uncomment to use workaround functions for libnl bridge creation
 #target_compile_definitions( ${PROJECT_NAME} PRIVATE ENABLE_LIBNL_BRIDGE_WORKAROUND )
