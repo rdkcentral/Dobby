@@ -43,12 +43,6 @@ Netfilter::RuleSet constructRules(const std::string &containerId, const int ipVe
 {
     AI_LOG_FN_ENTRY();
 
-#if defined(DEV_VM)
-    const std::string id(containerId);
-#else
-    const std::string id("\"" + containerId + "\"");
-#endif
-
     // the following rule set was obtained by looking at what libvirt had setup
     // for the NAT connection, we're just replicating
     char buf[256];
@@ -61,7 +55,7 @@ Netfilter::RuleSet constructRules(const std::string &containerId, const int ipVe
                         "-i " BRIDGE_NAME " "
                         "-p %s "
                         "-m %s --dport 53 "
-                        "-m comment --comment " + id + " "
+                        "-m comment --comment " + containerId + " "
                         "-j DNAT --to-destination %s:53");
 
     // allow DNS packets from containers
@@ -71,7 +65,7 @@ Netfilter::RuleSet constructRules(const std::string &containerId, const int ipVe
                            "-i " BRIDGE_NAME " "
                            "-p %s "
                            "-m %s --dport 53 "
-                           "-m comment --comment " + id + " -j ACCEPT");
+                           "-m comment --comment " + containerId + " -j ACCEPT");
 
     if (ipVersion == AF_INET)
     {
