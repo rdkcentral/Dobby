@@ -86,8 +86,8 @@ Vagrant.configure("2") do |config|
 
         figlet GCC
         # Use GCC/G++ 6.4 as the default instead of 5.4 to match build environment
-        add-apt-repository ppa:jonathonf/gcc
-        apt update && apt install gcc-6 g++-6
+        add-apt-repository -y ppa:jonathonf/gcc
+        apt update && apt install -y gcc-6 g++-6
         update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-6 10
         update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-6 10
 
