@@ -675,6 +675,71 @@ static void bundleCommand(const std::shared_ptr<IDobbyProxy>& dobbyProxy,
 }
 #endif // (AI_BUILD_TYPE == AI_DEBUG)
 
+#if (AI_ENABLE_TRACING)
+// -----------------------------------------------------------------------------
+/**
+ * @brief
+ *
+ *
+ *
+ */
+static void traceStartCommand(const std::shared_ptr<IDobbyProxy>& dobbyProxy,
+                              const std::shared_ptr<const IReadLineContext>& readLine,
+                              const std::vector<std::string>& args)
+{
+    if (args.size() < 1)
+    {
+        readLine->printLnError("must provide at least one arg; <file>");
+        return;
+    }
+
+    std::string path = args[0];
+    if (path.empty())
+    {
+        readLine->printLnError("invalid trace file path '%s'", path.c_str());
+        return;
+    }
+
+    // open / create the trace file
+    int fd = open(path.c_str(), O_CLOEXEC | O_CREAT | O_TRUNC | O_RDWR, 0644);
+    if (fd < 0)
+    {
+        readLine->printLnError("Failed to open / create trace file 's' (%d - %s)",
+                               path.c_str(), errno, strerror(errno));
+        return;
+    }
+
+    if (dobbyProxy->startInProcessTracing(fd, ""))
+    {
+        readLine->printLn("started tracing to file '%s'", path.c_str());
+    }
+    else
+    {
+        readLine->printLnError("failed to start tracing, check Dobby log for details");
+    }
+
+    close(fd);
+}
+
+// -----------------------------------------------------------------------------
+/**
+ * @brief
+ *
+ *
+ *
+ */
+static void traceStopCommand(const std::shared_ptr<IDobbyProxy>& dobbyProxy,
+                             const std::shared_ptr<const IReadLineContext>& readLine,
+                             const std::vector<std::string>& args)
+{
+    (void) readLine;
+    (void) args;
+
+    dobbyProxy->stopInProcessTracing();
+}
+
+#endif // (AI_ENABLE_TRACING)
+
 // -----------------------------------------------------------------------------
 /**
  * @brief
@@ -809,6 +874,22 @@ static void initCommands(const std::shared_ptr<IReadLine>& readLine,
                          "Creates a bundle containing rootfs and config.json for runc\n"
                          "but doesn't actually run it.  Useful for debugging runc issues\n",
                          "\n");
+#if (AI_ENABLE_TRACING)
+    readLine->addCommand("trace-start",
+                         std::bind(traceStartCommand, dobbyProxy, std::placeholders::_1, std::placeholders::_2),
+                         "trace-start <file> [options...]",
+                         "Starts the 'in process' tracing of DobbyDaemon, storing the trace\n"
+                         "in <file>. The trace is in Perfetto format (https://perfetto.dev/) \n",
+                         "  --filter=STR   A category filter string (not yet implemented)\n");
+
+    readLine->addCommand("trace-stop",
+                         std::bind(traceStopCommand, dobbyProxy, std::placeholders::_1, std::placeholders::_2),
+                         "trace-stop",
+                         "Stops the 'in process' running on the DobbyDaemon.  This doesn't\n"
+                         "stop any system level tracing enabled via the traced daemon\n",
+                         "\n");
+#endif // (AI_ENABLE_TRACING)
+
 #endif // (AI_BUILD_TYPE == AI_DEBUG)
 
     readLine->addCommand("set-dbus",
@@ -942,7 +1023,7 @@ int main(int argc, char * argv[])
     parseArgs(argc, argv);
 
     // Setup the AI logging stuff
-    AICommon::initLogging(nullptr);
+    // AICommon::initLogging(nullptr);
 
     // Create the ReadLine object
     std::shared_ptr<IReadLine> readLine = IReadLine::create();

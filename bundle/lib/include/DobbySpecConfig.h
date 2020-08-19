@@ -144,6 +144,7 @@ private:
     JSON_FIELD_PROCESSOR(processLegacyPlugins);
     JSON_FIELD_PROCESSOR(processMemLimit);
     JSON_FIELD_PROCESSOR(processGpu);
+    JSON_FIELD_PROCESSOR(processVpu);
     JSON_FIELD_PROCESSOR(processDbus);
     JSON_FIELD_PROCESSOR(processSyslog);
     JSON_FIELD_PROCESSOR(processCpu);
@@ -173,8 +174,16 @@ private:
     void enableRdkPlugin(ctemplate::TemplateDictionary*& subDict, const std::string& pluginName, const bool required);
 
 private:
+    static void addGpuDevNodes(const std::shared_ptr<const IDobbySettings::HardwareAccessSettings> &settings,
+                               ctemplate::TemplateDictionary *dict);
+
+    static  void addVpuDevNodes(const std::shared_ptr<const IDobbySettings::HardwareAccessSettings> &settings,
+                                ctemplate::TemplateDictionary *dict);
+
+private:
     const std::shared_ptr<IDobbyUtils> mUtilities;
-    const std::shared_ptr<const IDobbySettings> mSettings;
+    const std::shared_ptr<const IDobbySettings::HardwareAccessSettings> mGpuSettings;
+    const std::shared_ptr<const IDobbySettings::HardwareAccessSettings> mVpuSettings;
 
 private:
     bool mValid;

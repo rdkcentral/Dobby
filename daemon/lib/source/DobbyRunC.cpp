@@ -2,7 +2,7 @@
 * If not stated otherwise in this file or this component's LICENSE file the
 * following copyright and licenses apply:
 *
-* Copyright 2016 Sky UK
+* Copyright 2020 RDK Management
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@
 #include "DobbyBundle.h"
 #include "DobbyStream.h"
 #include <Logging.h>
+#include <Tracing.h>
 #include <FileUtilities.h>
 
 #include <stdlib.h>
@@ -98,6 +99,8 @@ pid_t DobbyRunC::run(const ContainerId& id,
 {
     AI_LOG_FN_ENTRY();
 
+    AI_TRACE_EVENT("Dobby", "runc::run");
+
     // run the following command "runc run --bundle <dir> <id>"
     pid_t pid = forkExecRunC({ "run", "--bundle", bundle->path().c_str(), id.c_str() },
                              { },
@@ -142,6 +145,8 @@ std::pair<pid_t, pid_t> DobbyRunC::create(const ContainerId &id,
                                           const std::string& customConfigPath /*= ""*/) const
 {
     AI_LOG_FN_ENTRY();
+
+    AI_TRACE_EVENT("Dobby", "runc::create");
 
     // create a path to the pid file to write to
     const std::string pidFilePath(bundle->path() + "/container.pid");
@@ -236,6 +241,8 @@ bool DobbyRunC::start(const ContainerId& id, const std::shared_ptr<const IDobbyS
 {
     AI_LOG_FN_ENTRY();
 
+    AI_TRACE_EVENT("Dobby", "runc::start");
+
     // run the following command "runc start <id>"
     pid_t pid = forkExecRunC({"start", id.c_str()},
                              {},
@@ -285,6 +292,8 @@ bool DobbyRunC::start(const ContainerId& id, const std::shared_ptr<const IDobbyS
 bool DobbyRunC::kill(const ContainerId& id, int signal, bool all) const
 {
     AI_LOG_FN_ENTRY();
+
+    AI_TRACE_EVENT("Dobby", "runc::kill");
 
     // convert the signal to string
     std::string strSignal;
@@ -362,6 +371,8 @@ bool DobbyRunC::pause(const ContainerId& id) const
 {
     AI_LOG_FN_ENTRY();
 
+    AI_TRACE_EVENT("Dobby", "runc::pause");
+
     // run the following command "runc pause <id>"
     pid_t pid = forkExecRunC( { "pause", id.c_str() }, { } );
     if (pid <= 0)
@@ -404,6 +415,8 @@ bool DobbyRunC::pause(const ContainerId& id) const
 bool DobbyRunC::resume(const ContainerId& id) const
 {
     AI_LOG_FN_ENTRY();
+
+    AI_TRACE_EVENT("Dobby", "runc::resume");
 
     // run the following command "runc pause <id>"
     pid_t pid = forkExecRunC( { "resume", id.c_str() }, { } );
@@ -574,6 +587,9 @@ bool DobbyRunC::destroy(const ContainerId& id, const std::shared_ptr<const IDobb
 {
     AI_LOG_FN_ENTRY();
 
+    AI_TRACE_EVENT("Dobby", "runc::destroy");
+
+    // run the following command "runc delete <id>"
     // Start by being nice and issuing a "normal" delete
     pid_t pid = forkExecRunC({ "delete", id.c_str() },
                              { }, {}, console, console);
@@ -698,6 +714,8 @@ DobbyRunC::ContainerStatus DobbyRunC::state(const ContainerId& id) const
 {
     AI_LOG_FN_ENTRY();
 
+    AI_TRACE_EVENT("Dobby", "runc::state");
+
     // buffer to store the output
     std::shared_ptr<DobbyBufferStream> bufferStream =
         std::make_shared<DobbyBufferStream>();
@@ -786,6 +804,8 @@ DobbyRunC::ContainerStatus DobbyRunC::state(const ContainerId& id) const
 std::map<ContainerId, DobbyRunC::ContainerStatus> DobbyRunC::list() const
 {
     AI_LOG_FN_ENTRY();
+
+    AI_TRACE_EVENT("Dobby", "runc::list");
 
     // buffer to store the output
     std::shared_ptr<DobbyBufferStream> bufferStream =

@@ -49,8 +49,14 @@ target_link_libraries(DobbyDaemon
         IpcService
         AppInfraLogging
         AppInfraCommon
-
+        AppInfraTracing
 )
+
+if (AI_ENABLE_TRACING)
+        target_link_libraries(DobbyDaemon
+                DobbyTracing
+        )
+endif()
 
 target_compile_definitions(
         DobbyDaemon

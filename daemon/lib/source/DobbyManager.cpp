@@ -40,22 +40,20 @@
 
 #include "IDobbySysHook.h"
 
+// TODO:: Remove syshooks...
+#include "syshooks/LocalTimeHook.h"
+#include "syshooks/GpuMemoryHook.h"
 #include "syshooks/RtSchedulingHook.h"
-#if !defined(RDK)
-#  include "syshooks/GpuMemoryHook.h"
-#endif
 
 #include <DobbyProtocol.h>
 #include <Logging.h>
-#include <FileUtilities.h>
+#include <Tracing.h>
 
 #include <rt_dobby_schema.h>
 
-#include <stdio.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <signal.h>
-#include <strings.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
@@ -310,17 +308,23 @@ void DobbyManager::setupSystemHooks()
 {
     AI_LOG_FN_ENTRY();
 
-#if !defined(RDK)
     // setup the gpu memory limiter system hook
     std::shared_ptr<GpuMemoryHook> gpuMemory =
         std::make_shared<GpuMemoryHook>(mEnvironment, mUtilities);
     mSysHooks.push_back(gpuMemory);
-#endif
 
     // setup the rt scheduling system hook
     std::shared_ptr<RtSchedulingHook> rtScheduling =
         std::make_shared<RtSchedulingHook>();
     mSysHooks.push_back(rtScheduling);
+
+    // TODO:: Remove/replace
+#if defined(RDK)
+    // on RDK we map in the /etc/localtime symlink from the system
+    std::shared_ptr<LocalTimeHook> localTimeHook =
+            std::make_shared<LocalTimeHook>(mUtilities);
+    mSysHooks.push_back(localTimeHook);
+#endif
 
     AI_LOG_FN_EXIT();
 }
@@ -1935,16 +1939,22 @@ bool DobbyManager::onPostConstructionHook(const ContainerId &id,
 {
     AI_LOG_FN_ENTRY();
 
+    AI_TRACE_EVENT("Dobby", "postConstruction");
+
     // optimist
     bool success = true;
 
     // execute the system hooks first
-    SysHookFn sysHookFn = std::bind(&IDobbySysHook::postConstruction,
-                                    std::placeholders::_1, // pointer to hook class
-                                    id,                    // container id
-                                    startState,            // start-up state
-                                    container->config,     // container config
-                                    container->rootfs);    // container rootfs
+    SysHookFn sysHookFn =
+            [&](IDobbySysHook *sysHook)
+            {
+                AI_TRACE_EVENT("Dobby", "syshook::postConstruction",
+                               "name", sysHook->hookName());
+
+                return sysHook->postConstruction(id, startState,
+                                                 container->config,
+                                                 container->rootfs);
+            };
 
     if (executeSysHooks(container, HookType::PostConstruction, sysHookFn) == false)
     {
@@ -1992,6 +2002,8 @@ bool DobbyManager::onPreStartHook(const ContainerId &id,
 {
     AI_LOG_FN_ENTRY();
 
+    AI_TRACE_EVENT("Dobby", "preStart");
+
     // the first thing to check is if the container has got the curse of death,
     // this can happen if DobbyManager::stop was called after the
     // container was constructed but before we hit this point.  In such cases
@@ -2005,12 +2017,17 @@ bool DobbyManager::onPreStartHook(const ContainerId &id,
     bool success = true;
 
     // execute the system hooks first
-    SysHookFn sysHookFn = std::bind(&IDobbySysHook::preStart,
-                                    std::placeholders::_1,   // pointer to hook class
-                                    id,                      // container id
-                                    container->containerPid, // container pid
-                                    container->config,       // container config
-                                    container->rootfs);      // container rootfs
+    SysHookFn sysHookFn =
+            [&](IDobbySysHook *sysHook)
+            {
+                AI_TRACE_EVENT("Dobby", "syshook::preStart",
+                               "name", sysHook->hookName());
+
+                return sysHook->preStart(id,
+                                         container->containerPid,
+                                         container->config,
+                                         container->rootfs);
+            };
 
     if (executeSysHooks(container, HookType::PreStart, sysHookFn) == false)
     {
@@ -2060,13 +2077,19 @@ bool DobbyManager::onPostStartHook(const ContainerId &id,
 {
     AI_LOG_FN_ENTRY();
 
-    // execute the system hooks first
-    SysHookFn sysHookFn = std::bind(&IDobbySysHook::postStart,
-                                    std::placeholders::_1,   // pointer to hook class
-                                    id,                      // container id
-                                    container->containerPid, // container pid
-                                    container->config,       // container config
-                                    container->rootfs);      // container rootfs
+    AI_TRACE_EVENT("Dobby", "postStart");
+
+    SysHookFn sysHookFn =
+            [&](IDobbySysHook *sysHook)
+            {
+                AI_TRACE_EVENT("Dobby", "syshook::postStart",
+                               "name", sysHook->hookName());
+
+                return sysHook->postStart(id,
+                                          container->containerPid,
+                                          container->config,
+                                          container->rootfs);
+            };
 
     if (executeSysHooks(container, HookType::PostStart, sysHookFn) == false)
     {
@@ -2111,6 +2134,8 @@ bool DobbyManager::onPostStopHook(const ContainerId &id,
 {
     AI_LOG_FN_ENTRY();
 
+    AI_TRACE_EVENT("Dobby", "postStop");
+
     // once we're here we mark the container as Stopping, however the container
     // object is not removed from the list until the runc parent process has
     // actually terminated
@@ -2125,12 +2150,16 @@ bool DobbyManager::onPostStopHook(const ContainerId &id,
                      id.c_str());
     }
 
-    // execute the system hooks next
-    SysHookFn sysHookFn = std::bind(&IDobbySysHook::postStop,
-                                    std::placeholders::_1, // pointer to hook class
-                                    id,                    // container id
-                                    container->config,     // container config
-                                    container->rootfs);    // container rootfs
+    SysHookFn sysHookFn =
+            [&](IDobbySysHook *sysHook)
+            {
+                AI_TRACE_EVENT("Dobby", "syshook::postStop",
+                               "name", sysHook->hookName());
+
+                return sysHook->postStop(id,
+                                         container->config,
+                                         container->rootfs);
+            };
 
     if (executeSysHooks(container, HookType::PostStop, sysHookFn) == false)
     {
@@ -2160,6 +2189,8 @@ bool DobbyManager::onPreDestructionHook(const ContainerId &id,
 {
     AI_LOG_FN_ENTRY();
 
+    AI_TRACE_EVENT("Dobby", "preDestruction");
+
     // execute the plugin hooks first
     if (mPlugins->executePreDestructionHooks(container->config->legacyPlugins(),
                                              id,
@@ -2170,11 +2201,16 @@ bool DobbyManager::onPreDestructionHook(const ContainerId &id,
     }
 
     // execute the system hooks next
-    SysHookFn sysHookFn = std::bind(&IDobbySysHook::preDestruction,
-                                    std::placeholders::_1, // pointer to hook class
-                                    id,                    // container id
-                                    container->config,     // container config
-                                    container->rootfs);    // container bundle
+    SysHookFn sysHookFn =
+            [&](IDobbySysHook *sysHook)
+            {
+                AI_TRACE_EVENT("Dobby", "syshook::preDestruction",
+                               "name", sysHook->hookName());
+
+                return sysHook->preDestruction(id,
+                                               container->config,
+                                               container->rootfs);
+            };
 
     if (executeSysHooks(container, HookType::PreDestruction, sysHookFn) == false)
     {
@@ -2201,6 +2237,8 @@ bool DobbyManager::onPreDestructionHook(const ContainerId &id,
 void DobbyManager::onChildExit()
 {
     AI_LOG_FN_ENTRY();
+
+    AI_LOG_INFO("detected child terminated signal");
 
     // take the lock as we're being called from the signal monitor thread
     std::lock_guard<std::mutex> locker(mLock);

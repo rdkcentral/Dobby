@@ -23,17 +23,13 @@
 
 #include "DobbyConfig.h"
 
+#include <atomic>
 #include <glob.h>
 #include <sys/stat.h>
 
 
 #define OCI_VERSION_CURRENT         "1.0.2"         // currently used version of OCI in bundles
 #define OCI_VERSION_CURRENT_DOBBY   "1.0.2-dobby"   // currently used version of extended OCI in bundles
-
-std::mutex DobbyConfig::mGpuDevNodesLock;
-std::string DobbyConfig::mGpuDevNodes;
-std::string DobbyConfig::mGpuDevNodesPerms;
-bool DobbyConfig::mInitialisedGpuDevNodes = false;
 
 /**
  *  @brief Map of RDK plugins currently in development.
@@ -56,32 +52,25 @@ const std::map<std::string, std::list<std::string>> DobbyConfig::mRdkPluginsInDe
 
 // -----------------------------------------------------------------------------
 /**
- *  @brief Populates the static strings used for setting the GPU container
- *  mappings.
+ *  @brief Takes a list of glob patterns corresponding to dev node paths and
+ *  returns a list of structs with their details.
  *
- *  This function is only expected to be run once the first time it is required,
- *  it then stores the strings in static fields and uses them for all
- *  subsequent container starts.
+ *  If the glob pattern doesn't match a device node then it is ignored, this
+ *  is not an error.
  *
  *  @param[in]  devNodes    The list of dev nodes paths (or glob patterns).
  *
  */
-void DobbyConfig::initGpuDevNodes(const std::list<std::string>& devNodes)
+std::list<DobbyConfig::DevNode> DobbyConfig::scanDevNodes(const std::list<std::string> &devNodes)
 {
-    std::lock_guard<std::mutex> locker(mGpuDevNodesLock);
-
-    // just in case we have multi-threaded container start
-    if (mInitialisedGpuDevNodes)
-    {
-        return;
-    }
+    std::list<DobbyConfig::DevNode> nodes;
 
     // sanity check any dev nodes to add
     if (devNodes.empty())
     {
-        mInitialisedGpuDevNodes = true;
-        return;
+        return nodes;
     }
+
 
     // create a glob structure to hold the list of dev nodes
     glob_t devNodeBuf;
@@ -94,10 +83,10 @@ void DobbyConfig::initGpuDevNodes(const std::list<std::string>& devNodes)
 
     if (devNodeBuf.gl_pathc == 0)
     {
-        AI_LOG_ERROR("no GPU dev nodes found despite some being listed in the "
+        AI_LOG_ERROR("no dev nodes found despite some being listed in the "
                     "JSON config file");
         globfree(&devNodeBuf);
-        return;
+        return nodes;
     }
 
     struct stat buf;
@@ -126,42 +115,17 @@ void DobbyConfig::initGpuDevNodes(const std::list<std::string>& devNodes)
             continue;
 #endif
 
-        AI_LOG_INFO("adding gpu dev node '%s' to the template", devNode);
+        AI_LOG_INFO("found dev node '%s'", devNode);
 
-        // the following creates some json telling crun to create the nodes
-        devNodesStream << "{ \"path\": \"" << devNode << "\","
-                    << "  \"type\": \"c\","
-                    << "  \"major\": "       << major(buf.st_rdev)   << ","
-                    << "  \"minor\": "       << minor(buf.st_rdev)   << ","
-                    << "  \"fileMode\": "    << (buf.st_mode & 0666) << ","
-                    << "  \"uid\": 0,"
-                    << "  \"gid\": 0 },\n";
-
-        // and this creates the json for the devices cgroup to tell it that
-        // the graphics nodes are readable and writeable
-        devNodesPermStream << ",\n{ \"allow\": true, "
-                        <<      "\"access\": \"rw\", "
-                        <<      "\"type\": \"c\","
-                        <<      "\"major\": " << major(buf.st_rdev) << ", "
-                        <<      "\"minor\": " << minor(buf.st_rdev) << " }";
-
+        nodes.emplace_back(DevNode{ devNode,
+                                    major(buf.st_rdev),
+                                    minor(buf.st_rdev),
+                                    (buf.st_mode & 0666) });
     }
 
     globfree(&devNodeBuf);
 
-
-    // trim off the final comma (',') and newline
-    std::string devNodesString = devNodesStream.str();
-    if (!devNodesString.empty())
-        devNodesString.pop_back();
-    if (!devNodesString.empty())
-        devNodesString.pop_back();
-
-    // and finally set the global template value
-    mGpuDevNodes = devNodesString;
-    mGpuDevNodesPerms = devNodesPermStream.str();
-
-    mInitialisedGpuDevNodes = true;
+    return nodes;
 }
 
 // -----------------------------------------------------------------------------
@@ -209,7 +173,7 @@ bool DobbyConfig::addMount(const std::string& source,
     std::list<std::string> mountOptionsFinal(mountOptions);
 
     // we only support the standard flags; bind, ro, sync, nosuid, noexec, etc
-    static const std::map<unsigned long, std::string> mountFlagsNames =
+    static const std::vector<std::pair<unsigned long, std::string>> mountFlagsNames =
     {
         {   MS_BIND | MS_REC,   "rbind"         },
         {   MS_BIND,            "bind"          },
@@ -227,14 +191,13 @@ bool DobbyConfig::addMount(const std::string& source,
     };
 
     // convert the mount flags to their string equivalents
-    std::map<unsigned long, std::string>::const_iterator it = mountFlagsNames.begin();
-    for (; it != mountFlagsNames.end(); ++it)
+    for (const auto &entry : mountFlagsNames)
     {
-        const unsigned long& mountFlag = it->first;
+        const unsigned long mountFlag = entry.first;
         if ((mountFlag & mountFlags) == mountFlag)
         {
             // add options to options list to be written to the bundle config
-            mountOptionsFinal.emplace_back(it->second);
+            mountOptionsFinal.emplace_back(entry.second);
 
             // clear the mount flags bit such that we can display a warning
             // if the caller supplies a flag we don't support

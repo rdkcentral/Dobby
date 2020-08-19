@@ -79,6 +79,11 @@ private:
     std::string constructDNATRule(const ContainerId& id,
                                   const std::string &containerIp,
                                   in_port_t port) const;
+    std::string constructCONNLIMITRule(const ContainerId& id,
+                                       const std::string &containerIp,
+                                       const std::string &vethName,
+                                       in_port_t port,
+                                       int connLimit) const;
     std::string constructACCEPTRule(const ContainerId& id,
                                     const std::string &containerIp,
                                     const std::string &vethName,
@@ -88,9 +93,13 @@ private:
     const std::string mName;
     const std::shared_ptr<IDobbyUtils> mUtilities;
 
+    const bool mEnableConnLimit;
+
 private:
     enum LocalServicesPort : in_port_t
     {
+        LocalServicesNone  = 0,
+
         LocalServices1Port = 9001,
         LocalServices2Port = 9002,
         LocalServices3Port = 9003,
@@ -103,7 +112,8 @@ private:
 
     struct ServicesConfig
     {
-        LocalServicesPort asPort;
+        int connLimit = 32;
+        LocalServicesPort asPort = LocalServicesNone;
         std::set<in_port_t> additionalPorts;
         Netfilter::RuleSet nfRuleSet;
     };

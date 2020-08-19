@@ -301,6 +301,7 @@ bool DobbyBundleConfig::parseOCIConfig(const std::string& bundlePath)
 }
 
 // -----------------------------------------------------------------------------
+// TODO:: Remove this
 /**
  *  @brief Processes the logging plugin field
  *
@@ -391,6 +392,7 @@ bool DobbyBundleConfig::processLogging(const Json::Value& value)
 }
 
 // -----------------------------------------------------------------------------
+// TODO:: Remove this
 /**
  *  @brief Processes the ipc plugin field
  *
@@ -534,7 +536,8 @@ bool DobbyBundleConfig::processGpu(const Json::Value& value)
         return false;
     }
 
-    // lazily init the GPU dev nodes mapping - we used to do this at start-up
+    // TODO:: This needs to be rewritten (or just removed as GPU hook will be changed into an RDK plugin)
+    /*// lazily init the GPU dev nodes mapping - we used to do this at start-up
     // but hit an issue on broadcom platforms where the dev nodes aren't
     // created until the gpu library is used
     if (!mInitialisedGpuDevNodes)
@@ -581,7 +584,7 @@ bool DobbyBundleConfig::processGpu(const Json::Value& value)
 
             mConfig["mounts"].append(newMount);
         }
-    }
+    }*/
 
     return true;
 }

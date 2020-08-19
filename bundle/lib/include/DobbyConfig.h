@@ -152,12 +152,15 @@ protected:
                             std::shared_ptr<rt_dobby_schema> cfg,
                             const std::string& bundlePath);
 
-    static void initGpuDevNodes(const std::list<std::string>& devNodes);
+    struct DevNode
+    {
+        std::string path;
+        dev_t major;
+        dev_t minor;
+        mode_t mode;
+    };
 
-    static std::mutex mGpuDevNodesLock;
-    static bool mInitialisedGpuDevNodes;
-    static std::string mGpuDevNodes;
-    static std::string mGpuDevNodesPerms;
+    static std::list<DevNode> scanDevNodes(const std::list<std::string> &devNodes);
 
     static const std::map<std::string, std::list<std::string>> mRdkPluginsInDevelopment;
 

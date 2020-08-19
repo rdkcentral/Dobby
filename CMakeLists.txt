@@ -69,6 +69,20 @@ else()
     message( FATAL_ERROR "Unknown RDK_PLATFORM '${RDK_PLATFORM}'" )
 endif()
 
+# Option to enable / disable the Perfetto tracing support
+if( BUILD_TYPE STREQUAL "RELEASE" )
+    set( ENABLE_PERFETTO_TRACING_DEFAULT OFF )
+else()
+    set( ENABLE_PERFETTO_TRACING_DEFAULT OFF )
+endif()
+
+option( ENABLE_PERFETTO_TRACING "Enable Perfetto tracing" ${ENABLE_PERFETTO_TRACING_DEFAULT} )
+
+if( BUILD_TYPE STREQUAL "RELEASE" AND ENABLE_PERFETTO_TRACING )
+    message( WARNING "Cannot enable tracing on release builds ")
+    set( ENABLE_PERFETTO_TRACING OFF )
+endif()
+
 # Add defines for DBUS path
 add_definitions( -DDBUS_SYSTEM_ADDRESS="unix:path=/var/run/dbus/system_bus_socket" )
 
@@ -109,11 +123,28 @@ find_package( Boost REQUIRED )
 # Required for libocispec only
 find_package( yajl REQUIRED )
 
+# Set #define if tracing is enabled
+if( ENABLE_PERFETTO_TRACING )
+    find_package(PerfettoSdk REQUIRED)
+    add_definitions( -DAI_ENABLE_TRACING=1 )
+
+    # For tracing, the trace categories need to be supplied in a separate header
+    # from the main trace code, the following tells cmake where to get that header
+    set( TRACING_CATEGORIES_HEADER "${CMAKE_CURRENT_LIST_DIR}/tracing/include/DobbyTraceCategories.h" )
+endif()
+
 # Run libocispec to generate OCI config parsers and necessary C headers
 include(cmake/libocispec.cmake)
 
+
+# Tracing
+if( ENABLE_PERFETTO_TRACING )
+    add_subdirectory(tracing)
+endif()
+
 # Import AppInfrastructure code
 add_subdirectory( AppInfrastructure/Logging )
+add_subdirectory( AppInfrastructure/Tracing )
 add_subdirectory( AppInfrastructure/Common )
 add_subdirectory( AppInfrastructure/IpcService )
 add_subdirectory( AppInfrastructure/ReadLine )
@@ -154,7 +185,6 @@ add_subdirectory( client/lib )
 if( BUILD_TYPE STREQUAL "DEBUG" )
     add_subdirectory( client/tool )
 endif()
-
 
 # Export targets in Dobby package
 # ---------------------------------------------------------

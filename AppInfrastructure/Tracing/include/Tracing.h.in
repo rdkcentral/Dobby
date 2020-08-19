@@ -1,0 +1,62 @@
+//
+//  Tracing.h
+//
+//  Copyright © 2020 Sky UK. All rights reserved.
+//
+#ifndef TRACING_H
+#define TRACING_H
+
+#if defined(AI_ENABLE_TRACING)
+
+#include <perfetto.h>
+
+    // TRACING_CATEGORIES_HEADER should be defined in the top level cmake file
+    // and it should contain the absolute path to a header file which includes
+    // the categories you want in the trace, see below for an example or
+    // https://perfetto.dev/docs/instrumentation/track-events
+    #include "@TRACING_CATEGORIES_HEADER@"
+
+    /* the following is some example category config
+    PERFETTO_DEFINE_CATEGORIES(
+        perfetto::Category("WindowManager")
+            .SetDescription("Events from the WindowManager component"),
+        perfetto::Category("RuntimeManager")
+            .SetDescription("Events from the RuntimeManager component"),
+        perfetto::Category("PackageManager")
+            .SetDescription("Events from the PackageManager component"),
+    );
+    */
+
+
+    // wrapper macros so we can fully disable tracing on release builds
+    #define AI_TRACE_EVENT_BEGIN(category, name, args...) \
+        TRACE_EVENT_BEGIN(category, name, ##args)
+
+    #define AI_TRACE_EVENT_END(category, args...) \
+        TRACE_EVENT_END(category, ##args)
+
+    #define AI_TRACE_EVENT(category, name, args...) \
+        TRACE_EVENT(category, name, ##args)
+
+    #define AI_TRACE_EVENT_INSTANT(category, name, args...) \
+        TRACE_EVENT_INSTANT(category, name, ##args)
+
+    /*
+    #define AI_TRACE_COUNTER(category, name, value) \
+        PERFETTO_INTERNAL_TRACK_EVENT(              \
+            category, PERFETTO_GET_STATIC_STRING(name), \
+            ::perfetto::protos::pbzero::TrackEvent::TYPE_COUNTER, \
+            "value", static_cast<int>(value))
+    */
+
+#else // defined(AI_ENABLE_TRACING)
+
+    #define AI_TRACE_EVENT_BEGIN(category, name, args...)
+    #define AI_TRACE_EVENT_END(category, args...)
+    #define AI_TRACE_EVENT(category, name, args...)
+    #define AI_TRACE_EVENT_INSTANT(category, name, args...)
+
+#endif // defined(AI_ENABLE_TRACING)
+
+
+#endif // TRACING_H

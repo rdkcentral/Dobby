@@ -122,6 +122,13 @@ public:
 
     std::string getOCIConfig(int32_t descriptor) const override;
 
+#if (AI_ENABLE_TRACING)
+    bool startInProcessTracing(int traceFileFd,
+                               const std::string &categoryFilter) const override;
+
+    bool stopInProcessTracing() const override;
+#endif // (AI_ENABLE_TRACING)
+
 #endif // (AI_BUILD_TYPE == AI_DEBUG)
 
 private:

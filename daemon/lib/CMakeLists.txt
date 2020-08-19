@@ -35,7 +35,8 @@ add_library( DobbyDaemonLib
         source/syshooks/BaseHook.cpp
         source/syshooks/GpuMemoryHook.cpp
         source/syshooks/RtSchedulingHook.cpp
-)
+        source/syshooks/LocalTimeHook.cpp
+        )
 
 target_include_directories( DobbyDaemonLib
 
@@ -61,7 +62,15 @@ target_link_libraries(DobbyDaemonLib
         DobbyUtils
         DobbyIpcUtils
         DobbyPluginLauncherLib
+        AppInfraTracing
 )
+
+if (ENABLE_PERFETTO_TRACING)
+        target_link_libraries(DobbyDaemonLib
+                DobbyTracing
+        )
+endif()
+
 
 if( BUILDING_WITH_RDK_SDK )
 

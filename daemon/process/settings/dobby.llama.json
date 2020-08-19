@@ -20,7 +20,7 @@
 
   "gpu": {
     "devNodes": [ "/dev/dri/card0", "/dev/mali0" ],
-    "groupId": "video"
+    "groupIds": [ "video" ]
   },
 
   "network": {

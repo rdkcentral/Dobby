@@ -53,6 +53,8 @@
 #define DOBBY_DEBUG_METHOD_CREATE_BUNDLE            "CreateBundle"
 #define DOBBY_DEBUG_METHOD_GET_SPEC                 "GetSpec"
 #define DOBBY_DEBUG_METHOD_GET_OCI_CONFIG           "GetOCIConfig"
+#define DOBBY_DEBUG_START_INPROCESS_TRACING         "StartInProcessTracing"
+#define DOBBY_DEBUG_STOP_INPROCESS_TRACING          "StopInProcessTracing"
 
 #define DOBBY_RDKPLUGIN_INTERFACE               "com.sky.dobby.rdkplugin1"
 #define DOBBY_RDKPLUGIN_GET_BRIDGE_CONNECTIONS      "GetBridgeConnections"
