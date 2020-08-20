@@ -349,10 +349,18 @@ bool DobbyRunC::kill(const ContainerId& id, int signal, bool all) const
     {
         int retryCounter = 10;
 
-        while (state(id) != ContainerStatus::Unknown && retryCounter > 0)
+        // get current container status
+        ContainerStatus contStatus = state(id);
+
+        // Unknown (container deleted), or Stopped (continer stopped)
+        // are both valid options after successfull kill
+        while (contStatus != ContainerStatus::Unknown &&
+               contStatus != ContainerStatus::Stopped &&
+               retryCounter > 0)
         {
             retryCounter--;
             usleep(500);
+            contStatus = state(id);
         }
 
         // Container wasn't killed
