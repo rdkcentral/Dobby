@@ -340,10 +340,41 @@ bool DobbyRunC::kill(const ContainerId& id, int signal, bool all) const
         return false;
     }
 
-    AI_LOG_FN_EXIT();
 
     // get the return code, 0 for success, 1 for failure
-    return (WEXITSTATUS(status) == EXIT_SUCCESS);
+    bool returnValue = (WEXITSTATUS(status) == EXIT_SUCCESS);
+
+    // Fix problem where SIGTERM was masked and containers never exited
+    if(signal == SIGTERM)
+    {
+        int retryCounter = 10;
+
+        // get current container status
+        ContainerStatus contStatus = state(id);
+
+        // Unknown (container deleted), or Stopped (continer stopped)
+        // are both valid options after successfull kill
+        while (contStatus != ContainerStatus::Unknown &&
+               contStatus != ContainerStatus::Stopped &&
+               retryCounter > 0)
+        {
+            retryCounter--;
+            usleep(500);
+            contStatus = state(id);
+        }
+
+        // Container wasn't killed
+        if(retryCounter <= 0)
+        {
+            AI_LOG_DEBUG("SIGTERM kill wasn't kill container (probably masked), "
+                        "retrying kill with SIGKILL");
+            // retry kill with SIGKILL now, its result will be proper result now
+            returnValue = DobbyRunC::kill(id, SIGKILL, all);
+        }
+    }
+
+    AI_LOG_FN_EXIT();
+    return returnValue;
 }
 
 // -----------------------------------------------------------------------------
