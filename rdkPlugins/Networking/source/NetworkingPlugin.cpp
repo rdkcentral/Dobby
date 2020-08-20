@@ -228,6 +228,13 @@ bool NetworkingPlugin::createRuntime()
         }
     }
 
+    // apply iptables changes
+    if (!mNetfilter->applyRules(AF_INET) || !mNetfilter->applyRules(AF_INET6))
+    {
+        AI_LOG_ERROR_EXIT("failed to apply iptables rules");
+        return false;
+    }
+
     AI_LOG_FN_EXIT();
     return true;
 }
@@ -341,6 +348,13 @@ bool NetworkingPlugin::postHalt()
         {
             success = false;
         }
+    }
+
+    // apply iptables changes
+    if (!mNetfilter->applyRules(AF_INET) || !mNetfilter->applyRules(AF_INET6))
+    {
+        AI_LOG_ERROR_EXIT("failed to apply iptables rules");
+        return false;
     }
 
     AI_LOG_FN_EXIT();

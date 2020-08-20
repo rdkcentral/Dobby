@@ -579,7 +579,6 @@ bool constructContainerToHostRules(std::vector<Netfilter::RuleSet> &ruleSets,
         filterRules.emplace_back(acceptRule);
     }
 
-
     // We want to insert(-I) these rules, so we put them in vector index 0.
     if (ruleSets.empty())
     {
@@ -588,17 +587,32 @@ bool constructContainerToHostRules(std::vector<Netfilter::RuleSet> &ruleSets,
             { Netfilter::TableType::Nat, natRules },
             { Netfilter::TableType::Filter, filterRules }
         };
-        ruleSets.emplace_back(rules);
+        ruleSets.emplace(ruleSets.begin(), rules);
     }
     else
     {
         // ruleSets vector isn't empty, so we need to merge our rulesets into
         // the ones already in there.
         auto natRuleset = ruleSets[0].find(Netfilter::TableType::Nat);
-        auto filterRuleset = ruleSets[0].find(Netfilter::TableType::Filter);
+        if (natRuleset != ruleSets[0].end())
+        {
+            natRuleset->second.merge(natRules);
+        }
+        else
+        {
+            ruleSets[0].insert({ Netfilter::TableType::Nat, natRules });
+        }
 
-        natRuleset->second.merge(natRules);
-        filterRuleset->second.merge(filterRules);
+        auto filterRuleset = ruleSets[0].find(Netfilter::TableType::Filter);
+        if (filterRuleset != ruleSets[0].end())
+        {
+            filterRuleset->second.merge(filterRules);
+        }
+        else
+        {
+            ruleSets[0].insert({ Netfilter::TableType::Filter, filterRules });
+        }
+
     }
 
     return true;

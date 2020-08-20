@@ -54,12 +54,14 @@ public:
     RuleSet rules(const int ipVersion) const;
     bool setRules(const RuleSet &ruleSet, const int ipVersion);
 
-    bool appendRules(const RuleSet &ruleSet, const int ipVersion);
-    bool insertRules(const RuleSet &ruleSet, const int ipVersion);
-    bool deleteRules(const RuleSet &ruleSet, const int ipVersion);
+    bool appendRules(RuleSet &ruleSet, const int ipVersion);
+    bool insertRules(RuleSet &ruleSet, const int ipVersion);
+    bool deleteRules(RuleSet &ruleSet, const int ipVersion);
 
     bool createNewChain(TableType table, const std::string &name,
-                        bool withDropRule, const int ipVersion);
+                        const int ipVersion);
+
+    bool applyRules(const int ipVersion);
 
 private:
     bool forkExec(const std::string &file,
@@ -73,8 +75,23 @@ private:
     bool ruleInList(const std::string &rule,
                     const std::list<std::string> &rulesList) const;
 
-    enum class Operation { Set, Append, Insert, Delete, Unchanged };
-    bool applyRuleSet(Operation operation, const RuleSet &ruleSet, const int ipVersion);
+
+    enum class Operation { Append, Insert, Delete, Unchanged };
+
+    typedef struct RuleSets
+    {
+        RuleSet appendRuleSet;
+        RuleSet insertRuleSet;
+        RuleSet deleteRuleSet;
+        RuleSet unchangedRuleSet;
+    } RuleSets;
+
+    RuleSets mIpv4RuleCache;
+    RuleSets mIpv6RuleCache;
+
+    void trimDuplicates(RuleSet &existing, RuleSet &newRuleSet,
+                        Operation operation) const;
+    bool checkDuplicates(RuleSets ruleCache, const int ipVersion) const;
 
     void dump(const RuleSet &ruleSet, const char *title = nullptr) const;
 

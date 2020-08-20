@@ -191,14 +191,6 @@ std::vector<Netfilter::RuleSet> constructBridgeRules(const std::shared_ptr<Netfi
     std::string bridgeAddressRange;
     if (ipVersion == AF_INET)
     {
-        // start with creating a chain to filter input into the bridge device
-        if (!netfilter->createNewChain(Netfilter::TableType::Filter,
-                                    "DobbyInputChain", false, AF_INET))
-        {
-            AI_LOG_ERROR_EXIT("failed to create iptables 'DobbyInputChain' chain");
-            return std::vector<Netfilter::RuleSet>();
-        }
-
         // add POSTROUTING RETURN rules to the front of the NAT table
         Netfilter::RuleSet::iterator appendNatRules = appendRuleSet.find(Netfilter::TableType::Nat);
         appendNatRules->second.emplace_front("POSTROUTING -s %y -d 255.255.255.255/32 ! -o " BRIDGE_NAME " -j RETURN");
@@ -213,14 +205,6 @@ std::vector<Netfilter::RuleSet> constructBridgeRules(const std::shared_ptr<Netfi
     }
     else if (ipVersion == AF_INET6)
     {
-        // start with creating a chain to filter input into the bridge device
-        if (!netfilter->createNewChain(Netfilter::TableType::Filter,
-                                       "DobbyInputChain", false, AF_INET6))
-        {
-            AI_LOG_ERROR_EXIT("failed to create ip6tables 'DobbyInputChain' chain");
-            return std::vector<Netfilter::RuleSet>();
-        }
-
         Netfilter::RuleSet::iterator appendFilterRules = appendRuleSet.find(Netfilter::TableType::Filter);
 
         // add DobbyInputChain rule to accept solicited-node multicast requests from containers
@@ -383,6 +367,8 @@ bool NetworkSetup::setupBridgeDevice(const std::shared_ptr<DobbyRdkPluginUtils> 
     }
 
     // step 4 - construct the IPv4 rules to be added to iptables and then add them
+    // start with creating a chain to filter input into the bridge device
+    netfilter->createNewChain(Netfilter::TableType::Filter, "DobbyInputChain", AF_INET);
     std::vector<Netfilter::RuleSet> ipv4RuleSets = constructBridgeRules(netfilter, extIfaces, AF_INET);
     if (ipv4RuleSets.empty())
     {
@@ -405,6 +391,8 @@ bool NetworkSetup::setupBridgeDevice(const std::shared_ptr<DobbyRdkPluginUtils> 
     }
 
     // step 5 - construct the IPv6 rules to be added to iptables and then add them
+    // start with creating a chain to filter input into the bridge device
+    netfilter->createNewChain(Netfilter::TableType::Filter, "DobbyInputChain", AF_INET6);
     std::vector<Netfilter::RuleSet> ipv6RuleSets = constructBridgeRules(netfilter, extIfaces, AF_INET6);
     if (ipv6RuleSets.empty())
     {
