@@ -26,10 +26,6 @@
 
 #include <Common/Notifier.h>
 
-#if defined(RDK)
-#  include <json/json.h>
-#endif
-
 #include <cstdint>
 #include <list>
 #include <string>
