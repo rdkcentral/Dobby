@@ -579,42 +579,6 @@ int32_t DobbyProxy::startContainerFromSpec(const std::string& id,
 
 // -----------------------------------------------------------------------------
 /**
- *  @brief Starts a container with the given id, json spec and optional list
- *  of files descriptors
- *
- *
- *
- *  @param[in]  id              The string id of the container, this should not
- *                              have any spaces and only container alphanumeric
- *                              characters plus '.' and '-'.
- *  @param[in]  spec            The root of the json spec, will be converted to
- *                              a string before being sent to the daemon.
- *  @param[in]  files           An array of file descriptors to pass into the
- *                              container construction, can be empty.
- *  @param[in]  command         Custom command to run inside the container,
- *                              overriding the args in the config file
- *  @param[in]  displaySocket   Path to the westeros display socket to mount into
- *                              the container
- *
- *  @return on success a container descriptor which is a number greater than
- *  0, on failure a negative error code.
- */
-int32_t DobbyProxy::startContainerFromSpec(const std::string& id,
-                                           const Json::Value& spec,
-                                           const std::list<int>& files /*= std::list<int>()*/,
-                                           const std::string& command /*= ""*/,
-                                           const std::string& displaySocket /*= ""*/) const
-{
-    // convert the json spec to a string
-    Json::FastWriter writer;
-    const std::string specString = writer.write(spec);
-
-    // and then just call start container with the string
-    return startContainerFromSpec(id, specString, files, command, displaySocket);
-}
-
-// -----------------------------------------------------------------------------
-/**
  *  @brief Starts a container with the given id, bundle path and the list
  *  of files.
  *

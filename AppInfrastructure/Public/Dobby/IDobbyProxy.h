@@ -28,8 +28,6 @@
 
 #if defined(RDK)
 #  include <json/json.h>
-#else
-#  include <jsoncpp/json.h>
 #endif
 
 #include <cstdint>
@@ -127,12 +125,6 @@ public:
                                            const std::string& command = "",
                                            const std::string& displaySocket = "") const = 0;
 
-    virtual int32_t startContainerFromSpec(const std::string& id,
-                                           const Json::Value& spec,
-                                           const std::list<int>& files,
-                                           const std::string& command = "",
-                                           const std::string& displaySocket = "") const = 0;
-
 
     virtual int32_t startContainerFromBundle(const std::string& id,
                                              const std::string& bundlePath,
@@ -162,12 +154,6 @@ public:
                                           const std::string& jsonSpec) const
     {
         return startContainerFromSpec(id, jsonSpec, { });
-    }
-
-    inline int32_t startContainerFromSpec(const std::string& id,
-                                          const Json::Value& spec) const
-    {
-        return startContainerFromSpec(id, spec, { });
     }
 
     inline int32_t startContainerFromBundle(const std::string& id,
