@@ -47,6 +47,8 @@
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include <sys/un.h>
+#include <linux/limits.h>
+#include <dirent.h>
 
 #include <list>
 #include <string>
@@ -251,7 +253,9 @@ static void startCommand(const std::shared_ptr<IDobbyProxy> &dobbyProxy,
     i++;
 
     // Get the path to spec/bundle
-    std::string path = realpath(args[i].data(), NULL);
+    char buf[PATH_MAX];
+    realpath(args[i].data(), buf);
+    const std::string path = buf;
     if (path.empty())
     {
         readLine->printLnError("invalid path to spec file or bundle '%s'", id.c_str());
@@ -274,10 +278,56 @@ static void startCommand(const std::shared_ptr<IDobbyProxy> &dobbyProxy,
 
     int32_t cd;
 
-    // If path is to a .json file, expect it to be a dobby spec
-    // Otherwise expect it to be the path to a bundle
-    if (path.find(".json") != std::string::npos)
+    struct stat statbuf;
+    if (stat(path.c_str(), &statbuf) < 0)
     {
+        readLine->printLnError("failed to stat '%s' (%d - %s)",
+                               path.c_str(), errno, strerror(errno));
+        return;
+    }
+
+    // If path is to a file, expect it to be a dobby spec, otherwise expect
+    // it to be the path to a bundle.
+    if (S_ISDIR(statbuf.st_mode))
+    {
+        // check that the path contains a config file
+        struct dirent *dir;
+        DIR *d = opendir(path.c_str());
+        if (d == nullptr)
+        {
+            readLine->printLnError("failed to opendir '%s' (%d - %s)",
+                                   path.c_str(), errno, strerror(errno));
+            return;
+        }
+        bool configFound = false;
+        while ((dir = readdir(d)) != nullptr)
+        {
+            if (strcmp(dir->d_name, "config.json") == 0)
+            {
+                // config file found, we can continue
+                configFound = true;
+                break;
+            }
+        }
+        closedir(d);
+
+        if (!configFound)
+        {
+            readLine->printLnError("no config.json file found in '%s'", path.c_str());
+            return;
+        }
+
+        cd = dobbyProxy->startContainerFromBundle(id, path, files, command, displaySocketPath);
+    }
+    else
+    {
+        // check that the file in path has a '.json' filename extension
+        if (path.find(".json") == std::string::npos)
+        {
+            readLine->printLnError("'%s' is not a .json file", path.c_str());
+            return;
+        }
+
         std::ifstream file(path, std::ifstream::binary);
         if (!file)
         {
@@ -295,10 +345,6 @@ static void startCommand(const std::shared_ptr<IDobbyProxy> &dobbyProxy,
         std::string jsonSpec(buffer, length);
         delete[] buffer;
         cd = dobbyProxy->startContainerFromSpec(id, jsonSpec, files, command, displaySocketPath);
-    }
-    else
-    {
-        cd = dobbyProxy->startContainerFromBundle(id, path, files, command, displaySocketPath);
     }
 
     if (cd < 0)
