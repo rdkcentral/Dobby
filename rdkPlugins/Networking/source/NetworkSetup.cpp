@@ -377,14 +377,14 @@ bool NetworkSetup::setupBridgeDevice(const std::shared_ptr<DobbyRdkPluginUtils> 
     }
 
     // set the iptables drop rules for the NAT
-    if (!netfilter->insertRules(ipv4RuleSets[0], AF_INET))
+    if (!netfilter->addRules(ipv4RuleSets[0], AF_INET, Netfilter::Operation::Insert))
     {
         AI_LOG_ERROR_EXIT("failed to setup iptables drop rules for NAT");
         return false;
     }
 
     // set the iptables rules for the NAT
-    if (!netfilter->appendRules(ipv4RuleSets[1], AF_INET))
+    if (!netfilter->addRules(ipv4RuleSets[1], AF_INET, Netfilter::Operation::Append))
     {
         AI_LOG_ERROR_EXIT("failed to setup iptables forwarding rules for NAT");
         return false;
@@ -401,14 +401,14 @@ bool NetworkSetup::setupBridgeDevice(const std::shared_ptr<DobbyRdkPluginUtils> 
     }
 
     // set the ip6tables drop rules for the NAT
-    if (!netfilter->insertRules(ipv6RuleSets[0], AF_INET6))
+    if (!netfilter->addRules(ipv6RuleSets[0], AF_INET6, Netfilter::Operation::Insert))
     {
         AI_LOG_ERROR_EXIT("failed to setup iptables drop rules for NAT");
         return false;
     }
 
     // set the ip6tables rules for the NAT
-    if (!netfilter->appendRules(ipv6RuleSets[1], AF_INET6))
+    if (!netfilter->addRules(ipv6RuleSets[1], AF_INET6, Netfilter::Operation::Append))
     {
         AI_LOG_ERROR_EXIT("failed to setup iptables forwarding rules for NAT");
         return false;
@@ -801,7 +801,7 @@ bool NetworkSetup::setupVeth(const std::shared_ptr<DobbyRdkPluginUtils> &utils,
             ipv4RuleSet = createDropAllRule(vethName);
         }
 
-        if (!netfilter->insertRules(ipv4RuleSet, AF_INET))
+        if (!netfilter->addRules(ipv4RuleSet, AF_INET, Netfilter::Operation::Insert))
         {
             AI_LOG_ERROR_EXIT("failed to add iptables rule to drop veth packets");
             return false;
@@ -819,7 +819,7 @@ bool NetworkSetup::setupVeth(const std::shared_ptr<DobbyRdkPluginUtils> &utils,
             ipv6RuleSet = createDropAllRule(vethName);
         }
 
-        if (!netfilter->insertRules(ipv6RuleSet, AF_INET6))
+        if (!netfilter->addRules(ipv6RuleSet, AF_INET6, Netfilter::Operation::Insert))
         {
             AI_LOG_ERROR_EXIT("failed to add iptables rule to drop veth packets");
             return false;
@@ -877,7 +877,7 @@ bool NetworkSetup::removeVethPair(const std::shared_ptr<Netfilter> &netfilter,
             ipv4RuleSet = createDropAllRule(vethName);
         }
 
-        if (!netfilter->deleteRules(ipv4RuleSet, AF_INET))
+        if (!netfilter->addRules(ipv4RuleSet, AF_INET, Netfilter::Operation::Delete))
         {
             AI_LOG_ERROR("failed to delete netfilter rules for container veth");
             success = false;
@@ -897,7 +897,7 @@ bool NetworkSetup::removeVethPair(const std::shared_ptr<Netfilter> &netfilter,
             ipv6RuleSet = createDropAllRule(vethName);
         }
 
-        if (!netfilter->deleteRules(ipv6RuleSet, AF_INET6))
+        if (!netfilter->addRules(ipv6RuleSet, AF_INET6, Netfilter::Operation::Delete))
         {
             AI_LOG_ERROR("failed to delete netfilter rules for container veth");
             success = false;
@@ -940,7 +940,7 @@ bool NetworkSetup::removeBridgeDevice(const std::shared_ptr<Netfilter> &netfilte
 
     for (Netfilter::RuleSet &ipv4RuleSet : ipv4RuleSets)
     {
-        if (!netfilter->deleteRules(ipv4RuleSet, AF_INET))
+        if (!netfilter->addRules(ipv4RuleSet, AF_INET, Netfilter::Operation::Delete))
         {
             AI_LOG_ERROR("failed to delete netfilter rules for bridge device");
             success = false;
@@ -957,7 +957,7 @@ bool NetworkSetup::removeBridgeDevice(const std::shared_ptr<Netfilter> &netfilte
 
     for (Netfilter::RuleSet &ipv6RuleSet : ipv6RuleSets)
     {
-        if (!netfilter->deleteRules(ipv6RuleSet, AF_INET6))
+        if (!netfilter->addRules(ipv6RuleSet, AF_INET6, Netfilter::Operation::Delete))
         {
             AI_LOG_ERROR("failed to delete netfilter rules for bridge device");
             success = false;

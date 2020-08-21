@@ -776,113 +776,80 @@ bool Netfilter::ruleInList(const std::string &rule,
     // FIXME: use parsed ruleset rather command line string compare
 }
 
+
 // -----------------------------------------------------------------------------
 /**
- *  @brief Adds append rules to the internal rule caches to be written later.
+ *  @brief Adds rules to the internal rule caches.
  *
- *  These rules will be prefixed with "-A" to signal appending to iptables.
+ *  The rules are added to the correct cache depending on the input ipVersion
+ *  and operation type.
+ *
+ *  ipVersion is set to either AF_INET or AF_INET6 depending on whether the
+ *  rule is an IPv4 rule for iptables or IPv6 rule for ip6tables.
+ *
+ *  The operation types match the following iptables/ip6tables options:
+ *
+ *      Netfilter::Append: -A
+ *      Netfilter::Insert: -I
+ *      Netfilter::Delete: -D
+ *      Netfilter::Unchanged: not used in this method, @see createNewChain()
+ *
+ *  NB: The rules are not written into iptables until the
+ *  Netfilter::applyRules() method is called.
  *
  *  @param[in]  ruleSet         The ruleset to apply.
  *  @param[in]  ipVersion       iptables version to use.
+ *  @param[in]  operation       iptables operation to use for rules.
  *
  *  @return always returns true.
  */
-bool Netfilter::appendRules(RuleSet &ruleSet, const int ipVersion)
+bool Netfilter::addRules(RuleSet &ruleSet, const int ipVersion, Operation operation)
 {
     AI_LOG_FN_ENTRY();
 
-    // get reference to the correct cache
-    RuleSets &ruleCache = (ipVersion == AF_INET) ? mIpv4RuleCache : mIpv6RuleCache;
-
-    for (auto &it : ruleSet)
+    if (ipVersion != AF_INET && ipVersion != AF_INET6)
     {
-        // find rules table from cache
-        auto cacheRuleset = ruleCache.appendRuleSet.find(it.first);
-        if (cacheRuleset == ruleCache.appendRuleSet.end())
+        AI_LOG_ERROR_EXIT("incorrect ip version %d, use AF_INET or AF_INET6", ipVersion);
+        return false;
+    }
+
+    // get pointer to the correct operation's ruleset in the cache
+    RuleSets *ruleCache = (ipVersion == AF_INET) ? &mIpv4RuleCache : &mIpv6RuleCache;
+    RuleSet *cacheRuleSet;
+    switch(operation) {
+        case Operation::Append:
         {
-            // the table doesn't exist, so add it as a new table
-            ruleCache.appendRuleSet.emplace(it);
+            cacheRuleSet = &ruleCache->appendRuleSet;
         }
-        else
+        case Operation::Insert:
         {
-            // table exists, merge new rules to the end of it
-            cacheRuleset->second.merge(it.second);
+            cacheRuleSet = &ruleCache->insertRuleSet;
+        }
+        case Operation::Delete:
+        {
+            cacheRuleSet = &ruleCache->deleteRuleSet;
+        }
+        case Operation::Unchanged:
+        {
+            AI_LOG_ERROR_EXIT("operation type 'Unchanged' not allowed, use Append, "
+                            "Insert or Delete");
+            return false;
         }
     }
 
-    AI_LOG_FN_EXIT();
-    return true;
-}
-
-// -----------------------------------------------------------------------------
-/**
- *  @brief Adds insert rules to the internal rule caches to be written later.
- *
- *  These rules will be prefixed with "-I" to signal inserting to iptables.
- *
- *  @param[in]  ruleSet         The ruleset to apply.
- *  @param[in]  ipVersion       iptables version to use.
- *
- *  @return always returns true.
- */
-bool Netfilter::insertRules(RuleSet &ruleSet, const int ipVersion)
-{
-    AI_LOG_FN_ENTRY();
-
-    // get reference to the correct cache
-    RuleSets &ruleCache = (ipVersion == AF_INET) ? mIpv4RuleCache : mIpv6RuleCache;
-
     for (auto &it : ruleSet)
     {
-        // find rules table from cache
-        auto cacheRuleset = ruleCache.insertRuleSet.find(it.first);
-        if (cacheRuleset == ruleCache.insertRuleSet.end())
+        // find the ruleset's Netfilter::TableType rules table from cache
+        auto cacheRuleSetTable = cacheRuleSet->find(it.first);
+        if (cacheRuleSetTable == cacheRuleSet->end())
         {
-            // the table doesn't exist, so add it as a new table
-            ruleCache.insertRuleSet.emplace(it);
+            // the table doesn't exist, so we can just emplace ours
+            cacheRuleSet->emplace(it);
         }
         else
         {
             // table exists, merge new rules to the end of it
-            cacheRuleset->second.merge(it.second);
-        }
-    }
-
-    AI_LOG_FN_EXIT();
-    return true;
-}
-
-// -----------------------------------------------------------------------------
-/**
- *  @brief Adds delete rules to the internal rule caches to be written later.
- *
- *  These rules will be prefixed with "-D" to signal deleting from iptables.
- *
- *  @param[in]  ruleSet         The ruleset to apply.
- *  @param[in]  ipVersion       iptables version to use.
- *
- *  @return always returns true.
- */
-bool Netfilter::deleteRules(RuleSet &ruleSet, const int ipVersion)
-{
-    AI_LOG_FN_ENTRY();
-
-    // get reference to the correct cache
-    RuleSets &ruleCache = (ipVersion == AF_INET) ? mIpv4RuleCache : mIpv6RuleCache;
-
-    for (auto &it : ruleSet)
-    {
-        // find rules table from cache
-        auto cacheRuleset = ruleCache.deleteRuleSet.find(it.first);
-        if (cacheRuleset == ruleCache.deleteRuleSet.end())
-        {
-            // the table doesn't exist, so add it as a new table
-            ruleCache.deleteRuleSet.emplace(it);
-        }
-        else
-        {
-            // table exists, merge new rules to the end of it
-            cacheRuleset->second.merge(it.second);
+            cacheRuleSetTable->second.merge(it.second);
         }
     }
 
@@ -894,6 +861,8 @@ bool Netfilter::deleteRules(RuleSet &ruleSet, const int ipVersion)
 /**
  *  @brief Creates a new IPTables chain with the given name and put it in the
  *  rule cache to write later.
+ *
+ *  The Netfilter::Unchanged operation type is used to add new chains.
  *
  *  This is equivalent to:
  *     iptables -t <table> -N <name>

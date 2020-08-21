@@ -54,9 +54,9 @@ public:
     RuleSet rules(const int ipVersion) const;
     bool setRules(const RuleSet &ruleSet, const int ipVersion);
 
-    bool appendRules(RuleSet &ruleSet, const int ipVersion);
-    bool insertRules(RuleSet &ruleSet, const int ipVersion);
-    bool deleteRules(RuleSet &ruleSet, const int ipVersion);
+    enum class Operation { Append, Insert, Delete, Unchanged };
+
+    bool addRules(RuleSet &ruleSet, const int ipVersion, Operation operation);
 
     bool createNewChain(TableType table, const std::string &name,
                         const int ipVersion);
@@ -74,9 +74,6 @@ private:
 
     bool ruleInList(const std::string &rule,
                     const std::list<std::string> &rulesList) const;
-
-
-    enum class Operation { Append, Insert, Delete, Unchanged };
 
     typedef struct RuleSets
     {

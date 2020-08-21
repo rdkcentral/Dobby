@@ -66,7 +66,7 @@ bool PortForwarding::addPortForwards(const std::shared_ptr<Netfilter> &netfilter
         }
 
         // insert vector index 0 of constructed rules
-        if (!netfilter->insertRules(ipv4Rules[0], AF_INET))
+        if (!netfilter->addRules(ipv4Rules[0], AF_INET, Netfilter::Operation::Insert))
         {
             AI_LOG_ERROR_EXIT("failed to insert port forward rules to iptables");
             return false;
@@ -75,7 +75,7 @@ bool PortForwarding::addPortForwards(const std::shared_ptr<Netfilter> &netfilter
         // append potential rules from vector index 1 of constructed rules
         if (ipv4Rules.size() > 1)
         {
-            if (!netfilter->appendRules(ipv4Rules[1], AF_INET))
+            if (!netfilter->addRules(ipv4Rules[1], AF_INET, Netfilter::Operation::Append))
             {
                 AI_LOG_ERROR_EXIT("failed to append port forward rules to iptables");
                 return false;
@@ -97,7 +97,7 @@ bool PortForwarding::addPortForwards(const std::shared_ptr<Netfilter> &netfilter
         }
 
         // insert vector index 0 of constructed rules
-        if (!netfilter->insertRules(ipv6Rules[0], AF_INET6))
+        if (!netfilter->addRules(ipv6Rules[0], AF_INET6, Netfilter::Operation::Insert))
         {
             AI_LOG_ERROR_EXIT("failed to insert port forward rules to ip6tables");
             return false;
@@ -106,7 +106,7 @@ bool PortForwarding::addPortForwards(const std::shared_ptr<Netfilter> &netfilter
         // append potential rules from vector index 1 of constructed rules
         if (ipv6Rules.size() > 1)
         {
-            if (!netfilter->appendRules(ipv6Rules[1], AF_INET6))
+            if (!netfilter->addRules(ipv6Rules[1], AF_INET6, Netfilter::Operation::Append))
             {
                 AI_LOG_ERROR_EXIT("failed to append port forward rules to ip6tables");
                 return false;
@@ -162,7 +162,7 @@ bool PortForwarding::removePortForwards(const std::shared_ptr<Netfilter> &netfil
         // delete constructed rulesets
         for (int i = 0; i < ipv4Rules.size(); i++)
         {
-            if (!netfilter->deleteRules(ipv4Rules[i], AF_INET))
+            if (!netfilter->addRules(ipv4Rules[i], AF_INET, Netfilter::Operation::Delete))
             {
                 AI_LOG_ERROR_EXIT("failed to delete port forwarding ip6tables rule"
                                   "at index %d", i);
@@ -188,7 +188,7 @@ bool PortForwarding::removePortForwards(const std::shared_ptr<Netfilter> &netfil
         // delete constructed rulesets
         for (int i = 0; i < ipv6Rules.size(); i++)
         {
-            if (!netfilter->deleteRules(ipv6Rules[i], AF_INET6))
+            if (!netfilter->addRules(ipv6Rules[i], AF_INET6, Netfilter::Operation::Delete))
             {
                 AI_LOG_ERROR_EXIT("failed to delete port forwarding ip6tables rule"
                                   "at index %d", i);
