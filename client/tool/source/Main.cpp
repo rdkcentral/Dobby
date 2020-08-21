@@ -998,55 +998,59 @@ int main(int argc, char * argv[])
         exit(EXIT_FAILURE);
     }
 
-
     // Create the IPC service and start it, this spawns a thread and runs the dbus
     // event loop inside it
+    AI_LOG_INFO("starting dbus service");
+    AI_LOG_INFO("  bus address '%s'", DBUS_SYSTEM_ADDRESS);
+    AI_LOG_INFO("  service name '%s'", gDBusService.c_str());
+
+    std::shared_ptr<AI_IPC::IIpcService> ipcService;
+
+    // create an IPCService that attach to the dbus daemon, this throws an
+    // exception if it can't connect
     try
     {
-        AI_LOG_INFO("starting dbus service");
-        AI_LOG_INFO("  bus address '%s'", DBUS_SYSTEM_ADDRESS);
-        AI_LOG_INFO("  service name '%s'", gDBusService.c_str());
-
-        std::shared_ptr<AI_IPC::IIpcService> ipcService =
-            AI_IPC::createIpcService(DBUS_SYSTEM_ADDRESS, gDBusService);
-        if (!ipcService)
-        {
-            AI_LOG_ERROR("failed to create IPC service");
-            exit(EXIT_FAILURE);
-        }
-        else
-        {
-            // Start the IPCService which kicks off the dispatcher thread
-            ipcService->start();
-
-            // Create a DobbyProxy remote service that wraps up the dbus API
-            // calls to the Dobby daemon
-            std::shared_ptr<IDobbyProxy> dobbyProxy =
-                std::make_shared<DobbyProxy>(ipcService, DOBBY_SERVICE, DOBBY_OBJECT);
-
-            // Add the commands to the readline loop
-            initCommands(readLine, dobbyProxy);
-
-            // Check if the command line contained the commands to send, otherwise
-            // start the interactive shell
-            if (gCmdlineArgv && gCmdlineArgc)
-            {
-                readLine->runCommand(gCmdlineArgc, gCmdlineArgv);
-            }
-            else
-            {
-                // Run the readline loop
-                readLine->run();
-            }
-
-            // Stop the service and fall out
-            ipcService->stop();
-        }
+        ipcService = AI_IPC::createIpcService(DBUS_SYSTEM_ADDRESS, gDBusService);
     }
     catch (const std::exception& e)
     {
         AI_LOG_ERROR("failed to create IPC service: %s", e.what());
         exit(EXIT_FAILURE);
+    }
+
+    if (!ipcService)
+    {
+        AI_LOG_ERROR("failed to create IPC service");
+        exit(EXIT_FAILURE);
+    }
+    else
+    {
+
+        // Start the IPCService which kicks off the dispatcher thread
+        ipcService->start();
+
+        // Create a DobbyProxy remote service that wraps up the dbus API
+        // calls to the Dobby daemon
+        std::shared_ptr<IDobbyProxy> dobbyProxy =
+            std::make_shared<DobbyProxy>(ipcService, DOBBY_SERVICE, DOBBY_OBJECT);
+
+        // Add the commands to the readline loop
+        initCommands(readLine, dobbyProxy);
+
+        // Check if the command line contained the commands to send, otherwise
+        // start the interactive shell
+        if (gCmdlineArgv && gCmdlineArgc)
+        {
+            readLine->runCommand(gCmdlineArgc, gCmdlineArgv);
+        }
+        else
+        {
+            // Run the readline loop
+            readLine->run();
+        }
+
+        // Stop the service and fall out
+        ipcService->stop();
     }
 
     // And we're done
