@@ -30,7 +30,7 @@
  *  @brief Checks if the supplied string is a valid container id
  *
  *  This simply checks that the string contains only alhpa numeric characters
- *  plus '.' and '-', in addition no double '.' is allowed.
+ *  plus '.', '-' and '_', in addition no double '.' is allowed.
  *
  *  In addition we must have at least one alpha character, this avoids people
  *  creating stupid names like '.' or using just numbers which could be
@@ -50,7 +50,7 @@ static bool isValidContainerId(const std::string& id)
     unsigned alphaCount = 0;
     for (const char c : id)
     {
-        if (!isalnum(c) && (c != '.') && (c != '-'))
+        if (!isalnum(c) && (c != '.') && (c != '-') && (c != '_'))
             return false;
 
         if (isalpha(c))
