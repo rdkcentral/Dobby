@@ -421,22 +421,108 @@ Netfilter::RuleSet Netfilter::getRuleSet(const int ipVersion) const
 
 // -----------------------------------------------------------------------------
 /**
- *  @brief Uses the iptables-restore tool to apply the given rules
+ *  @brief Trims duplicates from mRuleSets based on the operation.
+ *
+ *  Rules with 'Delete' operation will be removed from mRuleSets if the rule is
+ *  not found in iptables-save, so we avoid deleting rules that aren't there.
+ *
+ *  Conversely, any other rules are removed from mRuleSets if they are found in
+ *  iptables-save, so we avoid adding duplicate rules.
+ *
+ *  @param[in]  existing        existing rules from iptables-save.
+ *  @param[in]  newRuleSet      new ruleset to add from mRuleSets.
+ *  @param[in]  operation       operation intended to be added for the ruleset.
+ */
+void Netfilter::trimDuplicates(RuleSet &existing, RuleSet &newRuleSet, Operation operation) const
+{
+    // iterate through all tables in new ruleset
+    for (std::pair<const TableType, std::list<std::string>> &newRules : newRuleSet)
+    {
+        const TableType &table = newRules.first;
+        std::list<std::string> &tableRules = newRules.second;
+
+        // get the existing table
+        const std::list<std::string> &existingRules = (*(existing.find(table))).second;
+
+        // iterate through all rules in the table to check for duplicates
+        auto it = tableRules.begin();
+        while (it != tableRules.end())
+        {
+            const std::string &rule = *it;
+            if (operation == Operation::Delete && !ruleInList(rule, existingRules))
+            {
+                // didn't find rule to delete, remove from ruleset
+                AI_LOG_DEBUG("failed to find rule '%s' to delete", rule.c_str());
+                it = tableRules.erase(it);
+            }
+            else if (ruleInList(rule, existingRules))
+            {
+                // found duplicate rule, remove from ruleset
+                AI_LOG_DEBUG("skipping duplicate rule '%s'", rule.c_str());
+                it = tableRules.erase(it);
+            }
+            else
+            {
+                ++it;
+            }
+        }
+    }
+}
+
+// -----------------------------------------------------------------------------
+/**
+ *  @brief Checks all rulesets in a rule cache for duplicates to check which
+ *  rules need to be applied.
+ *
+ *  @param[in]  ruleCache       cache of rules to check for duplicates.
+ *  @param[in]  ipVersion       iptables version to use.
+ *
+ *  @return true if there are any new rules to write, otherwise false.
+ */
+bool Netfilter::checkDuplicates(RuleSets ruleCache, const int ipVersion) const
+{
+    AI_LOG_FN_ENTRY();
+
+    // get the existing iptables rules
+    RuleSet existing = getRuleSet(ipVersion);
+
+    // trim duplicates rules from the rulesets we want to add to iptables
+    trimDuplicates(existing, ruleCache.appendRuleSet, Operation::Append);
+    trimDuplicates(existing, ruleCache.insertRuleSet, Operation::Insert);
+    trimDuplicates(existing, ruleCache.deleteRuleSet, Operation::Delete);
+    trimDuplicates(existing, ruleCache.unchangedRuleSet, Operation::Unchanged);
+
+    // check if we actually have any rules left to apply
+    if (ruleCache.appendRuleSet.empty() && ruleCache.insertRuleSet.empty() &&
+        ruleCache.deleteRuleSet.empty() && ruleCache.unchangedRuleSet.empty())
+    {
+        AI_LOG_FN_EXIT();
+        return false;
+    }
+
+    AI_LOG_FN_EXIT();
+    return true;
+}
+
+// -----------------------------------------------------------------------------
+/**
+ *  @brief Uses the iptables-restore tool to apply the rules stored in
+ *  mRulesets.
  *
  *  The method creates a pipe to feed in the rules to the iptables-restore
  *  cmdline app, it then writes all the rules from the ruleset correctly
  *  formatted.
  *
- *  All rules are appended, so care must be taken to ensure that you don't
- *  end up with duplicated iptables rules.
+ *  Its publicly stated that iptables doesn't provide a stable C/C++ API
+ *  for adding / removing rules, hence the reason we go to the extra pain
+ *  of fork/exec. Running benchmark tests with an implementation of a libiptc
+ *  wrapper resulted in slower results compared to using fork/exec [RDK-29283].
  *
- *  @param[in]  operation       Operation to set (set/append/insert/delete)
- *  @param[in]  ruleSet         The ruleset to apply.
  *  @param[in]  ipVersion       iptables version to use.
  *
  *  @return true on success, false on failure.
  */
-bool Netfilter::applyRuleSet(Operation operation, const RuleSet &ruleSet, const int ipVersion)
+bool Netfilter::applyRules(const int ipVersion)
 {
     AI_LOG_FN_ENTRY();
 
@@ -454,21 +540,59 @@ bool Netfilter::applyRuleSet(Operation operation, const RuleSet &ruleSet, const 
     // positive attitude
     bool success = true;
 
+    // get reference to the correct cache
+    RuleSets &ruleCache = (ipVersion == AF_INET) ? mIpv4RuleCache : mIpv6RuleCache;
+
+    // before doing anything to the rules, check for duplicates in iptables and
+    // remove the duplicates from our cache
+    if (!checkDuplicates(ruleCache, ipVersion))
+    {
+        // all of the rules were duplicate, none left to write
+        AI_LOG_WARN("all iptables rules are already set");
+        AI_LOG_FN_EXIT();
+        return true;
+    }
+
     // fill the pipe with the iptables rules
     const TableType tables[] = { TableType::Raw,     TableType::Nat,
                                  TableType::Mangle,  TableType::Filter,
                                  TableType::Security };
     const size_t nTables = sizeof(tables) / sizeof(tables[0]);
 
+    // iterate through all tables
     for (size_t i = 0; success && (i < nTables); i++)
     {
-        RuleSet::const_iterator table = ruleSet.find(tables[i]);
-        if (table == ruleSet.end())
-            continue;
+        // check if there are any rules to be applied for this table
+        RuleSet::iterator tableUnchanged = ruleCache.unchangedRuleSet.find(tables[i]);
+        RuleSet::iterator tableAppend = ruleCache.appendRuleSet.find(tables[i]);
+        RuleSet::iterator tableInsert = ruleCache.insertRuleSet.find(tables[i]);
+        RuleSet::iterator tableDelete = ruleCache.deleteRuleSet.find(tables[i]);
 
-        const std::list<std::string>& tableRules = table->second;
+        // add all rules with their matching operation to the table rules
+        std::list<std::pair<Operation, std::list<std::string>>> tableRules;
+        // Unchanged = new chain, which will have to go first
+        if (tableUnchanged != ruleCache.unchangedRuleSet.end())
+        {
+            tableRules.emplace_back(std::pair<Operation, std::list<std::string>>({ Operation::Unchanged, tableUnchanged->second }));
+        }
+        if (tableAppend != ruleCache.appendRuleSet.end())
+        {
+            tableRules.emplace_back(std::pair<Operation, std::list<std::string>>({ Operation::Append, tableAppend->second }));
+        }
+        if (tableInsert != ruleCache.insertRuleSet.end())
+        {
+            tableRules.emplace_back(std::pair<Operation, std::list<std::string>>({ Operation::Insert, tableInsert->second }));
+        }
+        if (tableDelete != ruleCache.deleteRuleSet.end())
+        {
+            tableRules.emplace_back(std::pair<Operation, std::list<std::string>>({ Operation::Delete, tableDelete->second }));
+        }
+
+        // if there are no rules to install, try the next table
         if (tableRules.empty())
+        {
             continue;
+        }
 
         // write the table name first
         std::string line;
@@ -490,37 +614,41 @@ bool Netfilter::applyRuleSet(Operation operation, const RuleSet &ruleSet, const 
             break;
         }
 
-        // then iterate over the rules to add
-        for (const std::string &rule : tableRules)
+        // iterate through rule operations
+        for (auto &ruleGroup : tableRules)
         {
-            switch (operation)
+            std::string operationStr;
+            switch (ruleGroup.first)
             {
-                case Operation::Set:
                 case Operation::Append:
-                    line = "-A ";
+                    operationStr = "-A ";
                     break;
                 case Operation::Insert:
-                    line = "-I ";
+                    operationStr = "-I ";
                     break;
                 case Operation::Delete:
-                    line = "-D ";
+                    operationStr = "-D ";
                     break;
-
                 case Operation::Unchanged:
-                    line = "";
+                    operationStr = "";
                     break;
             }
 
-            line += rule;
-            line += '\n';
-
-            AI_LOG_DEBUG("applying rule '%s'", line.c_str());
-
-            if (!writeString(pipeFds[1], line))
+            // and then the actual rules
+            for (const std::string &rule : ruleGroup.second)
             {
-                AI_LOG_SYS_ERROR(errno, "failed to write into pipe");
-                success = false;
-                break;
+                line = operationStr;
+                line += rule;
+                line += '\n';
+
+                AI_LOG_DEBUG("applying rule '%s'", line.c_str());
+
+                if (!writeString(pipeFds[1], line))
+                {
+                    AI_LOG_SYS_ERROR(errno, "failed to write into pipe");
+                    success = false;
+                    break;
+                }
             }
         }
 
@@ -546,10 +674,7 @@ bool Netfilter::applyRuleSet(Operation operation, const RuleSet &ruleSet, const 
     {
         // set the args
         std::list<std::string> args;
-        if (operation != Operation::Set)
-        {
-            args.emplace_back("--noflush");
-        }
+        args.emplace_back("--noflush");
 
         // create a pipe to store the stderr output (it's destructor prints the
         // content of the pipe if not empty)
@@ -634,34 +759,6 @@ Netfilter::RuleSet Netfilter::rules(const int ipVersion) const
 
 // -----------------------------------------------------------------------------
 /**
- *  @brief Replaces all installed iptables rules with one from the ruleset.
- *
- *  This will flush out all existing rules and then append the new ruleset.
- *  Beware this is probably not what you want as it will clear other rules setup
- *  by the system.
- *
- *  @param[in]  ruleSet         The ruleset to apply.
- *  @param[in]  ipVersion       iptables version to use.
- *
- *  @return true on success, false on failure.
- */
-bool Netfilter::setRules(const RuleSet &ruleSet, const int ipVersion)
-{
-    AI_LOG_FN_ENTRY();
-
-    // finally apply the rules
-    bool success = applyRuleSet(Operation::Set, ruleSet, ipVersion);
-    if (!success)
-    {
-        AI_LOG_ERROR("failed to set all iptables rules");
-    }
-
-    AI_LOG_FN_EXIT();
-    return success;
-}
-
-// -----------------------------------------------------------------------------
-/**
  *  @brief Returns true if the rule is in the rulesList.
  *
  *  Both rule and the contents of rulesList are strings, however they are
@@ -677,259 +774,125 @@ bool Netfilter::ruleInList(const std::string &rule,
     // FIXME: use parsed ruleset rather command line string compare
 }
 
+
 // -----------------------------------------------------------------------------
 /**
- *  @brief Uses the iptables-restore tool to atomically add a set of rules
+ *  @brief Adds rules to the internal rule caches.
  *
- *  The function pipes the rules in @a ruleSet into the iptables-restore tool,
- *  this will append the rules onto the end ... beware.
+ *  The rules are added to the correct cache depending on the input ipVersion
+ *  and operation type.
  *
- *  This is equivalent to running the following for all the rules
- *     iptables -t <table> -A <rule>
+ *  ipVersion is set to either AF_INET or AF_INET6 depending on whether the
+ *  rule is an IPv4 rule for iptables or IPv6 rule for ip6tables.
  *
- *  Its publicly stated that iptables doesn't provide a stable C/C++ API
- *  for adding / removing rules, hence the reason we go to the extra pain
- *  of fork/exec.  All that said, we do have the libiptc.so on the box, but
- *  it's fair from an easy API to use.
+ *  The operation types match the following iptables/ip6tables options:
  *
- *  @see https://bani.com.br/2012/05/programmatically-managing-iptables-rules-in-c-iptc
+ *      Netfilter::Append: -A
+ *      Netfilter::Insert: -I
+ *      Netfilter::Delete: -D
+ *      Netfilter::Unchanged: not used in this method, @see createNewChain()
+ *
+ *  NB: The rules are not written into iptables until the
+ *  Netfilter::applyRules() method is called.
  *
  *  @param[in]  ruleSet         The ruleset to apply.
  *  @param[in]  ipVersion       iptables version to use.
+ *  @param[in]  operation       iptables operation to use for rules.
  *
- *  @return true on success, false on failure.
+ *  @return returns true on success, otherwise false.
  */
-bool Netfilter::appendRules(const RuleSet &ruleSet, const int ipVersion)
+bool Netfilter::addRules(RuleSet &ruleSet, const int ipVersion, Operation operation)
 {
     AI_LOG_FN_ENTRY();
 
-    // get the existing iptables rules
-    RuleSet existing = getRuleSet(ipVersion);
-
-    // create a rule set from entries in the supplied argument that are not
-    // not in the existing rules
-    RuleSet actual;
-
-    // check if we already have any of the rules
-    for (const std::pair<const TableType, std::list<std::string>> &newRule : ruleSet)
+    if (ipVersion != AF_INET && ipVersion != AF_INET6)
     {
-        const TableType &table = newRule.first;
-        const std::list<std::string> &tableRules = newRule.second;
+        AI_LOG_ERROR_EXIT("incorrect ip version %d, use AF_INET or AF_INET6", ipVersion);
+        return false;
+    }
 
-        // get the existing table
-        const std::list<std::string> &existingRules = existing[table];
+    // get pointer to the correct operation's ruleset in the cache
+    RuleSets *ruleCache = (ipVersion == AF_INET) ? &mIpv4RuleCache : &mIpv6RuleCache;
+    RuleSet *cacheRuleSet;
+    switch(operation) {
+        case Operation::Append:
+            cacheRuleSet = &ruleCache->appendRuleSet;
+            break;
+        case Operation::Insert:
+            cacheRuleSet = &ruleCache->insertRuleSet;
+            break;
+        case Operation::Delete:
+            cacheRuleSet = &ruleCache->deleteRuleSet;
+            break;
+        case Operation::Unchanged:
+            AI_LOG_ERROR_EXIT("operation type 'Unchanged' not allowed, use Append, "
+                              "Insert or Delete");
+            return false;
+    }
 
-        // add the rule to the actual list if it exists
-        for (const std::string &rule : tableRules)
+    for (auto &it : ruleSet)
+    {
+        // find the ruleset's Netfilter::TableType rules table from cache
+        auto cacheRuleSetTable = cacheRuleSet->find(it.first);
+        if (cacheRuleSetTable == cacheRuleSet->end())
         {
-            if (!ruleInList(rule, existingRules))
-            {
-                actual[table].emplace_back(rule);
-            }
+            // the table doesn't exist, so we can just emplace ours
+            cacheRuleSet->emplace(it);
+        }
+        else
+        {
+            // table exists, merge new rules to the end of it
+            cacheRuleSetTable->second.merge(it.second);
         }
     }
 
-    if (actual.empty())
-    {
-        AI_LOG_INFO("all iptables rules are already set");
-        AI_LOG_FN_EXIT();
-        return true;
-    }
-
-    // finally apply the rules
-    bool success = applyRuleSet(Operation::Append, actual, ipVersion);
-    if (!success)
-    {
-        AI_LOG_ERROR("failed to append all iptables rules");
-    }
-
     AI_LOG_FN_EXIT();
-    return success;
+    return true;
 }
 
 // -----------------------------------------------------------------------------
 /**
- *  @brief Uses the iptables-restore tool to atomically add a set of rules
+ *  @brief Creates a new IPTables chain with the given name and put it in the
+ *  rule cache to write later.
  *
- *  The function pipes the rules in @a ruleSet into the iptables-restore tool,
- *  this will insert the rules at the begining of the  table
+ *  The Netfilter::Unchanged operation type is used to add new chains.
  *
- *  This is equivalent to running the following for all the rules
- *     iptables -t <table> -I <rule>
- *
- *  @warning This doesn't re-insert already existing rules.  If the rule already
- *  existed in the table then it's position is left unchanged.
- *
- *  @param[in]  ruleSet         The ruleset to apply.
- *  @param[in]  ipVersion       iptables version to use.
- *
- *  @return true on success, false on failure.
- */
-bool Netfilter::insertRules(const RuleSet &ruleSet, const int ipVersion)
-{
-    AI_LOG_FN_ENTRY();
-
-    // get the existing iptables rules
-    RuleSet existing = getRuleSet(ipVersion);
-
-    // create a rule set from entries in the supplied argument that are not
-    // not in the existing rules
-    RuleSet actual;
-
-    // check if we already have any of the rules
-    for (const std::pair<const TableType, std::list<std::string>> &newRule : ruleSet)
-    {
-        const TableType& table = newRule.first;
-        const std::list<std::string>& tableRules = newRule.second;
-
-        // get the existing table
-        const std::list<std::string> &existingRules = existing[table];
-
-        // add the rule to the actual list if it exists
-        for (const std::string &rule : tableRules)
-        {
-            if (!ruleInList(rule, existingRules))
-            {
-                actual[table].emplace_back(rule);
-            }
-        }
-    }
-
-    if (actual.empty())
-    {
-        AI_LOG_INFO("all iptables rules are already set");
-        AI_LOG_FN_EXIT();
-        return true;
-    }
-
-    // finally apply the rules
-    bool success = applyRuleSet(Operation::Insert, actual, ipVersion);
-    if (!success)
-    {
-        AI_LOG_ERROR("failed to insert all iptables rules");
-    }
-
-    AI_LOG_FN_EXIT();
-    return success;
-}
-
-// -----------------------------------------------------------------------------
-/**
- *  @brief Uses the iptables-restore tool to atomically delete a set of rules
- *
- *  The function pipes the rules in @a ruleSet into the iptables-restore tool,
- *  prefixed with the -D option.
- *
- *  This is equivalent to running the following for all the rules
- *     iptables -t <table> -D <rule>
- *
- *  @param[in]  ruleSet         The ruleset to apply.
- *  @param[in]  ipVersion       iptables version to use.
- *
- *  @return true on success, false on failure.
- */
-bool Netfilter::deleteRules(const RuleSet &ruleSet, const int ipVersion)
-{
-    AI_LOG_FN_ENTRY();
-
-    // get the existing iptables rules
-    RuleSet existing = getRuleSet(ipVersion);
-
-    // create a rule set from entries in the supplied argument that are in the
-    // existing rules, we need this because iptables-restore throw an error
-    // if trying to remove a rule that doesn't exist
-    RuleSet actual;
-
-    // check if we already have any of the rules
-    for (const std::pair<const TableType, std::list<std::string>> &newRule : ruleSet)
-    {
-        const TableType& table = newRule.first;
-        const std::list<std::string>& tableRules = newRule.second;
-
-        // get the existing table
-        const std::list<std::string>& existingRules = existing[table];
-
-        // add the rule to the actual list if it exists
-        for (const std::string& rule : tableRules)
-        {
-            if (ruleInList(rule, existingRules))
-            {
-                actual[table].emplace_back(rule);
-            }
-            else
-            {
-                AI_LOG_DEBUG("failed to find rule '%s' to delete", rule.c_str());
-            }
-        }
-    }
-
-    if (actual.empty())
-    {
-        AI_LOG_INFO("none of the rules to remove are in the table");
-        AI_LOG_FN_EXIT();
-        return true;
-    }
-
-    // finally apply the rules
-    bool success = applyRuleSet(Operation::Delete, actual, ipVersion);
-    if (!success)
-    {
-        AI_LOG_ERROR("failed to delete all iptables rules");
-    }
-
-    AI_LOG_FN_EXIT();
-    return success;
-}
-
-// -----------------------------------------------------------------------------
-/**
- *  @brief Creates a new IPTables chain with the given name.
- *
- *  If @a withDropRule is true then a catch-all rule is added to the newly
- *  created change to drop everything.
- *
- *  This is equivalent to running the following for all the rules
+ *  This is equivalent to:
  *     iptables -t <table> -N <name>
  *
- *  @param[in]  table           The ruleset to apply.
+ *  @param[in]  table           The table to add the new chain to.
  *  @param[in]  name            Name of the chain to add.
- *  @param[in]  withDropRule    Add drop rule if true.
  *  @param[in]  ipVersion       iptables version to use.
  *
- *  @return true on success, false on failure.
+ *  @return always returns true.
  */
-bool Netfilter::createNewChain(TableType table, const std::string &name,
-                               bool withDropRule, const int ipVersion)
+bool Netfilter::createNewChain(TableType table, const std::string &name, const int ipVersion)
 {
     AI_LOG_FN_ENTRY();
 
-    // create the initial ruleset to create the table
-    RuleSet newChainRuleSet =
-        {
-            {   table,
-                {
-                    // create the table
-                    ":" + name + " - [0:0]"
-                }
-            },
-        };
+    // get reference to the correct cache
+    RuleSets &ruleCache = (ipVersion == AF_INET) ? mIpv4RuleCache : mIpv6RuleCache;
 
-    // if a drop rule was requested append that to the end of the newly
-    // created table
-    if (withDropRule)
+    // create the rule to add the new chain
+    const std::string chainRule = ":" + name + " - [0:0]";
+
+    // find rules table from cache
+    auto cacheRuleset = ruleCache.unchangedRuleSet.find(table);
+    if (cacheRuleset == ruleCache.unchangedRuleSet.end())
     {
-        newChainRuleSet[table].emplace_back("-A " + name + " -j DROP");
+        // the table doesn't exist, so add it as a new table
+        ruleCache.unchangedRuleSet.emplace(
+            std::pair<TableType, std::list<std::string>>({ table, { chainRule }})
+        );
     }
-
-    // finally apply the rules
-    bool success = applyRuleSet(Operation::Unchanged, newChainRuleSet, ipVersion);
-    if (!success)
+    else
     {
-        AI_LOG_ERROR("failed to append all iptables rules");
+        // table exists, merge new rules to the end of it
+        cacheRuleset->second.merge({ chainRule });
     }
 
     AI_LOG_FN_EXIT();
-    return success;
+    return true;
 }
 
 // -----------------------------------------------------------------------------

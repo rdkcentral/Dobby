@@ -10,9 +10,9 @@ Add the following section to your OCI runtime configuration `config.json` file t
             "required": true,
             "data": {
                 "type": "nat",
-                "ipv4": "true",
-                "ipv6": "true",
-                "dnsmasq": "true",
+                "ipv4": true,
+                "ipv6": true,
+                "dnsmasq": true,
                 "portForwarding": {
                     "hostToContainer": [
                         {

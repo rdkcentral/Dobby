@@ -66,7 +66,7 @@ bool PortForwarding::addPortForwards(const std::shared_ptr<Netfilter> &netfilter
         }
 
         // insert vector index 0 of constructed rules
-        if (!netfilter->insertRules(ipv4Rules[0], AF_INET))
+        if (!netfilter->addRules(ipv4Rules[0], AF_INET, Netfilter::Operation::Insert))
         {
             AI_LOG_ERROR_EXIT("failed to insert port forward rules to iptables");
             return false;
@@ -75,7 +75,7 @@ bool PortForwarding::addPortForwards(const std::shared_ptr<Netfilter> &netfilter
         // append potential rules from vector index 1 of constructed rules
         if (ipv4Rules.size() > 1)
         {
-            if (!netfilter->appendRules(ipv4Rules[1], AF_INET))
+            if (!netfilter->addRules(ipv4Rules[1], AF_INET, Netfilter::Operation::Append))
             {
                 AI_LOG_ERROR_EXIT("failed to append port forward rules to iptables");
                 return false;
@@ -97,7 +97,7 @@ bool PortForwarding::addPortForwards(const std::shared_ptr<Netfilter> &netfilter
         }
 
         // insert vector index 0 of constructed rules
-        if (!netfilter->insertRules(ipv6Rules[0], AF_INET6))
+        if (!netfilter->addRules(ipv6Rules[0], AF_INET6, Netfilter::Operation::Insert))
         {
             AI_LOG_ERROR_EXIT("failed to insert port forward rules to ip6tables");
             return false;
@@ -106,7 +106,7 @@ bool PortForwarding::addPortForwards(const std::shared_ptr<Netfilter> &netfilter
         // append potential rules from vector index 1 of constructed rules
         if (ipv6Rules.size() > 1)
         {
-            if (!netfilter->appendRules(ipv6Rules[1], AF_INET6))
+            if (!netfilter->addRules(ipv6Rules[1], AF_INET6, Netfilter::Operation::Append))
             {
                 AI_LOG_ERROR_EXIT("failed to append port forward rules to ip6tables");
                 return false;
@@ -162,7 +162,7 @@ bool PortForwarding::removePortForwards(const std::shared_ptr<Netfilter> &netfil
         // delete constructed rulesets
         for (int i = 0; i < ipv4Rules.size(); i++)
         {
-            if (!netfilter->deleteRules(ipv4Rules[i], AF_INET))
+            if (!netfilter->addRules(ipv4Rules[i], AF_INET, Netfilter::Operation::Delete))
             {
                 AI_LOG_ERROR_EXIT("failed to delete port forwarding ip6tables rule"
                                   "at index %d", i);
@@ -188,7 +188,7 @@ bool PortForwarding::removePortForwards(const std::shared_ptr<Netfilter> &netfil
         // delete constructed rulesets
         for (int i = 0; i < ipv6Rules.size(); i++)
         {
-            if (!netfilter->deleteRules(ipv6Rules[i], AF_INET6))
+            if (!netfilter->addRules(ipv6Rules[i], AF_INET6, Netfilter::Operation::Delete))
             {
                 AI_LOG_ERROR_EXIT("failed to delete port forwarding ip6tables rule"
                                   "at index %d", i);
@@ -579,7 +579,6 @@ bool constructContainerToHostRules(std::vector<Netfilter::RuleSet> &ruleSets,
         filterRules.emplace_back(acceptRule);
     }
 
-
     // We want to insert(-I) these rules, so we put them in vector index 0.
     if (ruleSets.empty())
     {
@@ -588,17 +587,32 @@ bool constructContainerToHostRules(std::vector<Netfilter::RuleSet> &ruleSets,
             { Netfilter::TableType::Nat, natRules },
             { Netfilter::TableType::Filter, filterRules }
         };
-        ruleSets.emplace_back(rules);
+        ruleSets.emplace(ruleSets.begin(), rules);
     }
     else
     {
         // ruleSets vector isn't empty, so we need to merge our rulesets into
         // the ones already in there.
         auto natRuleset = ruleSets[0].find(Netfilter::TableType::Nat);
-        auto filterRuleset = ruleSets[0].find(Netfilter::TableType::Filter);
+        if (natRuleset != ruleSets[0].end())
+        {
+            natRuleset->second.merge(natRules);
+        }
+        else
+        {
+            ruleSets[0].insert({ Netfilter::TableType::Nat, natRules });
+        }
 
-        natRuleset->second.merge(natRules);
-        filterRuleset->second.merge(filterRules);
+        auto filterRuleset = ruleSets[0].find(Netfilter::TableType::Filter);
+        if (filterRuleset != ruleSets[0].end())
+        {
+            filterRuleset->second.merge(filterRules);
+        }
+        else
+        {
+            ruleSets[0].insert({ Netfilter::TableType::Filter, filterRules });
+        }
+
     }
 
     return true;
