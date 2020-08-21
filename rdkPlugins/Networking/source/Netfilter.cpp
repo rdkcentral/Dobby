@@ -432,8 +432,6 @@ Netfilter::RuleSet Netfilter::getRuleSet(const int ipVersion) const
  *  @param[in]  existing        existing rules from iptables-save.
  *  @param[in]  newRuleSet      new ruleset to add from mRuleSets.
  *  @param[in]  operation       operation intended to be added for the ruleset.
- *
- *  @return true on success, false on failure.
  */
 void Netfilter::trimDuplicates(RuleSet &existing, RuleSet &newRuleSet, Operation operation) const
 {
@@ -444,10 +442,10 @@ void Netfilter::trimDuplicates(RuleSet &existing, RuleSet &newRuleSet, Operation
         std::list<std::string> &tableRules = newRules.second;
 
         // get the existing table
-        const std::list<std::string> &existingRules = existing[table];
+        const std::list<std::string> &existingRules = (*(existing.find(table))).second;
 
         // iterate through all rules in the table to check for duplicates
-        std::list<std::string>::const_iterator it = tableRules.begin();
+        auto it = tableRules.begin();
         while (it != tableRules.end())
         {
             const std::string &rule = *it;
@@ -801,7 +799,7 @@ bool Netfilter::ruleInList(const std::string &rule,
  *  @param[in]  ipVersion       iptables version to use.
  *  @param[in]  operation       iptables operation to use for rules.
  *
- *  @return always returns true.
+ *  @return returns true on success, otherwise false.
  */
 bool Netfilter::addRules(RuleSet &ruleSet, const int ipVersion, Operation operation)
 {
@@ -818,23 +816,18 @@ bool Netfilter::addRules(RuleSet &ruleSet, const int ipVersion, Operation operat
     RuleSet *cacheRuleSet;
     switch(operation) {
         case Operation::Append:
-        {
             cacheRuleSet = &ruleCache->appendRuleSet;
-        }
+            break;
         case Operation::Insert:
-        {
             cacheRuleSet = &ruleCache->insertRuleSet;
-        }
+            break;
         case Operation::Delete:
-        {
             cacheRuleSet = &ruleCache->deleteRuleSet;
-        }
+            break;
         case Operation::Unchanged:
-        {
             AI_LOG_ERROR_EXIT("operation type 'Unchanged' not allowed, use Append, "
-                            "Insert or Delete");
+                              "Insert or Delete");
             return false;
-        }
     }
 
     for (auto &it : ruleSet)
