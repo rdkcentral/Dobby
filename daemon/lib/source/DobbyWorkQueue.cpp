@@ -111,8 +111,6 @@ bool DobbyWorkQueue::runFor(const std::chrono::milliseconds &msecs)
  */
 bool DobbyWorkQueue::runUntil(const std::chrono::steady_clock::time_point &deadline)
 {
-    AI_LOG_FN_ENTRY();
-
     // wait for the next work item added or mTerminateWorkQueue is true
     const auto predicate = [&]()
     {
@@ -147,7 +145,7 @@ bool DobbyWorkQueue::runUntil(const std::chrono::steady_clock::time_point &deadl
             locker.lock();
         }
 
-        AI_LOG_DEBUG("waiting for next work item");
+        // AI_LOG_DEBUG("waiting for next work item");
 
         // wait for the next work item added or mTerminateWorkQueue is true
         if (deadline == std::chrono::steady_clock::time_point::max())
@@ -181,8 +179,6 @@ bool DobbyWorkQueue::runUntil(const std::chrono::steady_clock::time_point &deadl
 
     bool result = mExitRequested;
     mExitRequested = false;
-
-    AI_LOG_FN_EXIT();
 
     return result;
 }
