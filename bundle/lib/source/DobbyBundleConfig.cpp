@@ -536,55 +536,8 @@ bool DobbyBundleConfig::processGpu(const Json::Value& value)
         return false;
     }
 
-    // TODO:: This needs to be rewritten (or just removed as GPU hook will be changed into an RDK plugin)
-    /*// lazily init the GPU dev nodes mapping - we used to do this at start-up
-    // but hit an issue on broadcom platforms where the dev nodes aren't
-    // created until the gpu library is used
-    if (!mInitialisedGpuDevNodes)
-    {
-        DobbyConfig::initGpuDevNodes(mSettings->gpuDeviceNodes());
-    }
-
-    // check if a special 'GPU' group id is needed
-    const int gpuGroupId = mSettings->gpuGroupId();
-    if (gpuGroupId > 0)
-    {
-        // If gidMappings doesn't exist in bundle config, add it
-        if (!mConfig["linux"]["gidMappings"].isArray())
-        {
-            mConfig["linux"]["gidMappings"] = Json::arrayValue;
-        }
-
-        Json::Value newGid;
-
-        newGid["hostID"] = gpuGroupId;
-        newGid["containerID"] = gpuGroupId;
-        newGid["size"] = 1;
-
-        mConfig["linux"]["gidMappings"].append(newGid);
-    }
-
-    // add any extra mounts (i.e. ipc sockets, shared memory files, etc)
-    Json::Value newMount;
-    if (mSettings->gpuHasExtraMounts())
-    {
-        const std::list<IDobbySettings::GpuExtraMount> extraMounts =
-            mSettings->gpuExtraMounts();
-
-        for (const IDobbySettings::GpuExtraMount& extraMount : extraMounts)
-        {
-            newMount["destination"] = extraMount.source;
-            newMount["type"] = extraMount.target;
-            newMount["source"] = extraMount.type;
-
-            for (const std::string& flag : extraMount.flags)
-            {
-                newMount["options"].append(flag);
-            }
-
-            mConfig["mounts"].append(newMount);
-        }
-    }*/
+    // TODO:: This currently does nothing as functionality will be moved
+    // from syshook to RDK plugin and this will be removed.
 
     return true;
 }
