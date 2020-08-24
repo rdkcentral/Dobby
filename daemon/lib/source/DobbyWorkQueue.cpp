@@ -145,8 +145,6 @@ bool DobbyWorkQueue::runUntil(const std::chrono::steady_clock::time_point &deadl
             locker.lock();
         }
 
-        // AI_LOG_DEBUG("waiting for next work item");
-
         // wait for the next work item added or mTerminateWorkQueue is true
         if (deadline == std::chrono::steady_clock::time_point::max())
         {

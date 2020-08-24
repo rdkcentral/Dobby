@@ -324,7 +324,8 @@ static void startCommand(const std::shared_ptr<IDobbyProxy> &dobbyProxy,
         // check that the file in path has a '.json' filename extension
         if (path.find(".json") == std::string::npos)
         {
-            readLine->printLnError("'%s' is not a .json file", path.c_str());
+            readLine->printLnError("please provide the path to a bundle or a "
+                                   "valid .json file");
             return;
         }
 
