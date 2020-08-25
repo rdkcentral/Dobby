@@ -43,12 +43,6 @@ Netfilter::RuleSet constructRules(const std::string &containerId, const int ipVe
 {
     AI_LOG_FN_ENTRY();
 
-#if defined(DEV_VM)
-    const std::string id(containerId);
-#else
-    const std::string id("\"" + containerId + "\"");
-#endif
-
     // the following rule set was obtained by looking at what libvirt had setup
     // for the NAT connection, we're just replicating
     char buf[256];
@@ -61,7 +55,7 @@ Netfilter::RuleSet constructRules(const std::string &containerId, const int ipVe
                         "-i " BRIDGE_NAME " "
                         "-p %s "
                         "-m %s --dport 53 "
-                        "-m comment --comment " + id + " "
+                        "-m comment --comment " + containerId + " "
                         "-j DNAT --to-destination %s:53");
 
     // allow DNS packets from containers
@@ -71,7 +65,7 @@ Netfilter::RuleSet constructRules(const std::string &containerId, const int ipVe
                            "-i " BRIDGE_NAME " "
                            "-p %s "
                            "-m %s --dport 53 "
-                           "-m comment --comment " + id + " -j ACCEPT");
+                           "-m comment --comment " + containerId + " -j ACCEPT");
 
     if (ipVersion == AF_INET)
     {
@@ -191,7 +185,7 @@ bool DnsmasqSetup::set(const std::shared_ptr<DobbyRdkPluginUtils> &utils,
     if (helper->ipv4())
     {
         Netfilter::RuleSet ipv4RuleSet = constructRules(containerId, AF_INET);
-        if (!netfilter->appendRules(ipv4RuleSet, AF_INET))
+        if (!netfilter->addRules(ipv4RuleSet, AF_INET, Netfilter::Operation::Append))
         {
             AI_LOG_ERROR_EXIT("failed to setup netfilter rules for dns");
             return false;
@@ -200,7 +194,7 @@ bool DnsmasqSetup::set(const std::shared_ptr<DobbyRdkPluginUtils> &utils,
     if (helper->ipv6())
     {
         Netfilter::RuleSet ipv6RuleSet = constructRules(containerId, AF_INET6);
-        if (!netfilter->appendRules(ipv6RuleSet, AF_INET6))
+        if (!netfilter->addRules(ipv6RuleSet, AF_INET6, Netfilter::Operation::Append))
         {
             AI_LOG_ERROR_EXIT("failed to setup netfilter rules for dns");
             return false;
@@ -268,7 +262,7 @@ bool DnsmasqSetup::removeRules(const std::shared_ptr<Netfilter> &netfilter,
     if (helper->ipv4())
     {
         Netfilter::RuleSet ipv4RuleSet = constructRules(containerId, AF_INET);
-        if (!netfilter->deleteRules(ipv4RuleSet, AF_INET))
+        if (!netfilter->addRules(ipv4RuleSet, AF_INET, Netfilter::Operation::Delete))
         {
             AI_LOG_ERROR_EXIT("failed to delete netfilter rules for dnsmasq");
             return false;
@@ -277,7 +271,7 @@ bool DnsmasqSetup::removeRules(const std::shared_ptr<Netfilter> &netfilter,
     if (helper->ipv6())
     {
         Netfilter::RuleSet ipv6RuleSet = constructRules(containerId, AF_INET6);
-        if (!netfilter->deleteRules(ipv6RuleSet, AF_INET6))
+        if (!netfilter->addRules(ipv6RuleSet, AF_INET6, Netfilter::Operation::Delete))
         {
             AI_LOG_ERROR_EXIT("failed to delete netfilter rules for dnsmasq");
             return false;

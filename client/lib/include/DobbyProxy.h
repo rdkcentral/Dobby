@@ -78,12 +78,6 @@ public:
                                    const std::string& command = "",
                                    const std::string& displaySocket = "") const override;
 
-    int32_t startContainerFromSpec(const std::string& id,
-                                   const Json::Value& spec,
-                                   const std::list<int>& files,
-                                   const std::string& command = "",
-                                   const std::string& displaySocket = "") const override;
-
 
     int32_t startContainerFromBundle(const std::string& id,
                                      const std::string& bundlePath,

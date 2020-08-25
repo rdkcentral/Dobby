@@ -164,7 +164,7 @@ DobbyBundle::DobbyBundle(const std::shared_ptr<const IDobbyUtils>& utils,
     std::ostringstream os;
     os << id.str() << "." << dist(mt);
     std::string dir_name = os.str();
-    // eg. com.bskyb.epgui.12345
+    // eg. mycontainer.12345
 
     if (mkdirat(bundlesDirFd, dir_name.c_str(), 0755) != 0)
     {
