@@ -73,7 +73,9 @@ endif()
 add_definitions( -DDBUS_SYSTEM_ADDRESS="unix:path=/var/run/dbus/system_bus_socket" )
 
 option( LEGACY_COMPONENTS "Enable Dobby legacy components" ON )
-option( ENABLE_LTO "Enable link time optimisation compiler flags" ON )
+# Disable for now. LTO can cause issues with debugging symbols on GCC versions before 8.0.0.
+# See http://hubicka.blogspot.com/2018/06/gcc-8-link-time-and-interprocedural.html
+option( ENABLE_LTO "Enable link time optimisation compiler flags" OFF )
 
 # Enable C++14 support. The following tells cmake to always add the -std=c++14
 # flag (nb - if CMAKE_CXX_EXTENSIONS is ON then we'll get -std=gnu++14 instead)
