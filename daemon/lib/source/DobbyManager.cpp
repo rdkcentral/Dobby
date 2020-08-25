@@ -367,6 +367,12 @@ bool DobbyManager::createAndStart(const ContainerId &id,
 {
     AI_LOG_FN_ENTRY();
 
+    // Run any pre-creation hooks
+    if (!onPreCreationHook(container))
+    {
+        return false;
+    }
+
     // Create the container, but don't start it yet
     auto loggingPlugin = GetContainerLogger(container);
     std::shared_ptr<DobbyBufferStream> createBuffer = std::make_shared<DobbyBufferStream>();
@@ -390,6 +396,7 @@ bool DobbyManager::createAndStart(const ContainerId &id,
             mLogger->DumpBuffer(createBuffer->getMemFd(), -1, loggingPlugin, true);
         }
 
+        container->containerPid = -1;
         return false;
     }
     container->containerPid = pids.second;
@@ -581,49 +588,61 @@ bool DobbyManager::createAndStartContainer(const ContainerId &id,
         return true;
     }
 
-    AI_LOG_WARN("Something went wrong when creating/starting '%s', cleaning up", id.c_str());
-
-    // Something went wrong during container start, clean up everything
-    // kill the container created
-    if (!mRunc->kill(id, SIGKILL))
+    // If the PID is < 0, something went wrong during container creation and
+    // start was never attempted
+    if (container->containerPid < 0)
     {
-        AI_LOG_ERROR("failed to kill (non-running) container for '%s'",
-                     id.c_str());
+        AI_LOG_WARN("Something went wrong when creating '%s'", id.c_str());
+    }
+    else
+    {
+        // PID > 0 so container was created but failed to start
+        AI_LOG_WARN("Something went wrong when starting '%s', cleaning up", id.c_str());
+
+        // Something went wrong during container start, clean up everything
+        // kill the container created
+        if (!mRunc->kill(id, SIGKILL))
+        {
+            AI_LOG_ERROR("failed to kill (non-running) container for '%s'",
+                        id.c_str());
+        }
+
+
+        // wait for the half-started container to terminate
+        if (waitpid(container->containerPid, nullptr, 0) < 0)
+        {
+            AI_LOG_SYS_ERROR(errno, "error waiting for the container '%s' to terminate",
+                            id.c_str());
+        }
+
+        // either the container failed to start, or one of the preStart hooks
+        // failed, either way we want to call the postStop hook
+        onPostStopHook(id, container);
+
+        // if we dropped out here it means something has gone wrong, but the
+        // container was created, so destroy it
+        std::shared_ptr<DobbyBufferStream> destroyBuffer = std::make_shared<DobbyBufferStream>();
+        if (!mRunc->destroy(id, destroyBuffer))
+        {
+            AI_LOG_ERROR("failed to destroy '%s'", id.c_str());
+        }
+
+        auto loggingPlugin = GetContainerLogger(container);
+        if (loggingPlugin)
+        {
+            mLogger->DumpBuffer(destroyBuffer->getMemFd(), container->containerPid, loggingPlugin, false);
+        }
+
+        // clear the pid now it's been killed
+        container->containerPid = -1;
     }
 
-    // wait for the half-started container to terminate
-    if (waitpid(container->containerPid, nullptr, 0) < 0)
-    {
-        AI_LOG_SYS_ERROR(errno, "error waiting for the container '%s' to terminate",
-                         id.c_str());
-    }
-
-    // either the container failed to start, or one of the preStart hooks
-    // failed, either way we want to call the postStop hook
-    onPostStopHook(id, container);
-
-    // For the same reason, call the postHalt hook
+    // Call the postHalt hook to clean up from the creation (preCreation,
+    // createRuntime, createContainer) hooks
     if (container->config->rdkPlugins().size() > 0)
     {
         onPostHaltHook(container);
     }
-
-    // if we dropped out here it means something has gone wrong, but the
-    // container was created, so destroy it
-    std::shared_ptr<DobbyBufferStream> destroyBuffer = std::make_shared<DobbyBufferStream>();
-    if (!mRunc->destroy(id, destroyBuffer))
-    {
-        AI_LOG_ERROR("failed to destroy '%s'", id.c_str());
-    }
-
-    auto loggingPlugin = GetContainerLogger(container);
-    if (loggingPlugin)
-    {
-        mLogger->DumpBuffer(destroyBuffer->getMemFd(), container->containerPid, loggingPlugin, false);
-    }
-
-    // clear the pid now it's been killed
-    container->containerPid = -1;
 
     AI_LOG_FN_EXIT();
     return false;
@@ -755,35 +774,26 @@ int32_t DobbyManager::startContainerFromSpec(const ContainerId &id,
         }
         else
         {
-            // Run preCreation hook
-            if (!onPreCreationHook(container))
+            // if the respawn flag is set in the spec file then we need to store
+            // any file descriptors for use at respawn time
+            if (config->restartOnCrash())
             {
-                pluginFailure = true;
+                container->setRestartOnCrash(startState->files());
             }
 
-            if (!pluginFailure)
+            // try and create and start the container
+            if (createAndStartContainer(id, container, startState->files(), command, displaySocket))
             {
-                // if the respawn flag is set in the spec file then we need to store
-                // any file descriptors for use at respawn time
-                if (config->restartOnCrash())
-                {
-                    container->setRestartOnCrash(startState->files());
-                }
+                // get the descriptor of the container and return that to the
+                // caller (need to do this before we move into the map)
+                int32_t cd = container->descriptor;
 
-                // try and create and start the container
-                if (createAndStartContainer(id, container, startState->files(), command, displaySocket))
-                {
-                    // get the descriptor of the container and return that to the
-                    // caller (need to do this before we move into the map)
-                    int32_t cd = container->descriptor;
+                // woo - she's off and running, so move the container object
+                // into the map and then we're done
+                mContainers.emplace(id, std::move(container));
 
-                    // woo - she's off and running, so move the container object
-                    // into the map and then we're done
-                    mContainers.emplace(id, std::move(container));
-
-                    AI_LOG_FN_EXIT();
-                    return cd;
-                }
+                AI_LOG_FN_EXIT();
+                return cd;
             }
         }
     }
@@ -936,35 +946,26 @@ int32_t DobbyManager::startContainerFromBundle(const ContainerId &id,
                 std::ofstream flag(successFlagPath);
             }
 
-            // Run preCreation hook
-            if (!onPreCreationHook(container))
+            // if the respawn flag is set in the spec file then we need to store
+            // any file descriptors for use at respawn time
+            if (config->restartOnCrash())
             {
-                pluginFailure = true;
+                container->setRestartOnCrash(startState->files());
             }
 
-            if (!pluginFailure)
+            // try and create and start the container
+            if (createAndStartContainer(id, container, startState->files(), command, displaySocket))
             {
-                // if the respawn flag is set in the spec file then we need to store
-                // any file descriptors for use at respawn time
-                if (config->restartOnCrash())
-                {
-                    container->setRestartOnCrash(startState->files());
-                }
+                // get the descriptor of the container and return that to the
+                // caller (need to do this before we move into the map)
+                int32_t cd = container->descriptor;
 
-                // try and create and start the container
-                if (createAndStartContainer(id, container, startState->files(), command, displaySocket))
-                {
-                    // get the descriptor of the container and return that to the
-                    // caller (need to do this before we move into the map)
-                    int32_t cd = container->descriptor;
+                // woo - she's off and running, so move the container object
+                // into the map and then we're done
+                mContainers.emplace(id, std::move(container));
 
-                    // woo - she's off and running, so move the container object
-                    // into the map and then we're done
-                    mContainers.emplace(id, std::move(container));
-
-                    AI_LOG_FN_EXIT();
-                    return cd;
-                }
+                AI_LOG_FN_EXIT();
+                return cd;
             }
         }
     }
