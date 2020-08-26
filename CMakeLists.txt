@@ -72,7 +72,11 @@ endif()
 # Add defines for DBUS path
 add_definitions( -DDBUS_SYSTEM_ADDRESS="unix:path=/var/run/dbus/system_bus_socket" )
 
-option(LEGACY_COMPONENTS "Enable Dobby legacy components" ON)
+option( LEGACY_COMPONENTS "Enable Dobby legacy components" ON )
+# Add #define if enabled
+if ( LEGACY_COMPONENTS )
+    add_definitions( -DLEGACY_COMPONENTS )
+endif()
 
 # Enable C++14 support. The following tells cmake to always add the -std=c++14
 # flag (nb - if CMAKE_CXX_EXTENSIONS is ON then we'll get -std=gnu++14 instead)
@@ -103,8 +107,10 @@ set( CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_LIST_DIR}/cmake" )
 find_package( libnl REQUIRED )
 find_package( dbus REQUIRED )
 find_package( jsoncpp REQUIRED )
-find_package( ctemplate REQUIRED )
 find_package( Boost REQUIRED )
+if ( LEGACY_COMPONENTS )
+    find_package( ctemplate REQUIRED )
+endif()
 
 # Required for libocispec only
 find_package( yajl REQUIRED )
@@ -125,7 +131,9 @@ add_subdirectory(settings)
 
 # Add Bundle Generator code
 add_subdirectory(bundle/lib)
-add_subdirectory(bundle/tool)
+if ( LEGACY_COMPONENTS )
+    add_subdirectory(bundle/tool)
+endif()
 
 # Add the dobby daemon code
 add_subdirectory( daemon/init )

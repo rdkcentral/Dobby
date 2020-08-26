@@ -28,9 +28,12 @@
 #include "DobbyEnv.h"
 #include "DobbyUtils.h"
 #include "DobbyIPCUtils.h"
-#include "DobbyTemplate.h"
 #include "DobbyWorkQueue.h"
 #include "DobbyState.h"
+
+#if defined(LEGACY_COMPONENTS)
+#  include "DobbyTemplate.h"
+#endif // defined(LEGACY_COMPONENTS)
 
 #include <Logging.h>
 
@@ -82,8 +85,10 @@ Dobby::Dobby(const std::string& dbusAddress,
 {
     AI_LOG_FN_ENTRY();
 
+#if defined(LEGACY_COMPONENTS)
     // initialise the template code with the settings
     DobbyTemplate::setSettings(settings);
+#endif // defined(LEGACY_COMPONENTS)
 
     // create the two callback function objects for notifying when a container
     // has start and stopped
@@ -588,9 +593,6 @@ void Dobby::initIpcMethods()
         {   DOBBY_ADMIN_INTERFACE,       DOBBY_ADMIN_METHOD_SET_LOG_METHOD,         &Dobby::setLogMethod           },
         {   DOBBY_ADMIN_INTERFACE,       DOBBY_ADMIN_METHOD_SET_LOG_LEVEL,          &Dobby::setLogLevel            },
         {   DOBBY_ADMIN_INTERFACE,       DOBBY_ADMIN_METHOD_SET_AI_DBUS_ADDR,       &Dobby::setAIDbusAddress       },
-
-        {   DOBBY_CTRL_INTERFACE,        DOBBY_CTRL_METHOD_START,                   &Dobby::startFromSpec          },
-        {   DOBBY_CTRL_INTERFACE,        DOBBY_CTRL_METHOD_START_FROM_SPEC,         &Dobby::startFromSpec          },
         {   DOBBY_CTRL_INTERFACE,        DOBBY_CTRL_METHOD_START_FROM_BUNDLE,       &Dobby::startFromBundle        },
         {   DOBBY_CTRL_INTERFACE,        DOBBY_CTRL_METHOD_STOP,                    &Dobby::stop                   },
         {   DOBBY_CTRL_INTERFACE,        DOBBY_CTRL_METHOD_PAUSE,                   &Dobby::pause                  },
@@ -600,9 +602,16 @@ void Dobby::initIpcMethods()
         {   DOBBY_CTRL_INTERFACE,        DOBBY_CTRL_METHOD_GETINFO,                 &Dobby::getInfo                },
         {   DOBBY_CTRL_INTERFACE,        DOBBY_CTRL_METHOD_LIST,                    &Dobby::list                   },
 
+#if defined(LEGACY_COMPONENTS)
+        {   DOBBY_CTRL_INTERFACE,        DOBBY_CTRL_METHOD_START,                   &Dobby::startFromSpec          },
+        {   DOBBY_CTRL_INTERFACE,        DOBBY_CTRL_METHOD_START_FROM_SPEC,         &Dobby::startFromSpec          },
+#endif // defined(LEGACY_COMPONENTS)
+
 #if (AI_BUILD_TYPE == AI_DEBUG)
+#if defined(LEGACY_COMPONENTS)
         {   DOBBY_DEBUG_INTERFACE,       DOBBY_DEBUG_METHOD_CREATE_BUNDLE,          &Dobby::createBundle           },
         {   DOBBY_DEBUG_INTERFACE,       DOBBY_DEBUG_METHOD_GET_SPEC,               &Dobby::getSpec                },
+#endif // defined(LEGACY_COMPONENTS)
         {   DOBBY_DEBUG_INTERFACE,       DOBBY_DEBUG_METHOD_GET_OCI_CONFIG,         &Dobby::getOCIConfig           },
 #endif // (AI_BUILD_TYPE == AI_DEBUG)
 
@@ -889,6 +898,7 @@ void Dobby::setAIDbusAddress(std::shared_ptr<AI_IPC::IAsyncReplySender> replySen
     AI_LOG_FN_EXIT();
 }
 
+#if defined(LEGACY_COMPONENTS)
 // -----------------------------------------------------------------------------
 /**
  *  @brief Starts a new container from the supplied json spec document.
@@ -990,6 +1000,7 @@ void Dobby::startFromSpec(std::shared_ptr<AI_IPC::IAsyncReplySender> replySender
 
     AI_LOG_FN_EXIT();
 }
+#endif // defined(LEGACY_COMPONENTS)
 
 // -----------------------------------------------------------------------------
 /**
@@ -1510,7 +1521,7 @@ void Dobby::list(std::shared_ptr<AI_IPC::IAsyncReplySender> replySender)
     AI_LOG_FN_EXIT();
 }
 
-#if (AI_BUILD_TYPE == AI_DEBUG)
+#if (AI_BUILD_TYPE == AI_DEBUG) && defined(LEGACY_COMPONENTS)
 // -----------------------------------------------------------------------------
 /**
  *  @brief Debugging utility that can be used to create a bundle based on
@@ -1569,9 +1580,7 @@ void Dobby::createBundle(std::shared_ptr<AI_IPC::IAsyncReplySender> replySender)
         AI_LOG_ERROR("failed to send reply");
     }
 }
-#endif // (AI_BUILD_TYPE == AI_DEBUG)
 
-#if (AI_BUILD_TYPE == AI_DEBUG)
 // -----------------------------------------------------------------------------
 /**
  *  @brief Debugging utility to retrieve the original spec file for a running
@@ -1623,7 +1632,7 @@ void Dobby::getSpec(std::shared_ptr<AI_IPC::IAsyncReplySender> replySender)
 
     AI_LOG_FN_EXIT();
 }
-#endif // (AI_BUILD_TYPE == AI_DEBUG)
+#endif // (AI_BUILD_TYPE == AI_DEBUG) && defined(LEGACY_COMPONENTS)
 
 #if (AI_BUILD_TYPE == AI_DEBUG)
 // -----------------------------------------------------------------------------

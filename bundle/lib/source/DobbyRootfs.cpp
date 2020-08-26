@@ -37,6 +37,7 @@
 #include <sys/mount.h>
 
 
+#if defined(LEGACY_COMPONENTS)
 // -----------------------------------------------------------------------------
 /**
  *  @brief Constructor that creates the rootfs for a container.
@@ -94,6 +95,7 @@ DobbyRootfs::DobbyRootfs(const std::shared_ptr<IDobbyUtils>& utils,
 
     AI_LOG_FN_EXIT();
 }
+#endif // defined(LEGACY_COMPONENTS)
 
 // -----------------------------------------------------------------------------
 /**
@@ -310,6 +312,7 @@ void DobbyRootfs::unmountAllAt(const std::string& pathPrefix)
     AI_LOG_FN_EXIT();
 }
 
+#if defined(LEGACY_COMPONENTS)
 // -----------------------------------------------------------------------------
 /**
  *  @brief Utility method that simply creates a file at the given path and
@@ -672,3 +675,4 @@ bool DobbyRootfs::constructRootfs(int dirfd,
     AI_LOG_FN_EXIT();
     return true;
 }
+#endif // defined(LEGACY_COMPONENTS)

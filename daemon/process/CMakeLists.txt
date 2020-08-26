@@ -85,7 +85,6 @@ target_link_libraries( # Specifies the target exec
         # Import the 3rd party libraries
         systemd
         JsonCpp::JsonCpp
-        CTemplate::libctemplate
         DBUS::libdbus
         LIBNL::libnl
         LIBNL::libnl-route
@@ -143,3 +142,10 @@ install(
 #            $DESTDIR/${CMAKE_INSTALL_PREFIX}/etc/systemd/system/multi-user.target.wants/sky-dobby.service \
 #            )" )
 
+
+if (LEGACY_COMPONENTS)
+        target_link_libraries( DobbyDaemon
+                # Import the 3rd party libraries
+                CTemplate::libctemplate
+        )
+endif()

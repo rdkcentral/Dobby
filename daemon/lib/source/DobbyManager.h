@@ -93,16 +93,21 @@ public:
 private:
     void setupSystem();
     void setupWorkspace(const std::shared_ptr<IDobbyEnv>& env);
+
+#if defined(LEGACY_COMPONENTS)
     void setupSystemHooks();
+#endif // defined(LEGACY_COMPONENTS)
 
     void cleanupContainers();
 
 public:
+#if defined(LEGACY_COMPONENTS)
     int32_t startContainerFromSpec(const ContainerId& id,
                                    const std::string& jsonSpec,
                                    const std::list<int>& files,
                                    const std::string& command,
                                    const std::string& displaySocket);
+#endif // defined(LEGACY_COMPONENTS)
 
     int32_t startContainerFromBundle(const ContainerId& id,
                                      const std::string& bundlePath,
@@ -131,11 +136,12 @@ public:
     std::vector<std::string> getExtIfaces();
 
 public:
-    std::string specOfContainer(int32_t cd) const;
-
     std::string jsonConfigOfContainer(int32_t cd) const;
 
+#if defined(LEGACY_COMPONENTS)
+    std::string specOfContainer(int32_t cd) const;
     bool createBundle(const ContainerId& id, const std::string& jsonSpec);
+#endif // defined(LEGACY_COMPONENTS)
 
 private:
     void onChildExit();
@@ -173,6 +179,9 @@ private:
 private:
     bool onPostInstallationHook(const std::unique_ptr<DobbyContainer> &container);
     bool onPreCreationHook(const std::unique_ptr<DobbyContainer> &container);
+    bool onPostHaltHook(const std::unique_ptr<DobbyContainer> &container);
+
+#if defined(LEGACY_COMPONENTS)
     bool onPostConstructionHook(const ContainerId& id,
                                 const std::shared_ptr<DobbyStartState>& startState,
                                 const std::unique_ptr<DobbyContainer>& container);
@@ -182,10 +191,8 @@ private:
                          const std::unique_ptr<DobbyContainer>& container);
     bool onPostStopHook(const ContainerId& id,
                         const std::unique_ptr<DobbyContainer>& container);
-    bool onPostHaltHook(const std::unique_ptr<DobbyContainer> &container);
     bool onPreDestructionHook(const ContainerId& id,
                               const std::unique_ptr<DobbyContainer>& container);
-
 
 private:
     enum class HookType {
@@ -196,6 +203,7 @@ private:
     bool executeSysHooks(const std::unique_ptr<DobbyContainer>& container,
                          const HookType& hookType,
                          const SysHookFn& sysHookFn);
+#endif // defined(LEGACY_COMPONENTS)
 
 private:
     void startRuncMonitorThread();
@@ -211,8 +219,10 @@ private:
 
 private:
     std::unique_ptr<DobbyRunC> mRunc;
-    std::unique_ptr<DobbyPluginManager> mPlugins;
     std::shared_ptr<DobbyState> mState;
+#if defined(LEGACY_COMPONENTS)
+    std::unique_ptr<DobbyPluginManager> mPlugins;
+#endif // defined(LEGACY_COMPONENTS)
 
 private:
     std::list<std::shared_ptr<IDobbySysHook>> mSysHooks;

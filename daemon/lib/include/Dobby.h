@@ -96,8 +96,10 @@ private:
     DOBBY_DBUS_METHOD(getInfo);
 
 #if (AI_BUILD_TYPE == AI_DEBUG)
+#if defined(LEGACY_COMPONENTS)
     DOBBY_DBUS_METHOD(createBundle);
     DOBBY_DBUS_METHOD(getSpec);
+#endif // defined(LEGACY_COMPONENTS)
     DOBBY_DBUS_METHOD(getOCIConfig);
 #endif
 
