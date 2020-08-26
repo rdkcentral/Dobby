@@ -72,7 +72,10 @@ endif()
 # Add defines for DBUS path
 add_definitions( -DDBUS_SYSTEM_ADDRESS="unix:path=/var/run/dbus/system_bus_socket" )
 
-option(LEGACY_COMPONENTS "Enable Dobby legacy components" ON)
+option( LEGACY_COMPONENTS "Enable Dobby legacy components" ON )
+# Disable for now. LTO can cause issues with debugging symbols on GCC versions before 8.0.0.
+# See http://hubicka.blogspot.com/2018/06/gcc-8-link-time-and-interprocedural.html
+option( ENABLE_LTO "Enable link time optimisation compiler flags" OFF )
 
 # Enable C++14 support. The following tells cmake to always add the -std=c++14
 # flag (nb - if CMAKE_CXX_EXTENSIONS is ON then we'll get -std=gnu++14 instead)
@@ -111,6 +114,28 @@ find_package( yajl REQUIRED )
 
 # Run libocispec to generate OCI config parsers and necessary C headers
 include(cmake/libocispec.cmake)
+
+# Enable link time optimization if it's supported
+if( ENABLE_LTO )
+    if( ${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.9.0" )
+        # use cmake's IPO setting to apply LTO flags to compiler
+        cmake_policy( SET CMP0069 NEW )
+        include( CheckIPOSupported )
+        check_ipo_supported( RESULT ipo_supported OUTPUT error  )
+        if( ipo_supported )
+            set( CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE )
+        else()
+            message( WARNING "IPO flags not known for the current compiler" )
+        endif()
+    else()
+        # apply LTO manually with gcc flags
+        if( ${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU" AND ${CMAKE_CXX_COMPILER_VERSION} VERSION_GREATER_EQUAL "4.5.0" )
+            add_compile_options( -flto -ffat-lto-objects )
+        else()
+            message( WARNING "gcc 4.5.0 or higher required for LTO flags" )
+        endif()
+    endif()
+endif()
 
 # Import AppInfrastructure code
 add_subdirectory( AppInfrastructure/Logging )
