@@ -62,7 +62,7 @@ target_compile_definitions(
         DobbyDaemon
 
         PRIVATE
-        -DDOBBY_VERSION="${DOBBY_MAJOR_VERSION}.${DOBBY_MINOR_VERSION}.${DOBBY_MICRO_VERSION}"
+        -DDOBBY_VERSION="${DOBBY_MAJOR_VERSION}.${DOBBY_MINOR_VERSION}"
 
         )
 
