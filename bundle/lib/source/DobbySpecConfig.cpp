@@ -1427,7 +1427,7 @@ bool DobbySpecConfig::processGpu(const Json::Value& value,
     }
     else if (memLimit.isNull())
     {
-        mGpuMemLimit = 64 * 1024 * 1024;
+        mGpuMemLimit = GPU_MEMLIMIT_DEFAULT;
     }
     else
     {
@@ -1535,7 +1535,7 @@ bool DobbySpecConfig::processVpu(const Json::Value& value,
     }
 
     // add any extra mounts (ie ipc sockets, shared memory files, etc)
-    for (const IDobbySettings::ExtraMount& extraMount : mVpuSettings->extraMounts)
+    for (const auto& extraMount : mVpuSettings->extraMounts)
     {
         ctemplate::TemplateDictionary *subDict = dictionary->AddSectionDictionary(MOUNT_SECTION);
         subDict->SetValue(MOUNT_SRC, extraMount.source);

@@ -70,12 +70,8 @@ else()
 endif()
 
 # Option to enable / disable the Perfetto tracing support
-if( BUILD_TYPE STREQUAL "RELEASE" )
-    set( ENABLE_PERFETTO_TRACING_DEFAULT OFF )
-else()
-    set( ENABLE_PERFETTO_TRACING_DEFAULT OFF )
-endif()
-
+# Can only be enabled in DEBUG builds
+set( ENABLE_PERFETTO_TRACING_DEFAULT OFF )
 option( ENABLE_PERFETTO_TRACING "Enable Perfetto tracing" ${ENABLE_PERFETTO_TRACING_DEFAULT} )
 
 if( BUILD_TYPE STREQUAL "RELEASE" AND ENABLE_PERFETTO_TRACING )
