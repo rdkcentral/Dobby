@@ -35,12 +35,13 @@ target_include_directories( DobbyClientLib
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../../protocol/include>
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../../AppInfrastructure/Public>
 
-        PRIVATE
-        $<TARGET_PROPERTY:AppInfraLogging,INTERFACE_INCLUDE_DIRECTORIES>
-        $<TARGET_PROPERTY:AppInfraCommon,INTERFACE_INCLUDE_DIRECTORIES>
-        $<TARGET_PROPERTY:IpcService,INTERFACE_INCLUDE_DIRECTORIES>
-
         )
+
+target_link_libraries(DobbyClientLib
+        IpcService
+        AppInfraLogging
+        AppInfraCommon
+)
 
 install(TARGETS DobbyClientLib
         EXPORT DobbyTargets
