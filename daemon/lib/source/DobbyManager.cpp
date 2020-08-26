@@ -368,9 +368,12 @@ bool DobbyManager::createAndStart(const ContainerId &id,
     AI_LOG_FN_ENTRY();
 
     // Run any pre-creation hooks
-    if (!onPreCreationHook(container))
+    if (container->config->rdkPlugins().size() > 0)
     {
-        return false;
+        if (!onPreCreationHook(container))
+        {
+            return false;
+        }
     }
 
     // Create the container, but don't start it yet
