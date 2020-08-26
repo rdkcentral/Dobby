@@ -752,9 +752,12 @@ int32_t DobbyManager::startContainerFromSpec(const ContainerId &id,
         else
         {
             // Run preCreation hook
-            if (!onPreCreationHook(container))
+            if (rdkPlugins.size() > 0)
             {
-                pluginFailure = true;
+                if (!onPreCreationHook(container))
+                {
+                    pluginFailure = true;
+                }
             }
 
             if (!pluginFailure)
@@ -933,9 +936,12 @@ int32_t DobbyManager::startContainerFromBundle(const ContainerId &id,
             }
 
             // Run preCreation hook
-            if (!onPreCreationHook(container))
+            if (rdkPlugins.size() > 0)
             {
-                pluginFailure = true;
+                if (!onPreCreationHook(container))
+                {
+                    pluginFailure = true;
+                }
             }
 
             if (!pluginFailure)
