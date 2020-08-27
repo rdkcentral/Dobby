@@ -40,7 +40,6 @@ If the schema files in the `bundle/runtime-schemas` directory are changed, then 
 * `-DRDK_PLATFORM=DEV_VM` - specifiy which platform Dobby is running on. Defaults to `XI6` if none specified. Valid options include
   * `XI6`
   * `XI1`
-  * `LLAMA`
   * `DEV_VM`
 
 ## Development
