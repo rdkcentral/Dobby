@@ -218,8 +218,9 @@ bool DobbyFactory::startDobbyDaemon()
     mIpcService->unregisterHandler(id);
     mIpcService->flush();
 
-    // for NGDEV-67175 we fallback to sending ping / pong messages to the daemon
-    // for a while until finally giving up if we get no response
+    // In case of long kernel bootups we fallback to sending ping / pong
+    // messages to the daemon for a while until finally giving up if we
+    // get no response
     if (!success)
     {
         success = pingDobbyDaemon();
