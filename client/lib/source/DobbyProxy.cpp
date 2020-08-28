@@ -190,7 +190,7 @@ void DobbyProxy::unregisterListener(int id)
 
 // -----------------------------------------------------------------------------
 /**
- *  @brief Called when a com.sky.dobby.ctrl1.Started event is received from
+ *  @brief Called when a com.rdk.dobby.ctrl1.Started event is received from
  *  the Dobby 'hypervisor' daemon
  *
  *  We parse the event data and if it makes sense we bounce this event up to any
@@ -224,7 +224,7 @@ void DobbyProxy::onContainerStartedEvent(const AI_IPC::VariantList& args)
 
 // -----------------------------------------------------------------------------
 /**
- *  @brief Called when a com.sky.dobby.ctrl1.Stopped event is received from
+ *  @brief Called when a com.rdk.dobby.ctrl1.Stopped event is received from
  *  the Dobby 'hypervisor' daemon
  *
  *  We parse the event data and if it makes sense we bounce this event up to any
@@ -964,7 +964,7 @@ std::list<std::pair<int32_t, std::string>> DobbyProxy::listContainers() const
 // -----------------------------------------------------------------------------
 /**
  *  @brief Debugging utility that can be used to create a bundle based on
- *  a sky spec file
+ *  a dobby spec file
  *
  *  This can be useful for debugging container issues, as it allows the daemon
  *  to create the bundle but not actually run it, and therefore it can be

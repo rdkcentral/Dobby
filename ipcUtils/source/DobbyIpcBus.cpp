@@ -186,7 +186,7 @@ bool DobbyIpcBus::connect(const std::string& dbusAddress)
     // create a psuedo unique name for our service (this is only needed
     // because we may already have a connection to the bus in question).
     char serviceName[64];
-    sprintf(serviceName, "com.sky.dobby.pid%d", getpid());
+    sprintf(serviceName, "com.rdk.dobby.pid%d", getpid());
 
     // create IPCServices that attach to the dbus daemon, this throws an
     // exception if it can't connect, nb the default timeout is set to

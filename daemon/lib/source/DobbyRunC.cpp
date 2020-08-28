@@ -49,7 +49,7 @@ DobbyRunC::DobbyRunC(const std::shared_ptr<IDobbyUtils>& utils,
 #else
     , mRuncPath("/usr/sbin/runc")
 #endif
-    , mWorkingDir("/var/run/sky/crun")
+    , mWorkingDir("/var/run/rdk/crun")
     , mLogDir("/var/log")
     , mLogFilePath(mLogDir + "/crun.log")
 {

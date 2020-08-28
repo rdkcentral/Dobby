@@ -167,7 +167,7 @@ Container to host port forwarding can be used to allow containers access to the 
 
 ## Settings
 
-The Networking plugin uses external interfaces defined in the Dobby settings file (default location `/etc/sky/dobby.json`) to create iptables rules and enable port forwarding on the interfaces.
+The Networking plugin uses external interfaces defined in the Dobby settings file (default location `/etc/rdk/dobby.json`) to create iptables rules and enable port forwarding on the interfaces.
 
 To set up external interfaces for the Networking plugin, add the following to the settings file:
 

@@ -163,7 +163,7 @@ def start_dobby_daemon():
 
     """
     if test_utils.selected_platform == test_utils.Platforms.xi_6:
-        subprocess.run(["systemctl", "stop", "sky-dobby"])
+        subprocess.run(["systemctl", "stop", "rdk-dobby"])
     else:
         subprocess.run(["sudo", "pkill", "DobbyDaemon"])
 

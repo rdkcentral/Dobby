@@ -41,7 +41,7 @@
  *  Creates a bundle directory at the given path and doesn't delete it at
  *  when destructed.  This is used for the debug dbus interface:
  *
- *      "com.sky.dobby.debug1.CreateBundle"
+ *      "com.rdk.dobby.debug1.CreateBundle"
  *
  *  Which is helpful for debugging container start-up issues.
  *

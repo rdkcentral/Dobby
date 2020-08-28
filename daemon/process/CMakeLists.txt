@@ -124,20 +124,20 @@ endif()
 install(
         FILES       "${DOBBY_SETTINGS_FILE}"
         RENAME      dobby.json
-        DESTINATION /etc/sky/ )
+        DESTINATION /etc/rdk/ )
 
 
 
 # Install a systemd launch service config and enables it by default
 install(
-        FILES       sky-dobby.service
+        FILES       rdk-dobby.service
         DESTINATION /lib/systemd/system/ )
 
 # The following doesn't seem to work in RDK, disabling for now
 # install(
 #        CODE "execute_process( \
 #            COMMAND ${CMAKE_COMMAND} -E create_symlink \
-#            /lib/systemd/system/sky-dobby.service \
-#            $DESTDIR/${CMAKE_INSTALL_PREFIX}/etc/systemd/system/multi-user.target.wants/sky-dobby.service \
+#            /lib/systemd/system/rdk-dobby.service \
+#            $DESTDIR/${CMAKE_INSTALL_PREFIX}/etc/systemd/system/multi-user.target.wants/rdk-dobby.service \
 #            )" )
 

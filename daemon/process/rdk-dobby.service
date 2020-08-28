@@ -20,23 +20,23 @@
 # at boot time.
 #
 # Enable dobby to start on boot:
-#         systemctl enable sky-dobby.service
+#         systemctl enable rdk-dobby.service
 #
 # Start dobby immediately:
-#         systemctl start sky-dobby.service
+#         systemctl start rdk-dobby.service
 #
 # Stop dobby:
-#         systemctl stop sky-dobby.service
+#         systemctl stop rdk-dobby.service
 #
 # Status:
-#         systemctl status sky-dobby.service
+#         systemctl status rdk-dobby.service
 
 [Unit]
-Description=Sky Dobby (Container) daemon
+Description=RDK Dobby (Container) daemon
 
 [Service]
 Type=dbus
-BusName=com.sky.dobby
+BusName=com.rdk.dobby
 ExecStart=/usr/sbin/DobbyDaemon --nofork --noconsole --journald
 WatchdogSec=5
 Restart=on-failure
