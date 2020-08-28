@@ -25,7 +25,7 @@
 
 #include <glob.h>
 #include <sys/stat.h>
-
+#include <fstream>
 
 #define OCI_VERSION_CURRENT         "1.0.2"         // currently used version of OCI in bundles
 #define OCI_VERSION_CURRENT_DOBBY   "1.0.2-dobby"   // currently used version of extended OCI in bundles
@@ -584,6 +584,12 @@ bool DobbyConfig::updateBundleConfig(const ContainerId& id, std::shared_ptr<rt_d
         free_rt_defs_plugins_legacy_plugins(cfg->legacy_plugins);
         cfg->legacy_plugins = nullptr;
     }
+
+    // Make a backup of the original config, useful for checking whether a new config
+    // is available.
+    std::ifstream srcCfg(bundlePath + "/config.json", std::ios::binary);
+    std::ofstream dstCfg(bundlePath + "/config-orig.json", std::ios::binary);
+    dstCfg << srcCfg.rdbuf();
 
     // write the new config.json to a file
     if (!writeConfigJsonImpl(bundlePath + "/config.json"))
