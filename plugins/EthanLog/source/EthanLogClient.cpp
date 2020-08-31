@@ -312,8 +312,8 @@ bool EthanLogClient::shouldDrop()
 
         char messageBuf[128];
         snprintf(messageBuf, sizeof(messageBuf),
-                 "MESSAGE=Dropped %u log messages in last %lld seconds (most "
-                 "recently, %lld seconds ago) due to excessive rate",
+                 "MESSAGE=Dropped %u log messages in last %ld seconds (most "
+                 "recently, %ld seconds ago) due to excessive rate",
                  mDropped, firstDropped.count(), lastDropped.count());
 
         sd_journal_send("PRIORITY=4", mIdentifier.c_str(), messageBuf, nullptr);
