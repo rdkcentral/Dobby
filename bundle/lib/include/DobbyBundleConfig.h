@@ -82,9 +82,12 @@ public:
     std::shared_ptr<rt_dobby_schema> config() const override;
 
 public:
-    const std::map<std::string, Json::Value>& legacyPlugins() const override;
     const std::map<std::string, Json::Value>& rdkPlugins() const override;
     const std::list<std::string> sysHooks() const override;
+
+#if defined(LEGACY_COMPONENTS)
+    const std::map<std::string, Json::Value>& legacyPlugins() const override;
+#endif // defined(LEGACY_COMPONENTS)
 
 // ----------------------------------------------------------------------------
 /**
@@ -97,9 +100,13 @@ private:
     bool processLogging(const Json::Value& value);
     bool processIpc(const Json::Value& value);
     bool processGpu(const Json::Value& value);
-    bool processLegacyPlugins(const Json::Value& value);
     bool processRdkServices(const Json::Value& value);
     bool processDrm(const Json::Value& value);
+
+#if defined(LEGACY_COMPONENTS)
+    bool processLegacyPlugins(const Json::Value& value);
+#endif // defined(LEGACY_COMPONENTS)
+
 
 // ----------------------------------------------------------------------------
 /**
@@ -139,10 +146,13 @@ private:
     ssize_t mConsoleLimit;
 
 private:
-    std::map<std::string, Json::Value> mLegacyPlugins;
     std::map<std::string, Json::Value> mRdkPlugins;
     std::list<std::string> mEnabledSysHooks;
     void setSysHooksAndRdkPlugins(void);
+
+#if defined(LEGACY_COMPONENTS)
+    std::map<std::string, Json::Value> mLegacyPlugins;
+#endif // defined(LEGACY_COMPONENTS)
 
 private:
     std::string mRootfsPath;
