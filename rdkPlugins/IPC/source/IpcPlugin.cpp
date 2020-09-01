@@ -126,11 +126,8 @@ bool IpcPlugin::postInstallation()
                               "DBUS_ID_MAPPING=1");
 #endif
 
-    bool success = true;
-
-
     // create the directory in the rootfs for the mount
-    success = DobbyRdkPluginUtils::mkdirRecursive(mRootfsPath + mDbusRunDir, 0755);
+    bool success = DobbyRdkPluginUtils::mkdirRecursive(mRootfsPath + mDbusRunDir, 0755);
 
     // perform bind mounts into the rootfs of the container
     if (!systemBus.empty() && success)
