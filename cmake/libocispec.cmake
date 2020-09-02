@@ -70,6 +70,10 @@ execute_process(
     WORKING_DIRECTORY ${LIBOCISPEC_DIR}
     COMMAND mkdir -p ./schemas/rt
     COMMAND mkdir -p ./schemas/img
+)
+
+execute_process(
+    WORKING_DIRECTORY ${LIBOCISPEC_DIR}
     COMMAND cp -r ./runtime-spec/schema/. ./schemas/rt/
     COMMAND cp -r ./image-spec/schema/. ./schemas/img/
 )
