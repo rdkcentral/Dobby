@@ -62,6 +62,7 @@ private:
 
     void setTemplateDevNodes(const std::list<std::string>& devNodes);
     void setTemplateEnvVars(const std::map<std::string, std::string>& envVars);
+    void setTemplatePlatformEnvVars();
     void setTemplateCpuRtSched();
 
     void _setSettings(const std::shared_ptr<const IDobbySettings>& settings);

@@ -70,6 +70,9 @@ DobbyTemplate::DobbyTemplate()
     // cache is frozen.
     mTemplateCache->Freeze();
 
+    // set the template platform identifier environment variables
+    setTemplatePlatformEnvVars();
+
     // set the template enable/disable for the cpu RT sched cgroups
     setTemplateCpuRtSched();
 
@@ -356,6 +359,72 @@ void DobbyTemplate::setTemplateEnvVars(const std::map<std::string, std::string>&
 
     // assign the string to the template var
     ctemplate::TemplateDictionary::SetGlobalValue("EXTRA_ENV_VARS", envVarsStream.str());
+}
+
+// -----------------------------------------------------------------------------
+/**
+ *  @brief Sets the environment variables used to identify the platform.
+ *
+ *  All containers get two environment variables that define the platform;
+ *
+ *      ETHAN_STB_TYPE  = [ "GW" | "MR" | "HIP" ]
+ *      ETHAN_STB_MODEL = [ "ES140" | "ES130" | "EM150" | "ES240" | "ESi240" | ... ]
+ *
+ *  For a list of model names refer to the following confluence page
+ *
+ *      https://www.stb.bskyb.com/confluence/display/2016/STB+HW+ID
+ *
+ *  To determine platform we check for the AI_PLATFORM_IDENT environment
+ *  variable.  This should have been set by the user (or upstart script) that
+ *  started this daemon.  If it's not present then we set both templates
+ *  as empty and log an error.
+ */
+void DobbyTemplate::setTemplatePlatformEnvVars()
+{
+    AI_LOG_FN_ENTRY();
+
+    const char* platformType = getenv("AI_PLATFORM_TYPE");
+    if ((platformType == nullptr) || (platformType[0] == '\0'))
+    {
+        AI_LOG_INFO("missing AI_PLATFORM_TYPE environment var, will "
+                    "set empty container platform env vars");
+        AI_LOG_FN_EXIT();
+        return;
+    }
+
+    static const std::string mrType = "MR";
+    static const std::string gwType = "GW";
+    static const std::string ipType = "HIP";
+    if (!((mrType == platformType) || (gwType == platformType) || (ipType == platformType)))
+    {
+        AI_LOG_ERROR_EXIT("Platform type is invalid %s", platformType);
+        return;
+    }
+
+    const char* platformModel = getenv("AI_PLATFORM_MODEL");
+    if ((platformModel == nullptr) || (platformModel[0] == '\0'))
+    {
+        AI_LOG_INFO("missing AI_PLATFORM_MODEL environment var, will "
+                    "set empty container platform env vars");
+        AI_LOG_FN_EXIT();
+        return;
+    }
+
+    static const std::unordered_set<std::string> availablePlatformModels = {
+        "ES140", "ES130", "EM150", "ES240", "ES340", "ESi240", "vSTB", "ES160"
+    };
+
+    if (availablePlatformModels.count(platformModel) < 1)
+    {
+        AI_LOG_ERROR_EXIT("Platform model is invalid %s", platformModel);
+        return;
+    }
+
+    mExtraEnvVars["ETHAN_STB_TYPE"] = platformType;
+    mExtraEnvVars["ETHAN_STB_MODEL"] = platformModel;
+    setTemplateEnvVars(mExtraEnvVars);
+
+    AI_LOG_FN_EXIT();
 }
 
 // -----------------------------------------------------------------------------
