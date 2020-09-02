@@ -28,7 +28,7 @@
 
 REGISTER_RDK_PLUGIN(NetworkingPlugin);
 
-static std::string gDBusService("com.rdk.dobby.plugin.networking");
+static std::string gDBusService("org.rdk.dobby.plugin.networking");
 
 
 NetworkingPlugin::NetworkingPlugin(std::shared_ptr<rt_dobby_schema> &cfg,

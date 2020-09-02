@@ -190,7 +190,7 @@ void DobbyProxy::unregisterListener(int id)
 
 // -----------------------------------------------------------------------------
 /**
- *  @brief Called when a com.rdk.dobby.ctrl1.Started event is received from
+ *  @brief Called when a org.rdk.dobby.ctrl1.Started event is received from
  *  the Dobby 'hypervisor' daemon
  *
  *  We parse the event data and if it makes sense we bounce this event up to any
@@ -224,7 +224,7 @@ void DobbyProxy::onContainerStartedEvent(const AI_IPC::VariantList& args)
 
 // -----------------------------------------------------------------------------
 /**
- *  @brief Called when a com.rdk.dobby.ctrl1.Stopped event is received from
+ *  @brief Called when a org.rdk.dobby.ctrl1.Stopped event is received from
  *  the Dobby 'hypervisor' daemon
  *
  *  We parse the event data and if it makes sense we bounce this event up to any

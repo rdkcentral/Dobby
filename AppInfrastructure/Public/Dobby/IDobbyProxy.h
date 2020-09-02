@@ -45,7 +45,7 @@ namespace AI_IPC
  *  @brief Interface for the AI notifier API.
  *
  *  Contains a single event notifier method that is called whenever either
- *  of the 'com.rdk.dobby.ctrl1.Started' or 'com.rdk.dobby.ctrl1.Stopped'
+ *  of the 'org.rdk.dobby.ctrl1.Started' or 'org.rdk.dobby.ctrl1.Stopped'
  *  signals are received.
  *
  */

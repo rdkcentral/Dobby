@@ -36,7 +36,7 @@ Description=RDK Dobby (Container) daemon
 
 [Service]
 Type=dbus
-BusName=com.rdk.dobby
+BusName=org.rdk.dobby
 ExecStart=/usr/sbin/DobbyDaemon --nofork --noconsole --journald
 WatchdogSec=5
 Restart=on-failure

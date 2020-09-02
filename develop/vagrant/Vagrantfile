@@ -192,7 +192,7 @@ Vagrant.configure("2") do |config|
     config.vm.provision "shell", inline: <<-SHELL
         figlet DBUS  # ASCII banner
         # FIXME - This is not secure - only for debugging
-        if [ ! -e "/etc/dbus-1/system.d/com.rdk.dobby.conf" ]; then
+        if [ ! -e "/etc/dbus-1/system.d/org.rdk.dobby.conf" ]; then
             echo '
 <!DOCTYPE busconfig PUBLIC "-//freedesktop//DTD D-Bus Bus Configuration 1.0//EN"
     "http://www.freedesktop.org/standards/dbus/1.0/busconfig.dtd">
@@ -208,7 +208,7 @@ Vagrant.configure("2") do |config|
     <allow user="*"/>
 </policy>
 </busconfig>
-' > "/etc/dbus-1/system.d/com.rdk.dobby.conf"
+' > "/etc/dbus-1/system.d/org.rdk.dobby.conf"
         fi
     SHELL
 

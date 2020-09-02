@@ -68,7 +68,7 @@ Usage: DobbyDaemon <option(s)>
 
   -f, --settings-file=PATH      Path to a JSON dobby settings file [/etc/rdk/dobby.json]
   -a, --dbus-address=ADDRESS    The dbus address to put the admin service on [system bus]
-  -s, --service=SERVICE         The dbus service to put Dobby on [com.rdk.dobby]
+  -s, --service=SERVICE         The dbus service to put Dobby on [org.rdk.dobby]
   -p, --priority=PRIORITY       Sets the SCHED_RR priority of the daemon [RR,12]
   -n, --nofork                  Do not fork and daemonise the process
   -k, --noconsole               Disable console output

@@ -61,7 +61,7 @@
 #define ARRAY_LENGTH(x)   (sizeof(x) / sizeof((x)[0]))
 
 //
-static std::string gDBusService("com.rdk.dobby.test");
+static std::string gDBusService("org.rdk.dobby.test");
 
 //
 static char** gCmdlineArgv = NULL;

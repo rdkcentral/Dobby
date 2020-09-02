@@ -1,7 +1,7 @@
 {
   "dbus": {
-    "serviceName": "com.rdk.dobby",
-    "objectPath": "/com/rdk/dobby"
+    "serviceName": "org.rdk.dobby",
+    "objectPath": "/org/rdk/dobby"
   },
 
   "paths": {
