@@ -49,10 +49,10 @@ endif()
 
 # Add definition to determine RDK build
 add_definitions( -DRDK )
-add_definitions( -DXI1=1 -DXI6=6 )
+add_definitions( -DXI1=1 -DLLAMA=2 -DXI6=6 )
 
 # If no platform defined then default to XI6
-set( RDK_PLATFORM "XI6" CACHE STRING "The target RDK platform, options are \"XI1\", \"XI6\" or \"DEV_VM\"" )
+set( RDK_PLATFORM "XI6" CACHE STRING "The target RDK platform, options are \"XI1\", \"XI6\", \"LLAMA\" or \"DEV_VM\"" )
 string( TOUPPER "${RDK_PLATFORM}" RDK_PLATFORM )
 
 # If developer VM defined, configure platform to be Ubuntu VM machine, else configure set-top box
@@ -60,6 +60,8 @@ if( RDK_PLATFORM STREQUAL "XI6" )
     add_definitions( -DRDK_PLATFORM=XI6 )
 elseif( RDK_PLATFORM STREQUAL "XI1" )
     add_definitions( -DRDK_PLATFORM=XI1 )
+elseif( RDK_PLATFORM STREQUAL "LLAMA" )
+    add_definitions( -DRDK_PLATFORM=LLAMA )
 elseif( RDK_PLATFORM STREQUAL "DEV_VM" )
     add_definitions( -DDEV_VM )
     add_definitions( -DRDK_PLATFORM=DEV_VM )
