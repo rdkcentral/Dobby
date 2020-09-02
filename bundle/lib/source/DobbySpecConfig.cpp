@@ -209,8 +209,6 @@ DobbySpecConfig::DobbySpecConfig(const std::shared_ptr<IDobbyUtils> &utils,
     , mRtPriorityDefault(6)
     , mRtPriorityLimit(6)
     , mRestartOnCrash(false)
-    , mGpuEnabled(false)
-    , mGpuMemLimit(GPU_MEMLIMIT_DEFAULT)
     , mSystemDbus(IDobbyIPCUtils::BusType::NoneBus)
     , mSessionDbus(IDobbyIPCUtils::BusType::NoneBus)
     , mDebugDbus(IDobbyIPCUtils::BusType::NoneBus)
@@ -291,8 +289,6 @@ DobbySpecConfig::DobbySpecConfig(const std::shared_ptr<IDobbyUtils> &utils,
     , mRtPriorityDefault(6)
     , mRtPriorityLimit(6)
     , mRestartOnCrash(false)
-    , mGpuEnabled(false)
-    , mGpuMemLimit(GPU_MEMLIMIT_DEFAULT)
     , mSystemDbus(IDobbyIPCUtils::BusType::NoneBus)
     , mSessionDbus(IDobbyIPCUtils::BusType::NoneBus)
     , mDebugDbus(IDobbyIPCUtils::BusType::NoneBus)
@@ -369,16 +365,6 @@ int DobbySpecConfig::rtPriorityDefault() const
 bool DobbySpecConfig::restartOnCrash() const
 {
     return mRestartOnCrash;
-}
-
-bool DobbySpecConfig::gpuEnabled() const
-{
-    return mGpuEnabled;
-}
-
-size_t DobbySpecConfig::gpuMemLimit() const
-{
-    return mGpuMemLimit;
 }
 
 IDobbyIPCUtils::BusType DobbySpecConfig::systemDbus() const
@@ -639,10 +625,7 @@ bool DobbySpecConfig::parseSpec(ctemplate::TemplateDictionary* dictionary,
     // step 6 - enable the RDK plugins section
     dictionary->ShowSection(ENABLE_RDK_PLUGINS);
 
-    // step 7 - enable syshooks for use whilst RDK plugins are developed
-    setSysHooksAndRdkPlugins();
-
-    // step 8 - write dictionary to config file so that libocispec can continue
+    // step 7 - write dictionary to config file so that libocispec can continue
     // processing the config from here on out
     if (!DobbyTemplate::applyAt(bundleFd, "config.json", mDictionary, false))
     {
@@ -1404,16 +1387,19 @@ void DobbySpecConfig::addVpuDevNodes(const std::shared_ptr<const IDobbySettings:
 bool DobbySpecConfig::processGpu(const Json::Value& value,
                              ctemplate::TemplateDictionary* dictionary)
 {
+    bool gpuEnabled;
+    Json::Value rdkPluginData;
+
     const Json::Value& enable = value["enable"];
     const Json::Value& memLimit = value["memLimit"];
 
     if (enable.isBool())
     {
-        mGpuEnabled = enable.asBool();
+        gpuEnabled = enable.asBool();
     }
     else if (enable.isNull())
     {
-        mGpuEnabled = false;
+        gpuEnabled = false;
     }
     else
     {
@@ -1423,11 +1409,12 @@ bool DobbySpecConfig::processGpu(const Json::Value& value,
 
     if (memLimit.isIntegral())
     {
-        mGpuMemLimit = memLimit.asUInt();
+        rdkPluginData["memory"] = memLimit.asUInt();
     }
     else if (memLimit.isNull())
     {
-        mGpuMemLimit = GPU_MEMLIMIT_DEFAULT;
+        // use default memory limit
+        rdkPluginData["memory"] = 64 * 1024 * 1024;
     }
     else
     {
@@ -1435,7 +1422,7 @@ bool DobbySpecConfig::processGpu(const Json::Value& value,
         return false;
     }
 
-    if (mGpuEnabled)
+    if (gpuEnabled)
     {
         // lazily init the GPU dev nodes mapping - we use to do this at start-up
         // but hit an issue on broadcom platforms where the dev nodes aren't
@@ -1467,6 +1454,15 @@ bool DobbySpecConfig::processGpu(const Json::Value& value,
             // store the mount point for rootfs construction
             storeMountPoint(extraMount.type, extraMount.source, extraMount.target);
         }
+
+
+        // Enable the RDK GPU plugin to set gpu memory limit
+        ctemplate::TemplateDictionary* subDict;
+        enableRdkPlugin(subDict, RDK_GPU_PLUGIN_NAME, false);
+
+        std::string pluginData = createRdkPluginDataString(rdkPluginData);
+        subDict->SetValue(RDK_PLUGIN_DATA, pluginData);
+        addRdkPlugin(RDK_GPU_PLUGIN_NAME, false, rdkPluginData);
     }
 
     // and any extra environment variables
@@ -2564,28 +2560,4 @@ bool DobbySpecConfig::processCapabilities(const Json::Value& value,
 #endif // !defined(RDK)
 
     return true;
-}
-
-// -----------------------------------------------------------------------------
-/**
- *  @brief Sets the placeholder Dobby syshooks and removes RDK plugins in
- *  development.
- *
- *  NOTE: This should only be used until the RDK plugin is fully developed.
- */
-void DobbySpecConfig::setSysHooksAndRdkPlugins(void)
-{
-    // iterate through all rdk plugins in development to decide which syshooks
-    // should still be used. The RDK plugins are listed in the static variable
-    // DobbyConfig::mRdkPluginsInDevelopment
-    std::map<std::string, std::list<std::string>>::const_iterator it = mRdkPluginsInDevelopment.begin();
-    for (; it != mRdkPluginsInDevelopment.end(); ++it)
-    {
-        mRdkPlugins.erase(it->first);
-        std::list<std::string>::const_iterator jt = it->second.begin();
-        for (; jt != it->second.end(); ++jt)
-        {
-            mEnabledSysHooks.emplace_back(*jt);
-        }
-    }
 }

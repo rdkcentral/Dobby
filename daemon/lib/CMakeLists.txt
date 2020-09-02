@@ -33,7 +33,6 @@ add_library( DobbyDaemonLib
         source/DobbyState.cpp
 
         source/syshooks/BaseHook.cpp
-        source/syshooks/GpuMemoryHook.cpp
         source/syshooks/RtSchedulingHook.cpp
         source/syshooks/LocalTimeHook.cpp
         )

@@ -53,8 +53,6 @@ DobbyBundleConfig::DobbyBundleConfig(const std::shared_ptr<IDobbyUtils>& utils,
     , mUserId(-1)
     , mGroupId(-1)
     , mRestartOnCrash(false)
-    , mGpuEnabled(false)
-    , mGpuMemLimit(GPU_MEMLIMIT_DEFAULT)
     , mSystemDbus(IDobbyIPCUtils::BusType::NoneBus)
     , mSessionDbus(IDobbyIPCUtils::BusType::NoneBus)
     , mDebugDbus(IDobbyIPCUtils::BusType::NoneBus)
@@ -122,16 +120,6 @@ const std::string& DobbyBundleConfig::rootfsPath() const
 bool DobbyBundleConfig::restartOnCrash() const
 {
     return mRestartOnCrash;
-}
-
-bool DobbyBundleConfig::gpuEnabled() const
-{
-    return mGpuEnabled;
-}
-
-size_t DobbyBundleConfig::gpuMemLimit() const
-{
-    return mGpuMemLimit;
 }
 
 IDobbyIPCUtils::BusType DobbyBundleConfig::systemDbus() const
@@ -256,15 +244,6 @@ bool DobbyBundleConfig::parseOCIConfig(const std::string& bundlePath)
             }
         }
 
-        // Parse GPU plugin
-        if (rdkPlugins.isMember(RDK_GPU_PLUGIN_NAME))
-        {
-            if (!processGpu(rdkPlugins[RDK_GPU_PLUGIN_NAME]))
-            {
-                return false;
-            }
-        }
-
         // Parse IPC plugin
         if (rdkPlugins.isMember(RDK_IPC_PLUGIN_NAME))
         {
@@ -292,9 +271,6 @@ bool DobbyBundleConfig::parseOCIConfig(const std::string& bundlePath)
             }
         }
     }
-
-    // enable syshooks for use whilst RDK plugins are developed
-    setSysHooksAndRdkPlugins();
 
     AI_LOG_FN_EXIT();
     return true;
@@ -495,53 +471,6 @@ bool DobbyBundleConfig::processIpc(const Json::Value& value)
     return true;
 }
 
-// -----------------------------------------------------------------------------
-/**
- *  @brief Processes the gpu plugin field
- *
- *  Example json in rdkPlugins.gpu:
- *
- *  "data":{
- *      "memory": 67108864
- *  }
- *
- *  @param[in]  value       The rdkPlugins.gpu field from extended bundle config.
- *
- *  @return true if correctly processed the value, otherwise false.
- */
-bool DobbyBundleConfig::processGpu(const Json::Value& value)
-{
-    if (!value.isObject() || !value.isMember("data") || !value["data"].isObject())
-    {
-        AI_LOG_ERROR("invalid rdkPlugin.gpu.data field");
-        return false;
-    }
-    Json::Value data = value["data"];
-
-    const Json::Value& memLimit = data["memory"];
-
-    mGpuEnabled = true;
-
-    if (memLimit.isIntegral())
-    {
-        mGpuMemLimit = memLimit.asUInt();
-    }
-    else if (memLimit.isNull())
-    {
-        mGpuMemLimit = GPU_MEMLIMIT_DEFAULT;
-    }
-    else
-    {
-        AI_LOG_ERROR("invalid 'gpu.data.memory' field");
-        return false;
-    }
-
-    // TODO:: This currently does nothing as functionality will be moved
-    // from syshook to RDK plugin and this will be removed.
-
-    return true;
-}
-
 
 // -----------------------------------------------------------------------------
 /**
@@ -627,37 +556,4 @@ bool DobbyBundleConfig::processDrm(const Json::Value& value)
 {
     AI_LOG_ERROR("drm plugin is not supported yet.");
     return false;
-}
-
-
-// -----------------------------------------------------------------------------
-/**
- *  @brief Sets the placeholder Dobby syshooks and removes RDK plugins in
- *  development.
- *
- *  NOTE: This should only be used until the RDK plugin is fully developed.
- *
- *  With this in place, we can have syshooks turned on or off selectively.
- */
-void DobbyBundleConfig::setSysHooksAndRdkPlugins(void)
-{
-    // iterate through all rdk plugins in development to decide which syshooks
-    // should still be used. The RDK plugins are listed in the static variable
-    // DobbyConfig::mRdkPluginsInDevelopment
-    std::map<std::string, std::list<std::string>>::const_iterator it = mRdkPluginsInDevelopment.begin();
-    for (; it != mRdkPluginsInDevelopment.end(); ++it)
-    {
-        std::string rdkPluginName = it->first;
-        std::list<std::string> pluginSysHooks = it->second;
-        // if rdk plugin is turned on for this container, use syshooks instead
-        if (mRdkPlugins.find(rdkPluginName) != mRdkPlugins.end())
-        {
-            mRdkPlugins.erase(rdkPluginName);
-            std::list<std::string>::const_iterator jt = pluginSysHooks.begin();
-            for (; jt != pluginSysHooks.end(); ++jt)
-            {
-                mEnabledSysHooks.emplace_back(*jt);
-            }
-        }
-    }
 }

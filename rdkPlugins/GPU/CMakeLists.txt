@@ -15,11 +15,26 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Add all the plugin subdirectories here
-add_subdirectory(Common)
-add_subdirectory(TestPlugin)
-add_subdirectory(Storage)
-add_subdirectory(IPC)
-add_subdirectory(Logging)
-add_subdirectory(Networking)
-add_subdirectory(GPU)
+project(GPU)
+
+add_library( ${PROJECT_NAME}
+        SHARED
+        source/GpuPlugin.cpp
+)
+
+install(
+        TARGETS ${PROJECT_NAME}
+        LIBRARY DESTINATION lib/plugins/dobby
+        NAMELINK_SKIP
+)
+
+target_link_libraries( ${PROJECT_NAME}
+        DobbyRdkPluginCommonLib
+)
+
+target_include_directories( ${PROJECT_NAME}
+        PRIVATE
+        include
+)
+
+set_target_properties( ${PROJECT_NAME} PROPERTIES SOVERSION 1 )
