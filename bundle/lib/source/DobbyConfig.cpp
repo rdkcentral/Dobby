@@ -585,12 +585,6 @@ bool DobbyConfig::updateBundleConfig(const ContainerId& id, std::shared_ptr<rt_d
         cfg->legacy_plugins = nullptr;
     }
 
-    // Make a backup of the original config, useful for checking whether a new config
-    // is available.
-    std::ifstream srcCfg(bundlePath + "/config.json", std::ios::binary);
-    std::ofstream dstCfg(bundlePath + "/config-orig.json", std::ios::binary);
-    dstCfg << srcCfg.rdbuf();
-
     // write the new config.json to a file
     if (!writeConfigJsonImpl(bundlePath + "/config.json"))
     {
@@ -654,11 +648,11 @@ bool DobbyConfig::convertToCompliant(const ContainerId& id, std::shared_ptr<rt_d
     // check config version and process as needed
     if (!strcmp(cfg->oci_version, OCI_VERSION_CURRENT_DOBBY))
     {
-        // copy config.json to config-dobby.json
-        if (!writeConfigJsonImpl(bundlePath + "/config-dobby.json"))
-        {
-            return false;
-        }
+        // Make a backup of the original config, useful for checking whether a new config
+        // is available.
+        std::ifstream srcCfg(bundlePath + "/config.json", std::ios::binary);
+        std::ofstream dstCfg(bundlePath + "/config-dobby.json", std::ios::binary);
+        dstCfg << srcCfg.rdbuf();
 
         if (!updateBundleConfig(id, cfg, bundlePath))
         {
