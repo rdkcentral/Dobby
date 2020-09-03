@@ -77,7 +77,7 @@ static std::string gDbusAddress;
 static std::string gDBusService;
 
 //
-static std::string gSettingsFilePath("/etc/sky/dobby.json");
+static std::string gSettingsFilePath("/etc/dobby.json");
 
 
 

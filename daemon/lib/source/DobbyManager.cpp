@@ -160,8 +160,8 @@ void DobbyManager::setupSystem()
         AI_LOG_SYS_ERROR(errno, "failed to set RLIMIT_CORE");
     }
 
-    // [NGDEV-66223] globally enable ipv4 forwarding, this is what libvirt does
-    // and it seems selectively enabling forwarding on only the interfaces we
+    // globally enable ipv4 forwarding, this is what libvirt does and it
+    // seems selectively enabling forwarding on only the interfaces we
     // control doesn't seem to work (intermittently)
     if (!mUtilities->writeTextFile("/proc/sys/net/ipv4/ip_forward", "1\n",
                                    O_TRUNC | O_WRONLY, 0))

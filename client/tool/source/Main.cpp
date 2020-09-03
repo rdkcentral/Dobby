@@ -61,50 +61,11 @@
 #define ARRAY_LENGTH(x)   (sizeof(x) / sizeof((x)[0]))
 
 //
-static std::string gDBusService("com.sky.dobby.test");
+static std::string gDBusService("org.rdk.dobby.test");
 
 //
 static char** gCmdlineArgv = NULL;
 static int gCmdlineArgc = 0;
-
-// -----------------------------------------------------------------------------
-/**
- * @brief Opens a connection to the Hamiltron WindowManager
- *
- *
- *
- */
-static int openHamiltronConnection(const std::shared_ptr<const IReadLineContext>& readLine)
-{
-    int sock = socket(AF_UNIX, SOCK_STREAM | SOCK_CLOEXEC, 0);
-    if (sock < 0)
-    {
-        readLine->printLnError("failed to create socket (%d - %s)", errno,
-                               strerror(errno));
-        return -1;
-    }
-
-    struct sockaddr_un addr;
-    bzero(&addr, sizeof(addr));
-
-    addr.sun_family = AF_UNIX;
-
-    int nameSize = snprintf(addr.sun_path, sizeof(addr.sun_path),
-                            "/tmp/wayland-ethan/wayland-0") + 1;
-    assert((nameSize > 0) && (nameSize < (int)sizeof(addr.sun_path)));
-
-
-    socklen_t size = offsetof(struct sockaddr_un, sun_path) + nameSize;
-    if (connect(sock, (struct sockaddr*)&addr, size) != 0)
-    {
-        readLine->printLnError("failed to connect to socket @ '%s' (%d - %s)",
-                               addr.sun_path, errno, strerror(errno));
-        close(sock);
-        return -1;
-    }
-
-    return sock;
-}
 
 // -----------------------------------------------------------------------------
 /**
@@ -207,14 +168,7 @@ static void startCommand(const std::shared_ptr<IDobbyProxy> &dobbyProxy,
     // Command will be in the form "start --<option1> --<optionN> <id> <specfile> <commands>"
     while (i < args.size() && args[i].c_str()[0] == '-')
     {
-        if (args[i] == "--hamiltron")
-        {
-            int hamiltronFd = openHamiltronConnection(readLine);
-            if (hamiltronFd < 0)
-                return;
-            files.push_back(hamiltronFd);
-        }
-        else if (args[i] == "--westeros-socket")
+        if (args[i] == "--westeros-socket")
         {
             // TODO:: This won't work if the arg is in the form --westeros-socket=/path/to/socket
             // The next arg should be the path to socket
@@ -804,7 +758,6 @@ static void initCommands(const std::shared_ptr<IReadLine>& readLine,
                          "Starts a container using the given spec file or bundle path. Can optionally "
                          "specify the command to run inside the contianer. Any arguments after command "
                          "are treated as arguments to the command.\n",
-                         "  --hamiltron          Create a container with a hamiltron connection.\n"
                          "  --westeros-socket    Mount the specified westeros socket into the container\n");
 
     readLine->addCommand("stop",

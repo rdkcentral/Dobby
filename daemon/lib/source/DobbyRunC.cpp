@@ -49,7 +49,7 @@ DobbyRunC::DobbyRunC(const std::shared_ptr<IDobbyUtils>& utils,
 #else
     , mRuncPath("/usr/sbin/runc")
 #endif
-    , mWorkingDir("/var/run/sky/crun")
+    , mWorkingDir("/var/run/rdk/crun")
     , mLogDir("/var/log")
     , mLogFilePath(mLogDir + "/crun.log")
 {
@@ -59,9 +59,8 @@ DobbyRunC::DobbyRunC(const std::shared_ptr<IDobbyUtils>& utils,
         AI_LOG_FATAL("failed to find runc tool @ '%s'", mRuncPath.c_str());
     }
 
-    // NGDEV-84453: we can't rely on the /var/log or /var/run/runc directories
-    // being present in the rootfs, to ensure we don't get any surprises create
-    // them now
+    // we can't rely on the /var/log or /var/run/runc directories being present
+    // in the rootfs, to ensure we don't get any surprises create them now
     utils->mkdirRecursive(mWorkingDir, 0775);
     utils->mkdirRecursive(mLogDir, 0775);
 }

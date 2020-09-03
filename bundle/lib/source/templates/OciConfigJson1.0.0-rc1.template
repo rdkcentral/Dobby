@@ -55,8 +55,7 @@ static const char* ociJsonTemplate = R"JSON(
             "ETHAN_STB_MODEL={{ETHAN_STB_MODEL:json_escape}}",
             "QT_INSTALL_PATH=/usr/lib",
             "QT_PLUGIN_PATH=/usr/lib/plugins",
-            "QT_QPA_PLATFORM_PLUGIN_PATH=/usr/lib/plugins/platforms",
-            "QT_QPA_PLATFORM=hamiltron"
+            "QT_QPA_PLATFORM_PLUGIN_PATH=/usr/lib/plugins/platforms"
         ],
         "capabilities": [
             "CAP_AUDIT_WRITE",

@@ -15,7 +15,7 @@ space "destination".
                         "destination": "/home/private",
                         "flags": 14,
                         "fstype": "ext4",
-                        "source": "/tmp/data/sky/packages/com.bskyb.epgui/data.img"
+                        "source": "/tmp/data/data.img"
                     }
                 ]
             }
