@@ -1600,3 +1600,65 @@ void DobbyUtils::clearContainerMetaData(const ContainerId &id)
         }
     }
 }
+
+// -------------------------------------------------------------------------
+/**
+ *  @brief Inserts the given ebtables rule to the existing set.
+ *
+ *  This doesn't flush out any old rules, it just adds the new one at
+ *  the beginning of the table.
+ *
+ *  @param[in]  args  The args of one rule to add.
+ *
+ *  @return true if the rule was added, otherwise false.
+ */
+bool DobbyUtils::insertEbtablesRule(const std::string &args) const
+{
+    // TODO: replace with library call rather than using ebtables tool
+    return executeCommand("ebtables -I " + args);
+}
+
+// -------------------------------------------------------------------------
+/**
+ *  @brief Deletes the given ebtables rule from the existing set.
+ *
+ *  This only performs a delete, if the a rule is not
+ *  currently installed then false is returned
+ *
+ *  @param[in]  args     The set of one rule to remove.
+ *
+ *  @return true if the rules were removed, otherwise false.
+ */
+bool DobbyUtils::deleteEbtablesRule(const std::string &args) const
+{
+    // TODO: replace with library call rather than using ebtables tool
+    return executeCommand("ebtables -D " + args);
+}
+
+bool DobbyUtils::executeCommand(const std::string &command) const
+{
+    std::string noOutputCommand = command + " &> /dev/null";
+
+    FILE* pipe = popen(noOutputCommand.c_str(), "re");
+    if (!pipe)
+    {
+        AI_LOG_SYS_ERROR(errno, "popen failed");
+        return false;
+    }
+
+    int returnCode = pclose(pipe);
+    if (returnCode < 0)
+    {
+        AI_LOG_SYS_ERROR(errno, "failed to exec command `%s`",
+                         noOutputCommand.c_str());
+        return false;
+    }
+    else if (returnCode > 0)
+    {
+        AI_LOG_ERROR("failed to exec command `%s`, command returned code %d",
+                     noOutputCommand.c_str(), returnCode);
+        return false;
+    }
+
+    return true;
+}

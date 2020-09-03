@@ -599,8 +599,72 @@ public:
 
 };
 
+// -----------------------------------------------------------------------------
+/**
+ *  @class IDobbyUtils_v3
+ *  @brief Third version of the interface containing extra functions for
+ *  working with ebtables.
+ *
+ *
+ *
+ */
+class IDobbyUtils_v3 : public virtual IDobbyUtils_v2
+{
+public:
+    using IDobbyUtils_v1::mkdirRecursive;
+    using IDobbyUtils_v1::rmdirRecursive;
+    using IDobbyUtils_v1::rmdirContents;
+    using IDobbyUtils_v1::loopDeviceAssociate;
+    using IDobbyUtils_v1::checkExtImageFile;
+    using IDobbyUtils_v1::formatExtImageFile;
+    using IDobbyUtils_v1::cleanMountLostAndFound;
+    using IDobbyUtils_v1::writeTextFile;
+    using IDobbyUtils_v1::writeTextFileAt;
+    using IDobbyUtils_v1::readTextFile;
+    using IDobbyUtils_v1::readTextFileAt;
+    using IDobbyUtils_v1::getNamespaceFd;
+    using IDobbyUtils_v1::cancelTimer;
+    using IDobbyUtils_v1::getDriverMajorNumber;
+    using IDobbyUtils_v1::deviceAllowed;
 
-using IDobbyUtils = IDobbyUtils_v2;
+    using IDobbyUtils_v2::setIntegerMetaData;
+    using IDobbyUtils_v2::getIntegerMetaData;
+    using IDobbyUtils_v2::setStringMetaData;
+    using IDobbyUtils_v2::getStringMetaData;
+    using IDobbyUtils_v2::clearContainerMetaData;
+
+public:
+
+    // -------------------------------------------------------------------------
+    /**
+     *  @brief Inserts the given ebtables rule to the existing set.
+     *
+     *  This doesn't flush out any old rules, it just adds the new one at
+     *  the beginning of the table.
+     *
+     *  @param[in]  args  The args of one rule to add.
+     *
+     *  @return true if the rule was added, otherwise false.
+     */
+    virtual bool insertEbtablesRule(const std::string &args) const = 0;
+
+    // -------------------------------------------------------------------------
+    /**
+     *  @brief Deletes the given ebtables rule from the existing set.
+     *
+     *  This only performs a delete, if the a rule is not
+     *  currently installed then false is returned
+     *
+     *  @param[in]  args     The set of one rule to remove.
+     *
+     *  @return true if the rules were removed, otherwise false.
+     */
+    virtual bool deleteEbtablesRule(const std::string &args) const = 0;
+
+};
+
+
+using IDobbyUtils = IDobbyUtils_v3;
 
 
 

@@ -47,6 +47,7 @@ AppServicesPlugin::AppServicesPlugin(const std::shared_ptr<IDobbyEnv>& env,
                                      const std::shared_ptr<IDobbyUtils>& utils)
     : mName("AppServices")
     , mUtilities(utils)
+    , mEnableConnLimit(false)
     , mNetfilter(std::make_shared<Netfilter>())
 {
     AI_LOG_FN_ENTRY();
@@ -93,6 +94,17 @@ unsigned AppServicesPlugin::hookHints() const
  *  @brief Updates the /etc/services and /etc/hosts file to point to the mapped
  *  AS server.
  *
+ *  The json data is expected (required) to be formatted like the following
+ *
+ *      {
+ *          "setMenu": "local-services-1",
+ *          "additionalPorts": [ 8123 ],
+ *          "connLimit": 32
+ *      }
+ *
+ *  The 'setMenu' field is the old way of specifying which services to map into
+ *  the container.  It is intended that in the future fine grained API lists
+ *  will be specified here.
  *
  *  @param[in]  id              The id of the container.
  *  @param[in]  startupState    The start-up state of the container (ignored)
@@ -106,54 +118,105 @@ bool AppServicesPlugin::postConstruction(const ContainerId& id,
                                          const std::string& rootfsPath,
                                          const Json::Value& jsonData)
 {
+    AI_LOG_FN_ENTRY();
+
     (void) startupState;
+
+    // validate / read the json
+    ServicesConfig config;
 
     // get the 'set menu' config which will specify the AS port to use and
     // any additional ports
-
-    // validate / read the json
     const Json::Value setMenu = jsonData["setMenu"];
-    if (!setMenu.isString())
+    if (setMenu.isString())
+    {
+        // get the service number
+        static const std::regex matcher(R"(local-services-([0-9]))",
+                                        std::regex::ECMAScript | std::regex::icase);
+
+        std::cmatch match;
+        if (!std::regex_search(setMenu.asCString(), match, matcher) || (match.size() != 2))
+        {
+            AI_LOG_ERROR_EXIT("invalid 'setMenu' string");
+            return false;
+        }
+
+        // the service number determines
+        switch (match.str(1).front())
+        {
+            case '1':
+                config.asPort = LocalServices1Port;
+                config.additionalPorts.insert(8008);
+                break;
+            case '2':
+                config.asPort = LocalServices2Port;
+                break;
+            case '3':
+                config.asPort = LocalServices3Port;
+                break;
+            case '4':
+                config.asPort = LocalServices4Port;
+                break;
+            case '5':
+                config.asPort = LocalServices5Port;
+                break;
+
+            default:
+                AI_LOG_ERROR_EXIT("invalid 'setMenu' string");
+                return false;
+        }
+    }
+    else if (!setMenu.isNull())
     {
         AI_LOG_ERROR_EXIT("'setMenu' field is missing or not a string type");
         return false;
     }
 
-    // get the service number
-    static const std::regex matcher(R"(local-services-([0-9]))",
-                                    std::regex::ECMAScript | std::regex::icase);
 
-    std::cmatch match;
-    if (!std::regex_search(setMenu.asCString(), match, matcher) || (match.size() != 2))
+    // check if a connection limit has been set, if not we apply the default one
+    config.connLimit = 32;
+    const Json::Value connLimit = jsonData["connLimit"];
+    if (connLimit.isIntegral())
     {
-        AI_LOG_ERROR_EXIT("invalid 'setMenu' string");
+        config.connLimit = connLimit.asInt();
+        if (config.connLimit < 0)
+        {
+            AI_LOG_WARN("connection limit is invalid (%d), setting to 0",
+                        config.connLimit);
+            config.connLimit = 1;
+        }
+    }
+    else if (!connLimit.isNull())
+    {
+        AI_LOG_ERROR_EXIT("'connLimit' field must contain an integer type");
         return false;
     }
 
-    // the service number determines
-    ServicesConfig config;
-    switch (match.str(1).front())
-    {
-        case '1':
-            config.asPort = LocalServices1Port;
-            config.additionalPorts.insert(8008);
-            break;
-        case '2':
-            config.asPort = LocalServices2Port;
-            break;
-        case '3':
-            config.asPort = LocalServices3Port;
-            break;
-        case '4':
-            config.asPort = LocalServices4Port;
-            break;
-        case '5':
-            config.asPort = LocalServices5Port;
-            break;
 
-        default:
-            AI_LOG_ERROR_EXIT("invalid 'setMenu' string");
-            return false;
+    // check for any additional ports that need to be opened up
+    const Json::Value additionalPorts = jsonData["additionalPorts"];
+    if (additionalPorts.isArray())
+    {
+        for (const Json::Value &additionalPort : additionalPorts)
+        {
+            if (!additionalPort.isIntegral())
+            {
+                AI_LOG_WARN("invalid json value type in additionalPorts field");
+            }
+            else
+            {
+                in_port_t port = static_cast<in_port_t>(additionalPort.asInt());
+                if (port < 128)
+                    AI_LOG_WARN("invalid port value (%hu) in additionalPorts array", port);
+                else
+                    config.additionalPorts.insert(port);
+            }
+        }
+    }
+    else if (!additionalPorts.isNull())
+    {
+        AI_LOG_ERROR_EXIT("'additionalPorts' field is not an array type");
+        return false;
     }
 
 
@@ -176,11 +239,13 @@ bool AppServicesPlugin::postConstruction(const ContainerId& id,
                                 O_CREAT | O_TRUNC | O_WRONLY, 0644);
 
     // specify the AS port number
-    char buf[64];
-    snprintf(buf, sizeof(buf), "as\t%hu/tcp\t\t# Sky AS Service\n", config.asPort);
-    mUtilities->writeTextFileAt(rootfsDirFd, "etc/services", buf,
-                                O_CREAT | O_APPEND | O_WRONLY, 0644);
-
+    if (config.asPort != LocalServicesNone)
+    {
+        char buf[64];
+        snprintf(buf, sizeof(buf), "as\t%hu/tcp\t\t# Sky AS Service\n", config.asPort);
+        mUtilities->writeTextFileAt(rootfsDirFd, "etc/services", buf,
+                                    O_CREAT | O_APPEND | O_WRONLY, 0644);
+    }
 
     if (close(rootfsDirFd) != 0)
     {
@@ -188,9 +253,12 @@ bool AppServicesPlugin::postConstruction(const ContainerId& id,
     }
 
 
-    // set the service details
+    // store the service details
     std::lock_guard<std::mutex> locker(mLock);
-    mContainerServices[id] = config;
+    mContainerServices.emplace(id, std::move(config));
+
+    AI_LOG_FN_EXIT();
+    return true;
 }
 
 // -----------------------------------------------------------------------------
@@ -211,9 +279,9 @@ std::string AppServicesPlugin::constructDNATRule(const ContainerId &id,
     char buf[256];
 
 #if defined(DEV_VM)
-    const std::string comment("asplugin-" + id.str());
+    const std::string comment("asplugin:" + id.str());
 #else
-    const std::string comment("\"asplugin-" + id.str() + "\"");
+    const std::string comment("\"asplugin:" + id.str() + "\"");
 #endif
 
     snprintf(buf, sizeof(buf), "PREROUTING -s %s/32 -d 100.64.11.1/32 "
@@ -223,6 +291,47 @@ std::string AppServicesPlugin::constructDNATRule(const ContainerId &id,
              containerIp.c_str(), port, comment.c_str(), port);
 
     return std::string(buf);
+}
+
+// -----------------------------------------------------------------------------
+/**
+ *  @brief Constructs an INPUT REJECT rule to reject connection if exceed the
+ *  limit.
+ *
+ *  @param[in]  id          The id of the container.
+ *  @param[in]  containerIp The ip address inside the container.
+ *  @param[in]  vethName    The name of the veth device (outside the container)
+ *                          that belongs to the container.
+ *  @param[in]  port        The port number to add the DNAT rule for.
+ *
+ *  @return the iptables formatted string.
+ */
+std::string AppServicesPlugin::constructCONNLIMITRule(const ContainerId& id,
+                                                      const std::string &containerIp,
+                                                      const std::string &vethName,
+                                                      in_port_t port,
+                                                      int connLimit) const
+{
+    char buf[256];
+
+#if defined(DEV_VM)
+    const std::string comment("asplugin:" + id.str());
+#else
+    const std::string comment("\"asplugin:" + id.str() + "\"");
+#endif
+
+    snprintf(buf, sizeof(buf), "DobbyInputChain -s %s/32 -d 127.0.0.1/32 "
+                               "-i dobby0 -p tcp "
+                               "-m tcp --dport %hu --tcp-flags FIN,SYN,RST,ACK SYN "
+                               "-m connlimit --connlimit-above %d --connlimit-mask 32 --connlimit-saddr "
+                               "-m comment --comment %s "
+                               "-j REJECT --reject-with tcp-reset",
+             containerIp.c_str(), port, connLimit, comment.c_str());
+
+    AI_LOG_INFO("%s", buf);
+
+    return std::string(buf);
+
 }
 
 // -----------------------------------------------------------------------------
@@ -246,9 +355,9 @@ std::string AppServicesPlugin::constructACCEPTRule(const ContainerId& id,
     char buf[256];
 
 #if defined(DEV_VM)
-    const std::string comment("asplugin-" + id.str());
+    const std::string comment("asplugin:" + id.str());
 #else
-    const std::string comment("\"asplugin-" + id.str() + "\"");
+    const std::string comment("\"asplugin:" + id.str() + "\"");
 #endif
 
     snprintf(buf, sizeof(buf), "DobbyInputChain -s %s/32 -d 127.0.0.1/32 "
@@ -337,13 +446,32 @@ bool AppServicesPlugin::preStart(const ContainerId& id,
     std::list<std::string> natRules;
 
     // add the AS rules
-    acceptRules.emplace_back(constructACCEPTRule(id, ipAddress, vethName, config.asPort));
-    natRules.emplace_back(constructDNATRule(id, ipAddress, config.asPort));
+    if (config.asPort != LocalServicesNone)
+    {
+        if (mEnableConnLimit)
+        {
+            acceptRules.emplace_back(
+                constructCONNLIMITRule(id, ipAddress, vethName,
+                                       config.asPort, config.connLimit));
+        }
+
+        acceptRules.emplace_back(constructACCEPTRule(id, ipAddress, vethName,
+                                                     config.asPort));
+        natRules.emplace_back(constructDNATRule(id, ipAddress, config.asPort));
+    }
 
     // add any addition port rules
     for (in_port_t port : config.additionalPorts)
     {
-        acceptRules.emplace_back(constructACCEPTRule(id, ipAddress, vethName, port));
+        if (mEnableConnLimit)
+        {
+            acceptRules.emplace_back(
+                constructCONNLIMITRule(id, ipAddress, vethName,
+                                       port, config.connLimit));
+        }
+
+        acceptRules.emplace_back(constructACCEPTRule(id, ipAddress, vethName,
+                                                     port));
         natRules.emplace_back(constructDNATRule(id, ipAddress, port));
     }
 

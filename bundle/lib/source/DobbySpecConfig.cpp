@@ -26,7 +26,7 @@
 #include "IDobbyUtils.h"
 
 #include <array>
-
+#include <atomic>
 #include <grp.h>
 #include <fcntl.h>
 #include <limits.h>
@@ -74,17 +74,23 @@ static const ctemplate::StaticTemplateString CPU_CPUS_VALUE =
 static const ctemplate::StaticTemplateString NETNS_ENABLED =
     STS_INIT(NETNS_ENABLED, "NETNS_ENABLED");
 
-static const ctemplate::StaticTemplateString GPU_ENABLED =
-    STS_INIT(GPU_ENABLED, "GPU_ENABLED");
-static const ctemplate::StaticTemplateString GPU_DEV_NODES =
-    STS_INIT(GPU_DEV_NODES, "GPU_DEV_NODES");
-static const ctemplate::StaticTemplateString GPU_DEV_NODES_PERMS =
-    STS_INIT(GPU_DEV_NODES_PERMS, "GPU_DEV_NODES_PERMS");
+static const ctemplate::StaticTemplateString ADDITIONAL_GIDS =
+    STS_INIT(ADDITIONAL_GIDS, "ADDITIONAL_GIDS");
+static const ctemplate::StaticTemplateString ADDITIONAL_GID =
+    STS_INIT(ADDITIONAL_GID, "ADDITIONAL_GID");
 
-static const ctemplate::StaticTemplateString GPU_GROUP_ENABLED =
-    STS_INIT(GPU_GROUP_ENABLED, "GPU_GROUP_ENABLED");
-static const ctemplate::StaticTemplateString GPU_GROUP_ID =
-    STS_INIT(GPU_GROUP_ID, "GPU_GROUP_ID");
+static const ctemplate::StaticTemplateString ADDITIONAL_DEVICE_NODES =
+    STS_INIT(ADDITIONAL_DEVICE_NODES, "ADDITIONAL_DEVICE_NODES");
+static const ctemplate::StaticTemplateString DEVICE_PATH =
+    STS_INIT(DEVICE_PATH, "DEVICE_PATH");
+static const ctemplate::StaticTemplateString DEVICE_MAJOR =
+        STS_INIT(DEVICE_MAJOR, "DEVICE_MAJOR");
+static const ctemplate::StaticTemplateString DEVICE_MINOR =
+    STS_INIT(DEVICE_MINOR, "DEVICE_MINOR");
+static const ctemplate::StaticTemplateString DEVICE_FILE_MODE =
+    STS_INIT(DEVICE_FILE_MODE, "DEVICE_FILE_MODE");
+static const ctemplate::StaticTemplateString DEVICE_ACCESS =
+    STS_INIT(DEVICE_ACCESS, "DEVICE_ACCESS");
 
 static const ctemplate::StaticTemplateString MOUNT_SECTION =
     STS_INIT(MOUNT_SECTION, "MOUNT_SECTION");
@@ -164,6 +170,8 @@ static const ctemplate::StaticTemplateString PLUGIN_DATA =
 #define JSON_FLAG_CPU               (0x1U << 17)
 #define JSON_FLAG_DEVICES           (0x1U << 18)
 #define JSON_FLAG_CAPABILITIES      (0x1U << 19)
+#define JSON_FLAG_FILECAPABILITIES  (0x1U << 20)
+#define JSON_FLAG_VPU               (0x1U << 21)
 
 int DobbySpecConfig::mNumCores = -1;
 
@@ -191,7 +199,8 @@ DobbySpecConfig::DobbySpecConfig(const std::shared_ptr<IDobbyUtils> &utils,
                                  const std::shared_ptr<const DobbyBundle>& bundle,
                                  const std::string& specJson)
     : mUtilities(utils)
-    , mSettings(settings)
+    , mGpuSettings(settings->gpuAccessSettings())
+    , mVpuSettings(settings->vpuAccessSettings())
     , mDictionary(nullptr)
     , mConf(nullptr)
     , mSpecVersion(SpecVersion::Unknown)
@@ -272,7 +281,8 @@ DobbySpecConfig::DobbySpecConfig(const std::shared_ptr<IDobbyUtils> &utils,
                                  const std::shared_ptr<const DobbyBundle>& bundle,
                                  const std::string& specJson)
     : mUtilities(utils)
-    , mSettings(settings)
+    , mGpuSettings(settings->gpuAccessSettings())
+    , mVpuSettings(settings->vpuAccessSettings())
     , mDictionary(nullptr)
     , mConf(nullptr)
     , mSpecVersion(SpecVersion::Unknown)
@@ -494,11 +504,12 @@ bool DobbySpecConfig::parseSpec(ctemplate::TemplateDictionary* dictionary,
         { "plugins",        {   JSON_FLAG_PLUGINS,          &DobbySpecConfig::processLegacyPlugins  }   },
         { "memLimit",       {   JSON_FLAG_MEMLIMIT,         &DobbySpecConfig::processMemLimit       }   },
         { "gpu",            {   JSON_FLAG_GPU,              &DobbySpecConfig::processGpu            }   },
+        { "vpu",            {   JSON_FLAG_VPU,              &DobbySpecConfig::processVpu            }   },
         { "dbus",           {   JSON_FLAG_DBUS,             &DobbySpecConfig::processDbus           }   },
         { "syslog",         {   JSON_FLAG_SYSLOG,           &DobbySpecConfig::processSyslog         }   },
         { "cpu",            {   JSON_FLAG_CPU,              &DobbySpecConfig::processCpu            }   },
         { "devices",        {   JSON_FLAG_DEVICES,          &DobbySpecConfig::processDevices        }   },
-        { "capabilities",   {   JSON_FLAG_CAPABILITIES,     &DobbySpecConfig::processCapabilities   }   },
+        { "capabilities",   {   JSON_FLAG_CAPABILITIES,     &DobbySpecConfig::processCapabilities   }   }
     };
 
     // step 1 - parse the 'dobby' spec document
@@ -1286,6 +1297,94 @@ bool DobbySpecConfig::processMemLimit(const Json::Value& value,
 
 // -----------------------------------------------------------------------------
 /**
+ *  @brief Adds the GPU device nodes (if any) to supplied dictionary.
+ *
+ *  This function gathers the dev node details from the settings and system the
+ *  first time it runs, for all subsequent times it uses the initial cached
+ *  details.
+ *
+ *  @param[in]  settings    The settings containing the list of dev nodes paths
+ *                          or glob patterns.  Only used the first time called.
+ *  @param[in]  dictionary  The dictionary to add the details to.
+ *
+ */
+void DobbySpecConfig::addGpuDevNodes(const std::shared_ptr<const IDobbySettings::HardwareAccessSettings> &settings,
+                                 ctemplate::TemplateDictionary *dictionary)
+{
+    // device nodes should be static, so get the details once and store for
+    // all subsequent calls
+    static std::mutex scanningLock;
+    static std::atomic<bool> scannedDevNodes(false);
+    static std::list<DobbyConfig::DevNode> devNodes;
+
+    if (!scannedDevNodes)
+    {
+        std::lock_guard<std::mutex> locker(scanningLock);
+
+        if (!scannedDevNodes)
+        {
+            devNodes = scanDevNodes(settings->deviceNodes);
+            scannedDevNodes = true;
+        }
+    }
+
+    // add to the additional device node section
+    for (const DobbyConfig::DevNode &devNode : devNodes)
+    {
+        ctemplate::TemplateDictionary *subDict = dictionary->AddSectionDictionary(ADDITIONAL_DEVICE_NODES);
+        subDict->SetValue(DEVICE_PATH, devNode.path);
+        subDict->SetIntValue(DEVICE_MAJOR, devNode.major);
+        subDict->SetIntValue(DEVICE_MINOR, devNode.minor);
+        subDict->SetIntValue(DEVICE_FILE_MODE, devNode.mode);
+    }
+}
+
+// -----------------------------------------------------------------------------
+/**
+ *  @brief Adds the VPU device nodes (if any) to supplied dictionary.
+ *
+ *  This function gathers the dev node details from the settings and system the
+ *  first time it runs, for all subsequent times it uses the initial cached
+ *  details.
+ *
+ *  @param[in]  settings    The settings containing the list of dev nodes paths
+ *                          or glob patterns.  Only used the first time called.
+ *  @param[in]  dictionary  The dictionary to add the details to.
+ *
+ */
+void DobbySpecConfig::addVpuDevNodes(const std::shared_ptr<const IDobbySettings::HardwareAccessSettings> &settings,
+                                 ctemplate::TemplateDictionary *dictionary)
+{
+    // device nodes should be static, so get the details once and store for
+    // all subsequent calls
+    static std::mutex scanningLock;
+    static std::atomic<bool> scannedDevNodes(false);
+    static std::list<DobbyConfig::DevNode> devNodes;
+
+    if (!scannedDevNodes)
+    {
+        std::lock_guard<std::mutex> locker(scanningLock);
+
+        if (!scannedDevNodes)
+        {
+            devNodes = scanDevNodes(settings->deviceNodes);
+            scannedDevNodes = true;
+        }
+    }
+
+    // add to the additional device node section
+    for (const DobbyConfig::DevNode &devNode : devNodes)
+    {
+        ctemplate::TemplateDictionary *subDict = dictionary->AddSectionDictionary(ADDITIONAL_DEVICE_NODES);
+        subDict->SetValue(DEVICE_PATH, devNode.path);
+        subDict->SetIntValue(DEVICE_MAJOR, devNode.major);
+        subDict->SetIntValue(DEVICE_MINOR, devNode.minor);
+        subDict->SetIntValue(DEVICE_FILE_MODE, devNode.mode);
+    }
+}
+
+// -----------------------------------------------------------------------------
+/**
  *  @brief Processes the gpu field, which contains enable and memLimit values.
  *
  *  Example json:
@@ -1338,62 +1437,128 @@ bool DobbySpecConfig::processGpu(const Json::Value& value,
 
     if (mGpuEnabled)
     {
-        dictionary->ShowSection(GPU_ENABLED);
-
-        // OCI config can't limit GPU memory, need RDK plugin for this
-        ctemplate::TemplateDictionary* subDict;
-        enableRdkPlugin(subDict, RDK_GPU_PLUGIN_NAME, false);
-
-        Json::Value rdkPluginData;
-        rdkPluginData["memory"] = static_cast<int>(mGpuMemLimit);
-        std::string pluginData = createRdkPluginDataString(rdkPluginData);
-
-        subDict->SetValue(RDK_PLUGIN_DATA, pluginData);
-        addRdkPlugin(RDK_GPU_PLUGIN_NAME, false, rdkPluginData);
-
         // lazily init the GPU dev nodes mapping - we use to do this at start-up
         // but hit an issue on broadcom platforms where the dev nodes aren't
         // created until the gpu library is used
-        if (!mInitialisedGpuDevNodes)
-        {
-            DobbyConfig::initGpuDevNodes(mSettings->gpuDeviceNodes());
-        }
-
-        dictionary->SetValue(GPU_DEV_NODES, mGpuDevNodes);
-        dictionary->SetValue(GPU_DEV_NODES_PERMS, mGpuDevNodesPerms);
+        addGpuDevNodes(mGpuSettings, dictionary);
 
         // check if a special 'GPU' group id is needed
-        const int gpuGroupId = mSettings->gpuGroupId();
-        if (gpuGroupId > 0)
+        for (const int gid : mGpuSettings->groupIds)
         {
-            char buf[32];
-            int len = snprintf(buf, sizeof(buf), "%d", gpuGroupId);
-
-            dictionary->SetValueAndShowSection(GPU_GROUP_ID,
-                                               ctemplate::TemplateString(buf, len),
-                                               GPU_GROUP_ENABLED);
+            dictionary->
+                    AddSectionDictionary(ADDITIONAL_GIDS)->
+                    SetIntValue(ADDITIONAL_GID, gid);
         }
 
         // add any extra mounts (ie ipc sockets, shared memory files, etc)
-        if (mSettings->gpuHasExtraMounts())
+        for (const IDobbySettings::ExtraMount &extraMount : mGpuSettings->extraMounts)
         {
-            const std::list<IDobbySettings::GpuExtraMount> extraMounts =
-                mSettings->gpuExtraMounts();
+            ctemplate::TemplateDictionary *subDict = dictionary->AddSectionDictionary(MOUNT_SECTION);
+            subDict->SetValue(MOUNT_SRC, extraMount.source);
+            subDict->SetValue(MOUNT_DST, extraMount.target);
+            subDict->SetValue(MOUNT_TYPE, extraMount.type);
 
-            for (const IDobbySettings::GpuExtraMount& extraMount : extraMounts)
+            for (const std::string& flag : extraMount.flags)
             {
-                ctemplate::TemplateDictionary *subDict = dictionary->AddSectionDictionary(MOUNT_SECTION);
-                subDict->SetValue(MOUNT_SRC, extraMount.source);
-                subDict->SetValue(MOUNT_DST, extraMount.target);
-                subDict->SetValue(MOUNT_TYPE, extraMount.type);
-
-                for (const std::string& flag : extraMount.flags)
-                {
-                    ctemplate::TemplateDictionary *optSubDict = subDict->AddSectionDictionary(MOUNT_OPT_SECTION);
-                    optSubDict->SetValue(MOUNT_OPT, flag);
-                }
+                ctemplate::TemplateDictionary *optSubDict = subDict->AddSectionDictionary(MOUNT_OPT_SECTION);
+                optSubDict->SetValue(MOUNT_OPT, flag);
             }
+
+            // store the mount point for rootfs construction
+            storeMountPoint(extraMount.type, extraMount.source, extraMount.target);
         }
+    }
+
+    // and any extra environment variables
+    for (const auto& extraEnvVar : mGpuSettings->extraEnvVariables)
+    {
+        ctemplate::TemplateDictionary *envSubDict = dictionary->AddSectionDictionary(ENV_VAR_SECTION);
+        envSubDict->SetFormattedValue(ENV_VAR_VALUE, "%s=%s",
+                                      extraEnvVar.first.c_str(),
+                                      extraEnvVar.second.c_str());
+    }
+
+    return true;
+}
+
+// -----------------------------------------------------------------------------
+/**
+ *  @brief Processes the vpu field, which is used to enable access to the VPU.
+ *
+ *  Example json:
+ *
+ *      "vpu": {
+ *          "enable": true,
+ *      }
+ *
+ *
+ *
+ *  @param[in]  value       The json spec document from the client
+ *  @param[in]  dictionary  Pointer to the OCI dictionary to populate
+ *
+ *  @return true if correctly processed the value, otherwise false.
+ */
+bool DobbySpecConfig::processVpu(const Json::Value& value,
+                             ctemplate::TemplateDictionary* dictionary)
+{
+    // check VPU access should be enabled
+    const Json::Value& enable = value["enable"];
+    if (enable.isBool())
+    {
+        if (!enable.asBool())
+        {
+            // vpu not enabled, just return
+            return true;
+        }
+    }
+    else if (enable.isNull())
+    {
+        // not an error but means vpu is not enabled
+        return true;
+    }
+    else
+    {
+        AI_LOG_ERROR("invalid 'vpu.enable' field");
+        return false;
+    }
+
+
+    // add the VPU dev nodes
+    addVpuDevNodes(mVpuSettings, dictionary);
+
+    // check if a special 'VPU' group id(s) are needed
+    for (const int gid : mVpuSettings->groupIds)
+    {
+        dictionary->
+                AddSectionDictionary(ADDITIONAL_GIDS)->
+                SetIntValue(ADDITIONAL_GID, gid);
+    }
+
+    // add any extra mounts (ie ipc sockets, shared memory files, etc)
+    for (const auto& extraMount : mVpuSettings->extraMounts)
+    {
+        ctemplate::TemplateDictionary *subDict = dictionary->AddSectionDictionary(MOUNT_SECTION);
+        subDict->SetValue(MOUNT_SRC, extraMount.source);
+        subDict->SetValue(MOUNT_DST, extraMount.target);
+        subDict->SetValue(MOUNT_TYPE, extraMount.type);
+
+        for (const std::string& flag : extraMount.flags)
+        {
+            ctemplate::TemplateDictionary *optSubDict = subDict->AddSectionDictionary(MOUNT_OPT_SECTION);
+            optSubDict->SetValue(MOUNT_OPT, flag);
+        }
+
+        // store the mount point for rootfs construction
+        storeMountPoint(extraMount.type, extraMount.source, extraMount.target);
+    }
+
+    // and any extra environment variables
+    for (const auto& extraEnvVar : mVpuSettings->extraEnvVariables)
+    {
+        ctemplate::TemplateDictionary *envSubDict = dictionary->AddSectionDictionary(ENV_VAR_SECTION);
+        envSubDict->SetFormattedValue(ENV_VAR_VALUE, "%s=%s",
+                                      extraEnvVar.first.c_str(),
+                                      extraEnvVar.second.c_str());
     }
 
     return true;

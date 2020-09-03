@@ -310,11 +310,11 @@ void DobbyTemplate::setTemplateDevNodes(const std::list<std::string>& devNodes)
 
         // and this creates the json for the devices cgroup to tell it that
         // the graphics nodes are readable and writeable
-        devNodesPermStream << ",\n{ \"allow\": true, "
-                           <<      "\"access\": \"rw\", "
-                           <<      "\"type\": \"c\","
-                           <<      "\"major\": " << major(buf.st_rdev) << ", "
-                           <<      "\"minor\": " << minor(buf.st_rdev) << " }";
+        devNodesPermStream << "{ \"allow\": true, "
+                           << "    \"access\": \"rw\", "
+                           << "    \"type\": \"c\","
+                           << "    \"major\": " << major(buf.st_rdev) << ", "
+                           << "    \"minor\": " << minor(buf.st_rdev) << " },\n";
 
     }
 
@@ -326,15 +326,25 @@ void DobbyTemplate::setTemplateDevNodes(const std::list<std::string>& devNodes)
 
     // trim off the final comma (',') and newline
     std::string devNodesString = devNodesStream.str();
-    if (!devNodesString.empty())
+    while (!devNodesString.empty() &&
+           ((devNodesString.back() == '\n') || (devNodesString.back() == ',')))
+    {
         devNodesString.pop_back();
-    if (!devNodesString.empty())
-        devNodesString.pop_back();
+    }
+
+    std::string devNodesPermString = devNodesPermStream.str();
+    while (!devNodesPermString.empty() &&
+           ((devNodesPermString.back() == '\n') || (devNodesPermString.back() == ',')))
+    {
+        devNodesPermString.pop_back();
+    }
+
 
     // and finally set the global template value
-    ctemplate::TemplateDictionary::SetGlobalValue("GPU_DEV_NODES", devNodesString);
+    ctemplate::TemplateDictionary::SetGlobalValue("GPU_DEV_NODES",
+                                                  devNodesString);
     ctemplate::TemplateDictionary::SetGlobalValue("GPU_DEV_NODES_PERMS",
-                                                  devNodesPermStream.str());
+                                                  devNodesPermString);
 
 
     AI_LOG_FN_EXIT();

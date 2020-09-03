@@ -54,6 +54,7 @@ target_link_libraries( # Specifies the target exec
         IpcService
         AppInfraLogging
         AppInfraCommon
+        AppInfraTracing
 
         # Import the 3rd party libraries
         JsonCpp::JsonCpp

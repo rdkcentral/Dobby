@@ -45,7 +45,8 @@ GpuMemoryHook::GpuMemoryHook(const std::shared_ptr<IDobbyEnv>& env,
 
     if (mCgroupDirPath.empty())
     {
-        AI_LOG_FATAL_EXIT("no GPU cgroup found!");
+        AI_LOG_WARN("no GPU cgroup found - disabling hook");
+        AI_LOG_FN_EXIT();
         return;
     }
 
@@ -86,11 +87,14 @@ std::string GpuMemoryHook::hookName() const
  *  @brief Hook hints for when to run the network hook
  *
  *  We want to be called at the pre-start and post-stop phase. The preStart is
- *  run qsynchronously as we need to do some bind mounting within the namespace.
+ *  run asynchronously as we need to do some bind mounting within the namespace.
  *
  */
 unsigned GpuMemoryHook::hookHints() const
 {
+    if (mCgroupDirfd < 0)
+        return 0;
+
     return (IDobbySysHook::PreStartAsync |
             IDobbySysHook::PostStopSync);
 }
@@ -108,7 +112,7 @@ unsigned GpuMemoryHook::hookHints() const
  *  @param[in]  fileName    The name of the file in the cgroup to write to.
  *  @param[in]  value       The value to write.
  *
- *  @return true if successiful otherwise false.
+ *  @return true if successful otherwise false.
  */
 bool GpuMemoryHook::writeCgroupFile(const ContainerId& id,
                                     const std::string& fileName,
@@ -317,6 +321,12 @@ bool GpuMemoryHook::preStart(const ContainerId& id,
                              const std::shared_ptr<const DobbyConfig>& config,
                              const std::shared_ptr<const DobbyRootfs>& rootfs)
 {
+    // if we don't have a GPU cgroup controller then nothing to do
+    if (mCgroupDirfd < 0)
+    {
+        return true;
+    }
+
     if (config->gpuEnabled())
     {
         return setupContainerGpuLimit(id, containerPid, config);
@@ -361,7 +371,7 @@ bool GpuMemoryHook::postStop(const ContainerId& id,
     // sanity check we have a gpu cgroup dir
     if (mCgroupDirfd < 0)
     {
-        AI_LOG_ERROR("missing gpu cgroup dirfd");
+        AI_LOG_INFO("no gpu cgroup controller found");
     }
     else if (unlinkat(mCgroupDirfd, id.c_str(), AT_REMOVEDIR) != 0)
     {

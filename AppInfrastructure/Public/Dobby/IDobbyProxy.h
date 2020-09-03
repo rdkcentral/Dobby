@@ -182,6 +182,13 @@ public:
 
     virtual std::string getOCIConfig(int32_t descriptor) const = 0;
 
+#if (AI_ENABLE_TRACING)
+    virtual bool startInProcessTracing(int traceFileFd,
+                                       const std::string &categoryFilter) const = 0;
+
+    virtual bool stopInProcessTracing() const = 0;
+#endif // (AI_ENABLE_TRACING)
+
 #endif // (AI_BUILD_TYPE == AI_DEBUG)
 
 };

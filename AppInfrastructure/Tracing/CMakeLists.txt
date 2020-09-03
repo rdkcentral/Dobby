@@ -14,27 +14,19 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+project(AppInfraTracing)
 
-add_library( AppInfraLogging
+add_library(${PROJECT_NAME}
+        INTERFACE
+)
 
-        STATIC
-        source/Logging.cpp
+target_include_directories( ${PROJECT_NAME}
+        INTERFACE
+        include
+        ${CMAKE_CURRENT_BINARY_DIR}
+)
 
-        )
-
-set_target_properties(AppInfraLogging PROPERTIES POSITION_INDEPENDENT_CODE ON)
-
-target_include_directories( AppInfraLogging
-
-        PUBLIC
-
-        # Adds the include dirs to INTERFACE_INCLUDE_DIRECTORIES for exporting
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-
-        )
-
-install(TARGETS AppInfraLogging
-        EXPORT DobbyTargets
-        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-
-        )
+configure_file(
+        ${CMAKE_CURRENT_LIST_DIR}/include/Tracing.h.in
+        ${CMAKE_CURRENT_BINARY_DIR}/Tracing.h
+)

@@ -106,6 +106,11 @@ private:
     DOBBY_DBUS_METHOD(freeIpAddress);
     DOBBY_DBUS_METHOD(getExtIfaces);
 
+#if defined(AI_ENABLE_TRACING)
+    DOBBY_DBUS_METHOD(startInProcessTracing);
+    DOBBY_DBUS_METHOD(stopInProcessTracing);
+#endif
+
     #undef DOBBY_DBUS_METHOD
 
 private:

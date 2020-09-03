@@ -15,26 +15,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-add_library( AppInfraLogging
+project(DobbyTracing)
 
+add_library(${PROJECT_NAME}
         STATIC
-        source/Logging.cpp
+        source/PerfettoTracing.cpp
+        source/PerfettoTracingSingleton.cpp
+)
 
-        )
-
-set_target_properties(AppInfraLogging PROPERTIES POSITION_INDEPENDENT_CODE ON)
-
-target_include_directories( AppInfraLogging
-
+target_include_directories(${PROJECT_NAME}
         PUBLIC
+        include
 
-        # Adds the include dirs to INTERFACE_INCLUDE_DIRECTORIES for exporting
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+        PRIVATE
+        $<TARGET_PROPERTY:AppInfraLogging,INTERFACE_INCLUDE_DIRECTORIES>
+)
 
-        )
-
-install(TARGETS AppInfraLogging
-        EXPORT DobbyTargets
-        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-
-        )
+target_link_libraries(${PROJECT_NAME}
+        AppInfraTracing
+        PerfettoSdk
+)

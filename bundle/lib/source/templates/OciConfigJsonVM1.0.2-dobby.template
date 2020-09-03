@@ -32,15 +32,13 @@ static const char* ociJsonTemplate = R"JSON(
         "user": {
             {{#USERNS_DISABLED}}
             "uid": {{USER_ID}},
-            "gid": {{GROUP_ID}}
+            "gid": {{GROUP_ID}},
             {{/USERNS_DISABLED}}
             {{#USERNS_ENABLED}}
             "uid": 0,
-            "gid": 0
+            "gid": 0,
             {{/USERNS_ENABLED}}
-            {{#GPU_GROUP_ENABLED}}
-            ,"additionalGids": [ {{GPU_GROUP_ID}} ]
-            {{/GPU_GROUP_ENABLED}}
+            "additionalGids": [ {{#ADDITIONAL_GIDS}} {{ADDITIONAL_GID}}{{#ADDITIONAL_GIDS_separator}},{{/ADDITIONAL_GIDS_separator}} {{/ADDITIONAL_GIDS}} ]
         },
         "args": [
             "/usr/libexec/DobbyInit",
@@ -111,16 +109,6 @@ static const char* ociJsonTemplate = R"JSON(
     "hostname": "dobby",
 
     "mounts": [
-        {
-            "destination": "/proc",
-            "type": "proc",
-            "source": "proc",
-            "options": [
-                "nosuid",
-                "noexec",
-                "nodev"
-            ]
-        },
         {
             "destination": "/tmp",
             "type": "tmpfs",
@@ -236,6 +224,17 @@ static const char* ociJsonTemplate = R"JSON(
                 "ro"
             ]
         },
+        {
+            "destination": "/usr",
+            "type": "bind",
+            "source": "/usr",
+            "options": [
+                "rbind",
+                "nosuid",
+                "nodev",
+                "ro"
+            ]
+        },
         {{#SYSLOG_SECTION}}{
             "destination": "/dev/log",
             "type": "bind",
@@ -255,14 +254,13 @@ static const char* ociJsonTemplate = R"JSON(
             ]
         },{{/MOUNT_SECTION}}
         {
-            "destination": "/usr",
-            "type": "bind",
-            "source": "/usr",
+            "destination": "/proc",
+            "type": "proc",
+            "source": "proc",
             "options": [
-                "rbind",
                 "nosuid",
-                "nodev",
-                "ro"
+                "noexec",
+                "nodev"
             ]
         }
     ],
@@ -282,19 +280,27 @@ static const char* ociJsonTemplate = R"JSON(
                 "containerID": 0,
                 "size": 10
             }
-            {{#GPU_GROUP_ENABLED}}
+            {{#ADDITIONAL_GIDS}}
             ,{
-                "hostID": {{GPU_GROUP_ID}},
-                "containerID": {{GPU_GROUP_ID}},
+                "hostID": {{ADDITIONAL_GID}},
+                "containerID": {{ADDITIONAL_GID}},
                 "size": 1
             }
-            {{/GPU_GROUP_ENABLED}}
+            {{/ADDITIONAL_GIDS}}
         ],
         {{/USERNS_ENABLED}}
         "devices": [
-            {{#GPU_ENABLED}}
-            {{GPU_DEV_NODES}}
-            {{/GPU_ENABLED}}
+            {{#ADDITIONAL_DEVICE_NODES}}
+            {
+                "path": "{{DEVICE_PATH}}",
+                "type": "c",
+                "major": {{DEVICE_MAJOR}},
+                "minor": {{DEVICE_MINOR}},
+                "fileMode": {{DEVICE_FILE_MODE}},
+                "uid": 0,
+                "gid": 0
+            }{{#ADDITIONAL_DEVICE_NODES_separator}},{{/ADDITIONAL_DEVICE_NODES_separator}}
+            {{/ADDITIONAL_DEVICE_NODES}}
         ],
         "resources": {
             "devices": [
@@ -302,9 +308,15 @@ static const char* ociJsonTemplate = R"JSON(
                     "allow": false,
                     "access": "rwm"
                 }
-                {{#GPU_ENABLED}}
-                {{GPU_DEV_NODES_PERMS}}
-                {{/GPU_ENABLED}}
+                {{#ADDITIONAL_DEVICE_NODES}}
+                ,{
+                    "allow": true,
+                    "type": "c",
+                    "major": {{DEVICE_MAJOR}},
+                    "minor": {{DEVICE_MINOR}},
+                    "access": "rw"
+                }
+                {{/ADDITIONAL_DEVICE_NODES}}
                 {{#DEV_WHITELIST_SECTION}}
                 ,{
                     "allow": true,
