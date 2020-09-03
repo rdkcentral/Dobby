@@ -32,7 +32,7 @@ REGISTER_RDK_PLUGIN(GpuPlugin);
 GpuPlugin::GpuPlugin(std::shared_ptr<rt_dobby_schema> &containerConfig,
                      const std::shared_ptr<DobbyRdkPluginUtils> &utils,
                      const std::string &rootfsPath)
-    : mName("GpuPlugin"),
+    : mName("Gpu"),
       mContainerConfig(containerConfig),
       mUtils(utils),
       mContainerId(mContainerConfig->hostname),
@@ -80,6 +80,12 @@ bool GpuPlugin::createRuntime()
     }
 
     // get memory limit from the config
+    if (mContainerConfig->rdk_plugins->gpu->data->memory <= 0)
+    {
+        AI_LOG_ERROR_EXIT("gpu memory limit must be > 0");
+        return false;
+    }
+
     const int memLimit = mContainerConfig->rdk_plugins->gpu->data->memory;
 
     // setup the gpu memory limit
@@ -101,8 +107,8 @@ bool GpuPlugin::postHalt()
     // sanity check we have a gpu cgroup dir
     if (mCgroupDirPath.empty())
     {
-        AI_LOG_ERROR_EXIT("no gpu cgroup directory found");
-        return false;
+        AI_LOG_WARN("no gpu cgroup directory found");
+        return true;
     }
 
     // remove the container's gpu cgroup directory
@@ -231,14 +237,11 @@ bool GpuPlugin::bindMountGpuCgroup(const std::string &source,
                          source.c_str(), target.c_str());
         return false;
     }
-    else
-    {
-        AI_LOG_DEBUG("bind mounted '%s' to '%s'", source.c_str(),
-                     target.c_str());
-        return true;
-    }
+
+    AI_LOG_DEBUG("bind mounted '%s' to '%s'", source.c_str(), target.c_str());
 
     AI_LOG_FN_EXIT();
+    return true;
 }
 
 // -----------------------------------------------------------------------------

@@ -15,7 +15,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-project(GPU)
+project(GpuPlugin)
 
 add_library( ${PROJECT_NAME}
         SHARED
@@ -30,11 +30,6 @@ install(
 
 target_link_libraries( ${PROJECT_NAME}
         DobbyRdkPluginCommonLib
-)
-
-target_include_directories( ${PROJECT_NAME}
-        PRIVATE
-        include
 )
 
 set_target_properties( ${PROJECT_NAME} PROPERTIES SOVERSION 1 )

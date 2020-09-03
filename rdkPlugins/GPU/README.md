@@ -16,7 +16,7 @@ Add the following section to your OCI runtime configuration `config.json` file t
 }
 ```
 
-If you already have other RDK plugins in the bundle, then just add the networking plugin. Do not create multiple `rdkPlugin` sections.
+If you already have other RDK plugins in the bundle, then just add the gpu plugin. Do not create multiple `rdkPlugin` sections.
 
 ## Prerequisites
 
