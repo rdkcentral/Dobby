@@ -258,6 +258,19 @@ void DobbyRdkPluginManager::loadPlugins()
                         pluginName.c_str(), libPath);
 
             it->second.second.reset();
+
+            if (isLogger)
+            {
+                auto iter = mLoggers.find(pluginName);
+                if(iter != mLoggers.end())
+                {
+                    iter->second.second.reset();
+                    mLoggers.erase(iter);
+                }
+            }
+
+            //  destruct the pointer first then close the library as
+            // the destructor needs to be called from the library.
             dlclose(it->second.first);
             mPlugins.erase(it);
         }
