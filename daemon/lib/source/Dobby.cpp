@@ -1524,7 +1524,7 @@ void Dobby::list(std::shared_ptr<AI_IPC::IAsyncReplySender> replySender)
 // -----------------------------------------------------------------------------
 /**
  *  @brief Debugging utility that can be used to create a bundle based on
- *  a sky spec file
+ *  a dobby spec file
  *
  *  This can be useful for debugging container issues, as it allows the daemon
  *  to create the bundle but not actually run it, and therefore it can be

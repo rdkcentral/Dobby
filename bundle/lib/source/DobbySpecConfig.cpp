@@ -512,7 +512,7 @@ bool DobbySpecConfig::parseSpec(ctemplate::TemplateDictionary* dictionary,
         { "capabilities",   {   JSON_FLAG_CAPABILITIES,     &DobbySpecConfig::processCapabilities   }   }
     };
 
-    // step 1 - parse the 'ethan' spec document
+    // step 1 - parse the 'dobby' spec document
     mSpec.clear();
     if (json.empty())
     {

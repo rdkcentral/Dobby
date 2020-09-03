@@ -41,11 +41,11 @@ namespace ctemplate {
  *  @brief Takes a JSON formatted spec file in the constructor, parses it and
  *  extracts the relevant fields.
  *
- *  The JSON should be in our custom 'ethan' container format, this includes
+ *  The JSON should be in our custom 'dobby' container format, this includes
  *  extra custom fields for things like /etc files, plugin configurations
  *  and so forth.
  *
- *  It's main purpose is to convert the ethan spec file to a OCI conformant
+ *  It's main purpose is to convert the dobby spec file to a OCI conformant
  *  JSON file.
  *
  *

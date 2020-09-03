@@ -115,9 +115,9 @@ Vagrant.configure("2") do |config|
         cp /usr/lib/x86_64-linux-gnu/dbus-1.0/include/dbus/dbus-arch-deps.h /usr/include/dbus-1.0/dbus
 
         mkdir -p /usr/lib/plugins/dobby
-        mkdir -p /opt/persistent/sky
-        mkdir -p /var/volatile/sky/dobby/bundles
-        chmod 755 /var/volatile/sky/dobby/bundles
+        mkdir -p /opt/persistent/rdk
+        mkdir -p /var/volatile/rdk/dobby/bundles
+        chmod 755 /var/volatile/rdk/dobby/bundles
 
         # Hardcoded .so locations in the code so need to create a symlink
         ln -s /lib/x86_64-linux-gnu/libreadline.so.* /lib/
@@ -192,7 +192,7 @@ Vagrant.configure("2") do |config|
     config.vm.provision "shell", inline: <<-SHELL
         figlet DBUS  # ASCII banner
         # FIXME - This is not secure - only for debugging
-        if [ ! -e "/etc/dbus-1/system.d/com.sky.dobby.conf" ]; then
+        if [ ! -e "/etc/dbus-1/system.d/org.rdk.dobby.conf" ]; then
             echo '
 <!DOCTYPE busconfig PUBLIC "-//freedesktop//DTD D-Bus Bus Configuration 1.0//EN"
     "http://www.freedesktop.org/standards/dbus/1.0/busconfig.dtd">
@@ -208,7 +208,7 @@ Vagrant.configure("2") do |config|
     <allow user="*"/>
 </policy>
 </busconfig>
-' > "/etc/dbus-1/system.d/com.sky.dobby.conf"
+' > "/etc/dbus-1/system.d/org.rdk.dobby.conf"
         fi
     SHELL
 

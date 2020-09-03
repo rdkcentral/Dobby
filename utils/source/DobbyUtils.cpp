@@ -374,8 +374,8 @@ bool DobbyUtils::rmdirContents(int dirFd) const
  *  @brief Logs and deletes any files found in the lost+found directory of
  *  the mount point.
  *
- *  This was added for NGDEV-133724; we should be clearing the lost+found to
- *  avoid cruft building up and taking all the space in the loop mount.
+ *  We should be clearing the lost+found to avoid cruft building up and
+ *  taking all the space in the loop mount.
  *
  *
  *  @param[in]  mountPoint      The absolute path to the mounted device,

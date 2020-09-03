@@ -250,8 +250,8 @@ void Settings::setDefaults()
     mConsoleSocketPath = "/tmp/dobbyPty.sock";
 
 #if defined(RDK)
-    mWorkspaceDir = getPathFromEnv("AI_WORKSPACE_PATH", "/var/volatile/sky");
-    mPersistentDir = getPathFromEnv("AI_PERSISTENT_PATH", "/opt/persistent/sky");
+    mWorkspaceDir = getPathFromEnv("AI_WORKSPACE_PATH", "/var/volatile/rdk");
+    mPersistentDir = getPathFromEnv("AI_PERSISTENT_PATH", "/opt/persistent/rdk");
 #else
     mWorkspaceDir = getPathFromEnv("AI_WORKSPACE_PATH", "/tmp/ai-workspace-fallback");
     mPersistentDir = getPathFromEnv("AI_PERSISTENT_PATH", "/tmp/ai-flash-fallback");
