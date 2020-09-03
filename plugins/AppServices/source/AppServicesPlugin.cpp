@@ -481,10 +481,17 @@ bool AppServicesPlugin::preStart(const ContainerId& id,
     ruleSet[Netfilter::TableType::Filter] = std::move(acceptRules);
     ruleSet[Netfilter::TableType::Nat] = std::move(natRules);
 
-    // try and apply the changes
+    // add all rules to cache
     if (!mNetfilter->addRules(ruleSet, AF_INET, Netfilter::Operation::Insert))
     {
-        AI_LOG_ERROR_EXIT("failed to apply DNAT rules for '%s''", id.c_str());
+        AI_LOG_ERROR_EXIT("failed to setup as iptables rules for '%s''", id.c_str());
+        return false;
+    }
+
+    // Actually apply the rules
+    if (!mNetfilter->applyRules(AF_INET))
+    {
+        AI_LOG_ERROR_EXIT("Failed to apply AS iptables rules for '%s'", id.c_str());
         return false;
     }
 
@@ -528,7 +535,14 @@ bool AppServicesPlugin::postStop(const ContainerId& id,
     // delete the rule set
     if (!mNetfilter->addRules(it->second.nfRuleSet, AF_INET, Netfilter::Operation::Delete))
     {
-        AI_LOG_ERROR("failed to remove iptables rules for '%s'", id.c_str());
+        AI_LOG_ERROR_EXIT("failed to setup AS iptables rules for '%s'", id.c_str());
+        return false;
+    }
+
+    if (!mNetfilter->applyRules(AF_INET))
+    {
+        AI_LOG_ERROR_EXIT("Failed to delete AS iptables rules for '%s'", id.c_str());
+        return false;
     }
 
     // remove all the holes from the internal map
