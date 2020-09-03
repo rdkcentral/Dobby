@@ -90,12 +90,7 @@ private:
     bool parseOCIConfig(const std::string& bundlePath);
 
 private:
-    bool processLogging(const Json::Value& value);
-    bool processIpc(const Json::Value& value);
-    bool processGpu(const Json::Value& value);
     bool processLegacyPlugins(const Json::Value& value);
-    bool processRdkServices(const Json::Value& value);
-    bool processDrm(const Json::Value& value);
 
 // ----------------------------------------------------------------------------
 /**
