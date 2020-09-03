@@ -20,16 +20,16 @@
 # at boot time.
 #
 # Enable dobby to start on boot:
-#         systemctl enable rdk-dobby.service
+#         systemctl enable dobby.service
 #
 # Start dobby immediately:
-#         systemctl start rdk-dobby.service
+#         systemctl start dobby.service
 #
 # Stop dobby:
-#         systemctl stop rdk-dobby.service
+#         systemctl stop dobby.service
 #
 # Status:
-#         systemctl status rdk-dobby.service
+#         systemctl status dobby.service
 
 [Unit]
 Description=RDK Dobby (Container) daemon

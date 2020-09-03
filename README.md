@@ -50,7 +50,7 @@ If you with to develop Dobby further, detailed instructions on setting up a deve
 ## DobbyDaemon
 This is the main component of Dobby. This daemon is responsible for managing, controlling and creating containers. The daemon runs in the background and communicates over dbus. It connects on a few dbus addresses - one for admin, one for debugging and the other for Dobby commands.
 
-DobbyDaemon can be started as a systemd service at system boot (the systemd service file can be found at `daemon/process/rdk-dobby.service`) or run manually on the command line by running:
+DobbyDaemon can be started as a systemd service at system boot (the systemd service file can be found at `daemon/process/dobby.service`) or run manually on the command line by running:
 
 ```
 DobbyDaemon --nofork
@@ -66,7 +66,7 @@ Usage: DobbyDaemon <option(s)>
   -v, --verbose                 Increase the log level
   -V, --version                 Display this program's version number
 
-  -f, --settings-file=PATH      Path to a JSON dobby settings file [/etc/rdk/dobby.json]
+  -f, --settings-file=PATH      Path to a JSON dobby settings file [/etc/dobby.json]
   -a, --dbus-address=ADDRESS    The dbus address to put the admin service on [system bus]
   -s, --service=SERVICE         The dbus service to put Dobby on [org.rdk.dobby]
   -p, --priority=PRIORITY       Sets the SCHED_RR priority of the daemon [RR,12]

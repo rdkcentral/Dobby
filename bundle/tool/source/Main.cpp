@@ -42,7 +42,7 @@
 #include <iostream>
 #include <fstream>
 
-#define DEFAULT_SETTINGS_PATH "/etc/rdk/dobby.json"
+#define DEFAULT_SETTINGS_PATH "/etc/dobby.json"
 
 // Some globals variables for command line arguments
 static std::string inputPath;

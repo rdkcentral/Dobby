@@ -61,7 +61,7 @@ class dobby_daemon:
     """Starts and stops DobbyDaemon service."""
     def __init__(self):
         if selected_platform == Platforms.xi_6:
-            subprocess.run(["systemctl", "stop", "rdk-dobby"])
+            subprocess.run(["systemctl", "stop", "dobby"])
         else:
             subprocess.run(["sudo", "pkill", "DobbyDaemon"])
         sleep(1) # give DobbyDaemon time to terminate
@@ -97,9 +97,9 @@ class dobby_daemon:
         if self.subproc.returncode == -11: # -11 == SIGSEGV
             print_log("Received SIGSEGV from DobbyDaemon", Severity.error)
 
-        # restart rdk-dobby service on xi6
+        # restart dobby service on xi6
         if selected_platform == Platforms.xi_6:
-            subprocess.run(["systemctl", "start", "rdk-dobby"])
+            subprocess.run(["systemctl", "start", "dobby"])
 
 
 class Platforms(IntEnum):
