@@ -49,10 +49,10 @@ public:
     static bool attachFileToLoopDevice(int loopFd, int fileFd);
     static int attachLoopDevice(const std::string& sourceFile,
                                 std::string* loopDevice);
-    static bool createFileIfNeeded(const std::string filePath,
+    static bool createFileIfNeeded(const std::string& filePath,
                                     const size_t storageSize,
                                     const uid_t userId,
-                                    const std::string fileSystem);
+                                    const std::string& fileSystem);
     static void cleanMountLostAndFound(const std::string& mountPoint,
                                         const std::string& logTag);
 
@@ -104,11 +104,11 @@ public:
 
     // Tests
 #ifdef ENABLE_TESTS
-    static bool Test_mkdirRecursive(const std::string rootfsPath);
+    static bool Test_mkdirRecursive(const std::string& rootfsPath);
     static bool Test_openLoopDevice();
-    static bool Test_attachLoopDevice(std::string imagePath);
-    static bool Test_cleanMountLostAndFound(const std::string rootfsPath);
-    static bool Test_checkWriteReadMount(const std::string tmpPath);
+    static bool Test_attachLoopDevice(std::string& imagePath);
+    static bool Test_cleanMountLostAndFound(const std::string& rootfsPath);
+    static bool Test_checkWriteReadMount(const std::string& tmpPath);
 #endif // ENABLE_TESTS
 
 };

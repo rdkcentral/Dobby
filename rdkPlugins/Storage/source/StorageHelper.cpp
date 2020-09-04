@@ -269,10 +269,10 @@ int StorageHelper::attachLoopDevice(const std::string& sourceFile,
  *                          image file
  *  @param[in]  fileSystem  Filesystem of created image file
  */
-bool StorageHelper::createFileIfNeeded(const std::string filePath,
+bool StorageHelper::createFileIfNeeded(const std::string& filePath,
                                         const size_t storageSize,
                                         const uid_t userId,
-                                        const std::string fileSystem)
+                                        const std::string& fileSystem)
 {
     AI_LOG_FN_ENTRY();
 
@@ -579,7 +579,8 @@ bool StorageHelper::deleteRecursive(int dirfd, int availDepth)
 
 // Tests Storage helpers
 #ifdef ENABLE_TESTS
-bool StorageHelper::Test_mkdirRecursive(const std::string rootfsPath)
+// cppcheck-suppress unusedFunction
+bool StorageHelper::Test_mkdirRecursive(const std::string& rootfsPath)
 {
     std::string tmp = "/home/private/";
     tmp = rootfsPath + tmp;
@@ -601,6 +602,7 @@ bool StorageHelper::Test_mkdirRecursive(const std::string rootfsPath)
     }
 }
 
+// cppcheck-suppress unusedFunction
 bool StorageHelper::Test_openLoopDevice()
 {
     std::string loopDevPath;
@@ -624,7 +626,8 @@ bool StorageHelper::Test_openLoopDevice()
     return true;
 }
 
-bool StorageHelper::Test_attachLoopDevice(std::string imagePath)
+// cppcheck-suppress unusedFunction
+bool StorageHelper::Test_attachLoopDevice(std::string& imagePath)
 {
     std::string loopDevice;
 
@@ -649,7 +652,8 @@ bool StorageHelper::Test_attachLoopDevice(std::string imagePath)
     return true;
 }
 
-bool StorageHelper::Test_cleanMountLostAndFound(const std::string rootfsPath)
+// cppcheck-suppress unusedFunction
+bool StorageHelper::Test_cleanMountLostAndFound(const std::string& rootfsPath)
 {
     std::string tmp = "/lost+found/some/long/path/file.xyz";
     tmp = rootfsPath + tmp;
@@ -659,12 +663,14 @@ bool StorageHelper::Test_cleanMountLostAndFound(const std::string rootfsPath)
     cleanMountLostAndFound(rootfsPath, std::string("0"));
 }
 
-bool StorageHelper::Test_checkWriteReadMount(const std::string tmpPath)
+// cppcheck-suppress unusedFunction
+bool StorageHelper::Test_checkWriteReadMount(const std::string& tmpPath)
 {
     //Test
     ssize_t nrd;
-    char buffer[100] = "";
-    char text[] = "Storage was runned\n";
+    const char text[] = "Storage was runned\n";
+    const unsigned int BUFFER_SIZE = 100;
+
     //std::string tmpPath = "/home/private/test.txt";
     AI_LOG_INFO("path = '%s'", tmpPath.c_str());
 
@@ -685,7 +691,8 @@ bool StorageHelper::Test_checkWriteReadMount(const std::string tmpPath)
         AI_LOG_SYS_ERROR(errno, "failed to open");
     else
     {
-        nrd = read(fd,buffer,50);
+        char buffer[BUFFER_SIZE] = "";
+        nrd = read(fd,buffer,BUFFER_SIZE);
         if (nrd > 0) {
             AI_LOG_INFO("Test file content '%s'", buffer);
         }
