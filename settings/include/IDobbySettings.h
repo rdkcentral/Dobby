@@ -46,24 +46,6 @@ public:
     virtual ~IDobbySettings() = default;
 
 public:
-
-    // -------------------------------------------------------------------------
-    /**
-     *  @brief The name to use when registering the dbus service on the bus.
-     *
-     *
-     */
-    virtual std::string dbusServiceName() const = 0;
-
-    // -------------------------------------------------------------------------
-    /**
-     *  @brief The dbus object path under which the interfaces will be
-     *  registered.
-     *
-     *
-     */
-    virtual std::string dbusObjectPath() const = 0;
-
     // -------------------------------------------------------------------------
     /**
      *  @brief Should return the path to a directory used to store temporary

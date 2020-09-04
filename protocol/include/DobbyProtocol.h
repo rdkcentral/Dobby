@@ -24,10 +24,7 @@
 #define DOBBYPROTOCOL_H
 
 
-#define DOBBY_SERVICE                           "org.rdk.dobby"
-#define DOBBY_OBJECT                            "/org/rdk/dobby"
-
-#define DOBBY_ADMIN_INTERFACE                   "org.rdk.dobby.admin1"
+#define DOBBY_ADMIN_INTERFACE                   DOBBY_SERVICE ".admin1"
 #define DOBBY_ADMIN_METHOD_PING                     "Ping"
 #define DOBBY_ADMIN_METHOD_SHUTDOWN                 "Shutdown"
 #define DOBBY_ADMIN_METHOD_SET_LOG_METHOD           "SetLogMethod"
@@ -35,7 +32,7 @@
 #define DOBBY_ADMIN_METHOD_SET_AI_DBUS_ADDR         "SetAIDbusAddress"
 #define DOBBY_ADMIN_EVENT_READY                     "Ready"
 
-#define DOBBY_CTRL_INTERFACE                    "org.rdk.dobby.ctrl1"
+#define DOBBY_CTRL_INTERFACE                    DOBBY_SERVICE ".ctrl1"
 #define DOBBY_CTRL_METHOD_START                     "Start"
 #define DOBBY_CTRL_METHOD_START_FROM_SPEC           "StartFromSpec"
 #define DOBBY_CTRL_METHOD_START_FROM_BUNDLE         "StartFromBundle"
@@ -49,14 +46,14 @@
 #define DOBBY_CTRL_EVENT_STARTED                    "Started"
 #define DOBBY_CTRL_EVENT_STOPPED                    "Stopped"
 
-#define DOBBY_DEBUG_INTERFACE                   "org.rdk.dobby.debug1"
+#define DOBBY_DEBUG_INTERFACE                   DOBBY_SERVICE ".debug1"
 #define DOBBY_DEBUG_METHOD_CREATE_BUNDLE            "CreateBundle"
 #define DOBBY_DEBUG_METHOD_GET_SPEC                 "GetSpec"
 #define DOBBY_DEBUG_METHOD_GET_OCI_CONFIG           "GetOCIConfig"
 #define DOBBY_DEBUG_START_INPROCESS_TRACING         "StartInProcessTracing"
 #define DOBBY_DEBUG_STOP_INPROCESS_TRACING          "StopInProcessTracing"
 
-#define DOBBY_RDKPLUGIN_INTERFACE               "org.rdk.dobby.rdkplugin1"
+#define DOBBY_RDKPLUGIN_INTERFACE               DOBBY_SERVICE ".rdkplugin1"
 #define DOBBY_RDKPLUGIN_GET_BRIDGE_CONNECTIONS      "GetBridgeConnections"
 #define DOBBY_RDKPLUGIN_GET_ADDRESS                 "GetIpAddress"
 #define DOBBY_RDKPLUGIN_FREE_ADDRESS                "FreeIpAddress"
