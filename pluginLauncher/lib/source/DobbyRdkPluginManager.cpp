@@ -129,17 +129,20 @@ void DobbyRdkPluginManager::loadPlugins()
         return;
     }
 
-    // iterate through all the files in the directory
-    struct dirent *entry;
-    while ((entry = readdir(dir)) != nullptr)
+    int directoriesCount = 0;
+    struct dirent **namelist;
+
+    // Need to sort directories with versionsort so lib.12 would be greater than lib.2
+    directoriesCount = scandir(mPluginPath.c_str(), &namelist, 0, versionsort);
+    for(int i=0; i<directoriesCount;i++)
     {
         // if a symlink verify that the thing we're pointing to is a file
-        if (entry->d_type == DT_LNK)
+        if (namelist[i]->d_type == DT_LNK)
         {
             struct stat buf;
-            if (fstatat(dirfd(dir), entry->d_name, &buf, AT_NO_AUTOMOUNT) != 0)
+            if (fstatat(dirfd(dir), namelist[i]->d_name, &buf, AT_NO_AUTOMOUNT) != 0)
             {
-                AI_LOG_SYS_ERROR(errno, "failed to stat '%s'", entry->d_name);
+                AI_LOG_SYS_ERROR(errno, "failed to stat '%s'", namelist[i]->d_name);
                 continue;
             }
 
@@ -149,7 +152,7 @@ void DobbyRdkPluginManager::loadPlugins()
                 continue;
             }
         }
-        else if (entry->d_type != DT_REG)
+        else if (namelist[i]->d_type != DT_REG)
         {
             // the entry is not a regular file so skip it
             continue;
@@ -157,12 +160,12 @@ void DobbyRdkPluginManager::loadPlugins()
 
         // try and dlopen it
         char libPath[PATH_MAX];
-        snprintf(libPath, sizeof(libPath), "%s/%s", mPluginPath.c_str(), entry->d_name);
+        snprintf(libPath, sizeof(libPath), "%s/%s", mPluginPath.c_str(), namelist[i]->d_name);
 
         void *libHandle = dlopen(libPath, RTLD_LAZY | RTLD_LOCAL);
         if (libHandle == nullptr)
         {
-            AI_LOG_ERROR("Plugin %s failed to load with error %s\n", entry->d_name, dlerror());
+            AI_LOG_ERROR("Plugin %s failed to load with error %s\n", namelist[i]->d_name, dlerror());
             continue;
         }
 
@@ -182,7 +185,7 @@ void DobbyRdkPluginManager::loadPlugins()
         if (!isPlugin && !isLogger)
         {
             dlclose(libHandle);
-            AI_LOG_DEBUG("%s does not contain create/destroy functions, skipping...\n", entry->d_name);
+            AI_LOG_DEBUG("%s does not contain create/destroy functions, skipping...\n", namelist[i]->d_name);
             continue;
         }
 
@@ -282,9 +285,13 @@ void DobbyRdkPluginManager::loadPlugins()
         }
 
         AI_LOG_INFO("Loaded plugin '%s' from '%s'\n", pluginName.c_str(), libPath);
+
+        free(namelist[i]);
     }
 
+    free(namelist);
     closedir(dir);
+    close(dirFd);
 
     AI_LOG_FN_EXIT();
 }
