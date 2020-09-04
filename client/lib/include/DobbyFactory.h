@@ -51,7 +51,7 @@ class IDobbyProxy;
 class DobbyFactory
 {
 public:
-    DobbyFactory(const std::shared_ptr<AI_IPC::IIpcService> &ipcService);
+    explicit DobbyFactory(const std::shared_ptr<AI_IPC::IIpcService> &ipcService);
     ~DobbyFactory();
 
 public:

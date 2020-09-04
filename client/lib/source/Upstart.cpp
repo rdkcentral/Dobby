@@ -82,7 +82,7 @@ bool Upstart::invokeMethod(const std::string& method,
                                             std::chrono::steady_clock::now();
 
     // fire off the request and wait for the reply, we set a heathy timeout
-    // value of 60 seconds (for NGDEV-67175)
+    // value of 60 seconds (in case of long kernel boot-ups)
     AI_IPC::VariantList ipcReply;
     if (!mIpcService->invokeMethod(ipcMethod, ipcArgs, ipcReply, (60 * 1000)))
     {

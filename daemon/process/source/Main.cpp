@@ -27,7 +27,12 @@
 #include <DobbyProtocol.h>
 
 #include <Logging.h>
+#include <Tracing.h>
 #include <IpcFactory.h>
+
+#if defined(AI_ENABLE_TRACING)
+    #include <PerfettoTracing.h>
+#endif
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -77,7 +82,7 @@ static std::string gDbusAddress;
 static std::string gDBusService;
 
 //
-static std::string gSettingsFilePath("/etc/sky/dobby.json");
+static std::string gSettingsFilePath("/etc/dobby.json");
 
 
 
@@ -451,7 +456,7 @@ int main(int argc, char * argv[])
     }
 
 
-    // Creat object storing Dobby settings
+    // Create object storing Dobby settings
     const std::shared_ptr<Settings> settings = createSettings();
 
 
@@ -478,6 +483,14 @@ int main(int argc, char * argv[])
     // Setup signals, this MUST be done in the main thread before any other
     // threads are spawned
     Dobby::configSignals();
+
+
+    // Initialise tracing on debug builds (warning: this must be done after the
+    // Dobby::configSignals() call above, because it spawns threads that mess
+    // with the signal masks)
+#if defined(AI_ENABLE_TRACING)
+    PerfettoTracing::initialise();
+#endif
 
 
     // Create the IPC service and start it, this spawns a thread and runs the dbus

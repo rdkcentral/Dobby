@@ -41,11 +41,11 @@ namespace ctemplate {
  *  @brief Takes a JSON formatted spec file in the constructor, parses it and
  *  extracts the relevant fields.
  *
- *  The JSON should be in our custom 'ethan' container format, this includes
+ *  The JSON should be in our custom 'dobby' container format, this includes
  *  extra custom fields for things like /etc files, plugin configurations
  *  and so forth.
  *
- *  It's main purpose is to convert the ethan spec file to a OCI conformant
+ *  It's main purpose is to convert the dobby spec file to a OCI conformant
  *  JSON file.
  *
  *
@@ -144,6 +144,7 @@ private:
     JSON_FIELD_PROCESSOR(processLegacyPlugins);
     JSON_FIELD_PROCESSOR(processMemLimit);
     JSON_FIELD_PROCESSOR(processGpu);
+    JSON_FIELD_PROCESSOR(processVpu);
     JSON_FIELD_PROCESSOR(processDbus);
     JSON_FIELD_PROCESSOR(processSyslog);
     JSON_FIELD_PROCESSOR(processCpu);
@@ -173,8 +174,16 @@ private:
     void enableRdkPlugin(ctemplate::TemplateDictionary*& subDict, const std::string& pluginName, const bool required);
 
 private:
+    static void addGpuDevNodes(const std::shared_ptr<const IDobbySettings::HardwareAccessSettings> &settings,
+                               ctemplate::TemplateDictionary *dict);
+
+    static  void addVpuDevNodes(const std::shared_ptr<const IDobbySettings::HardwareAccessSettings> &settings,
+                                ctemplate::TemplateDictionary *dict);
+
+private:
     const std::shared_ptr<IDobbyUtils> mUtilities;
-    const std::shared_ptr<const IDobbySettings> mSettings;
+    const std::shared_ptr<const IDobbySettings::HardwareAccessSettings> mGpuSettings;
+    const std::shared_ptr<const IDobbySettings::HardwareAccessSettings> mVpuSettings;
 
 private:
     bool mValid;

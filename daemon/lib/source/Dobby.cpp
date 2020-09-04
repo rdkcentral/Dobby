@@ -33,6 +33,11 @@
 #include "DobbyState.h"
 
 #include <Logging.h>
+#include <Tracing.h>
+
+#if defined(AI_ENABLE_TRACING)
+    #include <PerfettoTracing.h>
+#endif
 
 #if defined(RDK)
 #  define SD_JOURNAL_SUPPRESS_LOCATION
@@ -213,7 +218,7 @@ void Dobby::configSignals()
     struct sigaction action;
     bzero(&action, sizeof(action));
     action.sa_sigaction = nullSigChildHandler;
-    action.sa_flags = SA_SIGINFO;
+    action.sa_flags = SA_SIGINFO | SA_RESTART;
     sigemptyset(&action.sa_mask);
 
     sigaction(SIGCHLD, &action, NULL);
@@ -223,7 +228,7 @@ void Dobby::configSignals()
     // shutdown from upstart which issues a SIGTERM to terminate the daemon
     bzero(&action, sizeof(action));
     action.sa_handler = sigTermHandler;
-    action.sa_flags = 0;
+    action.sa_flags = SA_RESTART;
     sigemptyset(&action.sa_mask);
 
     sigaction(SIGTERM, &action, NULL);
@@ -605,6 +610,11 @@ void Dobby::initIpcMethods()
         {   DOBBY_DEBUG_INTERFACE,       DOBBY_DEBUG_METHOD_GET_SPEC,               &Dobby::getSpec                },
         {   DOBBY_DEBUG_INTERFACE,       DOBBY_DEBUG_METHOD_GET_OCI_CONFIG,         &Dobby::getOCIConfig           },
 #endif // (AI_BUILD_TYPE == AI_DEBUG)
+
+#if defined(AI_ENABLE_TRACING)
+        {   DOBBY_DEBUG_INTERFACE,  DOBBY_DEBUG_START_INPROCESS_TRACING,    &Dobby::startInProcessTracing   },
+        {   DOBBY_DEBUG_INTERFACE,  DOBBY_DEBUG_STOP_INPROCESS_TRACING,     &Dobby::stopInProcessTracing    },
+#endif // defined(AI_ENABLE_TRACING)
 
         {   DOBBY_RDKPLUGIN_INTERFACE,   DOBBY_RDKPLUGIN_GET_BRIDGE_CONNECTIONS,    &Dobby::getBridgeConnections   },
         {   DOBBY_RDKPLUGIN_INTERFACE,   DOBBY_RDKPLUGIN_GET_ADDRESS,               &Dobby::getIpAddress           },
@@ -1514,7 +1524,7 @@ void Dobby::list(std::shared_ptr<AI_IPC::IAsyncReplySender> replySender)
 // -----------------------------------------------------------------------------
 /**
  *  @brief Debugging utility that can be used to create a bundle based on
- *  a sky spec file
+ *  a dobby spec file
  *
  *  This can be useful for debugging container issues, as it allows the daemon
  *  to create the bundle but not actually run it, and therefore it can be
@@ -1865,6 +1875,78 @@ void Dobby::getExtIfaces(std::shared_ptr<AI_IPC::IAsyncReplySender> replySender)
 }
 
 
+#if defined(AI_ENABLE_TRACING)
+// -----------------------------------------------------------------------------
+/**
+ *  @brief Debugging utility to start the Perfetto in-process trace to a file
+ *  enabling the given trace categories.
+ *
+ *
+ *
+ */
+void Dobby::startInProcessTracing(std::shared_ptr<AI_IPC::IAsyncReplySender> replySender)
+{
+    AI_LOG_FN_ENTRY();
+
+    // Pessimist
+    bool result = false;
+
+    // Expecting two args: (UnixFd traceFile, string categoryFilter)
+    // Expecting a single arg:  (int32_t cd)
+    AI_IPC::UnixFd traceFileFd;
+    std::string categoryFilter;
+    if (!AI_IPC::parseVariantList
+            <AI_IPC::UnixFd, std::string>
+            (replySender->getMethodCallArguments(), &traceFileFd, &categoryFilter))
+    {
+        AI_LOG_ERROR("error getting the args");
+    }
+    else
+    {
+        AI_LOG_INFO(DOBBY_DEBUG_START_INPROCESS_TRACING "(%d, '%s')",
+                    traceFileFd.fd(), categoryFilter.c_str());
+
+        result = PerfettoTracing::startInProcessTracing(traceFileFd.fd(),
+                                                        categoryFilter);
+    }
+
+    // Fire off a reply with boolean result
+    if (!replySender->sendReply( { result }))
+    {
+        AI_LOG_ERROR("failed to send reply");
+    }
+
+    AI_LOG_FN_EXIT();
+}
+
+// -----------------------------------------------------------------------------
+/**
+ *  @brief Debugging utility to stop the Perfetto in-process tracing.
+ *
+ *
+ *
+ */
+void Dobby::stopInProcessTracing(std::shared_ptr<AI_IPC::IAsyncReplySender> replySender)
+{
+    AI_LOG_FN_ENTRY();
+
+    // Expecting no arguments
+
+    AI_LOG_INFO(DOBBY_DEBUG_STOP_INPROCESS_TRACING "()");
+
+    PerfettoTracing::stopInProcessTracing();
+
+    // Fire off empty reply
+    if (!replySender->sendReply( { true }))
+    {
+        AI_LOG_ERROR("failed to send reply");
+    }
+
+    AI_LOG_FN_EXIT();
+}
+
+#endif // defined(AI_ENABLE_TRACING)
+
 // -----------------------------------------------------------------------------
 /**
  *  @brief Called by the DobbyManager code when a container has started
@@ -1954,11 +2036,12 @@ void Dobby::initWatchdog()
     }
     else if (ret > 0)
     {
-        AI_LOG_INFO("starting watchdog timer with period %" PRId64,
-                    (usecTimeout / 2));
+        usecTimeout /= 4;
+
+        AI_LOG_INFO("starting watchdog timer with period %" PRId64, usecTimeout);
 
         mWatchdogTimerId =
-            mUtilities->startTimer(std::chrono::microseconds(usecTimeout / 2),
+            mUtilities->startTimer(std::chrono::microseconds(usecTimeout),
                                    false,
                                    std::bind(&Dobby::onWatchdogTimer, this));
     }

@@ -1,12 +1,12 @@
 {
   "dbus": {
-    "serviceName": "com.sky.dobby",
-    "objectPath": "/com/sky/dobby"
+    "serviceName": "org.rdk.dobby",
+    "objectPath": "/org/rdk/dobby"
   },
 
   "paths": {
-    "workspaceDir": "/tmp/sky",
-    "persistentDir": "/opt/persistent/sky"
+    "workspaceDir": "/tmp/rdk",
+    "persistentDir": "/opt/persistent/rdk"
   },
 
   "logging": {
@@ -23,14 +23,59 @@
       "/dev/dri/card[0-9]",
       "/dev/mali*"
     ],
-    "groupId": "video"
+    "groupIds": [ "video" ]
   },
 
+  "vpu": {
+    "groupIds": [ "vpu", "audio" ],
+    "devNodes": [
+      "/dev/ion",
+      "/dev/rpc[0-7]",
+      "/dev/snd/*",
+      "/dev/uio253",
+      "/dev/tee[0-9]",
+      "/dev/vpu"
+    ],
+    "extraEnvVariables": [
+      "ENABLE_MEDIAINFO=0"
+    ],
+    "extraMounts": [
+      {
+        "source": "/etc/xdg/gstomx.conf",
+        "destination": "/etc/xdg/gstomx.conf",
+        "type": "bind",
+        "options": [ "bind", "ro", "nosuid", "nodev", "noexec" ]
+      },
+      {
+        "source": "/etc/asound.conf",
+        "destination": "/etc/asound.conf",
+        "type": "bind",
+        "options": [ "bind", "ro", "nosuid", "nodev", "noexec" ]
+      },
+      {
+        "source": "/etc/rtk_features.txt",
+        "destination": "/etc/rtk_features.txt",
+        "type": "bind",
+        "options": [ "bind", "ro", "nosuid", "nodev", "noexec" ]
+      },
+      {
+        "source": "/tmp/HdmiRequest",
+        "destination": "/tmp/HdmiRequest",
+        "type": "bind",
+        "options": [ "bind", "nosuid", "nodev", "noexec" ]
+      },
+      {
+        "source": "/opt/property.ini",
+        "destination": "/opt/property.ini",
+        "type": "bind",
+        "options": [ "bind", "nosuid", "nodev", "noexec" ]
+      }
+    ]
+  },
   "network": {
     "externalInterfaces": [ "eth0", "wlan0" ],
     "addressRange": "100.64.11.0"
   }
-
 }
 
 

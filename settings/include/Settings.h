@@ -45,7 +45,7 @@
  *
  */
 
-class Settings : public IDobbySettings
+class Settings final : public IDobbySettings
 {
 private:
     Settings();
@@ -72,10 +72,9 @@ public:
 
     std::map<std::string, std::string> extraEnvVariables() const override;
 
-    std::list<std::string> gpuDeviceNodes() const override;
-    int gpuGroupId() const override;
-    bool gpuHasExtraMounts() const override;
-    std::list<GpuExtraMount> gpuExtraMounts() const override;
+public:
+    std::shared_ptr<HardwareAccessSettings> gpuAccessSettings() const override;
+    std::shared_ptr<HardwareAccessSettings> vpuAccessSettings() const override;
 
     std::vector<std::string> externalInterfaces() const override;
     std::string addressRangeStr() const override;
@@ -89,6 +88,7 @@ private:
     bool isDir(const std::string& path, int accessFlags = 0) const;
 
     int getGroupId(const std::string& name) const;
+    std::set<int> getGroupIds(const Json::Value& field) const;
 
     std::string getPathFromEnv(const char* env,
                                const char* fallbackPath) const;
@@ -97,13 +97,20 @@ private:
     std::map<std::string, std::string> getEnvVarsFromJson(const Json::Value& root,
                                                           const Json::Path& path) const;
 
-    std::list<std::string> getGpuDevNodes(const Json::Value& root,
-                                          const Json::Path& path) const;
+    std::list<std::string> getDevNodes(const Json::Value& root,
+                                       const Json::Path& path) const;
 
-    std::list<GpuExtraMount> getGpuExtraMounts(const Json::Value& root,
-                                               const Json::Path& path) const;
+    std::list<ExtraMount> getExtraMounts(const Json::Value& root,
+                                         const Json::Path& path) const;
+
     bool processMountObject(const Json::Value& value,
-                            GpuExtraMount* mount) const;
+                            ExtraMount* mount) const;
+
+    std::shared_ptr<HardwareAccessSettings> getHardwareAccess(const Json::Value& root,
+                                                              const Json::Path& path) const;
+
+    void dumpHardwareAccess(int aiLogLevel, const std::string& name,
+                            const std::shared_ptr<const HardwareAccessSettings>& hwAccess) const;
 
 private:
     std::string mDBusServiceName;
@@ -114,9 +121,8 @@ private:
 
     std::map<std::string, std::string> mExtraEnvVars;
 
-    int mGpuGroupId;
-    std::list<std::string> mGpuDevNodes;
-    std::list<GpuExtraMount> mGpuExtraMounts;
+    std::shared_ptr<HardwareAccessSettings> mGpuHardwareAccess;
+    std::shared_ptr<HardwareAccessSettings> mVpuHardwareAccess;
 
     std::vector<std::string> mExternalInterfaces;
     std::pair<std::string, in_addr_t> mAddressRange;

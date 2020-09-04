@@ -1,12 +1,12 @@
 {
   "dbus": {
-    "serviceName": "com.sky.dobby",
-    "objectPath": "/com/sky/dobby"
+    "serviceName": "org.rdk.dobby",
+    "objectPath": "/org/rdk/dobby"
   },
 
   "paths": {
-    "workspaceDir": "/tmp/sky",
-    "persistentDir": "/opt/persistent/sky"
+    "workspaceDir": "/tmp/rdk",
+    "persistentDir": "/opt/persistent/rdk"
   },
 
   "logging": {
@@ -20,15 +20,54 @@
 
   "gpu": {
     "devNodes": [ "/dev/dri/card0", "/dev/mali0" ],
-    "groupId": "video"
+    "groupIds": [ "video" ]
+  },
+
+  "vpu": {
+    "devNodes": [ "/dev/dri/renderD128", "/dev/video[1-2][0-9]" ],
+    "groupIds": [ "vpu", "audio" ],
+    "extraMounts": [
+      {
+        "source": "/dev/shm/AudioServiceShmem",
+        "destination": "/dev/shm/AudioServiceShmem",
+        "type": "bind",
+        "options": [ "bind", "nosuid", "nodev", "noexec"  ]
+      },
+      {
+        "source": "/tmp/audio_socket",
+        "destination": "/tmp/audio_socket",
+        "type": "bind",
+        "options": [ "bind", "nosuid", "nodev", "noexec"  ]
+      },
+      {
+        "source": "/tmp/video",
+        "destination": "/tmp/video",
+        "type": "bind",
+        "options": [ "bind", "nosuid", "nodev", "noexec"  ]
+      },
+      {
+        "source": "/tmp/display",
+        "destination": "/tmp/display",
+        "type": "bind",
+        "options": [ "bind", "nosuid", "nodev", "noexec"  ]
+      },
+      {
+        "source": "/sys/class/codec_mm/tvp_enable",
+        "destination": "/sys/class/codec_mm/tvp_enable",
+        "type": "bind",
+        "options": [ "bind", "nosuid", "nodev", "noexec"  ]
+      },
+      {
+        "source": "/sys/class/tsync/",
+        "destination": "/sys/class/tsync/",
+        "type": "bind",
+        "options": [ "bind", "nosuid", "nodev", "noexec"  ]
+      }
+    ]
   },
 
   "network": {
     "externalInterfaces": [ "eth0", "wlan0" ],
     "addressRange": "100.64.11.0"
   }
-
 }
-
-
-

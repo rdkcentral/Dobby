@@ -39,7 +39,6 @@
 #include <unistd.h>
 #include <wordexp.h>
 #include <sys/stat.h>
-#include <sys/mount.h>
 
 
 // -----------------------------------------------------------------------------
@@ -96,7 +95,6 @@ std::shared_ptr<Settings> Settings::fromJsonFile(const std::string& filePath)
  *
  */
 Settings::Settings()
-    : mGpuGroupId(-1)
 {
     setDefaults();
 }
@@ -108,7 +106,6 @@ Settings::Settings()
  *
  */
 Settings::Settings(const Json::Value& settings)
-    : mGpuGroupId(-1)
 {
     // defaults first
     setDefaults();
@@ -178,23 +175,14 @@ Settings::Settings(const Json::Value& settings)
 
     // process the gpu settings
     {
-        Json::Value gpuGroupId = Json::Path(".gpu.groupId").resolve(settings);
-        if (!gpuGroupId.isNull())
-        {
-            if (gpuGroupId.isIntegral())
-                mGpuGroupId = gpuGroupId.asInt();
-            else if (gpuGroupId.isString())
-                mGpuGroupId = getGroupId(gpuGroupId.asString());
-            else
-                AI_LOG_ERROR("invalid gpu group id value in JSON settings file");
-        }
+        mGpuHardwareAccess =
+            getHardwareAccess(settings, Json::Path(".gpu"));
+    }
 
-        // Nb: validation that the paths are actually dev nodes is done in the
-        // DobbyTemplate code
-        mGpuDevNodes = getGpuDevNodes(settings, Json::Path(".gpu.devNodes"));
-
-        //
-        mGpuExtraMounts = getGpuExtraMounts(settings, Json::Path(".gpu.extraMounts"));
+    // process the vpu settings
+    {
+        mVpuHardwareAccess =
+            getHardwareAccess(settings, Json::Path(".vpu"));
     }
 
     // process the network settings
@@ -262,14 +250,12 @@ void Settings::setDefaults()
     mConsoleSocketPath = "/tmp/dobbyPty.sock";
 
 #if defined(RDK)
-    mWorkspaceDir = getPathFromEnv("AI_WORKSPACE_PATH", "/var/volatile/sky");
-    mPersistentDir = getPathFromEnv("AI_PERSISTENT_PATH", "/opt/persistent/sky");
+    mWorkspaceDir = getPathFromEnv("AI_WORKSPACE_PATH", "/var/volatile/rdk");
+    mPersistentDir = getPathFromEnv("AI_PERSISTENT_PATH", "/opt/persistent/rdk");
 #else
     mWorkspaceDir = getPathFromEnv("AI_WORKSPACE_PATH", "/tmp/ai-workspace-fallback");
     mPersistentDir = getPathFromEnv("AI_PERSISTENT_PATH", "/tmp/ai-flash-fallback");
 #endif
-
-    mGpuGroupId = -1;
 }
 
 // -----------------------------------------------------------------------------
@@ -357,9 +343,9 @@ std::map<std::string, std::string> Settings::extraEnvVariables() const
  *  @brief
  *
  */
-std::list<std::string> Settings::gpuDeviceNodes() const
+std::shared_ptr<IDobbySettings::HardwareAccessSettings> Settings::gpuAccessSettings() const
 {
-    return mGpuDevNodes;
+    return mGpuHardwareAccess;
 }
 
 // -----------------------------------------------------------------------------
@@ -367,29 +353,9 @@ std::list<std::string> Settings::gpuDeviceNodes() const
  *  @brief
  *
  */
-int Settings::gpuGroupId() const
+std::shared_ptr<IDobbySettings::HardwareAccessSettings> Settings::vpuAccessSettings() const
 {
-    return mGpuGroupId;
-}
-
-// -----------------------------------------------------------------------------
-/**
- *  @brief
- *
- */
-bool Settings::gpuHasExtraMounts() const
-{
-    return !mGpuExtraMounts.empty();
-}
-
-// -----------------------------------------------------------------------------
-/**
- *  @brief
- *
- */
-std::list<Settings::GpuExtraMount> Settings::gpuExtraMounts() const
-{
-    return mGpuExtraMounts;
+    return mVpuHardwareAccess;
 }
 
  // -----------------------------------------------------------------------------
@@ -447,33 +413,59 @@ void Settings::dump(int aiLogLevel) const
                         i++, envVar.first.c_str(), envVar.second.c_str());
     }
 
-    __AI_LOG_PRINTF(aiLogLevel, "settings.gpu.groupId=%d", mGpuGroupId);
-
-    i = 0;
-    for (const auto& devNode : mGpuDevNodes)
-    {
-        __AI_LOG_PRINTF(aiLogLevel, "settings.gpu.devNode[%u]='%s'",
-                        i++, devNode.c_str());
-    }
-
-    i = 0;
-    for (const auto& extraMount : mGpuExtraMounts)
-    {
-        std::ostringstream flags;
-        for (const std::string& flag : extraMount.flags)
-            flags << flag << ", ";
-
-        __AI_LOG_PRINTF(aiLogLevel, "settings.gpu.extraMounts[%u]={ src='%s' dst='%s' type='%s' flags=[%s] }",
-                        i++,
-                        extraMount.source.c_str(), extraMount.target.c_str(),
-                        extraMount.type.c_str(), flags.str().c_str());
-    }
-
     i = 0;
     for (const auto& extIface : mExternalInterfaces)
     {
         __AI_LOG_PRINTF(aiLogLevel, "settings.network.externalInterfaces[%u]='%s'",
                         i++, extIface.c_str());
+    }
+
+    dumpHardwareAccess(aiLogLevel, "gpu", mGpuHardwareAccess);
+    dumpHardwareAccess(aiLogLevel, "vpu", mVpuHardwareAccess);
+}
+
+// -----------------------------------------------------------------------------
+/**
+ *  @brief Debugging function to dump the settings to access certain H/W.
+ *
+ *
+ */
+void Settings::dumpHardwareAccess(int aiLogLevel, const std::string& name,
+                                  const std::shared_ptr<const HardwareAccessSettings>& hwAccess) const
+{
+    unsigned int i = 0;
+    for (const int& gid : hwAccess->groupIds)
+    {
+        __AI_LOG_PRINTF(aiLogLevel, "settings.%s.groupIds[%u]=%d",
+                        name.c_str(), i++, gid);
+    }
+
+    i = 0;
+    for (const auto& devNode : hwAccess->deviceNodes)
+    {
+        __AI_LOG_PRINTF(aiLogLevel, "settings.%s.devNode[%u]='%s'",
+                        name.c_str(), i++, devNode.c_str());
+    }
+
+    i = 0;
+    for (const auto& extraMount : hwAccess->extraMounts)
+    {
+        std::ostringstream flags;
+        for (const std::string& flag : extraMount.flags)
+            flags << flag << ", ";
+
+        __AI_LOG_PRINTF(aiLogLevel, "settings.%s.extraMounts[%u]={ src='%s' dst='%s' type='%s' flags=[%s] }",
+                        name.c_str(), i++,
+                        extraMount.source.c_str(), extraMount.target.c_str(),
+                        extraMount.type.c_str(), flags.str().c_str());
+    }
+
+    i = 0;
+    for (const auto& envVar : hwAccess->extraEnvVariables)
+    {
+        __AI_LOG_PRINTF(aiLogLevel, "settings.%s.extraEnvVariables[%u]='%s=%s'",
+                        name.c_str(), i++,
+                        envVar.first.c_str(), envVar.second.c_str());
     }
 
     __AI_LOG_PRINTF(aiLogLevel, "settings.network.addressRange=%s", mAddressRange.first.c_str());
@@ -533,6 +525,55 @@ int Settings::getGroupId(const std::string& name) const
     }
 
     return result->gr_gid;
+}
+
+// -----------------------------------------------------------------------------
+/**
+ *  @brief Processes a JSON array containing numbers and names of user groups.
+ *
+ *
+ *
+ *  @return the set of user group ids in the field, or an empty set on error.
+ */
+std::set<int> Settings::getGroupIds(const Json::Value& field) const
+{
+    std::set<int> groupIds;
+
+    if (field.isArray())
+    {
+        for (const Json::Value &value : field)
+        {
+            int gid = -1;
+            if (value.isIntegral())
+                gid = value.asInt();
+            else if (value.isString())
+                gid = getGroupId(value.asString());
+            else
+                AI_LOG_ERROR("invalid group id value in JSON settings file");
+
+            if (gid > 0)
+                groupIds.insert(gid);
+        }
+    }
+    else if (field.isIntegral())
+    {
+        int gid = field.asInt();
+        if (gid > 0)
+            groupIds.insert(gid);
+    }
+    else if (field.isString())
+    {
+        int gid = getGroupId(field.asString());
+        if (gid > 0)
+            groupIds.insert(gid);
+    }
+    else if (!field.isNull())
+    {
+        AI_LOG_ERROR("invalid groupId(s) field in JSON settings file - "
+                     "should be an array, integer or string value");
+    }
+
+    return groupIds;
 }
 
 // -----------------------------------------------------------------------------
@@ -693,8 +734,8 @@ std::map<std::string, std::string> Settings::getEnvVarsFromJson(const Json::Valu
  *
  *  @return
  */
-std::list<std::string> Settings::getGpuDevNodes(const Json::Value& root,
-                                                const Json::Path& path) const
+std::list<std::string> Settings::getDevNodes(const Json::Value& root,
+                                             const Json::Path& path) const
 {
     // get the array value from the json
     const Json::Value &devNodes = Json::Path(path).resolve(root);
@@ -738,35 +779,35 @@ std::list<std::string> Settings::getGpuDevNodes(const Json::Value& root,
  *
  *  @return
  */
-std::list<Settings::GpuExtraMount> Settings::getGpuExtraMounts(const Json::Value& root,
-                                                               const Json::Path& path) const
+std::list<Settings::ExtraMount> Settings::getExtraMounts(const Json::Value& root,
+                                                         const Json::Path& path) const
 {
     // get the string value from the json
     const Json::Value &extraMounts = Json::Path(path).resolve(root);
     if (extraMounts.isNull())
     {
         // it's not an error if the value does not exist in the JSON
-        return std::list<GpuExtraMount>();
+        return std::list<ExtraMount>();
     }
     else if (!extraMounts.isArray())
     {
         AI_LOG_ERROR("JSON value in settings file is not an array (of mount objects)");
-        return std::list<GpuExtraMount>();
+        return std::list<ExtraMount>();
     }
 
     // process each entry
-    std::list<GpuExtraMount> result;
+    std::list<ExtraMount> result;
     for (const Json::Value &extraMount : extraMounts)
     {
         // verify the value in an array is a string
         if (!extraMount.isObject())
         {
             AI_LOG_ERROR("invalid JSON value in extra gpu mount var array in settings file");
-            return std::list<GpuExtraMount>();
+            return std::list<ExtraMount>();
         }
 
         // add the extra mount to the list
-        GpuExtraMount mount;
+        ExtraMount mount;
         if (processMountObject(extraMount, &mount))
         {
             result.emplace_back(mount);
@@ -783,7 +824,7 @@ std::list<Settings::GpuExtraMount> Settings::getGpuExtraMounts(const Json::Value
  *
  *  @return
  */
-bool Settings::processMountObject(const Json::Value& value, GpuExtraMount* mount) const
+bool Settings::processMountObject(const Json::Value& value, ExtraMount* mount) const
 {
     const Json::Value& source = value["source"];
     const Json::Value& destination = value["destination"];
@@ -838,5 +879,80 @@ bool Settings::processMountObject(const Json::Value& value, GpuExtraMount* mount
     }
 
     return true;
+}
+
+// -----------------------------------------------------------------------------
+/**
+ *  @brief Processes a json 'gpu' or 'vpu' object.
+ *
+ *  The JSON is expected to look like the following:
+ *
+ *      {
+ *          "groupIds": [ "video" ],
+ *          "devNodes": [
+ *              "/dev/ion",
+ *              "/dev/rpc[0-7]"
+ *          ],
+ *          "extraEnvVariables": [
+ *              "ENABLE_MEDIAINFO=0"
+ *          ],
+ *          "extraMounts": [
+ *              {
+ *                  "source": "/etc/xdg/gstomx.conf",
+ *                  "destination": "/etc/xdg/gstomx.conf",
+ *                  "type": "bind",
+ *                  "options": [ "bind", "ro", "nosuid", "nodev", "noexec" ]
+ *              },
+ *              ...
+ *          ]
+ *      }
+ *
+ *  @return
+ */
+std::shared_ptr<IDobbySettings::HardwareAccessSettings> Settings::getHardwareAccess(const Json::Value& root,
+                                                                                    const Json::Path& path) const
+{
+    auto accessSettings =
+            std::make_shared<IDobbySettings::HardwareAccessSettings>();
+
+    // get the 'gpu' or 'vpu' object from the json
+    const Json::Value hw = Json::Path(path).resolve(root);
+    if (hw.isNull())
+    {
+        // it's not an error if the value does not exist in the JSON
+        return accessSettings;
+    }
+    else if (!hw.isObject())
+    {
+        // however it is an error if present but not a json object
+        AI_LOG_ERROR("invalid 'gpu' or 'vpu' JSON field in dobby settings file");
+        return accessSettings;
+    }
+
+
+    // get the group id(s) required
+    const Json::Value groupIds = hw["groupIds"];
+    if (!groupIds.isNull())
+    {
+        accessSettings->groupIds = getGroupIds(groupIds);
+    }
+    else
+    {
+        const Json::Value groupId = hw["groupId"];
+        if (!groupId.isNull())
+            accessSettings->groupIds = getGroupIds(groupId);
+    }
+
+    // Nb: validation that the paths are actually dev nodes is done in the
+    // DobbyConfig code
+    accessSettings->deviceNodes = getDevNodes(hw, Json::Path(".devNodes"));
+
+    // get any extra mounts
+    accessSettings->extraMounts = getExtraMounts(hw, Json::Path(".extraMounts"));
+
+    // get any extra environment vars
+    accessSettings->extraEnvVariables = getEnvVarsFromJson(hw, Json::Path(".extraEnvVariables"));
+
+    return accessSettings;
 }
 
