@@ -23,6 +23,19 @@
 #ifndef DOBBYPROTOCOL_H
 #define DOBBYPROTOCOL_H
 
+// Use default service name and object path unless if overriden with
+// Dobby CMake options "DOBBY_SERVICE"/"DOBBY_OBJECT".
+#if defined(DOBBY_SERVICE_OVERRIDE)
+    #define DOBBY_SERVICE   DOBBY_SERVICE_OVERRIDE
+#else
+    #define DOBBY_SERVICE   "org.rdk.dobby"
+#endif
+#if defined(DOBBY_OBJECT_OVERRIDE)
+    #define DOBBY_OBJECT   DOBBY_OBJECT_OVERRIDE
+#else
+    #define DOBBY_OBJECT   "/org/rdk/dobby"
+#endif
+
 
 #define DOBBY_ADMIN_INTERFACE                   DOBBY_SERVICE ".admin1"
 #define DOBBY_ADMIN_METHOD_PING                     "Ping"

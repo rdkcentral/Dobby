@@ -89,11 +89,15 @@ option( ENABLE_LTO "Enable link time optimisation compiler flags" OFF )
 
 # Set default Dobby dbus service to org.rdk.dobby and add defines
 set( DOBBY_SERVICE "org.rdk.dobby" CACHE STRING "Dobby dbus service name")
-add_definitions( -DDOBBY_SERVICE="${DOBBY_SERVICE}")
+if(NOT DOBBY_SERVICE STREQUAL "org.rdk.dobby")
+    add_definitions( -DDOBBY_SERVICE_OVERRIDE="${DOBBY_SERVICE}")
+endif()
 
 # Set default Dobby dbus object path to /org/rdk/dobby and add defines
 set( DOBBY_OBJECT "/org/rdk/dobby" CACHE STRING "Dobby dbus object path")
-add_definitions( -DDOBBY_OBJECT="${DOBBY_OBJECT}" )
+if(NOT DOBBY_OBJECT STREQUAL "/org/rdk/dobby")
+    add_definitions( -DDOBBY_OBJECT_OVERRIDE="${DOBBY_OBJECT}")
+endif()
 
 # Enable C++14 support. The following tells cmake to always add the -std=c++14
 # flag (nb - if CMAKE_CXX_EXTENSIONS is ON then we'll get -std=gnu++14 instead)
