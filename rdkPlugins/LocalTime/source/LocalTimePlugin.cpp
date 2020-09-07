@@ -45,7 +45,7 @@ unsigned LocalTimePlugin::hookHints() const
 
 // -----------------------------------------------------------------------------
 /**
- *  @brief createRuntime OCI hook.
+ *  @brief postInstallation OCI hook.
  *
  *  All we need to do create symlink in the container rootfs to the real time
  *  zone file - matching the /etc/localtime entry outside the container.

@@ -715,7 +715,7 @@ void DobbySpecConfig::enableLocaltimePlugin()
     enableRdkPlugin(subDict, RDK_LOCALTIME_PLUGIN_NAME, false);
 
     Json::Value rdkPluginData;
-    subDict->SetValue(RDK_PLUGIN_DATA, "");
+    subDict->SetValue(RDK_PLUGIN_DATA, "{}");
     addRdkPlugin(RDK_LOCALTIME_PLUGIN_NAME, false, rdkPluginData);
 }
 

@@ -6,7 +6,7 @@ Add the following section to your OCI runtime configuration `config.json` file t
 ```json
 {
     "rdkPlugins": {
-        "gpu": {
+        "localtime": {
             "required": true,
             "data": {}
         }
@@ -14,7 +14,7 @@ Add the following section to your OCI runtime configuration `config.json` file t
 }
 ```
 
-**Note:** This plugin takes no data, so the `data` field can be left empty.
+**Note:** This plugin takes no data, so the `data` field should be left empty.
 
 If you already have other RDK plugins in the bundle, then just add the localtime plugin. Do not create multiple `rdkPlugin` sections.
 
