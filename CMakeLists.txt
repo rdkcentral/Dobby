@@ -87,6 +87,18 @@ option( LEGACY_COMPONENTS "Enable Dobby legacy components" ON )
 # See http://hubicka.blogspot.com/2018/06/gcc-8-link-time-and-interprocedural.html
 option( ENABLE_LTO "Enable link time optimisation compiler flags" OFF )
 
+# Set default Dobby dbus service to org.rdk.dobby and add defines
+set( DOBBY_SERVICE "org.rdk.dobby" CACHE STRING "Dobby dbus service name")
+if(NOT DOBBY_SERVICE STREQUAL "org.rdk.dobby")
+    add_definitions( -DDOBBY_SERVICE_OVERRIDE="${DOBBY_SERVICE}")
+endif()
+
+# Set default Dobby dbus object path to /org/rdk/dobby and add defines
+set( DOBBY_OBJECT "/org/rdk/dobby" CACHE STRING "Dobby dbus object path")
+if(NOT DOBBY_OBJECT STREQUAL "/org/rdk/dobby")
+    add_definitions( -DDOBBY_OBJECT_OVERRIDE="${DOBBY_OBJECT}")
+endif()
+
 # Enable C++14 support. The following tells cmake to always add the -std=c++14
 # flag (nb - if CMAKE_CXX_EXTENSIONS is ON then we'll get -std=gnu++14 instead)
 set( CMAKE_CXX_STANDARD          14  )

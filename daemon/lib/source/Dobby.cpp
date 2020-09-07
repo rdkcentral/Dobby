@@ -80,8 +80,8 @@ Dobby::Dobby(const std::string& dbusAddress,
     , mWorkQueue(new DobbyWorkQueue)
     , mPluginWorkQueue(new DobbyWorkQueue)
     , mIpcService(ipcService)
-    , mService(settings->dbusServiceName())
-    , mObjectPath(settings->dbusObjectPath())
+    , mService(DOBBY_SERVICE)
+    , mObjectPath(DOBBY_OBJECT)
     , mShutdown(false)
     , mWatchdogTimerId(-1)
 {

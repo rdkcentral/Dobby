@@ -110,27 +110,6 @@ Settings::Settings(const Json::Value& settings)
     // defaults first
     setDefaults();
 
-    // process dbus settings
-    {
-        Json::Value serviceName = Json::Path(".dbus.serviceName").resolve(settings);
-        if (!serviceName.isNull())
-        {
-            if (!serviceName.isString())
-                AI_LOG_ERROR("invalid dbus service name in JSON settings file");
-            else
-                mDBusServiceName = serviceName.asString();
-        }
-
-        Json::Value objectPath = Json::Path(".dbus.objectPath").resolve(settings);
-        if (!objectPath.isNull())
-        {
-            if (!objectPath.isString())
-                AI_LOG_ERROR("invalid dbus object path in JSON settings file");
-            else
-                mDBusObjectPath = objectPath.asString();
-        }
-    }
-
     // process the paths
     {
         Json::Value workspaceDir = Json::Path(".paths.workspaceDir").resolve(settings);
@@ -245,8 +224,6 @@ Settings::Settings(const Json::Value& settings)
  */
 void Settings::setDefaults()
 {
-    mDBusServiceName = DOBBY_SERVICE;
-    mDBusObjectPath = DOBBY_OBJECT;
     mConsoleSocketPath = "/tmp/dobbyPty.sock";
 
 #if defined(RDK)
@@ -256,46 +233,6 @@ void Settings::setDefaults()
     mWorkspaceDir = getPathFromEnv("AI_WORKSPACE_PATH", "/tmp/ai-workspace-fallback");
     mPersistentDir = getPathFromEnv("AI_PERSISTENT_PATH", "/tmp/ai-flash-fallback");
 #endif
-}
-
-// -----------------------------------------------------------------------------
-/**
- *  @brief
- *
- */
-void Settings::setDBusServiceName(const std::string& name)
-{
-    mDBusServiceName = name;
-}
-
-// -----------------------------------------------------------------------------
-/**
- *  @brief
- *
- */
-std::string Settings::dbusServiceName() const
-{
-    return mDBusServiceName;
-}
-
-// -----------------------------------------------------------------------------
-/**
- *  @brief
- *
- */
-void Settings::setDBusObjectPath(const std::string& path)
-{
-    mDBusObjectPath = path;
-}
-
-// -----------------------------------------------------------------------------
-/**
- *  @brief
- *
- */
-std::string Settings::dbusObjectPath() const
-{
-    return mDBusObjectPath;
 }
 
 // -----------------------------------------------------------------------------
@@ -398,9 +335,6 @@ void Settings::dump(int aiLogLevel) const
 {
     if (aiLogLevel < 0)
         aiLogLevel = AI_DEBUG_LEVEL_INFO;
-
-    __AI_LOG_PRINTF(aiLogLevel, "settings.dbus.serviceName='%s'", mDBusServiceName.c_str());
-    __AI_LOG_PRINTF(aiLogLevel, "settings.dbus.objectPath='%s'", mDBusObjectPath.c_str());
 
     __AI_LOG_PRINTF(aiLogLevel, "settings.paths.workspaceDir='%s'", mWorkspaceDir.c_str());
     __AI_LOG_PRINTF(aiLogLevel, "settings.paths.persistentDir='%s'", mPersistentDir.c_str());

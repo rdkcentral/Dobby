@@ -61,7 +61,7 @@
 #define ARRAY_LENGTH(x)   (sizeof(x) / sizeof((x)[0]))
 
 //
-static std::string gDBusService("org.rdk.dobby.test");
+static std::string gDBusService(DOBBY_SERVICE ".test");
 
 //
 static char** gCmdlineArgv = NULL;
@@ -934,7 +934,6 @@ static void displayUsage()
     printf("\n");
     printf("  -a, --dbus-address=ADDRESS    The dbus address to talk to, if not set attempts\n");
     printf("                                to find the dbus socket in the usual places\n");
-    printf("  -s, --service=SERVICE         The dbus service the file mapper daemon is on [%s]\n", gDBusService.c_str());
     printf("\n");
 }
 
@@ -977,10 +976,6 @@ static void parseArgs(const int argc, char **argv)
             case 'V':
                 displayVersion();
                 exit(EXIT_SUCCESS);
-                break;
-
-            case 's':
-                gDBusService = reinterpret_cast<const char*>(optarg);
                 break;
 
             case '?':
