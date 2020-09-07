@@ -134,11 +134,11 @@ install(
         RENAME      dobby.json
         DESTINATION /etc/ )
 
-
+configure_file(dobby.service.in dobby.service @ONLY)
 
 # Install a systemd launch service config and enables it by default
 install(
-        FILES       dobby.service
+        FILES       ${CMAKE_CURRENT_BINARY_DIR}/dobby.service
         DESTINATION /lib/systemd/system/ )
 
 # The following doesn't seem to work in RDK, disabling for now

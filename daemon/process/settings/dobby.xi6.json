@@ -1,9 +1,4 @@
 {
-  "dbus": {
-    "serviceName": "org.rdk.dobby",
-    "objectPath": "/org/rdk/dobby"
-  },
-
   "paths": {
     "workspaceDir": "/var/volatile/rdk",
     "persistentDir": "/opt/persistent/rdk"

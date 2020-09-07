@@ -36,12 +36,18 @@ During the CMake configure stage, CMake will also configure the `libocispec` sub
 If the schema files in the `bundle/runtime-schemas` directory are changed, then you will need to re-run CMake again to regenerate the headers.
 
 ### CMake Configuration Settings
-* `-DPLUGIN_PATH=""` - specifiy a different location to load RDK plugins from.
-* `-DRDK_PLATFORM=DEV_VM` - specifiy which platform Dobby is running on. Defaults to `XI6` if none specified. Valid options include
+* `-DPLUGIN_PATH=""` - specify a different location to load RDK plugins from.
+* `-DRDK_PLATFORM=DEV_VM` - specify which platform Dobby is running on. Defaults to `XI6` if none specified. Valid options include
   * `XI6`
   * `XI1`
   * `LLAMA`
   * `DEV_VM`
+* `-DLEGACY_COMPONENTS=[ON|OFF]` - option to enable or disable legacy components (legacy plugins, Dobby specs, ...)
+* `-DENABLE_LTO=[ON|OFF]` - option to enable or disable link time optimisation for Dobby.
+* `-DENABLE_PERFETTO_TRACING=[ON|OFF]` - option to enable or disable Perfetto tracing. Can not be enabled for release builds.
+* `-DDOBBY_SERVICE=""` - specify the Dobby dbus service name. Defaults to `org.rdk.dobby` if none specified.
+* `-DDOBBY_OBJECT=""` - specify the Dobby dbus object path. Defaults to `/org/rdk/dobby` if none specified.
+
 
 ## Development
 If you with to develop Dobby further, detailed instructions on setting up a development environment can be found in the `develop` directory in this repo, including a Vagrant VM with all the necessary dependencies pre-installed.
@@ -68,7 +74,6 @@ Usage: DobbyDaemon <option(s)>
 
   -f, --settings-file=PATH      Path to a JSON dobby settings file [/etc/dobby.json]
   -a, --dbus-address=ADDRESS    The dbus address to put the admin service on [system bus]
-  -s, --service=SERVICE         The dbus service to put Dobby on [org.rdk.dobby]
   -p, --priority=PRIORITY       Sets the SCHED_RR priority of the daemon [RR,12]
   -n, --nofork                  Do not fork and daemonise the process
   -k, --noconsole               Disable console output
