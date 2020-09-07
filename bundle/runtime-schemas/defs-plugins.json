@@ -310,6 +310,23 @@
                 }
             }
         },
+        "LocalTime": {
+            "type": "object",
+            "required": [
+                "required",
+                "data"
+            ],
+            "properties": {
+                "required": {
+                    "type": "boolean"
+                },
+                "data": {
+                    "type": "object",
+                    "properties": {
+                    }
+                }
+            }
+        },
         "TestRdkPlugin": {
             "type": "object",
             "required": [
@@ -379,6 +396,9 @@
                 },
                 "drm": {
                     "$ref": "#/definitions/DRM"
+                },
+                "localtime": {
+                    "$ref": "#/definitions/LocalTime"
                 },
                 "testrdkplugin": {
                     "$ref": "#/definitions/TestRdkPlugin"

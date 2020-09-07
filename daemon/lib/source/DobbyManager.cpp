@@ -41,7 +41,6 @@
 #include "IDobbySysHook.h"
 
 // TODO:: Remove syshooks...
-#include "syshooks/LocalTimeHook.h"
 #include "syshooks/RtSchedulingHook.h"
 
 #include <DobbyProtocol.h>
@@ -311,14 +310,6 @@ void DobbyManager::setupSystemHooks()
     std::shared_ptr<RtSchedulingHook> rtScheduling =
         std::make_shared<RtSchedulingHook>();
     mSysHooks.push_back(rtScheduling);
-
-    // TODO:: Remove/replace
-#if defined(RDK)
-    // on RDK we map in the /etc/localtime symlink from the system
-    std::shared_ptr<LocalTimeHook> localTimeHook =
-            std::make_shared<LocalTimeHook>(mUtilities);
-    mSysHooks.push_back(localTimeHook);
-#endif
 
     AI_LOG_FN_EXIT();
 }

@@ -170,6 +170,9 @@ private:
     void enableRdkPlugin(ctemplate::TemplateDictionary*& subDict, const std::string& pluginName, const bool required);
 
 private:
+    void enableLocaltimePlugin();
+
+private:
     static void addGpuDevNodes(const std::shared_ptr<const IDobbySettings::HardwareAccessSettings> &settings,
                                ctemplate::TemplateDictionary *dict);
 

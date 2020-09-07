@@ -477,7 +477,6 @@ bool DobbyRdkPluginManager::implementsHook(const std::string &pluginName,
  *
  * @param[in]   pluginName      Name of the plugin to run
  * @param[in]   hook            Which hook to execute
- * @param[in]   jsonData        Plugin specific data (passed directly to plugin)
  *
  * @return True if the hook executed successfully
  */

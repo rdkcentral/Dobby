@@ -61,6 +61,7 @@
 #define RDK_STORAGE_PLUGIN_NAME         "storage"
 #define RDK_DRM_PLUGIN_NAME             "drm"
 #define RDK_GPU_PLUGIN_NAME             "gpu"
+#define RDK_LOCALTIME_PLUGIN_NAME       "localtime"
 
 
 // -----------------------------------------------------------------------------
