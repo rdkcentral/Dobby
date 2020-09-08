@@ -73,12 +73,15 @@ pid_t DobbyRdkPluginUtils::getContainerPid(const std::string &stdin) const
     }
 
     // get pid from hook's stdin json '"pid":xxxxx'
-    std::size_t pidPosition = stdin.find("\"pid\":") + 6;
+    std::size_t pidPosition = stdin.find("\"pid\":");
     if (pidPosition == std::string::npos)
     {
         AI_LOG_ERROR_EXIT("could not find \"pid\" in container stdin");
         return 0;
     }
+
+    // traverse 6 characters to get the position of the actual pid
+    pidPosition += 6;
 
     std::string tmp = stdin.substr(pidPosition, 5);
     std::string pidStr = tmp.substr(0, tmp.find(","));
