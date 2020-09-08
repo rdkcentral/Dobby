@@ -403,27 +403,40 @@ bool DobbyConfig::findPluginLauncherHookEntry(rt_defs_hook** hook, int len)
  */
 void DobbyConfig::setPluginHookEntry(rt_defs_hook* entry, const std::string& name, const std::string& configPath)
 {
-#if (AI_BUILD_TYPE == AI_DEBUG)
-    int args_len = 6;
-    std::string args[args_len] = {
+    std::string verbosity;
+
+    // match plugin launcher verbosity to the daemon's
+    switch(__ai_debug_log_level) {
+        case AI_DEBUG_LEVEL_DEBUG:
+            verbosity = "-vv";
+            break;
+        case AI_DEBUG_LEVEL_INFO:
+            verbosity = "-v";
+            break;
+        default:
+            verbosity = "";
+            break;
+    }
+
+    std::vector<std::string> args = {
         "DobbyPluginLauncher",
-        "-v",
-#else
-    int args_len = 5;
-    std::string args[args_len] = {
-        "DobbyPluginLauncher",
-#endif
         "-h",
         name,
         "-c",
         configPath
     };
 
+    // add verbosity level if needed
+    if (!verbosity.empty())
+    {
+        args.emplace_back(verbosity);
+    }
+
     entry->path = strdup(PLUGINLAUNCHER_PATH);
-    entry->args_len = args_len;
+    entry->args_len = args.size();;
     entry->args = (char**)calloc(entry->args_len, sizeof(char*));
 
-    for (int i = 0; i < args_len; i++)
+    for (int i = 0; i < args.size(); i++)
     {
         entry->args[i] = strdup(args[i].c_str());
     }
