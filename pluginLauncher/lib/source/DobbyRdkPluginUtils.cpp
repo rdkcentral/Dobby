@@ -59,19 +59,27 @@ DobbyRdkPluginUtils::~DobbyRdkPluginUtils()
  *  function only parses the pid from a string.
  *
  *  NOTE: Only works with OCI hooks.
- *  @param[in]  stdin            stdin contents from the context of the hook
  *
- *  @return container pid, 0 if none found
+ *  @param[in]  stdin            stdin contents from the context of the hook.
+ *
+ *  @return container pid, 0 if none found.
  */
 pid_t DobbyRdkPluginUtils::getContainerPid(const std::string &stdin) const
 {
     if (stdin.empty())
     {
+        AI_LOG_ERROR_EXIT("container stdin empty - couldn't get pid");
         return 0;
     }
 
     // get pid from hook's stdin json '"pid":xxxxx'
     std::size_t pidPosition = stdin.find("\"pid\":") + 6;
+    if (pidPosition == std::string::npos)
+    {
+        AI_LOG_ERROR_EXIT("could not find \"pid\" in container stdin");
+        return 0;
+    }
+
     std::string tmp = stdin.substr(pidPosition, 5);
     std::string pidStr = tmp.substr(0, tmp.find(","));
 
