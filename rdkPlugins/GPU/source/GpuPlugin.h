@@ -57,13 +57,14 @@ public:
     unsigned hookHints() const override;
 
 public:
-    bool createRuntime() override;
+    bool postInstallation() override;
     bool postHalt() override;
 
 private:
     std::string getGpuCgroupMountPoint();
 
-    bool setupContainerGpuLimit(pid_t containerPid,
+    bool setupContainerGpuLimit(const std::string cgroupDirPath,
+                                pid_t containerPid,
                                 int memoryLimit);
 
     bool bindMountGpuCgroup(const std::string &source,
@@ -75,7 +76,6 @@ private:
     const std::string mRootfsPath;
     const std::shared_ptr<DobbyRdkPluginUtils> mUtils;
     const std::string mContainerId;
-    const std::string mCgroupDirPath;
 };
 
 #endif // !defined(GPUPLUGIN_H)

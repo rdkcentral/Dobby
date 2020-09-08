@@ -35,8 +35,7 @@ GpuPlugin::GpuPlugin(std::shared_ptr<rt_dobby_schema> &containerConfig,
     : mName("Gpu"),
       mContainerConfig(containerConfig),
       mUtils(utils),
-      mContainerId(mContainerConfig->hostname),
-      mCgroupDirPath(getGpuCgroupMountPoint())
+      mContainerId(mContainerConfig->hostname)
 {
     AI_LOG_FN_ENTRY();
     AI_LOG_FN_EXIT();
@@ -45,14 +44,14 @@ GpuPlugin::GpuPlugin(std::shared_ptr<rt_dobby_schema> &containerConfig,
 unsigned GpuPlugin::hookHints() const
 {
     return (
-        IDobbyRdkPlugin::HintFlags::CreateRuntimeFlag |
+        IDobbyRdkPlugin::HintFlags::PostInstallationFlag |
         IDobbyRdkPlugin::HintFlags::PostHaltFlag);
 }
 
 // Begin Hook Methods
 
 /**
- *  @brief we use the createRuntime point to create a cgroup and put the
+ *  @brief we use the postInstallation point to create a cgroup and put the
  *  containered process into it.
  *
  *  The amount of memory to assign is read from the plugin's data section in
@@ -62,13 +61,15 @@ unsigned GpuPlugin::hookHints() const
  *
  *  @return true if successful, otherwise false.
  */
-bool GpuPlugin::createRuntime()
+bool GpuPlugin::postInstallation()
 {
+    const std::string cgroupDirPath = getGpuCgroupMountPoint();
+
     // if we don't have a GPU cgroup controller then nothing to do
-    if (mCgroupDirPath.empty())
+    if (cgroupDirPath.empty())
     {
         AI_LOG_ERROR_EXIT("missing gpu cgroup directory");
-        return true;
+        return false;
     }
 
     // get the container pid
@@ -89,7 +90,7 @@ bool GpuPlugin::createRuntime()
     const int memLimit = mContainerConfig->rdk_plugins->gpu->data->memory;
 
     // setup the gpu memory limit
-    setupContainerGpuLimit(containerPid, memLimit);
+    setupContainerGpuLimit(cgroupDirPath, containerPid, memLimit);
 }
 
 /**
@@ -104,15 +105,17 @@ bool GpuPlugin::postHalt()
 {
     AI_LOG_FN_ENTRY();
 
+    const std::string cgroupDirPath = getGpuCgroupMountPoint();
+
     // sanity check we have a gpu cgroup dir
-    if (mCgroupDirPath.empty())
+    if (cgroupDirPath.empty())
     {
         AI_LOG_WARN("no gpu cgroup directory found");
         return true;
     }
 
     // remove the container's gpu cgroup directory
-    const std::string cgroupPath = mCgroupDirPath + "/" + mContainerId.c_str();
+    const std::string cgroupPath = cgroupDirPath + "/" + mContainerId.c_str();
     if (rmdir(cgroupPath.c_str()) < 0)
     {
         // we could be called at stop time even though the createRuntime hook
@@ -251,12 +254,14 @@ bool GpuPlugin::bindMountGpuCgroup(const std::string &source,
  *
  *  The cgroup is given the same name as the container.
  *
+ *  @param[in]  cgroupDirPath   Path to the gpu cgroup directory.
  *  @param[in]  containerPid    The pid of the process in the container.
  *  @param[in]  memoryLimit     The memory limit set in the bundle config.
  *
  *  @return true if successful, otherwise false.
  */
-bool GpuPlugin::setupContainerGpuLimit(pid_t containerPid,
+bool GpuPlugin::setupContainerGpuLimit(const std::string cgroupDirPath,
+                                       pid_t containerPid,
                                        int memoryLimit)
 {
     AI_LOG_FN_ENTRY();
@@ -264,8 +269,8 @@ bool GpuPlugin::setupContainerGpuLimit(pid_t containerPid,
     // setup the paths for the bind mount, i.e.
     //   source:   "/sys/fs/cgroup/gpu/<id>"
     //   target:   "/sys/fs/cgroup/gpu"
-    const std::string sourcePath(mCgroupDirPath + "/" + mContainerId);
-    const std::string targetPath(mCgroupDirPath);
+    const std::string sourcePath(cgroupDirPath + "/" + mContainerId);
+    const std::string targetPath(cgroupDirPath);
 
     // create a new cgroup (we're ok with it already existing)
     if ((mkdir(sourcePath.c_str(), 0755) != 0) && (errno != EEXIST))
