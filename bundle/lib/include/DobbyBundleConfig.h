@@ -80,7 +80,6 @@ public:
 public:
     const std::map<std::string, Json::Value>& legacyPlugins() const override;
     const std::map<std::string, Json::Value>& rdkPlugins() const override;
-    const std::list<std::string> sysHooks() const override;
 
 // ----------------------------------------------------------------------------
 /**
@@ -128,7 +127,6 @@ private:
 private:
     std::map<std::string, Json::Value> mLegacyPlugins;
     std::map<std::string, Json::Value> mRdkPlugins;
-    std::list<std::string> mEnabledSysHooks;
 
 private:
     std::string mRootfsPath;

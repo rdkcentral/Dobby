@@ -38,11 +38,6 @@
 #include "DobbyAsync.h"
 #include "DobbyState.h"
 
-#include "IDobbySysHook.h"
-
-// TODO:: Remove syshooks...
-#include "syshooks/RtSchedulingHook.h"
-
 #include <DobbyProtocol.h>
 #include <Logging.h>
 #include <Tracing.h>
@@ -104,8 +99,6 @@ DobbyManager::DobbyManager(const std::shared_ptr<IDobbyEnv> &env,
     setupWorkspace(env);
 
     cleanupContainers();
-
-    setupSystemHooks();
 
     startRuncMonitorThread();
 
@@ -289,29 +282,6 @@ void DobbyManager::cleanupContainers()
                 break;
         }
     }
-}
-
-// -----------------------------------------------------------------------------
-/**
- *  @brief Populates the list of system hooks
- *
- *  System hooks are executed for the container before the hooks in th shared
- *  objects.  System hooks are generally things that are core to a container
- *  or things that every container gets, whereas the shared library hooks are
- *  are generally used to interface to other daemons / libraries and used to
- *  add features.
- *
- */
-void DobbyManager::setupSystemHooks()
-{
-    AI_LOG_FN_ENTRY();
-
-    // setup the rt scheduling system hook
-    std::shared_ptr<RtSchedulingHook> rtScheduling =
-        std::make_shared<RtSchedulingHook>();
-    mSysHooks.push_back(rtScheduling);
-
-    AI_LOG_FN_EXIT();
 }
 
 /**
@@ -1695,97 +1665,6 @@ std::vector<std::string> DobbyManager::getExtIfaces()
 
 // -----------------------------------------------------------------------------
 /**
- *  @brief Executes the given hook function on all the system hooks installed
- *
- *
- *
- */
-bool DobbyManager::executeSysHooks(const std::unique_ptr<DobbyContainer> &container,
-                                   const HookType &hookType,
-                                   const SysHookFn &sysHookFn)
-{
-    // get the flags to check for running state of hook
-    unsigned asyncFlag, syncFlag;
-    switch (hookType)
-    {
-    case HookType::PostConstruction:
-        asyncFlag = IDobbySysHook::PostConstructionAsync;
-        syncFlag = IDobbySysHook::PostConstructionSync;
-        break;
-    case HookType::PreStart:
-        asyncFlag = IDobbySysHook::PreStartAsync;
-        syncFlag = IDobbySysHook::PreStartSync;
-        break;
-    case HookType::PostStart:
-        asyncFlag = IDobbySysHook::PostStartAsync;
-        syncFlag = IDobbySysHook::PostStartSync;
-        break;
-    case HookType::PostStop:
-        asyncFlag = IDobbySysHook::PostStopAsync;
-        syncFlag = IDobbySysHook::PostStopSync;
-        break;
-    case HookType::PreDestruction:
-        asyncFlag = IDobbySysHook::PreDestructionAsync;
-        syncFlag = IDobbySysHook::PreDestructionSync;
-        break;
-    default:
-        asyncFlag = 0;
-        syncFlag = 0;
-        break;
-    }
-
-    std::list<std::shared_ptr<DobbyAsyncResult>> sysHookResults;
-    std::list<std::string> enabledSysHooks = container->config->sysHooks();
-
-    std::list<std::shared_ptr<IDobbySysHook>>::const_iterator it = mSysHooks.begin();
-    for (; it != mSysHooks.end(); ++it)
-    {
-        // get a pointer to the hook class
-        IDobbySysHook *sysHook = it->get();
-
-        // check if syshook is enabled for this container
-        if (find(enabledSysHooks.begin(), enabledSysHooks.end(), sysHook->hookName()) == enabledSysHooks.end())
-        {
-            continue;
-        }
-
-        // check if the hints indicate we should be running; at all,
-        // synchronously or asynchronously
-        unsigned hints = sysHook->hookHints();
-        if (hints & asyncFlag)
-        {
-            std::shared_ptr<DobbyAsyncResult> result = DobbyAsync(sysHook->hookName(), sysHookFn, sysHook);
-            sysHookResults.emplace_back(std::move(result));
-        }
-        else if (hints & syncFlag)
-        {
-            std::shared_ptr<DobbyAsyncResult> result = DobbyDeferred(sysHookFn, sysHook);
-            sysHookResults.emplace_front(std::move(result));
-        }
-    }
-
-    // the hookResults list contains all the outstanding hook operations, so we
-    // now need to wait till they all finish.  If any returns false then we
-    // return false (which in some cases will cause runc to abort the container).
-    bool result = true;
-
-    for (const std::shared_ptr<DobbyAsyncResult> &sysHookResult : sysHookResults)
-    {
-        // NB deliberately no timeout as we don't have any way to tell a hook
-        // to abort what it's doing and therefore we don't have any recovery
-        // mechanism ... so just patiently wait and trust the hooks to do
-        // sensible stuff
-        if (sysHookResult->getResult() == false)
-            result = false;
-    }
-
-    // TODO: add some checks on the total time it took to execute all hooks
-
-    return result;
-}
-
-// -----------------------------------------------------------------------------
-/**
  *  @brief Called at the post-installation stage of container startup
  *
  *  Uses the map of rdkPlugin names/data in the container config to determine
@@ -1911,8 +1790,8 @@ bool DobbyManager::onPostHaltHook(const std::unique_ptr<DobbyContainer> &contain
  *
  *  @warning this function is called with the lock already held.
  *
- *  Here we go though each system hook and install plugins and ask them to
- *  execute their postConstruction callbacks.
+ *  Here we go though each plugin and ask them to execute their
+ *  postConstruction hooks.
  *
  *  @param[in]  id              The id of the container.
  *  @param[in]  startState      The object that represents the start-up state.
@@ -1933,28 +1812,9 @@ bool DobbyManager::onPostConstructionHook(const ContainerId &id,
     // optimist
     bool success = true;
 
-    // execute the system hooks first
-    SysHookFn sysHookFn =
-            [&](IDobbySysHook *sysHook)
-            {
-                AI_TRACE_EVENT("Dobby", "syshook::postConstruction",
-                               "name", sysHook->hookName());
-
-                return sysHook->postConstruction(id, startState,
-                                                 container->config,
-                                                 container->rootfs);
-            };
-
-    if (executeSysHooks(container, HookType::PostConstruction, sysHookFn) == false)
-    {
-        AI_LOG_ERROR("one or more post-construction hooks failed for '%s'",
-                     id.c_str());
-        success = false;
-    }
-
     AI_LOG_DEBUG("executing plugins postConstruction hooks");
 
-    // execute the plugin hooks next
+    // execute the plugin hooks
     if (mPlugins->executePostConstructionHooks(container->config->legacyPlugins(),
                                                id,
                                                startState,
@@ -1976,8 +1836,7 @@ bool DobbyManager::onPostConstructionHook(const ContainerId &id,
  *  We use the @a id to find the container spec, using that we can determine
  *  what plugin libraries need to be called.
  *
- *  Then we go though each syshook & plugin and pass it it's data from the
- *  spec file.
+ *  Then we go though each plugin and pass it it's data from the spec file.
  *
  *  @param[in]  id              The id of the container.
  *  @param[in]  pid             The pid of the init process within the container.
@@ -2005,27 +1864,7 @@ bool DobbyManager::onPreStartHook(const ContainerId &id,
     // optimist
     bool success = true;
 
-    // execute the system hooks first
-    SysHookFn sysHookFn =
-            [&](IDobbySysHook *sysHook)
-            {
-                AI_TRACE_EVENT("Dobby", "syshook::preStart",
-                               "name", sysHook->hookName());
-
-                return sysHook->preStart(id,
-                                         container->containerPid,
-                                         container->config,
-                                         container->rootfs);
-            };
-
-    if (executeSysHooks(container, HookType::PreStart, sysHookFn) == false)
-    {
-        AI_LOG_ERROR("one or more pre-start hooks failed for '%s'",
-                     id.c_str());
-        success = false;
-    }
-
-    // execute the plugin hooks next
+    // execute the plugin hooks
     if (mPlugins->executePreStartHooks(container->config->legacyPlugins(),
                                        id,
                                        container->containerPid,
@@ -2051,8 +1890,7 @@ bool DobbyManager::onPreStartHook(const ContainerId &id,
  *  We use the @a id to find the container spec, using that we can determine
  *  what plugin libraries need to be called.
  *
- *  Then we go though each syshook & plugin and pass it it's data from the
- *  spec file.
+ *  Then we go though each plugin and pass it it's data from the spec file.
  *
  *  @param[in]  id              The id of the container.
  *  @param[in]  pid             The pid of the init process within the container.
@@ -2068,25 +1906,7 @@ bool DobbyManager::onPostStartHook(const ContainerId &id,
 
     AI_TRACE_EVENT("Dobby", "postStart");
 
-    SysHookFn sysHookFn =
-            [&](IDobbySysHook *sysHook)
-            {
-                AI_TRACE_EVENT("Dobby", "syshook::postStart",
-                               "name", sysHook->hookName());
-
-                return sysHook->postStart(id,
-                                          container->containerPid,
-                                          container->config,
-                                          container->rootfs);
-            };
-
-    if (executeSysHooks(container, HookType::PostStart, sysHookFn) == false)
-    {
-        AI_LOG_ERROR("one or more post-start hooks failed for '%s'",
-                     id.c_str());
-    }
-
-    // execute the plugin hooks next
+    // execute the plugin hooks
     if (mPlugins->executePostStartHooks(container->config->legacyPlugins(),
                                         id,
                                         container->containerPid,
@@ -2109,7 +1929,7 @@ bool DobbyManager::onPostStartHook(const ContainerId &id,
  *  We use the @a id to find the container spec, using that we can determine
  *  what plugin libraries need to be called.
  *
- *  Then we go though each syshook & plugin and pass it it's data from the
+ *  Then we go though each plugin and pass it it's data from the
  *  spec file.
  *
  *  @param[in]  id              The id of the container.
@@ -2130,29 +1950,12 @@ bool DobbyManager::onPostStopHook(const ContainerId &id,
     // actually terminated
     container->state = DobbyContainer::State::Stopping;
 
-    // execute the plugin hooks first
+    // execute the plugin hooks
     if (mPlugins->executePostStopHooks(container->config->legacyPlugins(),
                                        id,
                                        container->rootfs->path()) == false)
     {
         AI_LOG_ERROR("one or more post-stop hooks failed for '%s'",
-                     id.c_str());
-    }
-
-    SysHookFn sysHookFn =
-            [&](IDobbySysHook *sysHook)
-            {
-                AI_TRACE_EVENT("Dobby", "syshook::postStop",
-                               "name", sysHook->hookName());
-
-                return sysHook->postStop(id,
-                                         container->config,
-                                         container->rootfs);
-            };
-
-    if (executeSysHooks(container, HookType::PostStop, sysHookFn) == false)
-    {
-        AI_LOG_ERROR("one or more post-start hooks failed for '%s'",
                      id.c_str());
     }
 
@@ -2180,28 +1983,10 @@ bool DobbyManager::onPreDestructionHook(const ContainerId &id,
 
     AI_TRACE_EVENT("Dobby", "preDestruction");
 
-    // execute the plugin hooks first
+    // execute the plugin hooks
     if (mPlugins->executePreDestructionHooks(container->config->legacyPlugins(),
                                              id,
                                              container->rootfs->path()) == false)
-    {
-        AI_LOG_ERROR("one or more pre-destruction hooks failed for '%s'",
-                     id.c_str());
-    }
-
-    // execute the system hooks next
-    SysHookFn sysHookFn =
-            [&](IDobbySysHook *sysHook)
-            {
-                AI_TRACE_EVENT("Dobby", "syshook::preDestruction",
-                               "name", sysHook->hookName());
-
-                return sysHook->preDestruction(id,
-                                               container->config,
-                                               container->rootfs);
-            };
-
-    if (executeSysHooks(container, HookType::PreDestruction, sysHookFn) == false)
     {
         AI_LOG_ERROR("one or more pre-destruction hooks failed for '%s'",
                      id.c_str());

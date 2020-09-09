@@ -32,8 +32,6 @@ add_library( DobbyDaemonLib
         source/DobbyLogger.cpp
         source/DobbyState.cpp
 
-        source/syshooks/BaseHook.cpp
-        source/syshooks/RtSchedulingHook.cpp
         )
 
 target_include_directories( DobbyDaemonLib

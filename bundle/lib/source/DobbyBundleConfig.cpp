@@ -162,11 +162,6 @@ const std::map<std::string, Json::Value>& DobbyBundleConfig::rdkPlugins() const
     return mRdkPlugins;
 }
 
-const std::list<std::string> DobbyBundleConfig::sysHooks() const
-{
-    return mEnabledSysHooks;
-}
-
 std::shared_ptr<rt_dobby_schema> DobbyBundleConfig::config() const
 {
     return mValid ? std::shared_ptr<rt_dobby_schema>(mConf) : nullptr;

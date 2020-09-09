@@ -55,7 +55,6 @@ class IDobbyEnv;
 class IDobbySettings;
 class DobbyRunC;
 class DobbyStartState;
-class IDobbySysHook;
 class DobbyPluginManager;
 class DobbyState;
 class DobbyConfig;
@@ -93,7 +92,6 @@ public:
 private:
     void setupSystem();
     void setupWorkspace(const std::shared_ptr<IDobbyEnv>& env);
-    void setupSystemHooks();
 
     void cleanupContainers();
 
@@ -192,12 +190,6 @@ private:
         PostConstruction, PreStart, PostStart, PostStop, PreDestruction };
 
 private:
-    typedef std::function<bool (IDobbySysHook*)> SysHookFn;
-    bool executeSysHooks(const std::unique_ptr<DobbyContainer>& container,
-                         const HookType& hookType,
-                         const SysHookFn& sysHookFn);
-
-private:
     void startRuncMonitorThread();
     void stopRuncMonitorThread();
     void runcMonitorThread();
@@ -213,9 +205,6 @@ private:
     std::unique_ptr<DobbyRunC> mRunc;
     std::unique_ptr<DobbyPluginManager> mPlugins;
     std::shared_ptr<DobbyState> mState;
-
-private:
-    std::list<std::shared_ptr<IDobbySysHook>> mSysHooks;
 
 private:
     std::thread mRuncMonitorThread;

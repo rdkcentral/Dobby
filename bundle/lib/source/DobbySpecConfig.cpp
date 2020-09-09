@@ -400,11 +400,6 @@ const std::map<std::string, Json::Value>& DobbySpecConfig::rdkPlugins() const
     return mRdkPlugins;
 }
 
-const std::list<std::string> DobbySpecConfig::sysHooks() const
-{
-    return mEnabledSysHooks;
-}
-
 std::vector<DobbySpecConfig::MountPoint> DobbySpecConfig::mountPoints() const
 {
     std::lock_guard<std::mutex> locker(mLock);
