@@ -46,14 +46,14 @@ GpuPlugin::GpuPlugin(std::shared_ptr<rt_dobby_schema> &containerConfig,
 unsigned GpuPlugin::hookHints() const
 {
     return (
-        IDobbyRdkPlugin::HintFlags::PostInstallationFlag |
-        IDobbyRdkPlugin::HintFlags::PostHaltFlag);
+        IDobbyRdkPlugin::HintFlags::CreateRuntimeFlag |
+        IDobbyRdkPlugin::HintFlags::PostStopFlag);
 }
 
 // Begin Hook Methods
 
 /**
- *  @brief we use the postInstallation point to create a cgroup and put the
+ *  @brief we use the createRuntime point to create a cgroup and put the
  *  containered process into it.
  *
  *  The amount of memory to assign is read from the plugin's data section in
@@ -63,7 +63,7 @@ unsigned GpuPlugin::hookHints() const
  *
  *  @return true if successful, otherwise false.
  */
-bool GpuPlugin::postInstallation()
+bool GpuPlugin::createRuntime()
 {
     const std::string cgroupDirPath = getGpuCgroupMountPoint();
 
@@ -96,14 +96,14 @@ bool GpuPlugin::postInstallation()
 }
 
 /**
- *  @brief We use the postHalt point to remove the cgroup directory
+ *  @brief We use the postStop point to remove the cgroup directory
  *  created in the createRuntime phase.
  *
  *  The directory will have the same name as the container id.
  *
  *  @return true if successful, otherwise false.
  */
-bool GpuPlugin::postHalt()
+bool GpuPlugin::postStop()
 {
     AI_LOG_FN_ENTRY();
 

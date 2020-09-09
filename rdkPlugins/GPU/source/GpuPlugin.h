@@ -58,8 +58,8 @@ public:
     unsigned hookHints() const override;
 
 public:
-    bool postInstallation() override;
-    bool postHalt() override;
+    bool createRuntime() override;
+    bool postStop() override;
 
 private:
     std::string getGpuCgroupMountPoint();
