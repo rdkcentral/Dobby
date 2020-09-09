@@ -477,18 +477,17 @@ int main(int argc, char * argv[])
     PerfettoTracing::initialise();
 #endif
 
+    AI_LOG_INFO("starting dbus service");
+    AI_LOG_INFO("  dbus address '%s'", gDbusAddress.c_str());
+    AI_LOG_INFO("  service name '%s'", DOBBY_SERVICE);
+    AI_LOG_INFO("  object name '%s'", DOBBY_OBJECT);
 
     // Create the IPC service and start it, this spawns a thread and runs the dbus
-    // event loop inside it
+    // event loop inside it.
+    std::shared_ptr<AI_IPC::IIpcService> ipcService;
     try
     {
-        AI_LOG_INFO("starting dbus service");
-        AI_LOG_INFO("  dbus address '%s'", gDbusAddress.c_str());
-        AI_LOG_INFO("  service name '%s'", DOBBY_SERVICE);
-        AI_LOG_INFO("  object name '%s'", DOBBY_OBJECT);
-
         // Create IPCServices that attach to the dbus daemons
-        std::shared_ptr<AI_IPC::IIpcService> ipcService;
         if (gDbusAddress.empty())
         {
             ipcService = AI_IPC::createSystemBusIpcService(DOBBY_SERVICE);
@@ -497,44 +496,44 @@ int main(int argc, char * argv[])
         {
             ipcService = AI_IPC::createIpcService(gDbusAddress, DOBBY_SERVICE);
         }
-
-        if (!ipcService)
-        {
-            AI_LOG_ERROR("failed to create one of the IPC services");
-            rc = EXIT_FAILURE;
-        }
-        else
-        {
-            // Create the dobby object and hook into the IPC service
-            Dobby dobby(ipcService->getBusAddress(), ipcService, settings);
-
-            // On debug builds try and detect the AI dbus addresses at startup
-#if (AI_BUILD_TYPE == AI_DEBUG)
-            dobby.setDefaultAIDbusAddresses(getAIDbusAddress(true),
-                                            getAIDbusAddress(false));
-#endif // (AI_BUILD_TYPE == AI_DEBUG)
-
-
-            // Start the service, this spawns a thread and runs the dbus event
-            // loop inside it
-            ipcService->start();
-
-            // Milestone
-            AI_LOG_MILESTONE("started Dobby daemon");
-
-            // Wait till the Dobby service is terminated, this is obviously a
-            // blocking call
-            dobby.run();
-
-            // Stop the service and fall out
-            ipcService->stop();
-        }
     }
     catch (const std::exception& e)
     {
         AI_LOG_ERROR("failed to create IPC service: %s", e.what());
         rc = EXIT_FAILURE;
     }
+
+    if (!ipcService)
+    {
+        AI_LOG_ERROR("failed to create one of the IPC services");
+        rc = EXIT_FAILURE;
+    }
+    else
+    {
+        // Create the dobby object and hook into the IPC service
+        Dobby dobby(ipcService->getBusAddress(), ipcService, settings);
+
+        // On debug builds try and detect the AI dbus addresses at startup
+#if (AI_BUILD_TYPE == AI_DEBUG)
+        dobby.setDefaultAIDbusAddresses(getAIDbusAddress(true),
+                                        getAIDbusAddress(false));
+#endif // (AI_BUILD_TYPE == AI_DEBUG)
+
+        // Start the service, this spawns a thread and runs the dbus event
+        // loop inside it
+        ipcService->start();
+
+        // Milestone
+        AI_LOG_MILESTONE("started Dobby daemon");
+
+        // Wait till the Dobby service is terminated, this is obviously a
+        // blocking call
+        dobby.run();
+
+        // Stop the service and fall out
+        ipcService->stop();
+    }
+
 
     // Milestone
     if (rc == EXIT_SUCCESS)
