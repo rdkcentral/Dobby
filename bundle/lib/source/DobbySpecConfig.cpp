@@ -108,6 +108,8 @@ static const ctemplate::StaticTemplateString MOUNT_OPT =
 static const ctemplate::StaticTemplateString SYSLOG_SECTION =
     STS_INIT(SYSLOG_SECTION, "SYSLOG_SECTION");
 
+static const ctemplate::StaticTemplateString RTLIMIT_ENABLED =
+    STS_INIT(RTLIMIT_ENABLED, "RTLIMIT_ENABLED");
 static const ctemplate::StaticTemplateString RLIMIT_RTPRIO =
     STS_INIT(RLIMIT_RTPRIO, "RLIMIT_RTPRIO");
 
@@ -206,8 +208,6 @@ DobbySpecConfig::DobbySpecConfig(const std::shared_ptr<IDobbyUtils> &utils,
     , mSpecVersion(SpecVersion::Unknown)
     , mUserId(-1)
     , mGroupId(-1)
-    , mRtPriorityDefault(6)
-    , mRtPriorityLimit(6)
     , mRestartOnCrash(false)
     , mSystemDbus(IDobbyIPCUtils::BusType::NoneBus)
     , mSessionDbus(IDobbyIPCUtils::BusType::NoneBus)
@@ -286,8 +286,6 @@ DobbySpecConfig::DobbySpecConfig(const std::shared_ptr<IDobbyUtils> &utils,
     , mSpecVersion(SpecVersion::Unknown)
     , mUserId(-1)
     , mGroupId(-1)
-    , mRtPriorityDefault(6)
-    , mRtPriorityLimit(6)
     , mRestartOnCrash(false)
     , mSystemDbus(IDobbyIPCUtils::BusType::NoneBus)
     , mSessionDbus(IDobbyIPCUtils::BusType::NoneBus)
@@ -355,11 +353,6 @@ gid_t DobbySpecConfig::groupId() const
 const std::string& DobbySpecConfig::rootfsPath() const
 {
     return mRootfsPath;
-}
-
-int DobbySpecConfig::rtPriorityDefault() const
-{
-    return mRtPriorityDefault;
 }
 
 bool DobbySpecConfig::restartOnCrash() const
@@ -614,7 +607,8 @@ bool DobbySpecConfig::parseSpec(ctemplate::TemplateDictionary* dictionary,
 
     if (!(flags & JSON_FLAG_RTPRIORITY))
     {
-        dictionary->SetIntValue(RLIMIT_RTPRIO, mRtPriorityLimit);
+        dictionary->ShowSection(RTLIMIT_ENABLED);
+        dictionary->SetIntValue(RLIMIT_RTPRIO, 6);
     }
 
     if (!(flags & JSON_FLAG_CAPABILITIES))
@@ -952,8 +946,11 @@ bool DobbySpecConfig::processUserNs(const Json::Value& value,
  *  @return true if correctly processed the value, otherwise false.
  */
 bool DobbySpecConfig::processRtPriority(const Json::Value& value,
-                                    ctemplate::TemplateDictionary* dictionary)
+                                        ctemplate::TemplateDictionary* dictionary)
 {
+    int rtPriorityDefault;
+    int rtPriorityLimit;
+
     if (mSpecVersion == SpecVersion::Version1_0)
     {
         if (!value.isIntegral())
@@ -962,7 +959,7 @@ bool DobbySpecConfig::processRtPriority(const Json::Value& value,
             return false;
         }
 
-        mRtPriorityDefault = value.asInt();
+        rtPriorityDefault = value.asInt();
     }
     else if (mSpecVersion == SpecVersion::Version1_1)
     {
@@ -975,7 +972,7 @@ bool DobbySpecConfig::processRtPriority(const Json::Value& value,
         const Json::Value& default_ = value["default"];
         if (default_.isIntegral())
         {
-            mRtPriorityDefault = default_.asInt();
+            rtPriorityDefault = default_.asInt();
         }
         else if (!default_.isNull())
         {
@@ -986,7 +983,7 @@ bool DobbySpecConfig::processRtPriority(const Json::Value& value,
         const Json::Value& limit = value["limit"];
         if (limit.isIntegral())
         {
-            mRtPriorityLimit = limit.asInt();
+            rtPriorityLimit = limit.asInt();
         }
         else if (!limit.isNull())
         {
@@ -995,16 +992,17 @@ bool DobbySpecConfig::processRtPriority(const Json::Value& value,
         }
     }
 
-    mRtPriorityDefault = std::min<int>(mRtPriorityDefault, 99);
-    mRtPriorityDefault = std::max<int>(mRtPriorityDefault, 1);
+    // Write values to the rdk plugin
+    ctemplate::TemplateDictionary* subDict;
+    enableRdkPlugin(subDict, RDK_RTSCHEDULING_PLUGIN_NAME, false);
 
-    mRtPriorityLimit = std::min<int>(mRtPriorityLimit, 99);
-    mRtPriorityLimit = std::max<int>(mRtPriorityLimit, 1);
+    Json::Value rdkPluginData;
+    rdkPluginData["rtlimit"] = rtPriorityLimit;
+    rdkPluginData["rtdefault"] = rtPriorityDefault;
 
-    if (mRtPriorityDefault > mRtPriorityLimit)
-        AI_LOG_WARN("the default rtprio is higher than the limit");
-
-    dictionary->SetIntValue(RLIMIT_RTPRIO, mRtPriorityLimit);
+    std::string pluginData = createRdkPluginDataString(rdkPluginData);
+    subDict->SetValue(RDK_PLUGIN_DATA, pluginData);
+    addRdkPlugin(RDK_RTSCHEDULING_PLUGIN_NAME, false, rdkPluginData);
 
     return true;
 }

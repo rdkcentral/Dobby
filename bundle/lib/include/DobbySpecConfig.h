@@ -83,9 +83,6 @@ public:
     bool restartOnCrash() const override;
 
 public:
-    int rtPriorityDefault() const override;
-
-public:
     std::shared_ptr<rt_dobby_schema> config() const override;
 
 public:
@@ -202,10 +199,6 @@ private:
 private:
     uid_t mUserId;
     gid_t mGroupId;
-
-private:
-    int mRtPriorityDefault;
-    int mRtPriorityLimit;
 
 private:
     bool mRestartOnCrash;

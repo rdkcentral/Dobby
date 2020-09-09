@@ -62,6 +62,7 @@
 #define RDK_DRM_PLUGIN_NAME             "drm"
 #define RDK_GPU_PLUGIN_NAME             "gpu"
 #define RDK_LOCALTIME_PLUGIN_NAME       "localtime"
+#define RDK_RTSCHEDULING_PLUGIN_NAME    "rtscheduling"
 
 
 // -----------------------------------------------------------------------------
