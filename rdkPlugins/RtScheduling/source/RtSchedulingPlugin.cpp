@@ -80,7 +80,9 @@ bool RtSchedulingPlugin::postInstallation()
         {
             // found RLIMIT_RTPRIO, insert limit to it
             mConfig->process->rlimits[i]->hard = rtPriorityLimit;
+            mConfig->process->rlimits[i]->hard_present = true;
             mConfig->process->rlimits[i]->soft = rtPriorityLimit;
+            mConfig->process->rlimits[i]->soft_present = true;
             AI_LOG_FN_EXIT();
             return true;
         }
@@ -90,8 +92,11 @@ bool RtSchedulingPlugin::postInstallation()
 
     // allocate memory to create new rlimit
     rt_dobby_schema_process_rlimits_element *newRlimit = (rt_dobby_schema_process_rlimits_element*)calloc(1, sizeof(rt_dobby_schema_process_rlimits_element));
+    newRlimit->type = strdup("RLIMIT_RTPRIO");
     newRlimit->hard = rtPriorityLimit;
+    newRlimit->hard_present = true;
     newRlimit->soft = rtPriorityLimit;
+    newRlimit->soft_present = true;
 
     // allocate memory for new rlimit in config and place it in
     mConfig->process->rlimits_len++;
@@ -145,10 +150,6 @@ bool RtSchedulingPlugin::createRuntime()
         AI_LOG_ERROR_EXIT("couldn't find container pid");
         return false;
     }
-
-    AI_LOG_INFO("----------------------------");
-    AI_LOG_INFO("default %d limit %d",rtPriorityLimit,rtPriorityDefault);
-    AI_LOG_INFO("----------------------------");
 
     // set default rt limit
     struct sched_param schedParam;
