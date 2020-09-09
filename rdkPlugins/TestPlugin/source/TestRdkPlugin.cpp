@@ -35,7 +35,8 @@ REGISTER_RDK_PLUGIN(TestRdkPlugin);
  */
 TestRdkPlugin::TestRdkPlugin(std::shared_ptr<rt_dobby_schema> &containerConfig,
                              const std::shared_ptr<DobbyRdkPluginUtils> &utils,
-                             const std::string &rootfsPath)
+                             const std::string &rootfsPath,
+                             const std::string &hookStdin)
     : mName("TestRdkPlugin"),
       mContainerConfig(containerConfig),
       mRootfsPath(rootfsPath),

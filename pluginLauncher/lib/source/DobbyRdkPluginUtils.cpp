@@ -241,27 +241,6 @@ bool DobbyRdkPluginUtils::callInNamespaceImpl(pid_t pid, int nsType,
     return success;
 }
 
-// -----------------------------------------------------------------------------
-/**
- *  @brief Get stdin from hookpoint
- *
- *  @return content of stdin
- */
-std::string DobbyRdkPluginUtils::getHookStdin() const
-{
-    std::lock_guard<std::mutex> locker(mLock);
-
-    char buf[1000];
-
-    if (read(STDIN_FILENO, buf, sizeof(buf)) < 0)
-    {
-        AI_LOG_SYS_ERROR(errno, "failed to read stdin");
-        return std::string();
-    }
-
-    return std::string(buf);
-}
-
 // -------------------------------------------------------------------------
 /**
  *  @brief Simply writes a string into a file

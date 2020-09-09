@@ -31,11 +31,13 @@ REGISTER_RDK_PLUGIN(GpuPlugin);
 
 GpuPlugin::GpuPlugin(std::shared_ptr<rt_dobby_schema> &containerConfig,
                      const std::shared_ptr<DobbyRdkPluginUtils> &utils,
-                     const std::string &rootfsPath)
+                     const std::string &rootfsPath,
+                     const std::string &hookStdin)
     : mName("Gpu"),
       mContainerConfig(containerConfig),
       mUtils(utils),
-      mContainerId(mContainerConfig->hostname)
+      mContainerId(mContainerConfig->hostname),
+      mHookStdin(hookStdin)
 {
     AI_LOG_FN_ENTRY();
     AI_LOG_FN_EXIT();
@@ -65,7 +67,7 @@ bool GpuPlugin::postInstallation()
 {
     const std::string cgroupDirPath = getGpuCgroupMountPoint();
 
-    // if we don't have a GPU cgroup controller then nothing to do
+    // sanity check we have a gpu cgroup dir
     if (cgroupDirPath.empty())
     {
         AI_LOG_ERROR_EXIT("missing gpu cgroup directory");
@@ -73,7 +75,7 @@ bool GpuPlugin::postInstallation()
     }
 
     // get the container pid
-    pid_t containerPid = mUtils->getContainerPid(mUtils->getHookStdin());
+    pid_t containerPid = mUtils->getContainerPid(mHookStdin);
     if (!containerPid)
     {
         AI_LOG_ERROR_EXIT("couldn't find container pid");
@@ -110,8 +112,8 @@ bool GpuPlugin::postHalt()
     // sanity check we have a gpu cgroup dir
     if (cgroupDirPath.empty())
     {
-        AI_LOG_WARN("no gpu cgroup directory found");
-        return true;
+        AI_LOG_ERROR_EXIT("missing gpu cgroup directory");
+        return false;
     }
 
     // remove the container's gpu cgroup directory
