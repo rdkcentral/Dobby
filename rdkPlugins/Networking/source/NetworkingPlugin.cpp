@@ -33,7 +33,8 @@ static std::string gDBusService(DOBBY_SERVICE ".plugin.networking");
 
 NetworkingPlugin::NetworkingPlugin(std::shared_ptr<rt_dobby_schema> &cfg,
                                    const std::shared_ptr<DobbyRdkPluginUtils> &utils,
-                                   const std::string &rootfsPath)
+                                   const std::string &rootfsPath,
+                                   const std::string &hookStdin)
     : mName("Networking"),
       mContainerConfig(cfg),
       mUtils(utils),
@@ -42,7 +43,8 @@ NetworkingPlugin::NetworkingPlugin(std::shared_ptr<rt_dobby_schema> &cfg,
       mDobbyProxy(nullptr),
       mContainerId(cfg->hostname),
       mNetworkType(NetworkType::None),
-      mNetfilter(std::make_shared<Netfilter>())
+      mNetfilter(std::make_shared<Netfilter>()),
+      mHookStdin(hookStdin)
 {
     AI_LOG_FN_ENTRY();
 
@@ -201,7 +203,8 @@ bool NetworkingPlugin::createRuntime()
 
     // setup veth, ip address and iptables rules for container
     if (!NetworkSetup::setupVeth(mUtils, mNetfilter, mDobbyProxy, mHelper,
-                                 mRootfsPath, mContainerId, mNetworkType))
+                                 mRootfsPath, mContainerId, mNetworkType,
+                                 mHookStdin))
     {
         AI_LOG_ERROR_EXIT("failed to setup virtual ethernet device");
         return false;

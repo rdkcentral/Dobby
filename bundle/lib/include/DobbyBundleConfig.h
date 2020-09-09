@@ -59,10 +59,6 @@ public:
     gid_t groupId() const override;
 
 public:
-    bool gpuEnabled() const override;
-    size_t gpuMemLimit() const override;
-
-public:
     IDobbyIPCUtils::BusType systemDbus() const override;
     IDobbyIPCUtils::BusType sessionDbus() const override;
     IDobbyIPCUtils::BusType debugDbus() const override;
@@ -94,12 +90,7 @@ private:
     bool parseOCIConfig(const std::string& bundlePath);
 
 private:
-    bool processLogging(const Json::Value& value);
-    bool processIpc(const Json::Value& value);
-    bool processGpu(const Json::Value& value);
     bool processLegacyPlugins(const Json::Value& value);
-    bool processRdkServices(const Json::Value& value);
-    bool processDrm(const Json::Value& value);
 
 // ----------------------------------------------------------------------------
 /**
@@ -125,10 +116,6 @@ private:
     bool mRestartOnCrash;
 
 private:
-    bool mGpuEnabled;
-    size_t mGpuMemLimit;
-
-private:
     IDobbyIPCUtils::BusType mSystemDbus;
     IDobbyIPCUtils::BusType mSessionDbus;
     IDobbyIPCUtils::BusType mDebugDbus;
@@ -142,7 +129,6 @@ private:
     std::map<std::string, Json::Value> mLegacyPlugins;
     std::map<std::string, Json::Value> mRdkPlugins;
     std::list<std::string> mEnabledSysHooks;
-    void setSysHooksAndRdkPlugins(void);
 
 private:
     std::string mRootfsPath;

@@ -16,12 +16,9 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-/*
- * File: TestRdkPlugin.h
- *
- */
-#ifndef TESTRDKPLUGIN_H
-#define TESTRDKPLUGIN_H
+
+#ifndef GPUPLUGIN_H
+#define GPUPLUGIN_H
 
 #include <RdkPluginBase.h>
 
@@ -33,20 +30,24 @@
 #include <memory>
 
 /**
- * @brief Simple Dobby RDK Plugin
+ * @brief Dobby GPU plugin.
  *
- * Implements all hook points to print a simple statement showing the hook has been
- * called successfully.
+ *  Sets the gpu memory limits for a given container.
  *
- * Can be used as a reference implementation for future plugins
+ *  This plugin simply creates a gpu cgroup for the container, sets the limit
+ *  and then moves the containered process into it.
+ *
+ *  This is effectively what crun does for all the other limits, but it
+ *  doesn't know about the custom gpu cgroup as that is an extension to the
+ *  default cgroups.
  */
-class TestRdkPlugin : public RdkPluginBase
+class GpuPlugin : public RdkPluginBase
 {
 public:
-    TestRdkPlugin(std::shared_ptr<rt_dobby_schema>& containerConfig,
-                  const std::shared_ptr<DobbyRdkPluginUtils> &utils,
-                  const std::string &rootfsPath,
-                  const std::string &hookStdin);
+    GpuPlugin(std::shared_ptr<rt_dobby_schema> &containerConfig,
+              const std::shared_ptr<DobbyRdkPluginUtils> &utils,
+              const std::string &rootfsPath,
+              const std::string &hookStdin);
 
 public:
     inline std::string name() const override
@@ -54,33 +55,29 @@ public:
         return mName;
     };
 
-    // Override to return the appropriate hints for what we implement
     unsigned hookHints() const override;
 
-    // This test hook implements everything
 public:
-    bool postInstallation() override;
-
-    bool preCreation() override;
-
     bool createRuntime() override;
-
-    bool createContainer() override;
-
-    bool startContainer() override;
-
-    bool postStart() override;
-
-    bool postHalt() override;
-
     bool postStop() override;
 
+private:
+    std::string getGpuCgroupMountPoint();
+
+    bool setupContainerGpuLimit(const std::string cgroupDirPath,
+                                pid_t containerPid,
+                                int memoryLimit);
+
+    bool bindMountGpuCgroup(const std::string &source,
+                            const std::string &target);
 
 private:
     const std::string mName;
     std::shared_ptr<rt_dobby_schema> mContainerConfig;
     const std::string mRootfsPath;
     const std::shared_ptr<DobbyRdkPluginUtils> mUtils;
+    const std::string mContainerId;
+    const std::string mHookStdin;
 };
 
-#endif // !defined(TESTRDKPLUGIN_H)
+#endif // !defined(GPUPLUGIN_H)

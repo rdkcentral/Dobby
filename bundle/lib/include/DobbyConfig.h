@@ -62,8 +62,6 @@
 #define RDK_DRM_PLUGIN_NAME             "drm"
 #define RDK_GPU_PLUGIN_NAME             "gpu"
 
-#define GPU_MEMLIMIT_DEFAULT            64 * 1024 * 1024
-
 
 // -----------------------------------------------------------------------------
 /**
@@ -101,8 +99,6 @@ public:
     virtual bool isValid() const = 0;
     virtual uid_t userId() const = 0;
     virtual gid_t groupId() const = 0;
-    virtual bool gpuEnabled() const = 0;
-    virtual size_t gpuMemLimit() const = 0;
     virtual IDobbyIPCUtils::BusType systemDbus() const = 0;
     virtual IDobbyIPCUtils::BusType sessionDbus() const = 0;
     virtual IDobbyIPCUtils::BusType debugDbus() const = 0;
@@ -162,15 +158,12 @@ protected:
 
     static std::list<DevNode> scanDevNodes(const std::list<std::string> &devNodes);
 
-    static const std::map<std::string, std::list<std::string>> mRdkPluginsInDevelopment;
-
     mutable std::mutex mLock;
 
 private:
     void addPluginLauncherHooks(std::shared_ptr<rt_dobby_schema> cfg, const std::string& bundlePath);
     void setPluginHookEntry(rt_defs_hook* entry, const std::string& name, const std::string& configPath);
     bool findPluginLauncherHookEntry(rt_defs_hook** hook, int len);
-    bool findRdkPlugins(rt_defs_plugins_rdk_plugins *rdkPlugins);
 };
 
 

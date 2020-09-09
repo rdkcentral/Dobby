@@ -41,7 +41,8 @@ REGISTER_RDK_PLUGIN(IpcPlugin);
  */
 IpcPlugin::IpcPlugin(std::shared_ptr<rt_dobby_schema> &containerConfig,
                              const std::shared_ptr<DobbyRdkPluginUtils> &utils,
-                             const std::string &rootfsPath)
+                             const std::string &rootfsPath,
+                             const std::string &hookStdin)
     : mName("ipc"),
       mContainerConfig(containerConfig),
       mRootfsPath(rootfsPath),

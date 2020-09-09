@@ -42,7 +42,6 @@
 
 // TODO:: Remove syshooks...
 #include "syshooks/LocalTimeHook.h"
-#include "syshooks/GpuMemoryHook.h"
 #include "syshooks/RtSchedulingHook.h"
 
 #include <DobbyProtocol.h>
@@ -307,11 +306,6 @@ void DobbyManager::cleanupContainers()
 void DobbyManager::setupSystemHooks()
 {
     AI_LOG_FN_ENTRY();
-
-    // setup the gpu memory limiter system hook
-    std::shared_ptr<GpuMemoryHook> gpuMemory =
-        std::make_shared<GpuMemoryHook>(mEnvironment, mUtilities);
-    mSysHooks.push_back(gpuMemory);
 
     // setup the rt scheduling system hook
     std::shared_ptr<RtSchedulingHook> rtScheduling =
@@ -733,7 +727,7 @@ int32_t DobbyManager::startContainerFromSpec(const ContainerId &id,
         std::shared_ptr<rt_dobby_schema> containerConfig(config->config());
         std::shared_ptr<DobbyRdkPluginUtils> rdkPluginUtils = std::make_shared<DobbyRdkPluginUtils>();
         std::shared_ptr<DobbyRdkPluginManager> rdkPluginManager =
-            std::make_shared<DobbyRdkPluginManager>(containerConfig, rootfsPath, PLUGIN_PATH, rdkPluginUtils);
+            std::make_shared<DobbyRdkPluginManager>(containerConfig, rootfsPath, "", PLUGIN_PATH, rdkPluginUtils);
 
         std::vector<std::string> loadedPlugins = rdkPluginManager->listLoadedPlugins();
         AI_LOG_DEBUG("Loaded %zd RDK plugins\n", loadedPlugins.size());
@@ -896,7 +890,7 @@ int32_t DobbyManager::startContainerFromBundle(const ContainerId &id,
         std::shared_ptr<rt_dobby_schema> containerConfig(config->config());
         std::shared_ptr<DobbyRdkPluginUtils> rdkPluginUtils = std::make_shared<DobbyRdkPluginUtils>();
         std::shared_ptr<DobbyRdkPluginManager> rdkPluginManager =
-            std::make_shared<DobbyRdkPluginManager>(containerConfig, rootfsPath, PLUGIN_PATH, rdkPluginUtils);
+            std::make_shared<DobbyRdkPluginManager>(containerConfig, rootfsPath, "", PLUGIN_PATH, rdkPluginUtils);
 
         std::vector<std::string> loadedPlugins = rdkPluginManager->listLoadedPlugins();
         AI_LOG_DEBUG("Loaded %zd RDK plugins\n", loadedPlugins.size());

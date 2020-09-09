@@ -48,10 +48,12 @@
  */
 DobbyRdkPluginManager::DobbyRdkPluginManager(std::shared_ptr<rt_dobby_schema> containerConfig,
                                              const std::string &rootfsPath,
+                                             const std::string &hookStdin,
                                              const std::string &pluginPath,
                                              const std::shared_ptr<DobbyRdkPluginUtils> &utils)
     : mContainerConfig(containerConfig),
       mRootfsPath(rootfsPath),
+      mHookStdin(hookStdin),
       mPluginPath(pluginPath),
       mUtils(utils)
 {
@@ -197,13 +199,14 @@ void DobbyRdkPluginManager::loadPlugins()
             // execute the register function ... fingers crossed
             typedef IDobbyRdkPlugin *(*CreatePluginFunction)(std::shared_ptr<rt_dobby_schema>& containerConfig,
                                                             const std::shared_ptr<DobbyRdkPluginUtils> &util,
-                                                            const std::string &rootfsPath);
+                                                            const std::string &rootfsPath,
+                                                            const std::string &hookStdin);
             typedef void (*DestroyPluginFunction)(IDobbyRdkPlugin *);
 
             CreatePluginFunction createFunc = reinterpret_cast<CreatePluginFunction>(libCreateFn);
             DestroyPluginFunction destroyFunc = reinterpret_cast<DestroyPluginFunction>(libDestroyFn);
 
-            std::shared_ptr<IDobbyRdkPlugin> loadedPlugin(createFunc(mContainerConfig, mUtils, mRootfsPath),
+            std::shared_ptr<IDobbyRdkPlugin> loadedPlugin(createFunc(mContainerConfig, mUtils, mRootfsPath, mHookStdin),
                                                     destroyFunc);
 
             plugin = std::move(loadedPlugin);
@@ -213,16 +216,17 @@ void DobbyRdkPluginManager::loadPlugins()
             // execute the register function ... fingers crossed
             typedef IDobbyRdkLoggingPlugin *(*CreateLoggerFunction)(std::shared_ptr<rt_dobby_schema>& containerConfig,
                                                             const std::shared_ptr<DobbyRdkPluginUtils> &util,
-                                                            const std::string &rootfsPath);
+                                                            const std::string &rootfsPath,
+                                                            const std::string &hookStdin);
             typedef void (*DestroyLoggerFunction)(IDobbyRdkLoggingPlugin *);
 
             CreateLoggerFunction createFunc = reinterpret_cast<CreateLoggerFunction>(libCreateLoggerFn);
             DestroyLoggerFunction destroyFunc = reinterpret_cast<DestroyLoggerFunction>(libDestroyLoggerFn);
 
-            std::shared_ptr<IDobbyRdkPlugin> loadedPlugin(createFunc(mContainerConfig, mUtils, mRootfsPath),
+            std::shared_ptr<IDobbyRdkPlugin> loadedPlugin(createFunc(mContainerConfig, mUtils, mRootfsPath, mHookStdin),
                                                     destroyFunc);
 
-            std::shared_ptr<IDobbyRdkLoggingPlugin> loadedLogger(createFunc(mContainerConfig, mUtils, mRootfsPath),
+            std::shared_ptr<IDobbyRdkLoggingPlugin> loadedLogger(createFunc(mContainerConfig, mUtils, mRootfsPath, mHookStdin),
                                                      destroyFunc);
 
             logger = std::move(loadedLogger);
