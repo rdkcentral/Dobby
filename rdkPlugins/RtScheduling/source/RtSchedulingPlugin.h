@@ -23,10 +23,16 @@
 #include <RdkPluginBase.h>
 
 /**
- * @brief Dobby LocalTime plugin.
+ * @brief Dobby RtScheduling plugin.
  *
- * This plugin simply creates a symlink to the real /etc/localtime file
- * in the rootfs of the container.
+ *  This plugin sets the RT priority of the container.
+ *
+ *  This consists of a postInstallation hook that adds the rtpriority
+ *  limit and createRuntime hook that calls sched_setscheduler on the
+ *  container's init process.
+ *
+ *  Due to the way scheduling is inherited this will in turn filter down to
+ *  all processes running within the container.
  *
  */
 class RtSchedulingPlugin : public RdkPluginBase
