@@ -61,6 +61,8 @@
 #define RDK_STORAGE_PLUGIN_NAME         "storage"
 #define RDK_DRM_PLUGIN_NAME             "drm"
 #define RDK_GPU_PLUGIN_NAME             "gpu"
+#define RDK_LOCALTIME_PLUGIN_NAME       "localtime"
+#define RDK_RTSCHEDULING_PLUGIN_NAME    "rtscheduling"
 
 
 // -----------------------------------------------------------------------------
@@ -110,7 +112,6 @@ public:
     virtual std::shared_ptr<rt_dobby_schema> config() const = 0;
     virtual const std::map<std::string, Json::Value>& legacyPlugins() const = 0;
     virtual const std::map<std::string, Json::Value>& rdkPlugins() const = 0;
-    virtual const std::list<std::string> sysHooks() const = 0;
 
     /**
      *  @brief Get Dobby spec, defaults to empty

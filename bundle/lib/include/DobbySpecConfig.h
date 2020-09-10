@@ -83,9 +83,6 @@ public:
     bool restartOnCrash() const override;
 
 public:
-    int rtPriorityDefault() const override;
-
-public:
     std::shared_ptr<rt_dobby_schema> config() const override;
 
 public:
@@ -103,7 +100,6 @@ public:
 public:
     const std::map<std::string, Json::Value>& legacyPlugins() const override;
     const std::map<std::string, Json::Value>& rdkPlugins() const override;
-    const std::list<std::string> sysHooks() const override;
 
 public:
     typedef struct _MountPoint
@@ -170,6 +166,9 @@ private:
     void enableRdkPlugin(ctemplate::TemplateDictionary*& subDict, const std::string& pluginName, const bool required);
 
 private:
+    void enableLocaltimePlugin();
+
+private:
     static void addGpuDevNodes(const std::shared_ptr<const IDobbySettings::HardwareAccessSettings> &settings,
                                ctemplate::TemplateDictionary *dict);
 
@@ -201,10 +200,6 @@ private:
     gid_t mGroupId;
 
 private:
-    int mRtPriorityDefault;
-    int mRtPriorityLimit;
-
-private:
     bool mRestartOnCrash;
 
 private:
@@ -220,7 +215,6 @@ private:
 private:
     std::map<std::string, Json::Value> mLegacyPlugins;
     std::map<std::string, Json::Value> mRdkPlugins;
-    std::list<std::string> mEnabledSysHooks;
 
 private:
     std::vector<MountPoint> mMountPoints;
