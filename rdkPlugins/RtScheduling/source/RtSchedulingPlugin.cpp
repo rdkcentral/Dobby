@@ -53,9 +53,9 @@ unsigned RtSchedulingPlugin::hookHints() const
 
 // -----------------------------------------------------------------------------
 /**
- *  @brief postInstallation OCI hook.
+ *  @brief Adds the default value to RLIMIT_RTPRIO in the OCI config file.
  *
- *  TODO:
+ *  This hook creates the RLIMIT_RTPRIO field if it doesn't exist.
  *
  *  @return true on success, false on failure.
  */
