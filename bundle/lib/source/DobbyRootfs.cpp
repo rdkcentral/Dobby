@@ -37,6 +37,7 @@
 #include <sys/mount.h>
 
 
+#if defined(LEGACY_COMPONENTS)
 // -----------------------------------------------------------------------------
 /**
  *  @brief Constructor that creates the rootfs for a container.
@@ -94,6 +95,7 @@ DobbyRootfs::DobbyRootfs(const std::shared_ptr<IDobbyUtils>& utils,
 
     AI_LOG_FN_EXIT();
 }
+#endif //defined(LEGACY_COMPONENTS)
 
 // -----------------------------------------------------------------------------
 /**
@@ -141,7 +143,9 @@ DobbyRootfs::DobbyRootfs(const std::shared_ptr<IDobbyUtils>& utils,
 
 DobbyRootfs::~DobbyRootfs()
 {
+#if defined(LEGACY_COMPONENTS)
     cleanUp(mPersist);
+#endif //defined(LEGACY_COMPONENTS)
 }
 
 bool DobbyRootfs::isValid() const
@@ -164,6 +168,7 @@ void DobbyRootfs::setPersistence(bool persist)
     mPersist = persist;
 }
 
+#if defined(LEGACY_COMPONENTS)
 // -----------------------------------------------------------------------------
 /**
  *  @brief Removes the rootfs directory and all it's contents.
@@ -672,3 +677,4 @@ bool DobbyRootfs::constructRootfs(int dirfd,
     AI_LOG_FN_EXIT();
     return true;
 }
+#endif //defined(LEGACY_COMPONENTS)

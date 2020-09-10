@@ -17,14 +17,21 @@
 
 project(DobbyBundleGenLib)
 
+if (LEGACY_COMPONENTS)
+    list(APPEND ADDITIONAL_SOURCES
+        "source/DobbySpecConfig.cpp"
+        "source/DobbyTemplate.cpp"
+    )
+    list(APPEND ADDITIONAL_INCLUDES ${CTEMPLATE_INCLUDE_DIRS})
+endif()
+
 add_library(${PROJECT_NAME}
     STATIC
     source/DobbyBundle.cpp
     source/DobbyConfig.cpp
-    source/DobbyTemplate.cpp
     source/DobbyRootfs.cpp
-    source/DobbySpecConfig.cpp
     source/DobbyBundleConfig.cpp
+    ${ADDITIONAL_SOURCES}
 )
 
 target_include_directories(${PROJECT_NAME}
@@ -36,8 +43,8 @@ target_include_directories(${PROJECT_NAME}
     $<TARGET_PROPERTY:AppInfraLogging,INTERFACE_INCLUDE_DIRECTORIES>
     $<TARGET_PROPERTY:AppInfraCommon,INTERFACE_INCLUDE_DIRECTORIES>
 
-    ${CTEMPLATE_INCLUDE_DIRS}
     ${JSONCPP_INCLUDE_DIRS}
+    ${ADDITIONAL_INCLUDES}
 )
 
 target_link_libraries(${PROJECT_NAME}

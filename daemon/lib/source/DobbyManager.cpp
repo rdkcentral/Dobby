@@ -29,7 +29,6 @@
 #include "DobbyRunC.h"
 #include "DobbyRootfs.h"
 #include "DobbyBundleConfig.h"
-#include "DobbySpecConfig.h"
 #include "DobbyBundle.h"
 #include "DobbyStartState.h"
 #include "DobbyStream.h"
@@ -37,6 +36,10 @@
 #include "DobbyFileAccessFixer.h"
 #include "DobbyAsync.h"
 #include "DobbyState.h"
+
+#if defined(LEGACY_COMPONENTS)
+#  include "DobbySpecConfig.h"
+#endif // defined(LEGACY_COMPONENTS)
 
 #include <DobbyProtocol.h>
 #include <Logging.h>
@@ -88,9 +91,11 @@ DobbyManager::DobbyManager(const std::shared_ptr<IDobbyEnv> &env,
     , mIPCUtilities(ipcUtils)
     , mSettings(settings)
     , mRunc(new DobbyRunC(utils, settings))
-    , mPlugins(new DobbyPluginManager(env, utils))
     , mState(std::make_shared<DobbyState>(settings))
     , mRuncMonitorTerminate(false)
+#if defined(LEGACY_COMPONENTS)
+    , mPlugins(new DobbyPluginManager(env, utils))
+#endif // defined(LEGACY_COMPONENTS)
 {
     AI_LOG_FN_ENTRY();
 
@@ -359,12 +364,14 @@ bool DobbyManager::createAndStart(const ContainerId &id,
     }
     container->containerPid = pids.second;
 
+#if defined(LEGACY_COMPONENTS)
     // Run the legacy Dobby PreStart hooks (to be removed once RDK plugin work is complete)
     if (!onPreStartHook(id, container))
     {
         AI_LOG_ERROR("failure in one of the PreStart hooks");
         return false;
     }
+#endif //defined(LEGACY_COMPONENTS)
 
     // Attempt to start the container
     std::shared_ptr<DobbyBufferStream> startBuffer = std::make_shared<DobbyBufferStream>();
@@ -532,9 +539,11 @@ bool DobbyManager::createAndStartContainer(const ContainerId &id,
         AI_LOG_INFO("container '%s' started, controller process pid %d",
                     id.c_str(), container->containerPid);
 
+#if defined(LEGACY_COMPONENTS)
         // call the postStart hook, don't care about the return code
         // for now
         onPostStartHook(id, container);
+#endif //defined(LEGACY_COMPONENTS)
 
         // signal that the container has started
         if (mContainerStartedCb)
@@ -573,9 +582,11 @@ bool DobbyManager::createAndStartContainer(const ContainerId &id,
                             id.c_str());
         }
 
+#if defined(LEGACY_COMPONENTS)
         // either the container failed to start, or one of the preStart hooks
         // failed, either way we want to call the postStop hook
         onPostStopHook(id, container);
+#endif //defined(LEGACY_COMPONENTS)
 
         // if we dropped out here it means something has gone wrong, but the
         // container was created, so destroy it
@@ -606,6 +617,7 @@ bool DobbyManager::createAndStartContainer(const ContainerId &id,
     return false;
 }
 
+#if defined(LEGACY_COMPONENTS)
 // -----------------------------------------------------------------------------
 /**
  *  @brief Where the magic begins .... attempts to create a container
@@ -767,6 +779,7 @@ int32_t DobbyManager::startContainerFromSpec(const ContainerId &id,
     AI_LOG_FN_EXIT();
     return -1;
 }
+#endif //defined(LEGACY_COMPONENTS)
 
 // -----------------------------------------------------------------------------
 /**
@@ -867,14 +880,17 @@ int32_t DobbyManager::startContainerFromBundle(const ContainerId &id,
         container = std::move(dobbyContainer);
     }
 
+    bool pluginFailure = false;
+
+#if defined(LEGACY_COMPONENTS)
     // If we have legacy plugins, run their postConstruction hooks before
     // executing crun
-    bool pluginFailure = false;
     if (!onPostConstructionHook(id, startState, container))
     {
         AI_LOG_ERROR("failure in one of the PostConstruction hooks");
         pluginFailure = true;
     }
+#endif // defined(LEGACY_COMPONENTS)
 
     // If we have RDK plugins, run their postInstallation hooks. Other
     // hooks (excluding preCreate) will be run automatically by crun
@@ -940,9 +956,11 @@ int32_t DobbyManager::startContainerFromBundle(const ContainerId &id,
     // descriptors will be released now
     startState.reset();
 
+#if defined(LEGACY_COMPONENTS)
     // something went wrong, however we still want to call the preDestruction
     // hook, in case a hook setup some stuff the post-construction phase above
     onPreDestructionHook(id, container);
+#endif //defined(LEGACY_COMPONENTS)
 
     AI_LOG_FN_EXIT();
     return -1;
@@ -1491,6 +1509,42 @@ std::string DobbyManager::statsOfContainer(int32_t cd) const
 
 // -----------------------------------------------------------------------------
 /**
+ *  @brief Debugging method to allow you to retrieve the OCI config.json spec
+ *  used to create the container
+ *
+ *
+ *  @param[in]  cd      The descriptor of the container to get the config.json of.
+ *
+ *  @return the config.json string.
+ */
+std::string DobbyManager::jsonConfigOfContainer(int32_t cd) const
+{
+    std::lock_guard<std::mutex> locker(mLock);
+
+    // find the container
+    auto it = mContainers.cbegin();
+    for (; it != mContainers.cend(); ++it)
+    {
+        if (it->second && (it->second->descriptor == cd))
+            break;
+    }
+
+    if (it == mContainers.end())
+    {
+        AI_LOG_WARN("failed to find container with descriptor %d", cd);
+    }
+    else
+    {
+        const std::unique_ptr<DobbyContainer> &container = it->second;
+        return container->config->configJson();
+    }
+
+    return std::string();
+}
+
+#if defined(LEGACY_COMPONENTS)
+// -----------------------------------------------------------------------------
+/**
  *  @brief Debugging method to allow you to retrieve the json spec used to
  *  create the container
  *
@@ -1520,41 +1574,6 @@ std::string DobbyManager::specOfContainer(int32_t cd) const
         const std::unique_ptr<DobbyContainer> &container = it->second;
 
         return container->config->spec();
-    }
-
-    return std::string();
-}
-
-// -----------------------------------------------------------------------------
-/**
- *  @brief Debugging method to allow you to retrieve the OCI config.json spec
- *  used to create the container
- *
- *
- *  @param[in]  cd      The descriptor of the container to get the config.json of.
- *
- *  @return the config.json string.
- */
-std::string DobbyManager::jsonConfigOfContainer(int32_t cd) const
-{
-    std::lock_guard<std::mutex> locker(mLock);
-
-    // find the container
-    auto it = mContainers.cbegin();
-    for (; it != mContainers.cend(); ++it)
-    {
-        if (it->second && (it->second->descriptor == cd))
-            break;
-    }
-
-    if (it == mContainers.end())
-    {
-        AI_LOG_WARN("failed to find container with descriptor %d", cd);
-    }
-    else
-    {
-        const std::unique_ptr<DobbyContainer> &container = it->second;
-        return container->config->configJson();
     }
 
     return std::string();
@@ -1615,6 +1634,9 @@ bool DobbyManager::createBundle(const ContainerId &id,
     AI_LOG_FN_EXIT();
     return true;
 }
+#endif //defined(LEGACY_COMPONENTS)
+
+
 
 // -----------------------------------------------------------------------------
 /**
@@ -1784,6 +1806,7 @@ bool DobbyManager::onPostHaltHook(const std::unique_ptr<DobbyContainer> &contain
     return true;
 }
 
+#if defined(LEGACY_COMPONENTS)
 // -----------------------------------------------------------------------------
 /**
  *  @brief Called after the rootfs is created but before runc has been executed
@@ -1995,6 +2018,7 @@ bool DobbyManager::onPreDestructionHook(const ContainerId &id,
     AI_LOG_FN_EXIT();
     return true;
 }
+#endif //defined(LEGACY_COMPONENTS)
 
 // -----------------------------------------------------------------------------
 /**
@@ -2054,6 +2078,7 @@ void DobbyManager::onChildExit()
             AI_LOG_INFO("runc for container '%s' has quit (pid:%d status:0x%04x)",
                         id.c_str(), containerPid, status);
 
+#if defined(LEGACY_COMPONENTS)
             // this function is called when the runc process dies, what this
             // boils down to is that if we're in the Running state it
             // means that the preStart hook has been called but postStop hasn't
@@ -2064,6 +2089,7 @@ void DobbyManager::onChildExit()
                 // this will internally change the state to stopping
                 onPostStopHook(id, container);
             }
+#endif //defined(LEGACY_COMPONENTS)
 
             // signal the higher layers that a container has died
             if (mContainerStoppedCb)
@@ -2076,10 +2102,12 @@ void DobbyManager::onChildExit()
             // postConstruction hooks
             if (!container->shouldRestart(status) || !restartContainer(id, container))
             {
+#if defined(LEGACY_COMPONENTS)
                 // either the respawn flag isn't set, or we failed to restart
                 // the container, so call any pre-destruction hooks before
                 // tearing down the roots and bundle directories
                 onPreDestructionHook(id, container);
+#endif //defined(LEGACY_COMPONENTS)
 
                 // Also run any postHalt hooks in RDK plugins
                 if (container->config->rdkPlugins().size() > 0)

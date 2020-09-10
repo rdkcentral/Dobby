@@ -91,19 +91,10 @@ target_link_libraries( # Specifies the target exec
         # Import the 3rd party libraries
         systemd
         JsonCpp::JsonCpp
-        CTemplate::libctemplate
         DBUS::libdbus
-        LIBNL::libnl
-        LIBNL::libnl-route
-
-        # iptc
-        # ip4tc
 
         # Adds pthread support (if it's a separate library on target)
         Threads::Threads
-
-        # Adds dlopen support (if it's a separate library on target)
-        ${CMAKE_DL_LIBS}
 
         )
 
@@ -149,3 +140,11 @@ install(
 #            $DESTDIR/${CMAKE_INSTALL_PREFIX}/etc/systemd/system/multi-user.target.wants/dobby.service \
 #            )" )
 
+if (LEGACY_COMPONENTS)
+target_link_libraries( DobbyDaemon
+        # Import the 3rd party libraries
+        CTemplate::libctemplate
+        # Adds dlopen support (if it's a separate library on target)
+        ${CMAKE_DL_LIBS}
+)
+endif()

@@ -45,12 +45,14 @@ class IDobbyEnv;
 class DobbyBundle
 {
 public:
+#if defined(LEGACY_COMPONENTS)
     DobbyBundle(const std::shared_ptr<const IDobbyUtils>& utils,
                 const std::shared_ptr<const IDobbyEnv>& env,
                 const ContainerId& id);
     DobbyBundle(const std::shared_ptr<const IDobbyUtils>& utils,
                 const std::string& path,
                 bool persist = true);
+#endif // defined(LEGACY_COMPONENTS)
     DobbyBundle(const std::shared_ptr<const IDobbyUtils>& utils,
                 const std::shared_ptr<const IDobbyEnv>& env,
                 const std::string& bundlePath);

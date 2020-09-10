@@ -152,10 +152,12 @@ const std::string& DobbyBundleConfig::consolePath() const
     return mConsolePath;
 }
 
+#if defined(LEGACY_COMPONENTS)
 const std::map<std::string, Json::Value>& DobbyBundleConfig::legacyPlugins() const
 {
     return mLegacyPlugins;
 }
+#endif //defined(LEGACY_COMPONENTS)
 
 const std::map<std::string, Json::Value>& DobbyBundleConfig::rdkPlugins() const
 {
@@ -209,10 +211,16 @@ bool DobbyBundleConfig::parseOCIConfig(const std::string& bundlePath)
     // Parse legacy plugins if present & not null
     if (mConfig.isMember("legacyPlugins") && mConfig["legacyPlugins"].isObject())
     {
+#if defined(LEGACY_COMPONENTS)
         if (!processLegacyPlugins(mConfig["legacyPlugins"]))
         {
             return false;
         }
+#else
+        AI_LOG_ERROR_EXIT("legacyPlugins is unsupported, build with "
+                          "LEGACY_COMPONENTS=ON to use legacy plugins");
+        return false;
+#endif //defined(LEGACY_COMPONENTS)
     }
 
     // Parse rdk plugins if present & not null
@@ -235,6 +243,7 @@ bool DobbyBundleConfig::parseOCIConfig(const std::string& bundlePath)
     return true;
 }
 
+#if defined(LEGACY_COMPONENTS)
 // -----------------------------------------------------------------------------
 /**
  *  @brief Processes the legacy plugins field.
@@ -281,3 +290,4 @@ bool DobbyBundleConfig::processLegacyPlugins(const Json::Value& value)
 
     return true;
 }
+#endif //defined(LEGACY_COMPONENTS)
