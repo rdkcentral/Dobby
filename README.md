@@ -48,6 +48,10 @@ If the schema files in the `bundle/runtime-schemas` directory are changed, then 
 * `-DDOBBY_SERVICE=""` - specify the Dobby dbus service name. Defaults to `org.rdk.dobby` if none specified.
 * `-DDOBBY_OBJECT=""` - specify the Dobby dbus object path. Defaults to `/org/rdk/dobby` if none specified.
 
+In addition to all the above, each RDK plugin has a setting for enabling it for builds. The `Logging`, `Networking`, `IPC` and `Storage` plugins are enabled by default.
+
+Use `-DPLUGIN_[PLUGINNAME]=[ON|OFF]` to enable or disable plugins for your build.
+
 
 ## Development
 If you with to develop Dobby further, detailed instructions on setting up a development environment can be found in the `develop` directory in this repo, including a Vagrant VM with all the necessary dependencies pre-installed.
