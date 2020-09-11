@@ -24,10 +24,9 @@
 #ifndef DOBBYPROXY_H
 #define DOBBYPROXY_H
 
-#include <Dobby/IDobbyProxy.h>
-
-#include <IIpcService.h>
-#include <IDGenerator.h>
+#include <Dobby/Public/Dobby/IDobbyProxy.h>
+#include <Dobby/IpcService/IIpcService.h>
+#include <Dobby/IDGenerator.h>
 
 #include <string>
 #include <memory>

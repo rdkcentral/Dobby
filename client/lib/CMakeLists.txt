@@ -42,8 +42,22 @@ target_include_directories( DobbyClientLib
 
         )
 
+# Add include files to install to use DobbyProxy externally
+list( APPEND INCLUDE_FILES
+        "${PROJECT_SOURCE_DIR}/protocol/include/DobbyProtocol.h"
+        "${PROJECT_SOURCE_DIR}/client/lib/include/DobbyProxy.h"
+        "${PROJECT_SOURCE_DIR}/AppInfrastructure/Common/include/IDGenerator.h"
+)
+set_target_properties( DobbyClientLib PROPERTIES PUBLIC_HEADER "${INCLUDE_FILES}" )
+
 install(TARGETS DobbyClientLib
         EXPORT DobbyTargets
         ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+        PUBLIC_HEADER DESTINATION include/Dobby
+)
 
-        )
+# Install public headers from /AppInfrastructure/Public
+install( DIRECTORY "${PROJECT_SOURCE_DIR}/AppInfrastructure/Public/"
+        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/Dobby/Public
+        FILES_MATCHING PATTERN "*.h"
+)
