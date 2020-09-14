@@ -51,6 +51,9 @@ endif()
 add_definitions( -DRDK )
 add_definitions( -DXI1=1 -DLLAMA=2 -DXI6=6 )
 
+# Add definition to differentiate between Dobby builds and external projects building DobbyProxy
+add_definitions( -DDOBBY_BUILD )
+
 # If no platform defined then default to XI6
 set( RDK_PLATFORM "XI6" CACHE STRING "The target RDK platform, options are \"XI1\", \"XI6\", \"LLAMA\" or \"DEV_VM\"" )
 string( TOUPPER "${RDK_PLATFORM}" RDK_PLATFORM )

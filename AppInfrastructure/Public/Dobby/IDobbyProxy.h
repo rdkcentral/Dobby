@@ -24,7 +24,11 @@
 #ifndef IDOBBYPROXY_H
 #define IDOBBYPROXY_H
 
+#if defined(DOBBY_BUILD)
 #include <Common/Notifier.h>
+#else
+#include <Dobby/Public/Common/Notifier.h>
+#endif
 
 #include <cstdint>
 #include <list>
