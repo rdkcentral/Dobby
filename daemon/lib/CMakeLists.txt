@@ -17,7 +17,7 @@
 
 if (LEGACY_COMPONENTS)
         list(APPEND ADDITIONAL_SOURCES
-                "source/DobbyPluginManager.cpp"
+                "source/DobbyLegacyPluginManager.cpp"
         )
         list(APPEND ADDITIONAL_INCLUDES ${CTEMPLATE_INCLUDE_DIRS})
 endif()

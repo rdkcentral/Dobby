@@ -24,7 +24,7 @@
 #include "DobbyManager.h"
 #include "DobbyContainer.h"
 #include "DobbyEnv.h"
-#include "DobbyPluginManager.h"
+#include "DobbyLegacyPluginManager.h"
 #include "DobbyRdkPluginManager.h"
 #include "DobbyRunC.h"
 #include "DobbyRootfs.h"
@@ -94,7 +94,7 @@ DobbyManager::DobbyManager(const std::shared_ptr<IDobbyEnv> &env,
     , mState(std::make_shared<DobbyState>(settings))
     , mRuncMonitorTerminate(false)
 #if defined(LEGACY_COMPONENTS)
-    , mPlugins(new DobbyPluginManager(env, utils))
+    , mLegacyPlugins(new DobbyLegacyPluginManager(env, utils))
 #endif // defined(LEGACY_COMPONENTS)
 {
     AI_LOG_FN_ENTRY();
@@ -1526,7 +1526,7 @@ std::string DobbyManager::statsOfContainer(int32_t cd) const
  *
  *  @return the config.json string.
  */
-std::string DobbyManager::jsonConfigOfContainer(int32_t cd) const
+std::string DobbyManager::ociConfigOfContainer(int32_t cd) const
 {
     std::lock_guard<std::mutex> locker(mLock);
 
@@ -1567,7 +1567,7 @@ std::string DobbyManager::specOfContainer(int32_t cd) const
     std::lock_guard<std::mutex> locker(mLock);
 
     // find the container
-    std::map<ContainerId, std::unique_ptr<DobbyContainer>>::const_iterator it = mContainers.begin();
+    auto it = mContainers.begin();
     for (; it != mContainers.end(); ++it)
     {
         if (it->second && (it->second->descriptor == cd))
@@ -1847,10 +1847,10 @@ bool DobbyManager::onPostConstructionHook(const ContainerId &id,
     AI_LOG_DEBUG("executing plugins postConstruction hooks");
 
     // execute the plugin hooks
-    if (mPlugins->executePostConstructionHooks(container->config->legacyPlugins(),
-                                               id,
-                                               startState,
-                                               container->rootfs->path()) == false)
+    if (mLegacyPlugins->executePostConstructionHooks(container->config->legacyPlugins(),
+                                                     id,
+                                                     startState,
+                                                     container->rootfs->path()) == false)
     {
         AI_LOG_ERROR("one or more post-construction plugins failed for '%s'",
                      id.c_str());
@@ -1897,10 +1897,10 @@ bool DobbyManager::onPreStartHook(const ContainerId &id,
     bool success = true;
 
     // execute the plugin hooks
-    if (mPlugins->executePreStartHooks(container->config->legacyPlugins(),
-                                       id,
-                                       container->containerPid,
-                                       container->rootfs->path()) == false)
+    if (mLegacyPlugins->executePreStartHooks(container->config->legacyPlugins(),
+                                             id,
+                                             container->containerPid,
+                                             container->rootfs->path()) == false)
     {
         AI_LOG_ERROR("one or more pre-start plugins failed for '%s'",
                      id.c_str());
@@ -1935,10 +1935,10 @@ bool DobbyManager::onPostStartHook(const ContainerId &id,
     AI_TRACE_EVENT("Dobby", "postStart");
 
     // execute the plugin hooks
-    if (mPlugins->executePostStartHooks(container->config->legacyPlugins(),
-                                        id,
-                                        container->containerPid,
-                                        container->rootfs->path()) == false)
+    if (mLegacyPlugins->executePostStartHooks(container->config->legacyPlugins(),
+                                              id,
+                                              container->containerPid,
+                                              container->rootfs->path()) == false)
     {
         AI_LOG_ERROR("one or more post-start hooks failed for '%s'",
                      id.c_str());
@@ -1974,9 +1974,9 @@ bool DobbyManager::onPostStopHook(const ContainerId &id,
     AI_TRACE_EVENT("Dobby", "postStop");
 
     // execute the plugin hooks
-    if (mPlugins->executePostStopHooks(container->config->legacyPlugins(),
-                                       id,
-                                       container->rootfs->path()) == false)
+    if (mLegacyPlugins->executePostStopHooks(container->config->legacyPlugins(),
+                                             id,
+                                             container->rootfs->path()) == false)
     {
         AI_LOG_ERROR("one or more post-stop hooks failed for '%s'",
                      id.c_str());
@@ -2007,9 +2007,9 @@ bool DobbyManager::onPreDestructionHook(const ContainerId &id,
     AI_TRACE_EVENT("Dobby", "preDestruction");
 
     // execute the plugin hooks
-    if (mPlugins->executePreDestructionHooks(container->config->legacyPlugins(),
-                                             id,
-                                             container->rootfs->path()) == false)
+    if (mLegacyPlugins->executePreDestructionHooks(container->config->legacyPlugins(),
+                                                   id,
+                                                   container->rootfs->path()) == false)
     {
         AI_LOG_ERROR("one or more pre-destruction hooks failed for '%s'",
                      id.c_str());

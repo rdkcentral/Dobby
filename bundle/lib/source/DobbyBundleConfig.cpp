@@ -248,7 +248,7 @@ bool DobbyBundleConfig::parseOCIConfig(const std::string& bundlePath)
 /**
  *  @brief Processes the legacy plugins field.
  *
- *  This parses the legacy Dobby plugins to mPlugins.
+ *  This parses the legacy Dobby plugins to mLegacyPlugins.
  *
  *  @param[in]  value       The legacyPlugins field from extended bundle config.
  *

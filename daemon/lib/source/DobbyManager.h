@@ -55,7 +55,7 @@ class IDobbyEnv;
 class IDobbySettings;
 class DobbyRunC;
 class DobbyStartState;
-class DobbyPluginManager;
+class DobbyLegacyPluginManager;
 class DobbyState;
 class DobbyConfig;
 
@@ -131,7 +131,7 @@ public:
     std::vector<std::string> getExtIfaces();
 
 public:
-    std::string jsonConfigOfContainer(int32_t cd) const;
+    std::string ociConfigOfContainer(int32_t cd) const;
 
 #if defined(LEGACY_COMPONENTS)
 public:
@@ -214,7 +214,7 @@ private:
 
 #if defined(LEGACY_COMPONENTS)
 private:
-    std::unique_ptr<DobbyPluginManager> mPlugins;
+    std::unique_ptr<DobbyLegacyPluginManager> mLegacyPlugins;
 #endif // defined(LEGACY_COMPONENTS)
 
 private:

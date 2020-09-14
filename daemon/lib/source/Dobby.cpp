@@ -1678,7 +1678,7 @@ void Dobby::getOCIConfig(std::shared_ptr<AI_IPC::IAsyncReplySender> replySender)
             [manager = mManager, descriptor, replySender]()
             {
                 // Read the config.json
-                std::string configJson = manager->jsonConfigOfContainer(descriptor);
+                std::string configJson = manager->ociConfigOfContainer(descriptor);
 
                 // Fire off the reply
                 replySender->sendReply({ configJson });
