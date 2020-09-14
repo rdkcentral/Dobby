@@ -371,6 +371,10 @@ bool DobbyManager::createAndStart(const ContainerId &id,
         AI_LOG_ERROR("failure in one of the PreStart hooks");
         return false;
     }
+#else
+    // if we've survived to this point then the container is pretty much
+    // already to go, so move it's state to Running
+    container->state = DobbyContainer::State::Running;
 #endif //defined(LEGACY_COMPONENTS)
 
     // Attempt to start the container
@@ -586,6 +590,11 @@ bool DobbyManager::createAndStartContainer(const ContainerId &id,
         // either the container failed to start, or one of the preStart hooks
         // failed, either way we want to call the postStop hook
         onPostStopHook(id, container);
+#else
+        // once we're here we mark the container as Stopping, however the container
+        // object is not removed from the list until the crun parent process has
+        // actually terminated
+        container->state = DobbyContainer::State::Stopping;
 #endif //defined(LEGACY_COMPONENTS)
 
         // if we dropped out here it means something has gone wrong, but the
@@ -2078,7 +2087,6 @@ void DobbyManager::onChildExit()
             AI_LOG_INFO("runc for container '%s' has quit (pid:%d status:0x%04x)",
                         id.c_str(), containerPid, status);
 
-#if defined(LEGACY_COMPONENTS)
             // this function is called when the runc process dies, what this
             // boils down to is that if we're in the Running state it
             // means that the preStart hook has been called but postStop hasn't
@@ -2086,10 +2094,14 @@ void DobbyManager::onChildExit()
             // preDestruction hook
             if (container->state == DobbyContainer::State::Running)
             {
-                // this will internally change the state to stopping
+#if defined(LEGACY_COMPONENTS)
+                // this will internally change the state to 'stopping'
                 onPostStopHook(id, container);
-            }
+#else
+                // change the container state to 'stopping'
+                container->state = DobbyContainer::State::Stopping;
 #endif //defined(LEGACY_COMPONENTS)
+            }
 
             // signal the higher layers that a container has died
             if (mContainerStoppedCb)
