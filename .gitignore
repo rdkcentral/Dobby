@@ -1,4 +1,2 @@
 /build/
 /.vscode/
-state
-/tests/test_runner/__pycache__/
