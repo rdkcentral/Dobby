@@ -371,11 +371,11 @@ bool DobbyManager::createAndStart(const ContainerId &id,
         AI_LOG_ERROR("failure in one of the PreStart hooks");
         return false;
     }
-#else
+#endif //defined(LEGACY_COMPONENTS)
+
     // if we've survived to this point then the container is pretty much
     // already to go, so move it's state to Running
     container->state = DobbyContainer::State::Running;
-#endif //defined(LEGACY_COMPONENTS)
 
     // Attempt to start the container
     std::shared_ptr<DobbyBufferStream> startBuffer = std::make_shared<DobbyBufferStream>();
@@ -590,12 +590,12 @@ bool DobbyManager::createAndStartContainer(const ContainerId &id,
         // either the container failed to start, or one of the preStart hooks
         // failed, either way we want to call the postStop hook
         onPostStopHook(id, container);
-#else
+#endif //defined(LEGACY_COMPONENTS)
+
         // once we're here we mark the container as Stopping, however the container
         // object is not removed from the list until the crun parent process has
         // actually terminated
         container->state = DobbyContainer::State::Stopping;
-#endif //defined(LEGACY_COMPONENTS)
 
         // if we dropped out here it means something has gone wrong, but the
         // container was created, so destroy it
@@ -1907,10 +1907,6 @@ bool DobbyManager::onPreStartHook(const ContainerId &id,
         success = false;
     }
 
-    // if we've survived to this point then the container is pretty much
-    // already to go, so move it's state to Running
-    container->state = DobbyContainer::State::Running;
-
     AI_LOG_FN_EXIT();
     return success;
 }
@@ -1976,11 +1972,6 @@ bool DobbyManager::onPostStopHook(const ContainerId &id,
     AI_LOG_FN_ENTRY();
 
     AI_TRACE_EVENT("Dobby", "postStop");
-
-    // once we're here we mark the container as Stopping, however the container
-    // object is not removed from the list until the runc parent process has
-    // actually terminated
-    container->state = DobbyContainer::State::Stopping;
 
     // execute the plugin hooks
     if (mPlugins->executePostStopHooks(container->config->legacyPlugins(),
@@ -2097,10 +2088,10 @@ void DobbyManager::onChildExit()
 #if defined(LEGACY_COMPONENTS)
                 // this will internally change the state to 'stopping'
                 onPostStopHook(id, container);
-#else
+#endif //defined(LEGACY_COMPONENTS)
+
                 // change the container state to 'stopping'
                 container->state = DobbyContainer::State::Stopping;
-#endif //defined(LEGACY_COMPONENTS)
             }
 
             // signal the higher layers that a container has died
