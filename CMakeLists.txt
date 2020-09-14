@@ -212,9 +212,6 @@ endif()
 add_subdirectory(pluginLauncher/lib)
 add_subdirectory(pluginLauncher/tool)
 
-# Rdk Plugins
-add_subdirectory( rdkPlugins )
-
 # Client library
 add_subdirectory( client/lib )
 
@@ -222,6 +219,57 @@ add_subdirectory( client/lib )
 if( BUILD_TYPE STREQUAL "DEBUG" )
     add_subdirectory( client/tool )
 endif()
+
+# RDK Plugins
+# ---------------------------------------------------------
+
+# Add the common subdirectory
+add_subdirectory(rdkPlugins/Common)
+
+# Default RDK plugins
+option(PLUGIN_LOGGING "Include Logging plugin" ON)
+option(PLUGIN_NETWORKING "Include Networking plugin" ON)
+option(PLUGIN_IPC "Include IPC plugin" ON)
+option(PLUGIN_STORAGE "Include Storage plugin" ON)
+
+# Optional RDK plugins
+option(PLUGIN_TESTPLUGIN "Include TestPlugin plugin" OFF)
+option(PLUGIN_GPU "Include GPU plugin" OFF)
+option(PLUGIN_LOCALTIME "Include LocalTime plugin" OFF)
+option(PLUGIN_RTSCHEDULING "Include RtScheduling plugin" OFF)
+
+if(PLUGIN_TESTPLUGIN)
+    add_subdirectory(rdkPlugins/TestPlugin)
+endif()
+
+if(PLUGIN_LOGGING)
+    add_subdirectory(rdkPlugins/Logging)
+endif()
+
+if(PLUGIN_NETWORKING)
+    add_subdirectory(rdkPlugins/Networking)
+endif()
+
+if(PLUGIN_IPC)
+    add_subdirectory(rdkPlugins/IPC)
+endif()
+
+if(PLUGIN_STORAGE)
+    add_subdirectory(rdkPlugins/Storage)
+endif()
+
+if(PLUGIN_GPU)
+    add_subdirectory(rdkPlugins/GPU)
+endif()
+
+if(PLUGIN_LOCALTIME)
+    add_subdirectory(rdkPlugins/LocalTime)
+endif()
+
+if(PLUGIN_RTSCHEDULING)
+    add_subdirectory(rdkPlugins/RtScheduling)
+endif()
+
 
 # Export targets in Dobby package
 # ---------------------------------------------------------
