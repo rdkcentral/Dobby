@@ -86,6 +86,11 @@ endif()
 add_definitions( -DDBUS_SYSTEM_ADDRESS="unix:path=/var/run/dbus/system_bus_socket" )
 
 option( LEGACY_COMPONENTS "Enable Dobby legacy components" ON )
+# Add #define if enabled
+if ( LEGACY_COMPONENTS )
+    add_definitions( -DLEGACY_COMPONENTS )
+endif()
+
 # Disable for now. LTO can cause issues with debugging symbols on GCC versions before 8.0.0.
 # See http://hubicka.blogspot.com/2018/06/gcc-8-link-time-and-interprocedural.html
 option( ENABLE_LTO "Enable link time optimisation compiler flags" OFF )
@@ -131,7 +136,9 @@ set( CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_LIST_DIR}/cmake" )
 find_package( libnl REQUIRED )
 find_package( dbus REQUIRED )
 find_package( jsoncpp REQUIRED )
-find_package( ctemplate REQUIRED )
+if ( LEGACY_COMPONENTS )
+    find_package( ctemplate REQUIRED )
+endif()
 find_package( Boost REQUIRED )
 
 # Required for libocispec only
@@ -192,14 +199,16 @@ add_subdirectory(settings)
 
 # Add Bundle Generator code
 add_subdirectory(bundle/lib)
-add_subdirectory(bundle/tool)
+if ( LEGACY_COMPONENTS )
+    add_subdirectory(bundle/tool)
+endif()
 
 # Add the dobby daemon code
 add_subdirectory( daemon/init )
 add_subdirectory( daemon/lib )
 add_subdirectory( daemon/process )
 
-# Add the plugins
+# Add legacy plugins
 if( LEGACY_COMPONENTS )
     add_subdirectory( plugins/Common )
     add_subdirectory( plugins/AppServices )

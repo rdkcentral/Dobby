@@ -34,6 +34,7 @@
 #include <sstream>
 #include <random>
 
+#if defined(LEGACY_COMPONENTS)
 // -----------------------------------------------------------------------------
 /**
  *  @brief Constructor only intended for debugging.
@@ -202,6 +203,7 @@ DobbyBundle::DobbyBundle(const std::shared_ptr<const IDobbyUtils>& utils,
 
     AI_LOG_FN_EXIT();
 }
+#endif //defined(LEGACY_COMPONENTS)
 
 // -----------------------------------------------------------------------------
 /**

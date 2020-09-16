@@ -17,11 +17,11 @@
 * limitations under the License.
 */
 /*
- * File:   DobbyPluginManager.h
+ * File:   DobbyLegacyPluginManager.h
  *
  */
-#ifndef DOBBYPLUGINMANAGER_H
-#define DOBBYPLUGINMANAGER_H
+#ifndef DOBBYLEGACYPLUGINMANAGER_H
+#define DOBBYLEGACYPLUGINMANAGER_H
 
 #include "IDobbyUtils.h"
 #include "ContainerId.h"
@@ -56,7 +56,7 @@ class IDobbyEnv;
 
 // -----------------------------------------------------------------------------
 /**
- *  @class DobbyPluginManager
+ *  @class DobbyLegacyPluginManager
  *  @brief Class that manages all the plugin hook libraries.
  *
  *  This class doesn't manage the system hooks, they are setup in the
@@ -65,13 +65,13 @@ class IDobbyEnv;
  *  At creation time it loads all the plugin libraries from /opt/libexec.
  *
  */
-class DobbyPluginManager
+class DobbyLegacyPluginManager
 {
 public:
-    DobbyPluginManager(const std::shared_ptr<IDobbyEnv>& env,
-                       const std::shared_ptr<IDobbyUtils>& utils,
-                       const std::string& path = std::string(DEFAULT_PLUGIN_PATH));
-    ~DobbyPluginManager();
+    DobbyLegacyPluginManager(const std::shared_ptr<IDobbyEnv>& env,
+                             const std::shared_ptr<IDobbyUtils>& utils,
+                             const std::string& path = std::string(DEFAULT_PLUGIN_PATH));
+    ~DobbyLegacyPluginManager();
 
 public:
     void refreshPlugins(const std::string& path = std::string(DEFAULT_PLUGIN_PATH));
@@ -122,4 +122,4 @@ private:
 };
 
 
-#endif // !defined(DOBBYPLUGINMANAGER_H)
+#endif // !defined(DOBBYLEGACYPLUGINMANAGER_H)

@@ -78,8 +78,12 @@ public:
     std::shared_ptr<rt_dobby_schema> config() const override;
 
 public:
-    const std::map<std::string, Json::Value>& legacyPlugins() const override;
     const std::map<std::string, Json::Value>& rdkPlugins() const override;
+
+#if defined(LEGACY_COMPONENTS)
+public:
+    const std::map<std::string, Json::Value>& legacyPlugins() const override;
+#endif // defined(LEGACY_COMPONENTS)
 
 // ----------------------------------------------------------------------------
 /**
@@ -89,7 +93,9 @@ private:
     bool parseOCIConfig(const std::string& bundlePath);
 
 private:
+#if defined(LEGACY_COMPONENTS)
     bool processLegacyPlugins(const Json::Value& value);
+#endif // defined(LEGACY_COMPONENTS)
 
 // ----------------------------------------------------------------------------
 /**
@@ -125,8 +131,12 @@ private:
     ssize_t mConsoleLimit;
 
 private:
-    std::map<std::string, Json::Value> mLegacyPlugins;
     std::map<std::string, Json::Value> mRdkPlugins;
+
+#if defined(LEGACY_COMPONENTS)
+private:
+    std::map<std::string, Json::Value> mLegacyPlugins;
+#endif // defined(LEGACY_COMPONENTS)
 
 private:
     std::string mRootfsPath;

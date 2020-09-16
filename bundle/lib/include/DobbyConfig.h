@@ -110,20 +110,17 @@ public:
     virtual bool restartOnCrash() const = 0;
     virtual const std::string& rootfsPath() const = 0;
     virtual std::shared_ptr<rt_dobby_schema> config() const = 0;
-    virtual const std::map<std::string, Json::Value>& legacyPlugins() const = 0;
     virtual const std::map<std::string, Json::Value>& rdkPlugins() const = 0;
+
+#if defined(LEGACY_COMPONENTS)
+    virtual const std::map<std::string, Json::Value>& legacyPlugins() const = 0;
 
     /**
      *  @brief Get Dobby spec, defaults to empty
      */
     virtual const std::string spec() const
     { return std::string(); }
-
-    /**
-     *  @brief DEPRECATED - Rt priority used in Dobby specs
-     */
-    virtual int rtPriorityDefault() const
-    { return 0; }
+#endif //defined(LEGACY_COMPONENTS)
 
 
 // non-virtual methods for default use
