@@ -50,5 +50,9 @@ install( TARGETS IpcService
 
         EXPORT DobbyTargets
         ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+)
 
-        )
+# Install public headers for external use
+install( DIRECTORY include/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/Dobby/IpcService
+        FILES_MATCHING PATTERN "*.h"
+)
