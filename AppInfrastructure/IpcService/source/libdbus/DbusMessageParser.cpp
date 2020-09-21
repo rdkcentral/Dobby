@@ -368,10 +368,10 @@ bool DbusMessageParser::parseMsg()
 
     DBusMessageIter iter;
 
-    bool continueLoop = true;
-
     if ( dbus_message_iter_init( mDbusMsg, &iter ) ) // TRUE if the message has arguments
     {
+        bool continueLoop = true;
+
         while ( continueLoop == true )
         {
             int argType = dbus_message_iter_get_arg_type( &iter );

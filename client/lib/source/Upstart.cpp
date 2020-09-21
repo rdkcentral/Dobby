@@ -23,6 +23,7 @@
 #include "Upstart.h"
 
 #include <Logging.h>
+#include <inttypes.h>
 
 #include <chrono>
 
@@ -96,7 +97,7 @@ bool Upstart::invokeMethod(const std::string& method,
             (std::chrono::steady_clock::now() - startTime);
     if (timeTaken > std::chrono::seconds(2))
     {
-        AI_LOG_WARN("upstart request took a rather long time (%llums)",
+        AI_LOG_WARN("upstart request took a rather long time (%" PRId64 "ms)",
                     timeTaken.count());
     }
 

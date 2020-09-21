@@ -91,7 +91,7 @@ int32_t DobbyRdkPluginProxy::getBridgeConnections() const
     // send off the request
     AI_IPC::VariantList returns;
 
-    int32_t result;
+    int32_t result = 0;
 
     if (invokeMethod(DOBBY_RDKPLUGIN_INTERFACE,
                      DOBBY_RDKPLUGIN_GET_BRIDGE_CONNECTIONS,
@@ -156,7 +156,7 @@ bool DobbyRdkPluginProxy::freeIpAddress(uint32_t address) const
     const AI_IPC::VariantList params = { address };
     AI_IPC::VariantList returns;
 
-    bool result;
+    bool result = false;
 
     if (invokeMethod(DOBBY_RDKPLUGIN_INTERFACE,
                      DOBBY_RDKPLUGIN_FREE_ADDRESS,

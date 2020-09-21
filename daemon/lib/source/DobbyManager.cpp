@@ -2195,13 +2195,18 @@ void DobbyManager::onChildExit()
         {
             AI_LOG_SYS_ERROR(errno, "waitpid failed for pid %d", execit->second);
         }
-        else if (rc == execit->second)
+
+        if (rc == execit->second)
         {
             // Exec'd process has exited - remove from the map
-            mContainerExecPids.erase(execit);
+            // as erase invalidates iterator we must use its
+            // return value instead of simple increment
+            execit = mContainerExecPids.erase(execit);
         }
-
-        ++execit;
+        else
+        {
+            ++execit;
+        }
     }
 
     AI_LOG_FN_EXIT();

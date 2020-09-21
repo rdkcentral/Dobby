@@ -161,10 +161,10 @@ bool AICommon::mkdirRecursiveAt(const std::string& fullPath, int parentDirectory
     std::string path;
     for (const std::string & part : dirParts)
     {
-        bool created = true;
-
         if(!part.empty())
         {
+            bool created = true;
+
             path += part + '/';
             if(0 != mkdirat(parentDirectoryFd, path.c_str(), mode))
             {

@@ -200,7 +200,7 @@ extern "C" void __ai_debug_log_sys_printf(int err, int level, const char *file,
 {
     va_list ap;
     char errbuf[64];
-    const char *errmsg;
+    const char *errmsg = nullptr;
     char appendbuf[96];
     const char *append = nullptr;
 

@@ -607,9 +607,6 @@ DBusHandlerResult IpcService::handleDbusMessage( DBusMessage *dbusMsg )
     const char *interface = dbus_message_get_interface(dbusMsg);
     const char *name = dbus_message_get_member(dbusMsg);
 
-    bool isSignal = false;
-    bool isMethod = false;
-
 #if (AI_BUILD_TYPE == AI_DEBUG)
     if(objectPath && interface && name)
     {
@@ -626,6 +623,9 @@ DBusHandlerResult IpcService::handleDbusMessage( DBusMessage *dbusMsg )
 
     if( objectPath && isRegisteredObjectPath(objectPath) )
     {
+        bool isSignal = false;
+        bool isMethod = false;
+
         if ( (objectPath != NULL) && (interface != NULL) && (name != NULL) )
         {
             if( dbus_message_is_method_call(dbusMsg, interface, name) )

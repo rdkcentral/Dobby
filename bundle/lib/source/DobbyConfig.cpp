@@ -345,6 +345,11 @@ bool DobbyConfig::writeConfigJsonImpl(const std::string& filePath) const
     if (json_buf == nullptr || err)
     {
         AI_LOG_ERROR_EXIT("Failed to generate json from container config with code '%s'", err);
+        fclose(file);
+        if (json_buf != nullptr)
+        {
+            free(json_buf);
+        }
         return false;
     }
 
@@ -352,6 +357,8 @@ bool DobbyConfig::writeConfigJsonImpl(const std::string& filePath) const
     if (fputs(json_buf, file) == EOF)
     {
         AI_LOG_ERROR_EXIT("Failed to write config file.");
+        fclose(file);
+        free(json_buf);
         return false;
     }
     fclose(file);
