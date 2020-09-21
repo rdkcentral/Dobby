@@ -24,10 +24,16 @@
 #ifndef DOBBYPROXY_H
 #define DOBBYPROXY_H
 
-#include <Dobby/IDobbyProxy.h>
 
+#if defined(DOBBY_BUILD)
+#include <Dobby/IDobbyProxy.h>
 #include <IIpcService.h>
 #include <IDGenerator.h>
+#else
+#include <Dobby/Public/Dobby/IDobbyProxy.h>
+#include <Dobby/IpcService/IIpcService.h>
+#include <Dobby/IDGenerator.h>
+#endif
 
 #include <string>
 #include <memory>
@@ -115,6 +121,13 @@ public:
     std::string getSpec(int32_t descriptor) const override;
 
     std::string getOCIConfig(int32_t descriptor) const override;
+
+#if (AI_ENABLE_TRACING)
+    bool startInProcessTracing(int traceFileFd,
+                               const std::string &categoryFilter) const override;
+
+    bool stopInProcessTracing() const override;
+#endif // (AI_ENABLE_TRACING)
 
 #endif // (AI_BUILD_TYPE == AI_DEBUG)
 

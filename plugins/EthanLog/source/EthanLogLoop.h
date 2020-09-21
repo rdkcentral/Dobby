@@ -80,7 +80,7 @@ private:
 
     protected:
         explicit Event(Type type_)
-            : type(type_), id(ContainerId::create("")), basePid(-1)
+            : type(type_), id(), basePid(-1)
             , pipeFd(-1), allowedLevels(0), rate(0), burstSize(0)
         { }
 

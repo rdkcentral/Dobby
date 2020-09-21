@@ -190,7 +190,7 @@ void DobbyProxy::unregisterListener(int id)
 
 // -----------------------------------------------------------------------------
 /**
- *  @brief Called when a com.sky.dobby.ctrl1.Started event is received from
+ *  @brief Called when a org.rdk.dobby.ctrl1.Started event is received from
  *  the Dobby 'hypervisor' daemon
  *
  *  We parse the event data and if it makes sense we bounce this event up to any
@@ -224,7 +224,7 @@ void DobbyProxy::onContainerStartedEvent(const AI_IPC::VariantList& args)
 
 // -----------------------------------------------------------------------------
 /**
- *  @brief Called when a com.sky.dobby.ctrl1.Stopped event is received from
+ *  @brief Called when a org.rdk.dobby.ctrl1.Stopped event is received from
  *  the Dobby 'hypervisor' daemon
  *
  *  We parse the event data and if it makes sense we bounce this event up to any
@@ -964,7 +964,7 @@ std::list<std::pair<int32_t, std::string>> DobbyProxy::listContainers() const
 // -----------------------------------------------------------------------------
 /**
  *  @brief Debugging utility that can be used to create a bundle based on
- *  a sky spec file
+ *  a dobby spec file
  *
  *  This can be useful for debugging container issues, as it allows the daemon
  *  to create the bundle but not actually run it, and therefore it can be
@@ -1074,6 +1074,74 @@ std::string DobbyProxy::getOCIConfig(int32_t cd) const
     return result;
 }
 #endif // (AI_BUILD_TYPE == AI_DEBUG)
+
+#if (AI_ENABLE_TRACING)
+// -----------------------------------------------------------------------------
+/**
+ *  @brief Debugging utility to start 'in process' perfetto tracing for the
+ *  DobbyDaemon.
+ *
+ *  Only one in-process trace can be run at a time.  The trace will be written
+ *  to the supplied file descriptor.
+ *
+ *  @param[in]  traceFileFd     File descriptor to write the trace to.  This
+ *                              method does NOT take ownership of the fd, it's
+ *                              up to the caller to close the fd after the call.
+ *  @param[in]  categoryFilter  String used to determine which categories to
+ *                              include in the trace (if empty all categories
+ *                              are enabled).
+ *
+ *  @return boolean indicating success or failure.
+ */
+bool DobbyProxy::startInProcessTracing(int traceFileFd,
+                                       const std::string &categoryFilter) const
+{
+    AI_LOG_FN_ENTRY();
+
+    // send off the request
+    AI_IPC::VariantList returns;
+    bool result = false;
+
+    if (invokeMethod(DOBBY_DEBUG_INTERFACE,
+                     DOBBY_DEBUG_START_INPROCESS_TRACING,
+                     { AI_IPC::UnixFd(traceFileFd), categoryFilter },
+                     returns))
+    {
+        AI_IPC::parseVariantList<bool>(returns, &result);
+    }
+
+    AI_LOG_FN_EXIT();
+    return result;
+}
+
+// -----------------------------------------------------------------------------
+/**
+ *  @brief Debugging utility to stop 'in process' perfetto tracing
+ *
+ *
+ *
+ *  @return boolean indicating success or failure.
+ */
+bool DobbyProxy::stopInProcessTracing() const
+{
+    AI_LOG_FN_ENTRY();
+
+    AI_IPC::VariantList returns;
+    bool result = false;
+
+    if (invokeMethod(DOBBY_DEBUG_INTERFACE,
+                     DOBBY_DEBUG_STOP_INPROCESS_TRACING,
+                     { }, returns))
+    {
+        AI_IPC::parseVariantList<bool>(returns, &result);
+    }
+
+    AI_LOG_FN_EXIT();
+    return result;
+}
+
+#endif // (AI_ENABLE_TRACING)
+
 
 // -----------------------------------------------------------------------------
 /**

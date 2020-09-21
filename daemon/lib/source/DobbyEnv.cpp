@@ -42,7 +42,7 @@ DobbyEnv::DobbyEnv(const std::shared_ptr<const IDobbySettings>& settings)
 {
     // create a directory within the top level workspace dir for the plugins
     // to use exclusively
-    if (!AICommon::mkdirRecursive(mPluginsWorkspacePath, 0700))
+    if (!AICommon::mkdirRecursive(mPluginsWorkspacePath, 0755))
     {
         AI_LOG_SYS_FATAL(errno, "failed to create workspace dir '%s'",
                          mPluginsWorkspacePath.c_str());

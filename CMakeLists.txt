@@ -51,6 +51,9 @@ endif()
 add_definitions( -DRDK )
 add_definitions( -DXI1=1 -DLLAMA=2 -DXI6=6 )
 
+# Add definition to differentiate between Dobby builds and external projects building DobbyProxy
+add_definitions( -DDOBBY_BUILD )
+
 # If no platform defined then default to XI6
 set( RDK_PLATFORM "XI6" CACHE STRING "The target RDK platform, options are \"XI1\", \"XI6\", \"LLAMA\" or \"DEV_VM\"" )
 string( TOUPPER "${RDK_PLATFORM}" RDK_PLATFORM )
@@ -63,19 +66,46 @@ elseif( RDK_PLATFORM STREQUAL "XI1" )
 elseif( RDK_PLATFORM STREQUAL "LLAMA" )
     add_definitions( -DRDK_PLATFORM=LLAMA )
 elseif( RDK_PLATFORM STREQUAL "DEV_VM" )
-    add_definitions( -DDEV_VM )
+    add_definitions( -DDEV_VM=9 )
     add_definitions( -DRDK_PLATFORM=DEV_VM )
 else()
     message( FATAL_ERROR "Unknown RDK_PLATFORM '${RDK_PLATFORM}'" )
+endif()
+
+# Option to enable / disable the Perfetto tracing support
+# Can only be enabled in DEBUG builds
+set( ENABLE_PERFETTO_TRACING_DEFAULT OFF )
+option( ENABLE_PERFETTO_TRACING "Enable Perfetto tracing" ${ENABLE_PERFETTO_TRACING_DEFAULT} )
+
+if( BUILD_TYPE STREQUAL "RELEASE" AND ENABLE_PERFETTO_TRACING )
+    message( WARNING "Cannot enable tracing on release builds ")
+    set( ENABLE_PERFETTO_TRACING OFF )
 endif()
 
 # Add defines for DBUS path
 add_definitions( -DDBUS_SYSTEM_ADDRESS="unix:path=/var/run/dbus/system_bus_socket" )
 
 option( LEGACY_COMPONENTS "Enable Dobby legacy components" ON )
+# Add #define if enabled
+if ( LEGACY_COMPONENTS )
+    add_definitions( -DLEGACY_COMPONENTS )
+endif()
+
 # Disable for now. LTO can cause issues with debugging symbols on GCC versions before 8.0.0.
 # See http://hubicka.blogspot.com/2018/06/gcc-8-link-time-and-interprocedural.html
 option( ENABLE_LTO "Enable link time optimisation compiler flags" OFF )
+
+# Set default Dobby dbus service to org.rdk.dobby and add defines
+set( DOBBY_SERVICE "org.rdk.dobby" CACHE STRING "Dobby dbus service name")
+if(NOT DOBBY_SERVICE STREQUAL "org.rdk.dobby")
+    add_definitions( -DDOBBY_SERVICE_OVERRIDE="${DOBBY_SERVICE}")
+endif()
+
+# Set default Dobby dbus object path to /org/rdk/dobby and add defines
+set( DOBBY_OBJECT "/org/rdk/dobby" CACHE STRING "Dobby dbus object path")
+if(NOT DOBBY_OBJECT STREQUAL "/org/rdk/dobby")
+    add_definitions( -DDOBBY_OBJECT_OVERRIDE="${DOBBY_OBJECT}")
+endif()
 
 # Enable C++14 support. The following tells cmake to always add the -std=c++14
 # flag (nb - if CMAKE_CXX_EXTENSIONS is ON then we'll get -std=gnu++14 instead)
@@ -106,14 +136,32 @@ set( CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_LIST_DIR}/cmake" )
 find_package( libnl REQUIRED )
 find_package( dbus REQUIRED )
 find_package( jsoncpp REQUIRED )
-find_package( ctemplate REQUIRED )
+if ( LEGACY_COMPONENTS )
+    find_package( ctemplate REQUIRED )
+endif()
 find_package( Boost REQUIRED )
 
 # Required for libocispec only
 find_package( yajl REQUIRED )
 
+# Set #define if tracing is enabled
+if( ENABLE_PERFETTO_TRACING )
+    find_package(PerfettoSdk REQUIRED)
+    add_definitions( -DAI_ENABLE_TRACING=1 )
+
+    # For tracing, the trace categories need to be supplied in a separate header
+    # from the main trace code, the following tells cmake where to get that header
+    set( TRACING_CATEGORIES_HEADER "${CMAKE_CURRENT_LIST_DIR}/tracing/include/DobbyTraceCategories.h" )
+endif()
+
 # Run libocispec to generate OCI config parsers and necessary C headers
 include(cmake/libocispec.cmake)
+
+
+# Tracing
+if( ENABLE_PERFETTO_TRACING )
+    add_subdirectory(tracing)
+endif()
 
 # Enable link time optimization if it's supported
 if( ENABLE_LTO )
@@ -139,6 +187,7 @@ endif()
 
 # Import AppInfrastructure code
 add_subdirectory( AppInfrastructure/Logging )
+add_subdirectory( AppInfrastructure/Tracing )
 add_subdirectory( AppInfrastructure/Common )
 add_subdirectory( AppInfrastructure/IpcService )
 add_subdirectory( AppInfrastructure/ReadLine )
@@ -150,27 +199,27 @@ add_subdirectory(settings)
 
 # Add Bundle Generator code
 add_subdirectory(bundle/lib)
-add_subdirectory(bundle/tool)
+if ( LEGACY_COMPONENTS )
+    add_subdirectory(bundle/tool)
+endif()
 
 # Add the dobby daemon code
 add_subdirectory( daemon/init )
 add_subdirectory( daemon/lib )
 add_subdirectory( daemon/process )
 
-# Add the plugins
+# Add legacy plugins
 if( LEGACY_COMPONENTS )
     add_subdirectory( plugins/Common )
     add_subdirectory( plugins/AppServices )
     add_subdirectory( plugins/EthanLog )
     add_subdirectory( plugins/OpenCDM )
+    add_subdirectory( plugins/Perfetto )
 endif()
 
 # Add the plugin launcher
 add_subdirectory(pluginLauncher/lib)
 add_subdirectory(pluginLauncher/tool)
-
-# Rdk Plugins
-add_subdirectory( rdkPlugins )
 
 # Client library
 add_subdirectory( client/lib )
@@ -178,6 +227,56 @@ add_subdirectory( client/lib )
 # Add the dobby tool on debug builds
 if( BUILD_TYPE STREQUAL "DEBUG" )
     add_subdirectory( client/tool )
+endif()
+
+# RDK Plugins
+# ---------------------------------------------------------
+
+# Add the common subdirectory
+add_subdirectory(rdkPlugins/Common)
+
+# Default RDK plugins
+option(PLUGIN_LOGGING "Include Logging plugin" ON)
+option(PLUGIN_NETWORKING "Include Networking plugin" ON)
+option(PLUGIN_IPC "Include IPC plugin" ON)
+option(PLUGIN_STORAGE "Include Storage plugin" ON)
+
+# Optional RDK plugins
+option(PLUGIN_TESTPLUGIN "Include TestPlugin plugin" OFF)
+option(PLUGIN_GPU "Include GPU plugin" OFF)
+option(PLUGIN_LOCALTIME "Include LocalTime plugin" OFF)
+option(PLUGIN_RTSCHEDULING "Include RtScheduling plugin" OFF)
+
+if(PLUGIN_TESTPLUGIN)
+    add_subdirectory(rdkPlugins/TestPlugin)
+endif()
+
+if(PLUGIN_LOGGING)
+    add_subdirectory(rdkPlugins/Logging)
+endif()
+
+if(PLUGIN_NETWORKING)
+    add_subdirectory(rdkPlugins/Networking)
+endif()
+
+if(PLUGIN_IPC)
+    add_subdirectory(rdkPlugins/IPC)
+endif()
+
+if(PLUGIN_STORAGE)
+    add_subdirectory(rdkPlugins/Storage)
+endif()
+
+if(PLUGIN_GPU)
+    add_subdirectory(rdkPlugins/GPU)
+endif()
+
+if(PLUGIN_LOCALTIME)
+    add_subdirectory(rdkPlugins/LocalTime)
+endif()
+
+if(PLUGIN_RTSCHEDULING)
+    add_subdirectory(rdkPlugins/RtScheduling)
 endif()
 
 

@@ -24,12 +24,11 @@
 #include "DobbyManager.h"
 #include "DobbyContainer.h"
 #include "DobbyEnv.h"
-#include "DobbyPluginManager.h"
+#include "DobbyLegacyPluginManager.h"
 #include "DobbyRdkPluginManager.h"
 #include "DobbyRunC.h"
 #include "DobbyRootfs.h"
 #include "DobbyBundleConfig.h"
-#include "DobbySpecConfig.h"
 #include "DobbyBundle.h"
 #include "DobbyStartState.h"
 #include "DobbyStream.h"
@@ -38,24 +37,19 @@
 #include "DobbyAsync.h"
 #include "DobbyState.h"
 
-#include "IDobbySysHook.h"
-
-#include "syshooks/RtSchedulingHook.h"
-#if !defined(RDK)
-#  include "syshooks/GpuMemoryHook.h"
-#endif
+#if defined(LEGACY_COMPONENTS)
+#  include "DobbySpecConfig.h"
+#endif // defined(LEGACY_COMPONENTS)
 
 #include <DobbyProtocol.h>
 #include <Logging.h>
-#include <FileUtilities.h>
+#include <Tracing.h>
 
 #include <rt_dobby_schema.h>
 
-#include <stdio.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <signal.h>
-#include <strings.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
@@ -97,9 +91,11 @@ DobbyManager::DobbyManager(const std::shared_ptr<IDobbyEnv> &env,
     , mIPCUtilities(ipcUtils)
     , mSettings(settings)
     , mRunc(new DobbyRunC(utils, settings))
-    , mPlugins(new DobbyPluginManager(env, utils))
     , mState(std::make_shared<DobbyState>(settings))
     , mRuncMonitorTerminate(false)
+#if defined(LEGACY_COMPONENTS)
+    , mLegacyPlugins(new DobbyLegacyPluginManager(env, utils))
+#endif // defined(LEGACY_COMPONENTS)
 {
     AI_LOG_FN_ENTRY();
 
@@ -108,8 +104,6 @@ DobbyManager::DobbyManager(const std::shared_ptr<IDobbyEnv> &env,
     setupWorkspace(env);
 
     cleanupContainers();
-
-    setupSystemHooks();
 
     startRuncMonitorThread();
 
@@ -160,8 +154,8 @@ void DobbyManager::setupSystem()
         AI_LOG_SYS_ERROR(errno, "failed to set RLIMIT_CORE");
     }
 
-    // [NGDEV-66223] globally enable ipv4 forwarding, this is what libvirt does
-    // and it seems selectively enabling forwarding on only the interfaces we
+    // globally enable ipv4 forwarding, this is what libvirt does and it
+    // seems selectively enabling forwarding on only the interfaces we
     // control doesn't seem to work (intermittently)
     if (!mUtilities->writeTextFile("/proc/sys/net/ipv4/ip_forward", "1\n",
                                    O_TRUNC | O_WRONLY, 0))
@@ -295,36 +289,6 @@ void DobbyManager::cleanupContainers()
     }
 }
 
-// -----------------------------------------------------------------------------
-/**
- *  @brief Populates the list of system hooks
- *
- *  System hooks are executed for the container before the hooks in th shared
- *  objects.  System hooks are generally things that are core to a container
- *  or things that every container gets, whereas the shared library hooks are
- *  are generally used to interface to other daemons / libraries and used to
- *  add features.
- *
- */
-void DobbyManager::setupSystemHooks()
-{
-    AI_LOG_FN_ENTRY();
-
-#if !defined(RDK)
-    // setup the gpu memory limiter system hook
-    std::shared_ptr<GpuMemoryHook> gpuMemory =
-        std::make_shared<GpuMemoryHook>(mEnvironment, mUtilities);
-    mSysHooks.push_back(gpuMemory);
-#endif
-
-    // setup the rt scheduling system hook
-    std::shared_ptr<RtSchedulingHook> rtScheduling =
-        std::make_shared<RtSchedulingHook>();
-    mSysHooks.push_back(rtScheduling);
-
-    AI_LOG_FN_EXIT();
-}
-
 /**
  * @brief Get the instance of the logging plugin for the current container (if
  * one is loaded)
@@ -363,6 +327,15 @@ bool DobbyManager::createAndStart(const ContainerId &id,
 {
     AI_LOG_FN_ENTRY();
 
+    // Run any pre-creation hooks
+    if (container->config->rdkPlugins().size() > 0)
+    {
+        if (!onPreCreationHook(container))
+        {
+            return false;
+        }
+    }
+
     // Create the container, but don't start it yet
     auto loggingPlugin = GetContainerLogger(container);
     std::shared_ptr<DobbyBufferStream> createBuffer = std::make_shared<DobbyBufferStream>();
@@ -386,16 +359,23 @@ bool DobbyManager::createAndStart(const ContainerId &id,
             mLogger->DumpBuffer(createBuffer->getMemFd(), -1, loggingPlugin, true);
         }
 
+        container->containerPid = -1;
         return false;
     }
     container->containerPid = pids.second;
 
+#if defined(LEGACY_COMPONENTS)
     // Run the legacy Dobby PreStart hooks (to be removed once RDK plugin work is complete)
     if (!onPreStartHook(id, container))
     {
         AI_LOG_ERROR("failure in one of the PreStart hooks");
         return false;
     }
+#endif //defined(LEGACY_COMPONENTS)
+
+    // if we've survived to this point then the container is pretty much
+    // already to go, so move it's state to Running
+    container->state = DobbyContainer::State::Running;
 
     // Attempt to start the container
     std::shared_ptr<DobbyBufferStream> startBuffer = std::make_shared<DobbyBufferStream>();
@@ -563,9 +543,11 @@ bool DobbyManager::createAndStartContainer(const ContainerId &id,
         AI_LOG_INFO("container '%s' started, controller process pid %d",
                     id.c_str(), container->containerPid);
 
+#if defined(LEGACY_COMPONENTS)
         // call the postStart hook, don't care about the return code
         // for now
         onPostStartHook(id, container);
+#endif //defined(LEGACY_COMPONENTS)
 
         // signal that the container has started
         if (mContainerStartedCb)
@@ -577,54 +559,74 @@ bool DobbyManager::createAndStartContainer(const ContainerId &id,
         return true;
     }
 
-    AI_LOG_WARN("Something went wrong when creating/starting '%s', cleaning up", id.c_str());
-
-    // Something went wrong during container start, clean up everything
-    // kill the container created
-    if (!mRunc->kill(id, SIGKILL))
+    // If the PID is < 0, something went wrong during container creation and
+    // start was never attempted
+    if (container->containerPid < 0)
     {
-        AI_LOG_ERROR("failed to kill (non-running) container for '%s'",
-                     id.c_str());
+        AI_LOG_WARN("Something went wrong when creating '%s'", id.c_str());
+    }
+    else
+    {
+        // PID > 0 so container was created but failed to start
+        AI_LOG_WARN("Something went wrong when starting '%s', cleaning up", id.c_str());
+
+        // Something went wrong during container start, clean up everything
+        // kill the container created
+        if (!mRunc->kill(id, SIGKILL))
+        {
+            AI_LOG_ERROR("failed to kill (non-running) container for '%s'",
+                        id.c_str());
+        }
+
+
+        // wait for the half-started container to terminate
+        if (waitpid(container->containerPid, nullptr, 0) < 0)
+        {
+            AI_LOG_SYS_ERROR(errno, "error waiting for the container '%s' to terminate",
+                            id.c_str());
+        }
+
+#if defined(LEGACY_COMPONENTS)
+        // either the container failed to start, or one of the preStart hooks
+        // failed, either way we want to call the postStop hook
+        onPostStopHook(id, container);
+#endif //defined(LEGACY_COMPONENTS)
+
+        // once we're here we mark the container as Stopping, however the container
+        // object is not removed from the list until the crun parent process has
+        // actually terminated
+        container->state = DobbyContainer::State::Stopping;
+
+        // if we dropped out here it means something has gone wrong, but the
+        // container was created, so destroy it
+        std::shared_ptr<DobbyBufferStream> destroyBuffer = std::make_shared<DobbyBufferStream>();
+        if (!mRunc->destroy(id, destroyBuffer))
+        {
+            AI_LOG_ERROR("failed to destroy '%s'", id.c_str());
+        }
+
+        auto loggingPlugin = GetContainerLogger(container);
+        if (loggingPlugin)
+        {
+            mLogger->DumpBuffer(destroyBuffer->getMemFd(), container->containerPid, loggingPlugin, false);
+        }
+
+        // clear the pid now it's been killed
+        container->containerPid = -1;
     }
 
-    // wait for the half-started container to terminate
-    if (waitpid(container->containerPid, nullptr, 0) < 0)
-    {
-        AI_LOG_SYS_ERROR(errno, "error waiting for the container '%s' to terminate",
-                         id.c_str());
-    }
-
-    // either the container failed to start, or one of the preStart hooks
-    // failed, either way we want to call the postStop hook
-    onPostStopHook(id, container);
-
-    // For the same reason, call the postHalt hook
+    // Call the postHalt hook to clean up from the creation (preCreation,
+    // createRuntime, createContainer) hooks
     if (container->config->rdkPlugins().size() > 0)
     {
         onPostHaltHook(container);
     }
 
-    // if we dropped out here it means something has gone wrong, but the
-    // container was created, so destroy it
-    std::shared_ptr<DobbyBufferStream> destroyBuffer = std::make_shared<DobbyBufferStream>();
-    if (!mRunc->destroy(id, destroyBuffer))
-    {
-        AI_LOG_ERROR("failed to destroy '%s'", id.c_str());
-    }
-
-    auto loggingPlugin = GetContainerLogger(container);
-    if (loggingPlugin)
-    {
-        mLogger->DumpBuffer(destroyBuffer->getMemFd(), container->containerPid, loggingPlugin, false);
-    }
-
-    // clear the pid now it's been killed
-    container->containerPid = -1;
-
     AI_LOG_FN_EXIT();
     return false;
 }
 
+#if defined(LEGACY_COMPONENTS)
 // -----------------------------------------------------------------------------
 /**
  *  @brief Where the magic begins .... attempts to create a container
@@ -707,7 +709,7 @@ int32_t DobbyManager::startContainerFromSpec(const ContainerId &id,
         std::shared_ptr<rt_dobby_schema> containerConfig(config->config());
         std::shared_ptr<DobbyRdkPluginUtils> rdkPluginUtils = std::make_shared<DobbyRdkPluginUtils>();
         std::shared_ptr<DobbyRdkPluginManager> rdkPluginManager =
-            std::make_shared<DobbyRdkPluginManager>(containerConfig, rootfsPath, PLUGIN_PATH, rdkPluginUtils);
+            std::make_shared<DobbyRdkPluginManager>(containerConfig, rootfsPath, "", PLUGIN_PATH, rdkPluginUtils);
 
         std::vector<std::string> loadedPlugins = rdkPluginManager->listLoadedPlugins();
         AI_LOG_DEBUG("Loaded %zd RDK plugins\n", loadedPlugins.size());
@@ -751,38 +753,26 @@ int32_t DobbyManager::startContainerFromSpec(const ContainerId &id,
         }
         else
         {
-            // Run preCreation hook
-            if (rdkPlugins.size() > 0)
+            // if the respawn flag is set in the spec file then we need to store
+            // any file descriptors for use at respawn time
+            if (config->restartOnCrash())
             {
-                if (!onPreCreationHook(container))
-                {
-                    pluginFailure = true;
-                }
+                container->setRestartOnCrash(startState->files());
             }
 
-            if (!pluginFailure)
+            // try and create and start the container
+            if (createAndStartContainer(id, container, startState->files(), command, displaySocket))
             {
-                // if the respawn flag is set in the spec file then we need to store
-                // any file descriptors for use at respawn time
-                if (config->restartOnCrash())
-                {
-                    container->setRestartOnCrash(startState->files());
-                }
+                // get the descriptor of the container and return that to the
+                // caller (need to do this before we move into the map)
+                int32_t cd = container->descriptor;
 
-                // try and create and start the container
-                if (createAndStartContainer(id, container, startState->files(), command, displaySocket))
-                {
-                    // get the descriptor of the container and return that to the
-                    // caller (need to do this before we move into the map)
-                    int32_t cd = container->descriptor;
+                // woo - she's off and running, so move the container object
+                // into the map and then we're done
+                mContainers.emplace(id, std::move(container));
 
-                    // woo - she's off and running, so move the container object
-                    // into the map and then we're done
-                    mContainers.emplace(id, std::move(container));
-
-                    AI_LOG_FN_EXIT();
-                    return cd;
-                }
+                AI_LOG_FN_EXIT();
+                return cd;
             }
         }
     }
@@ -798,6 +788,7 @@ int32_t DobbyManager::startContainerFromSpec(const ContainerId &id,
     AI_LOG_FN_EXIT();
     return -1;
 }
+#endif //defined(LEGACY_COMPONENTS)
 
 // -----------------------------------------------------------------------------
 /**
@@ -882,7 +873,7 @@ int32_t DobbyManager::startContainerFromBundle(const ContainerId &id,
         std::shared_ptr<rt_dobby_schema> containerConfig(config->config());
         std::shared_ptr<DobbyRdkPluginUtils> rdkPluginUtils = std::make_shared<DobbyRdkPluginUtils>();
         std::shared_ptr<DobbyRdkPluginManager> rdkPluginManager =
-            std::make_shared<DobbyRdkPluginManager>(containerConfig, rootfsPath, PLUGIN_PATH, rdkPluginUtils);
+            std::make_shared<DobbyRdkPluginManager>(containerConfig, rootfsPath, "", PLUGIN_PATH, rdkPluginUtils);
 
         std::vector<std::string> loadedPlugins = rdkPluginManager->listLoadedPlugins();
         AI_LOG_DEBUG("Loaded %zd RDK plugins\n", loadedPlugins.size());
@@ -898,14 +889,17 @@ int32_t DobbyManager::startContainerFromBundle(const ContainerId &id,
         container = std::move(dobbyContainer);
     }
 
+    bool pluginFailure = false;
+
+#if defined(LEGACY_COMPONENTS)
     // If we have legacy plugins, run their postConstruction hooks before
     // executing crun
-    bool pluginFailure = false;
     if (!onPostConstructionHook(id, startState, container))
     {
         AI_LOG_ERROR("failure in one of the PostConstruction hooks");
         pluginFailure = true;
     }
+#endif // defined(LEGACY_COMPONENTS)
 
     // If we have RDK plugins, run their postInstallation hooks. Other
     // hooks (excluding preCreate) will be run automatically by crun
@@ -935,38 +929,26 @@ int32_t DobbyManager::startContainerFromBundle(const ContainerId &id,
                 std::ofstream flag(successFlagPath);
             }
 
-            // Run preCreation hook
-            if (rdkPlugins.size() > 0)
+            // if the respawn flag is set in the spec file then we need to store
+            // any file descriptors for use at respawn time
+            if (config->restartOnCrash())
             {
-                if (!onPreCreationHook(container))
-                {
-                    pluginFailure = true;
-                }
+                container->setRestartOnCrash(startState->files());
             }
 
-            if (!pluginFailure)
+            // try and create and start the container
+            if (createAndStartContainer(id, container, startState->files(), command, displaySocket))
             {
-                // if the respawn flag is set in the spec file then we need to store
-                // any file descriptors for use at respawn time
-                if (config->restartOnCrash())
-                {
-                    container->setRestartOnCrash(startState->files());
-                }
+                // get the descriptor of the container and return that to the
+                // caller (need to do this before we move into the map)
+                int32_t cd = container->descriptor;
 
-                // try and create and start the container
-                if (createAndStartContainer(id, container, startState->files(), command, displaySocket))
-                {
-                    // get the descriptor of the container and return that to the
-                    // caller (need to do this before we move into the map)
-                    int32_t cd = container->descriptor;
+                // woo - she's off and running, so move the container object
+                // into the map and then we're done
+                mContainers.emplace(id, std::move(container));
 
-                    // woo - she's off and running, so move the container object
-                    // into the map and then we're done
-                    mContainers.emplace(id, std::move(container));
-
-                    AI_LOG_FN_EXIT();
-                    return cd;
-                }
+                AI_LOG_FN_EXIT();
+                return cd;
             }
         }
     }
@@ -983,9 +965,11 @@ int32_t DobbyManager::startContainerFromBundle(const ContainerId &id,
     // descriptors will be released now
     startState.reset();
 
+#if defined(LEGACY_COMPONENTS)
     // something went wrong, however we still want to call the preDestruction
     // hook, in case a hook setup some stuff the post-construction phase above
     onPreDestructionHook(id, container);
+#endif //defined(LEGACY_COMPONENTS)
 
     AI_LOG_FN_EXIT();
     return -1;
@@ -1534,42 +1518,6 @@ std::string DobbyManager::statsOfContainer(int32_t cd) const
 
 // -----------------------------------------------------------------------------
 /**
- *  @brief Debugging method to allow you to retrieve the json spec used to
- *  create the container
- *
- *
- *  @param[in]  cd      The descriptor of the container to get the spec of.
- *
- *  @return the json spec string.
- */
-std::string DobbyManager::specOfContainer(int32_t cd) const
-{
-    std::lock_guard<std::mutex> locker(mLock);
-
-    // find the container
-    std::map<ContainerId, std::unique_ptr<DobbyContainer>>::const_iterator it = mContainers.begin();
-    for (; it != mContainers.end(); ++it)
-    {
-        if (it->second && (it->second->descriptor == cd))
-            break;
-    }
-
-    if (it == mContainers.end())
-    {
-        AI_LOG_WARN("failed to find container with descriptor %d", cd);
-    }
-    else
-    {
-        const std::unique_ptr<DobbyContainer> &container = it->second;
-
-        return container->config->spec();
-    }
-
-    return std::string();
-}
-
-// -----------------------------------------------------------------------------
-/**
  *  @brief Debugging method to allow you to retrieve the OCI config.json spec
  *  used to create the container
  *
@@ -1578,7 +1526,7 @@ std::string DobbyManager::specOfContainer(int32_t cd) const
  *
  *  @return the config.json string.
  */
-std::string DobbyManager::jsonConfigOfContainer(int32_t cd) const
+std::string DobbyManager::ociConfigOfContainer(int32_t cd) const
 {
     std::lock_guard<std::mutex> locker(mLock);
 
@@ -1598,6 +1546,43 @@ std::string DobbyManager::jsonConfigOfContainer(int32_t cd) const
     {
         const std::unique_ptr<DobbyContainer> &container = it->second;
         return container->config->configJson();
+    }
+
+    return std::string();
+}
+
+#if defined(LEGACY_COMPONENTS)
+// -----------------------------------------------------------------------------
+/**
+ *  @brief Debugging method to allow you to retrieve the json spec used to
+ *  create the container
+ *
+ *
+ *  @param[in]  cd      The descriptor of the container to get the spec of.
+ *
+ *  @return the json spec string.
+ */
+std::string DobbyManager::specOfContainer(int32_t cd) const
+{
+    std::lock_guard<std::mutex> locker(mLock);
+
+    // find the container
+    auto it = mContainers.begin();
+    for (; it != mContainers.end(); ++it)
+    {
+        if (it->second && (it->second->descriptor == cd))
+            break;
+    }
+
+    if (it == mContainers.end())
+    {
+        AI_LOG_WARN("failed to find container with descriptor %d", cd);
+    }
+    else
+    {
+        const std::unique_ptr<DobbyContainer> &container = it->second;
+
+        return container->config->spec();
     }
 
     return std::string();
@@ -1658,6 +1643,9 @@ bool DobbyManager::createBundle(const ContainerId &id,
     AI_LOG_FN_EXIT();
     return true;
 }
+#endif //defined(LEGACY_COMPONENTS)
+
+
 
 // -----------------------------------------------------------------------------
 /**
@@ -1704,97 +1692,6 @@ bool DobbyManager::freeIpAddress(uint32_t address)
 std::vector<std::string> DobbyManager::getExtIfaces()
 {
     return mSettings->externalInterfaces();
-}
-
-// -----------------------------------------------------------------------------
-/**
- *  @brief Executes the given hook function on all the system hooks installed
- *
- *
- *
- */
-bool DobbyManager::executeSysHooks(const std::unique_ptr<DobbyContainer> &container,
-                                   const HookType &hookType,
-                                   const SysHookFn &sysHookFn)
-{
-    // get the flags to check for running state of hook
-    unsigned asyncFlag, syncFlag;
-    switch (hookType)
-    {
-    case HookType::PostConstruction:
-        asyncFlag = IDobbySysHook::PostConstructionAsync;
-        syncFlag = IDobbySysHook::PostConstructionSync;
-        break;
-    case HookType::PreStart:
-        asyncFlag = IDobbySysHook::PreStartAsync;
-        syncFlag = IDobbySysHook::PreStartSync;
-        break;
-    case HookType::PostStart:
-        asyncFlag = IDobbySysHook::PostStartAsync;
-        syncFlag = IDobbySysHook::PostStartSync;
-        break;
-    case HookType::PostStop:
-        asyncFlag = IDobbySysHook::PostStopAsync;
-        syncFlag = IDobbySysHook::PostStopSync;
-        break;
-    case HookType::PreDestruction:
-        asyncFlag = IDobbySysHook::PreDestructionAsync;
-        syncFlag = IDobbySysHook::PreDestructionSync;
-        break;
-    default:
-        asyncFlag = 0;
-        syncFlag = 0;
-        break;
-    }
-
-    std::list<std::shared_ptr<DobbyAsyncResult>> sysHookResults;
-    std::list<std::string> enabledSysHooks = container->config->sysHooks();
-
-    std::list<std::shared_ptr<IDobbySysHook>>::const_iterator it = mSysHooks.begin();
-    for (; it != mSysHooks.end(); ++it)
-    {
-        // get a pointer to the hook class
-        IDobbySysHook *sysHook = it->get();
-
-        // check if syshook is enabled for this container
-        if (find(enabledSysHooks.begin(), enabledSysHooks.end(), sysHook->hookName()) == enabledSysHooks.end())
-        {
-            continue;
-        }
-
-        // check if the hints indicate we should be running; at all,
-        // synchronously or asynchronously
-        unsigned hints = sysHook->hookHints();
-        if (hints & asyncFlag)
-        {
-            std::shared_ptr<DobbyAsyncResult> result = DobbyAsync(sysHook->hookName(), sysHookFn, sysHook);
-            sysHookResults.emplace_back(std::move(result));
-        }
-        else if (hints & syncFlag)
-        {
-            std::shared_ptr<DobbyAsyncResult> result = DobbyDeferred(sysHookFn, sysHook);
-            sysHookResults.emplace_front(std::move(result));
-        }
-    }
-
-    // the hookResults list contains all the outstanding hook operations, so we
-    // now need to wait till they all finish.  If any returns false then we
-    // return false (which in some cases will cause runc to abort the container).
-    bool result = true;
-
-    for (const std::shared_ptr<DobbyAsyncResult> &sysHookResult : sysHookResults)
-    {
-        // NB deliberately no timeout as we don't have any way to tell a hook
-        // to abort what it's doing and therefore we don't have any recovery
-        // mechanism ... so just patiently wait and trust the hooks to do
-        // sensible stuff
-        if (sysHookResult->getResult() == false)
-            result = false;
-    }
-
-    // TODO: add some checks on the total time it took to execute all hooks
-
-    return result;
 }
 
 // -----------------------------------------------------------------------------
@@ -1918,14 +1815,15 @@ bool DobbyManager::onPostHaltHook(const std::unique_ptr<DobbyContainer> &contain
     return true;
 }
 
+#if defined(LEGACY_COMPONENTS)
 // -----------------------------------------------------------------------------
 /**
  *  @brief Called after the rootfs is created but before runc has been executed
  *
  *  @warning this function is called with the lock already held.
  *
- *  Here we go though each system hook and install plugins and ask them to
- *  execute their postConstruction callbacks.
+ *  Here we go though each plugin and ask them to execute their
+ *  postConstruction hooks.
  *
  *  @param[in]  id              The id of the container.
  *  @param[in]  startState      The object that represents the start-up state.
@@ -1941,31 +1839,18 @@ bool DobbyManager::onPostConstructionHook(const ContainerId &id,
 {
     AI_LOG_FN_ENTRY();
 
+    AI_TRACE_EVENT("Dobby", "postConstruction");
+
     // optimist
     bool success = true;
 
-    // execute the system hooks first
-    SysHookFn sysHookFn = std::bind(&IDobbySysHook::postConstruction,
-                                    std::placeholders::_1, // pointer to hook class
-                                    id,                    // container id
-                                    startState,            // start-up state
-                                    container->config,     // container config
-                                    container->rootfs);    // container rootfs
-
-    if (executeSysHooks(container, HookType::PostConstruction, sysHookFn) == false)
-    {
-        AI_LOG_ERROR("one or more post-construction hooks failed for '%s'",
-                     id.c_str());
-        success = false;
-    }
-
     AI_LOG_DEBUG("executing plugins postConstruction hooks");
 
-    // execute the plugin hooks next
-    if (mPlugins->executePostConstructionHooks(container->config->legacyPlugins(),
-                                               id,
-                                               startState,
-                                               container->rootfs->path()) == false)
+    // execute the plugin hooks
+    if (mLegacyPlugins->executePostConstructionHooks(container->config->legacyPlugins(),
+                                                     id,
+                                                     startState,
+                                                     container->rootfs->path()) == false)
     {
         AI_LOG_ERROR("one or more post-construction plugins failed for '%s'",
                      id.c_str());
@@ -1983,8 +1868,7 @@ bool DobbyManager::onPostConstructionHook(const ContainerId &id,
  *  We use the @a id to find the container spec, using that we can determine
  *  what plugin libraries need to be called.
  *
- *  Then we go though each syshook & plugin and pass it it's data from the
- *  spec file.
+ *  Then we go though each plugin and pass it it's data from the spec file.
  *
  *  @param[in]  id              The id of the container.
  *  @param[in]  pid             The pid of the init process within the container.
@@ -1998,6 +1882,8 @@ bool DobbyManager::onPreStartHook(const ContainerId &id,
 {
     AI_LOG_FN_ENTRY();
 
+    AI_TRACE_EVENT("Dobby", "preStart");
+
     // the first thing to check is if the container has got the curse of death,
     // this can happen if DobbyManager::stop was called after the
     // container was constructed but before we hit this point.  In such cases
@@ -2010,35 +1896,16 @@ bool DobbyManager::onPreStartHook(const ContainerId &id,
     // optimist
     bool success = true;
 
-    // execute the system hooks first
-    SysHookFn sysHookFn = std::bind(&IDobbySysHook::preStart,
-                                    std::placeholders::_1,   // pointer to hook class
-                                    id,                      // container id
-                                    container->containerPid, // container pid
-                                    container->config,       // container config
-                                    container->rootfs);      // container rootfs
-
-    if (executeSysHooks(container, HookType::PreStart, sysHookFn) == false)
-    {
-        AI_LOG_ERROR("one or more pre-start hooks failed for '%s'",
-                     id.c_str());
-        success = false;
-    }
-
-    // execute the plugin hooks next
-    if (mPlugins->executePreStartHooks(container->config->legacyPlugins(),
-                                       id,
-                                       container->containerPid,
-                                       container->rootfs->path()) == false)
+    // execute the plugin hooks
+    if (mLegacyPlugins->executePreStartHooks(container->config->legacyPlugins(),
+                                             id,
+                                             container->containerPid,
+                                             container->rootfs->path()) == false)
     {
         AI_LOG_ERROR("one or more pre-start plugins failed for '%s'",
                      id.c_str());
         success = false;
     }
-
-    // if we've survived to this point then the container is pretty much
-    // already to go, so move it's state to Running
-    container->state = DobbyContainer::State::Running;
 
     AI_LOG_FN_EXIT();
     return success;
@@ -2051,8 +1918,7 @@ bool DobbyManager::onPreStartHook(const ContainerId &id,
  *  We use the @a id to find the container spec, using that we can determine
  *  what plugin libraries need to be called.
  *
- *  Then we go though each syshook & plugin and pass it it's data from the
- *  spec file.
+ *  Then we go though each plugin and pass it it's data from the spec file.
  *
  *  @param[in]  id              The id of the container.
  *  @param[in]  pid             The pid of the init process within the container.
@@ -2066,25 +1932,13 @@ bool DobbyManager::onPostStartHook(const ContainerId &id,
 {
     AI_LOG_FN_ENTRY();
 
-    // execute the system hooks first
-    SysHookFn sysHookFn = std::bind(&IDobbySysHook::postStart,
-                                    std::placeholders::_1,   // pointer to hook class
-                                    id,                      // container id
-                                    container->containerPid, // container pid
-                                    container->config,       // container config
-                                    container->rootfs);      // container rootfs
+    AI_TRACE_EVENT("Dobby", "postStart");
 
-    if (executeSysHooks(container, HookType::PostStart, sysHookFn) == false)
-    {
-        AI_LOG_ERROR("one or more post-start hooks failed for '%s'",
-                     id.c_str());
-    }
-
-    // execute the plugin hooks next
-    if (mPlugins->executePostStartHooks(container->config->legacyPlugins(),
-                                        id,
-                                        container->containerPid,
-                                        container->rootfs->path()) == false)
+    // execute the plugin hooks
+    if (mLegacyPlugins->executePostStartHooks(container->config->legacyPlugins(),
+                                              id,
+                                              container->containerPid,
+                                              container->rootfs->path()) == false)
     {
         AI_LOG_ERROR("one or more post-start hooks failed for '%s'",
                      id.c_str());
@@ -2103,7 +1957,7 @@ bool DobbyManager::onPostStartHook(const ContainerId &id,
  *  We use the @a id to find the container spec, using that we can determine
  *  what plugin libraries need to be called.
  *
- *  Then we go though each syshook & plugin and pass it it's data from the
+ *  Then we go though each plugin and pass it it's data from the
  *  spec file.
  *
  *  @param[in]  id              The id of the container.
@@ -2117,30 +1971,14 @@ bool DobbyManager::onPostStopHook(const ContainerId &id,
 {
     AI_LOG_FN_ENTRY();
 
-    // once we're here we mark the container as Stopping, however the container
-    // object is not removed from the list until the runc parent process has
-    // actually terminated
-    container->state = DobbyContainer::State::Stopping;
+    AI_TRACE_EVENT("Dobby", "postStop");
 
-    // execute the plugin hooks first
-    if (mPlugins->executePostStopHooks(container->config->legacyPlugins(),
-                                       id,
-                                       container->rootfs->path()) == false)
+    // execute the plugin hooks
+    if (mLegacyPlugins->executePostStopHooks(container->config->legacyPlugins(),
+                                             id,
+                                             container->rootfs->path()) == false)
     {
         AI_LOG_ERROR("one or more post-stop hooks failed for '%s'",
-                     id.c_str());
-    }
-
-    // execute the system hooks next
-    SysHookFn sysHookFn = std::bind(&IDobbySysHook::postStop,
-                                    std::placeholders::_1, // pointer to hook class
-                                    id,                    // container id
-                                    container->config,     // container config
-                                    container->rootfs);    // container rootfs
-
-    if (executeSysHooks(container, HookType::PostStop, sysHookFn) == false)
-    {
-        AI_LOG_ERROR("one or more post-start hooks failed for '%s'",
                      id.c_str());
     }
 
@@ -2166,23 +2004,12 @@ bool DobbyManager::onPreDestructionHook(const ContainerId &id,
 {
     AI_LOG_FN_ENTRY();
 
-    // execute the plugin hooks first
-    if (mPlugins->executePreDestructionHooks(container->config->legacyPlugins(),
-                                             id,
-                                             container->rootfs->path()) == false)
-    {
-        AI_LOG_ERROR("one or more pre-destruction hooks failed for '%s'",
-                     id.c_str());
-    }
+    AI_TRACE_EVENT("Dobby", "preDestruction");
 
-    // execute the system hooks next
-    SysHookFn sysHookFn = std::bind(&IDobbySysHook::preDestruction,
-                                    std::placeholders::_1, // pointer to hook class
-                                    id,                    // container id
-                                    container->config,     // container config
-                                    container->rootfs);    // container bundle
-
-    if (executeSysHooks(container, HookType::PreDestruction, sysHookFn) == false)
+    // execute the plugin hooks
+    if (mLegacyPlugins->executePreDestructionHooks(container->config->legacyPlugins(),
+                                                   id,
+                                                   container->rootfs->path()) == false)
     {
         AI_LOG_ERROR("one or more pre-destruction hooks failed for '%s'",
                      id.c_str());
@@ -2191,6 +2018,7 @@ bool DobbyManager::onPreDestructionHook(const ContainerId &id,
     AI_LOG_FN_EXIT();
     return true;
 }
+#endif //defined(LEGACY_COMPONENTS)
 
 // -----------------------------------------------------------------------------
 /**
@@ -2207,6 +2035,8 @@ bool DobbyManager::onPreDestructionHook(const ContainerId &id,
 void DobbyManager::onChildExit()
 {
     AI_LOG_FN_ENTRY();
+
+    AI_LOG_INFO("detected child terminated signal");
 
     // take the lock as we're being called from the signal monitor thread
     std::lock_guard<std::mutex> locker(mLock);
@@ -2255,8 +2085,13 @@ void DobbyManager::onChildExit()
             // preDestruction hook
             if (container->state == DobbyContainer::State::Running)
             {
-                // this will internally change the state to stopping
+#if defined(LEGACY_COMPONENTS)
+                // this will internally change the state to 'stopping'
                 onPostStopHook(id, container);
+#endif //defined(LEGACY_COMPONENTS)
+
+                // change the container state to 'stopping'
+                container->state = DobbyContainer::State::Stopping;
             }
 
             // signal the higher layers that a container has died
@@ -2270,10 +2105,12 @@ void DobbyManager::onChildExit()
             // postConstruction hooks
             if (!container->shouldRestart(status) || !restartContainer(id, container))
             {
+#if defined(LEGACY_COMPONENTS)
                 // either the respawn flag isn't set, or we failed to restart
                 // the container, so call any pre-destruction hooks before
                 // tearing down the roots and bundle directories
                 onPreDestructionHook(id, container);
+#endif //defined(LEGACY_COMPONENTS)
 
                 // Also run any postHalt hooks in RDK plugins
                 if (container->config->rdkPlugins().size() > 0)

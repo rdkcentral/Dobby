@@ -26,7 +26,10 @@
 #include "IDobbyUtils.h"
 #include "ContainerId.h"
 
+#if defined(LEGACY_COMPONENTS)
 #include "DobbySpecConfig.h"
+#endif // LEGACY_COMPONENTS
+
 #include "DobbyBundleConfig.h"
 
 #include <sys/types.h>
@@ -53,9 +56,11 @@ class DobbyBundle;
 class DobbyRootfs
 {
 public:
+#if defined(LEGACY_COMPONENTS)
     DobbyRootfs(const std::shared_ptr<IDobbyUtils>& utils,
                 const std::shared_ptr<const DobbyBundle>& bundle,
                 const std::shared_ptr<const DobbySpecConfig>& config);
+#endif //defined(LEGACY_COMPONENTS)
     DobbyRootfs(const std::shared_ptr<IDobbyUtils>& utils,
                 const std::shared_ptr<const DobbyBundle>& bundle,
                 const std::shared_ptr<const DobbyBundleConfig>& config);
@@ -69,10 +74,12 @@ public:
 
     void setPersistence(bool persist);
 
+#if defined(LEGACY_COMPONENTS)
 private:
     void cleanUp(bool dontRemoveFiles);
 
     bool createMountPoint(int dirfd, const std::string &path, bool isDirectory) const;
+
     bool createStandardMountPoints(int dirfd) const;
 
     bool constructRootfs(int dirfd,
@@ -84,6 +91,7 @@ private:
                               mode_t mode = 0644) const;
 
     void unmountAllAt(const std::string& pathPrefix);
+#endif //defined(LEGACY_COMPONENTS)
 
 private:
     const std::shared_ptr<IDobbyUtils> mUtilities;

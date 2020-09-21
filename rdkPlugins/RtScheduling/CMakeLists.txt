@@ -15,10 +15,25 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Add all the plugin subdirectories here
-add_subdirectory(Common)
-add_subdirectory(TestPlugin)
-add_subdirectory(Storage)
-add_subdirectory(IPC)
-add_subdirectory(Logging)
-add_subdirectory(Networking)
+# Reference CMake file for the simplest Dobby RDK Plugin
+
+# Project name should match the name of the plugin
+# CMake will prefix this with "lib"
+project(RtSchedulingPlugin)
+
+add_library( ${PROJECT_NAME}
+        SHARED
+        source/RtSchedulingPlugin.cpp
+        )
+
+install(
+        TARGETS ${PROJECT_NAME}
+        LIBRARY DESTINATION lib/plugins/dobby
+        NAMELINK_SKIP
+        )
+
+target_link_libraries(${PROJECT_NAME}
+        DobbyRdkPluginCommonLib
+)
+
+set_target_properties( ${PROJECT_NAME} PROPERTIES SOVERSION 1 )

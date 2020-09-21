@@ -1,7 +1,7 @@
 # If not stated otherwise in this file or this component's LICENSE file the
 # following copyright and licenses apply:
 #
-# Copyright 2019 Sky UK
+# Copyright 2020 Sky UK
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,31 +15,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-#
-# This file is systemd script for launching the dobby service
-# at boot time.
-#
-# Enable dobby to start on boot:
-#         systemctl enable sky-dobby.service
-#
-# Start dobby immediately:
-#         systemctl start sky-dobby.service
-#
-# Stop dobby:
-#         systemctl stop sky-dobby.service
-#
-# Status:
-#         systemctl status sky-dobby.service
+project(DobbyTracing)
 
-[Unit]
-Description=Sky Dobby (Container) daemon
+add_library(${PROJECT_NAME}
+        STATIC
+        source/PerfettoTracing.cpp
+        source/PerfettoTracingSingleton.cpp
+)
 
-[Service]
-Type=dbus
-BusName=com.sky.dobby
-ExecStart=/usr/sbin/DobbyDaemon --nofork --noconsole --journald
-WatchdogSec=5
-Restart=on-failure
+target_include_directories(${PROJECT_NAME}
+        PUBLIC
+        include
 
-[Install]
-WantedBy=multi-user.target
+        PRIVATE
+        $<TARGET_PROPERTY:AppInfraLogging,INTERFACE_INCLUDE_DIRECTORIES>
+)
+
+target_link_libraries(${PROJECT_NAME}
+        AppInfraTracing
+        PerfettoSdk
+)

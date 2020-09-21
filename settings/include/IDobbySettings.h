@@ -23,6 +23,7 @@
 #ifndef IDOBBYSETTINGS_H
 #define IDOBBYSETTINGS_H
 
+#include <memory>
 #include <string>
 #include <list>
 #include <vector>
@@ -45,24 +46,6 @@ public:
     virtual ~IDobbySettings() = default;
 
 public:
-
-    // -------------------------------------------------------------------------
-    /**
-     *  @brief The name to use when registering the dbus service on the bus.
-     *
-     *
-     */
-    virtual std::string dbusServiceName() const = 0;
-
-    // -------------------------------------------------------------------------
-    /**
-     *  @brief The dbus object path under which the interfaces will be
-     *  registered.
-     *
-     *
-     */
-    virtual std::string dbusObjectPath() const = 0;
-
     // -------------------------------------------------------------------------
     /**
      *  @brief Should return the path to a directory used to store temporary
@@ -110,11 +93,11 @@ public:
 public:
     // -------------------------------------------------------------------------
     /**
-     *  Describes the details of any extra mounts needed to use the GPU. For
-     *  example the bind mount for the nexus socket.
+     *  Describes the details of any extra mounts needed to use the GPU or VPU.
+     *  For example on broadcom we bind mount the nexus socket.
      *
      */
-    struct GpuExtraMount
+    struct ExtraMount
     {
         std::string source;
         std::string target;
@@ -124,37 +107,49 @@ public:
 
     // -------------------------------------------------------------------------
     /**
-     *  @brief Returns a list of extra device nodes that need to be mapped into
-     *  the container to allow the apps to use the GPU.
+     *  Describes the details of anything extra needed to enable access to
+     *  certain hardware blocks, like the GPU or VPU.
      *
-     *
+     *      - deviceNodes
+     *          List of extra device nodes that need to be mapped into
+     *          the container to allow the apps to use the H/W.
+     *      - groupIds
+     *          The group id that the app needs to be in to access the
+     *          H/W device nodes. If not empty then the containered app will be
+     *          in that supplementary group(s).
+     *      - extraMounts
+     *          The details of any additional mounts required to access
+     *          the H/W. For example this is used on nexus platforms to map in
+     *          the nexus server socket.  This can also be used to map in
+     *          extra files / sockets used by the software.
+     *      - extraEnvVariables
+     *          A list of extra environment variables that will be set for all
+     *          containers if the given H/W access is requested.
      *
      */
-    virtual std::list<std::string> gpuDeviceNodes() const = 0;
+    struct HardwareAccessSettings
+    {
+        std::list<std::string> deviceNodes;
+        std::set<int> groupIds;
+        std::list<ExtraMount> extraMounts;
+        std::map<std::string, std::string> extraEnvVariables;
+    };
 
     // -------------------------------------------------------------------------
     /**
-     *  @brief Returns the group id that the app needs to be in to access the
-     *  GPU device nodes.
-     *
-     *  If no special gid for the GPU then this returns -1.  If there is a gid
-     *  for the GPU dev nodes then the containered app will be in that
-     *  supplementary group.
+     *  @brief Returns any extra details needed to access the GPU inside the
+     *  container.
      *
      */
-    virtual int gpuGroupId() const = 0;
+    virtual std::shared_ptr<HardwareAccessSettings> gpuAccessSettings() const = 0;
 
     // -------------------------------------------------------------------------
     /**
-     *  @brief Returns the details of any additional mounts required to access
-     *  the GPU.
-     *
-     *  For example this is used on nexus platforms to map in the nexus server
-     *  socket.
+     *  @brief Returns any extra details needed to access the VPU (video
+     *  pipeline) inside the container.
      *
      */
-    virtual bool gpuHasExtraMounts() const = 0;
-    virtual std::list<GpuExtraMount> gpuExtraMounts() const = 0;
+    virtual std::shared_ptr<HardwareAccessSettings> vpuAccessSettings() const = 0;
 
     // -------------------------------------------------------------------------
     /**

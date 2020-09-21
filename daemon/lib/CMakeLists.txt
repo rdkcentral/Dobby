@@ -15,13 +15,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+if (LEGACY_COMPONENTS)
+        list(APPEND ADDITIONAL_SOURCES
+                "source/DobbyLegacyPluginManager.cpp"
+        )
+        list(APPEND ADDITIONAL_INCLUDES ${CTEMPLATE_INCLUDE_DIRS})
+endif()
+
 add_library( DobbyDaemonLib
 
         STATIC
         source/Dobby.cpp
         source/DobbyContainer.cpp
         source/DobbyManager.cpp
-        source/DobbyPluginManager.cpp
         source/DobbyEnv.cpp
         source/DobbyRunC.cpp
         source/DobbyStream.cpp
@@ -32,10 +38,8 @@ add_library( DobbyDaemonLib
         source/DobbyLogger.cpp
         source/DobbyState.cpp
 
-        source/syshooks/BaseHook.cpp
-        source/syshooks/GpuMemoryHook.cpp
-        source/syshooks/RtSchedulingHook.cpp
-)
+        ${ADDITIONAL_SOURCES}
+        )
 
 target_include_directories( DobbyDaemonLib
 
@@ -46,7 +50,7 @@ target_include_directories( DobbyDaemonLib
         PRIVATE
         ${JSONCPP_INCLUDE_DIRS}
         ${DBUS_INCLUDE_DIRS}
-        ${CTEMPLATE_INCLUDE_DIRS}
+        ${ADDITIONAL_INCLUDES}
 
         $<TARGET_PROPERTY:AppInfraLogging,INTERFACE_INCLUDE_DIRECTORIES>
         $<TARGET_PROPERTY:AppInfraCommon,INTERFACE_INCLUDE_DIRECTORIES>
@@ -61,7 +65,15 @@ target_link_libraries(DobbyDaemonLib
         DobbyUtils
         DobbyIpcUtils
         DobbyPluginLauncherLib
+        AppInfraTracing
 )
+
+if (ENABLE_PERFETTO_TRACING)
+        target_link_libraries(DobbyDaemonLib
+                DobbyTracing
+        )
+endif()
+
 
 if( BUILDING_WITH_RDK_SDK )
 

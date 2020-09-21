@@ -95,16 +95,24 @@ private:
     DOBBY_DBUS_METHOD(getState);
     DOBBY_DBUS_METHOD(getInfo);
 
-#if (AI_BUILD_TYPE == AI_DEBUG)
+#if defined(LEGACY_COMPONENTS) && (AI_BUILD_TYPE == AI_DEBUG)
     DOBBY_DBUS_METHOD(createBundle);
     DOBBY_DBUS_METHOD(getSpec);
+#endif //defined(LEGACY_COMPONENTS) && (AI_BUILD_TYPE == AI_DEBUG)
+
+#if (AI_BUILD_TYPE == AI_DEBUG)
     DOBBY_DBUS_METHOD(getOCIConfig);
-#endif
+#endif //(AI_BUILD_TYPE == AI_DEBUG)
 
     DOBBY_DBUS_METHOD(getBridgeConnections);
     DOBBY_DBUS_METHOD(getIpAddress);
     DOBBY_DBUS_METHOD(freeIpAddress);
     DOBBY_DBUS_METHOD(getExtIfaces);
+
+#if defined(AI_ENABLE_TRACING)
+    DOBBY_DBUS_METHOD(startInProcessTracing);
+    DOBBY_DBUS_METHOD(stopInProcessTracing);
+#endif
 
     #undef DOBBY_DBUS_METHOD
 

@@ -37,6 +37,7 @@
 #include <sstream>
 #include <set>
 #include <unordered_map>
+#include <mutex>
 
 // Can override the plugin path at build time by setting -DPLUGIN_PATH=/path/to/plugins/
 #ifndef PLUGIN_PATH
@@ -149,6 +150,46 @@ IDobbyRdkPlugin::HintFlags determineHookPoint(const std::string &hookName)
     return IDobbyRdkPlugin::HintFlags::Unknown;
 }
 
+// -----------------------------------------------------------------------------
+/**
+ *  @brief Get stdin from hookpoint.
+ *
+ *  Returns a json file containing information of the container such as id, pid,
+ *  rootfs etc.
+ *
+ *  Only available with OCI container hooks.
+ *
+ *  @return content of stdin, empty on failure.
+ */
+std::string getOCIHookStdin()
+{
+    std::mutex lock;
+    std::lock_guard<std::mutex> locker(lock);
+
+    char buf[1000];
+
+    if (read(STDIN_FILENO, buf, sizeof(buf)) < 0)
+    {
+        AI_LOG_SYS_ERROR(errno, "failed to read stdin");
+        return std::string();
+    }
+
+    // Occasionally, there's some extra special characters after the json.
+    // We need to clear them out of the string.
+    std::string hookStdin(buf);
+    if (hookStdin[hookStdin.length()-1] != '}')
+    {
+        size_t pos = hookStdin.rfind('}');
+        if (pos != std::string::npos)
+        {
+            // clear any characters after the last '}'
+            hookStdin.erase(pos+1);
+        }
+    }
+
+    return hookStdin;
+}
+
 /**
  * @brief Run the plugins
  *
@@ -163,9 +204,17 @@ bool runPlugins(const IDobbyRdkPlugin::HintFlags &hookPoint, std::shared_ptr<rt_
 {
     AI_LOG_DEBUG("Loading plugins from %s", PLUGIN_PATH);
 
+    // Get the OCI hook stdin for the plugins to use
+    const std::string hookStdin = getOCIHookStdin();
+    if (hookStdin.empty())
+    {
+        AI_LOG_ERROR_EXIT("empty hook stdin, nothing to pass to plugins");
+        return false;
+    }
+
     // Create an instance of pluginManager to load the plugins
     std::shared_ptr<DobbyRdkPluginUtils> rdkPluginUtils = std::make_shared<DobbyRdkPluginUtils>();
-    DobbyRdkPluginManager pluginManager(containerConfig, rootfsPath, PLUGIN_PATH, rdkPluginUtils);
+    DobbyRdkPluginManager pluginManager(containerConfig, rootfsPath, hookStdin, PLUGIN_PATH, rdkPluginUtils);
 
     std::vector<std::string> loadedPlugins = pluginManager.listLoadedPlugins();
     std::vector<std::string> loadedLoggers = pluginManager.listLoadedLoggers();

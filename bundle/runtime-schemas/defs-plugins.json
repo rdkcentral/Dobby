@@ -310,6 +310,46 @@
                 }
             }
         },
+        "LocalTime": {
+            "type": "object",
+            "required": [
+                "required",
+                "data"
+            ],
+            "properties": {
+                "required": {
+                    "type": "boolean"
+                },
+                "data": {
+                    "type": "object",
+                    "properties": {
+                    }
+                }
+            }
+        },
+        "RtScheduling": {
+            "type": "object",
+            "required": [
+                "required",
+                "data"
+            ],
+            "properties": {
+                "required": {
+                    "type": "boolean"
+                },
+                "data": {
+                    "type": "object",
+                    "properties": {
+                        "rtlimit": {
+                            "$ref": "defs.json#/definitions/int32"
+                        },
+                        "rtdefault": {
+                            "$ref": "defs.json#/definitions/int32"
+                        }
+                    }
+                }
+            }
+        },
         "TestRdkPlugin": {
             "type": "object",
             "required": [
@@ -379,6 +419,12 @@
                 },
                 "drm": {
                     "$ref": "#/definitions/DRM"
+                },
+                "localtime": {
+                    "$ref": "#/definitions/LocalTime"
+                },
+                "rtscheduling": {
+                    "$ref": "#/definitions/RtScheduling"
                 },
                 "testrdkplugin": {
                     "$ref": "#/definitions/TestRdkPlugin"
