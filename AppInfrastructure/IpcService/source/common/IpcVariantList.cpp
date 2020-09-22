@@ -37,7 +37,7 @@
  *  does the variant's value is stored in the arg, if not the result flag is
  *  set to false.
  *
- *  @param[in]   it      The interator that points to the entry in the variant list
+ *  @param[in]   it      The iterator that points to the entry in the variant list
  *  @param[out]  arg     Pointer to value to store the arg in (if the types match)
  *  @param[out]  result  Pointer to a bool that will be set to false if the
  *                       variant value couldn't be assigned to the arg.

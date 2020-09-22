@@ -596,7 +596,7 @@ bool DbusConnection::sendMessageNoReply(DBusMessage *msg)
  *  @brief Gets the reply for the given request.
  *
  *  This method blocks until a reply or timeout has been received.  The timeout
- *  time is set when the messag was originally sent (by sendMessageWithReply).
+ *  time is set when the message was originally sent (by sendMessageWithReply).
  *  However there is a maximum timeout value of 120 seconds, this should never
  *  be hit in normal operation, if it is then it indicates a problem with the
  *  timeout code in libdbus.

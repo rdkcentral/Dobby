@@ -77,7 +77,7 @@ public:
 // -----------------------------------------------------------------------------
 /**
  *  @interface IDobbyProxy
- *  @brief Wrapper around an IpcService object that provides simplier method
+ *  @brief Wrapper around an IpcService object that provides simpler method
  *  calls to the Dobby 'hypervisor' daemon.
  *
  *  All the methods are constant because the class doesn't have any internal

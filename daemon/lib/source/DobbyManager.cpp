@@ -145,7 +145,7 @@ void DobbyManager::setupSystem()
 
     // set the core dump ulimit to un-limited, this is needed to get core
     // dumps from apps within containers ... and for if this daemon dies.
-    // note that is can be overwridden by the 'rlimits' field in the OCI
+    // note that is can be overridden by the 'rlimits' field in the OCI
     // json spec file
     struct rlimit coreLimit;
     coreLimit.rlim_cur = coreLimit.rlim_max = RLIM_INFINITY;
@@ -319,7 +319,7 @@ std::shared_ptr<IDobbyRdkLoggingPlugin> DobbyManager::GetContainerLogger(const s
  *
  * @param[in] id          id of the container
  * @param[in] container   The object that wraps up the container details.
- * @param[in] files       List of fds to preserve inside the contianer
+ * @param[in] files       List of fds to preserve inside the container
  */
 bool DobbyManager::createAndStart(const ContainerId &id,
                                   const std::unique_ptr<DobbyContainer> &container,
@@ -1093,7 +1093,7 @@ bool DobbyManager::stopContainer(int32_t cd, bool withPrejudice)
     const ContainerId &id = it->first;
     const std::unique_ptr<DobbyContainer> &container = it->second;
 
-    // this is an explict stop request by the user so clear the 'restartOnCrash'
+    // this is an explicit stop request by the user so clear the 'restartOnCrash'
     // flag so the container doesn't auto-respawn
     container->clearRestartOnCrash();
 
@@ -1127,7 +1127,7 @@ bool DobbyManager::stopContainer(int32_t cd, bool withPrejudice)
     // If a container is paused, it must be resumed before it can be stopped
     // Calling runc kill on a paused container won't do anything.
     // As per the OCI spec: "Attempting to send a signal to a container that is
-    // neither "created" nor "running" MUST have no effect on the containe"
+    // neither "created" nor "running" MUST have no effect on the container"
     else if (container->state == DobbyContainer::State::Paused)
     {
         // If we're force stopping, resume the container so it can be stopped

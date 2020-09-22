@@ -214,7 +214,7 @@ int DobbyBufferStream::dupWriteFD(int newFd, bool closeExec) const
 /**
  *  @brief Reads all the data in the buffer.
  *
- *  This doesn't do a flush or anything, this just returns everything writen
+ *  This doesn't do a flush or anything, this just returns everything written
  *  into the buffer.
  *
  *

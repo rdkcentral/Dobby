@@ -53,7 +53,7 @@ def test_container(container_id, expected_output):
 
     Parameters:
     container_id (string): name of container to run
-    expected_output (string): output that should be provided by containter
+    expected_output (string): output that should be provided by container
 
     Returns:
     (pass (bool), message (string)): Returns if expected output found and message
@@ -76,7 +76,7 @@ def validate_output_file(container_id, expected_output):
 
     Parameters:
     container_id (string): name of container to run
-    expected_output (string): output that should be provided by containter
+    expected_output (string): output that should be provided by container
 
     Returns:
     (pass (bool), message (string)): Returns if expected output found and message

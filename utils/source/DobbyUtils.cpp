@@ -545,7 +545,7 @@ void DobbyUtils::nsThread(int newNsFd, int nsType, bool* success,
 {
     AI_LOG_FN_ENTRY();
 
-    // unshare the specifc namespace from the thread
+    // unshare the specific namespace from the thread
     if (unshare(nsType) != 0)
     {
         AI_LOG_SYS_ERROR_EXIT(errno, "failed to unshare");
@@ -869,7 +869,7 @@ int DobbyUtils::loopDeviceAssociate(int fileFd, std::string* loopDevPath /*= nul
  *  @brief Run the E2FS tool inside the given directory with given args
  *
  *  This function does a fork/exec to launch the process, it drops root
- *  privilages and runs the tool as user 1000:1000, therefore the file that is
+ *  privileges and runs the tool as user 1000:1000, therefore the file that is
  *  being checked should be readable and writeble by user 1000.
  *
  *  If this function returns false the image file should probably be deleted /
@@ -957,7 +957,7 @@ int DobbyUtils::runE2fsTool(int dirFd, std::list<std::string>* consoleOutput,
                 close(devnull);
         }
 
-        // for extra safety drop root priviledge, but first change into the
+        // for extra safety drop root privilege, but first change into the
         // directory containing the image
         if (dirFd != AT_FDCWD)
         {
@@ -1048,7 +1048,7 @@ int DobbyUtils::runE2fsTool(int dirFd, std::list<std::string>* consoleOutput,
  *  @brief Runs the e2fsck tool on a file system image to check it's integrity
  *
  *  This function does a fork/exec to launch the process, it drops root
- *  privilages and runs the tool as user 1000:1000, therefore the file that is
+ *  privileges and runs the tool as user 1000:1000, therefore the file that is
  *  being checked should be readable and writeble by user 1000.
  *
  *  If this function returns false the image file should probably be deleted /
@@ -1146,7 +1146,7 @@ bool DobbyUtils::checkExtImageFile(int dirFd, const std::string& imageFileName,
  *  @brief Runs the mke2fs tool to format a file system image
  *
  *  This function does a fork/exec to launch the process, it drops root
- *  privilages and runs the tool as user 1000:1000, therefore the file that it's
+ *  privileges and runs the tool as user 1000:1000, therefore the file that it's
  *  formatting should be readable and writeble by user 1000.
  *
  *
@@ -1281,7 +1281,7 @@ bool DobbyUtils::writeTextFile(const std::string& path,
  *  @param[in]  dirFd           If specified the path should be relative to
  *                              to this directory.
  *  @param[in]  path            The path to file to write to.
- *  @param[in]  maxLen          The maxiumum number of characters to read,
+ *  @param[in]  maxLen          The maximum number of characters to read,
  *                              defaults to 4096.
  *
  *  @return the string read from the file, on failure an empty string.

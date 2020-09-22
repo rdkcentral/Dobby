@@ -147,7 +147,7 @@ IpcService::IpcService( const std::shared_ptr<const AI_DBUS::IDbusServer>& dbusS
                         int defaultTimeoutMs /*= -1*/ )
 : IpcService(dbusServer, serviceName, defaultTimeoutMs)
 {
-    // not doing member initialization on these, as don't wan't to change the parameter list of the old ctor
+    // not doing member initialization on these, as don't want to change the parameter list of the old ctor
     mDbusPackageEntitlements = std::make_shared<DbusEntitlements>(packageManager);
 
     mDbusUserIdSenderIdCache = std::make_shared<DbusUserIdSenderIdCache>(*this, mDbusPackageEntitlements);

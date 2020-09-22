@@ -122,7 +122,7 @@ public:
      *  @param[in]  bus         The bus to check.
      *  @param[in]  serviceName The service to query.
      *
-     *  @return true if the service is available, otherise false.
+     *  @return true if the service is available, otherwise false.
      */
     virtual bool ipcServiceAvailable(const BusType &bus,
                                      const std::string &serviceName) const = 0;

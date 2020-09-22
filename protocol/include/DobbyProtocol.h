@@ -23,7 +23,7 @@
 #ifndef DOBBYPROTOCOL_H
 #define DOBBYPROTOCOL_H
 
-// Use default service name and object path unless if overriden with
+// Use default service name and object path unless if overridden with
 // Dobby CMake options "DOBBY_SERVICE"/"DOBBY_OBJECT".
 #if defined(DOBBY_SERVICE_OVERRIDE)
     #define DOBBY_SERVICE   DOBBY_SERVICE_OVERRIDE

@@ -85,7 +85,7 @@ std::shared_ptr<IIpcService> createIpcService( const std::shared_ptr<const AI_DB
                                                int defaultTimeoutMs = -1);
 
 /**
- * @brief Create a IPC service attached to one of the known busses
+ * @brief Create a IPC service attached to one of the known buses
  *
  * A remote process is identified by a name, i.e., the service name. It can have one to several associated objects distinguished from each other using
  * object paths. A object can be considered as a remote instance that can be accessed through its interfaces.

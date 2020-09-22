@@ -677,7 +677,7 @@ std::string DobbySpecConfig::createRdkPluginDataString(const Json::Value& jsonOb
 
 // -----------------------------------------------------------------------------
 /**
- * @brief Enables an RDK plugin with the specified name in the ouput OCI spec
+ * @brief Enables an RDK plugin with the specified name in the output OCI spec
  */
 void DobbySpecConfig::enableRdkPlugin(ctemplate::TemplateDictionary*& subDict,
                                     const std::string& pluginName,
@@ -2572,7 +2572,7 @@ bool DobbySpecConfig::processCapabilities(const Json::Value& value,
     }
 
 #if !defined(RDK)
-    // allow the containered apps to inherit any file base capabilties, this
+    // allow the containered apps to inherit any file base capabilities, this
     // is needed if wanting to execute programs that have the file capabilities
     // that match the capabilities we've given the container
     dictionary->SetValue(NO_NEW_PRIVS, "false");

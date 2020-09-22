@@ -46,7 +46,7 @@
 // -----------------------------------------------------------------------------
 /**
  *  @class DobbyProxy
- *  @brief Wrapper around an IpcService object that provides simplier method
+ *  @brief Wrapper around an IpcService object that provides simpler method
  *  calls to the dobby daemon.
  *
  *

@@ -414,7 +414,7 @@ void DbusTimeouts::removeTimeOut(DBusTimeout *timeout)
     {
         // if not processing then we can just remove the entry, in theory we
         // should also update the timerfd, but we only need to do this if we're
-        // removing the next expiry ... and it's probably just more efficent to
+        // removing the next expiry ... and it's probably just more efficient to
         // let the timer expire and handle it in processEvent()
         mTimeouts.erase(it);
     }

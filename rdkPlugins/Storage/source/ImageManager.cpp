@@ -243,14 +243,14 @@ bool ImageManager::checkFSImageAt(int dirFd,
 
 
 /**
- * @brief Create a filesytem image of the given size and format
+ * @brief Create a filesystem image of the given size and format
  *
  * This function creates an empty file of the given size and then uses one
  * of the mkfs tools to write a file system structure into the file.
  *
  *
  * @warning If this function aborts in the middle of the process there is
- * a possiblity it could leak temporary files.  Some sort of clean-up needs
+ * a possibility it could leak temporary files.  Some sort of clean-up needs
  * be down at start-up to remove previous temporary files.
  *
  * @param[in] filepath The fully qualified path to the filesystem image

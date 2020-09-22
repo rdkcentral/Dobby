@@ -811,7 +811,7 @@ static void shutdownCommand(const std::shared_ptr<IDobbyProxy>& dobbyProxy,
 
 // -----------------------------------------------------------------------------
 /**
- * @brief Initilises the interactive commands
+ * @brief Initialises the interactive commands
  *
  *
  *
