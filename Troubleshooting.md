@@ -9,6 +9,7 @@
     - [Raspberry Pi](#raspberry-pi)
   - [Networking](#networking)
   - [Permissions](#permissions)
+  - ["container is not in a 'stopped' state" Error Message](#container-is-not-in-a-stopped-state-error-message)
 - [Running commands inside the container](#running-commands-inside-the-container)
 
 # Preface
@@ -109,7 +110,27 @@ The UID/GID map is defined in the OCI runtime config:
 ```
 Here, the bundle should be owned by 1000:1000 on the host, so that the user inside the container has the correct permissions to read/write/execute files in the container rootfs.
 
-To disable user namespacing en
+To disable user namespacing for a container:
+
+* If using BundleGen to create the bundle...
+  * Set `disableUserNamespacing: true` in the platform template and regenerate the bundle
+* If using pre-made bundles:
+  * Remove the `user` namespace type from the `namespaces` section of the config
+  * Remove the `uidMappings` and `gidMappings` sections
+
+## "container is not in a 'stopped' state" Error Message
+Sometimes, if a container crashes, when restarting the container Dobby will produce the following error:
+
+`container is not in the 'stopped' state`
+
+The root cause is still being investigated, but it is often possible to fix with one of the following methods
+
+* Delete the contents of the following directories:
+  * `/run/rdk/crun/`
+  * `/var/run/rdk/crun`
+
+* Delete the OCI bundle and re-install the container
+
 
 # Running commands inside the container
 If the container is starting but not behaving as expected, it can often be useful to run commands inside the container. The easiest way to do this is with `DobbyTool exec` (assuming `DobbyTool` is installed on the STB).
