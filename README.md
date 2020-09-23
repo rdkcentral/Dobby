@@ -16,8 +16,6 @@ Dobby has the following dependencies
 * libdbus
 * boost (1.61)
 
-The STB kernel should also have veth support enabled to allow for NAT networking: https://cateee.net/lkddb/web-lkddb/VETH.html
-
 ## Build
 Dobby is a CMake project and can be built with the standard CMake workflow. To build, run the following commands.
 
