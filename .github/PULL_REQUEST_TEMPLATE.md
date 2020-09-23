@@ -13,4 +13,4 @@ How to test this PR (if applicable)
 - [ ] Other (doesn't fit into the above catagories - e.g. documentation updates)
 
 ### Requires Bitbake Recipe changes?
-- [ ] The Bitbake recipe must be modified to support the changes in this PR (beyond updating `SRC_REV`)
+- [ ] The base Bitbake recipe (`meta-rdk-ext/recipes-containers/dobby/dobby.bb`) must be modified to support the changes in this PR (beyond updating `SRC_REV`)
