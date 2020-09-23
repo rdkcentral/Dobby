@@ -118,7 +118,7 @@ public:
      *  namespace.  @see LoopMounterHook class for where this is used.
      *
      *  You can also hook this point to allow you to add extra environment
-     *  variables or pass in additional file descriptors vie the @a startupState
+     *  variables or pass in additional file descriptors via the @a startupState
      *  class.
      *
      *  @param[in]  id              The string id of the container.
@@ -223,7 +223,7 @@ public:
 // -----------------------------------------------------------------------------
 /**
  *  @define PUBLIC_FN
- *  @brief Macro for setting the visiblity on the symbols
+ *  @brief Macro for setting the visibility on the symbols
  *
  *  See https://gcc.gnu.org/wiki/Visibility for details on why this is a good
  *  idea.

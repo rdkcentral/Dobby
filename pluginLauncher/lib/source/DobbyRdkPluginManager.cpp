@@ -448,7 +448,7 @@ bool DobbyRdkPluginManager::isLoaded(const std::string &pluginName) const
  * @brief Check if a plugin implements the specified hook
  *
  * @param[in]   pluginName  The name of the plugin to check
- * @param[in]   hook        The hook to check if the plugin implemenets
+ * @param[in]   hook        The hook to check if the plugin implements
  *
  * @return True if plugin implements specified hook
  */

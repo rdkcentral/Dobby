@@ -252,7 +252,7 @@ bool DobbyConfig::addEnvironmentVar(const std::string& envVar)
         }
     }
 
-    // Increase the number of enviromental variables
+    // Increase the number of environment variables
     cfg->process->env_len += 1;
 
     // Update env var in OCI bundle config

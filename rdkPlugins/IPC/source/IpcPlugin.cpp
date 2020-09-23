@@ -276,7 +276,7 @@ bool IpcPlugin::addSocketAndEnv(const std::shared_ptr<DobbyRdkPluginUtils> utils
  *
  *  This uses basic string operations
  *
- *  @param[in]  address     The dbus address tring to parse
+ *  @param[in]  address     The dbus address trying to parse
  *
  *  @return on success the path to the dbus socket, on failure an empty string.
  */

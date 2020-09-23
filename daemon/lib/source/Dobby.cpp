@@ -245,7 +245,7 @@ void Dobby::configSignals()
 /**
  *  @brief Writes logging output to the console.
  *
- *  This duplicates code in the Logging component, but unfortunatly we can't
+ *  This duplicates code in the Logging component, but unfortunately we can't
  *  use the function there without messing up the API for all other things
  *  that use it.
  *
@@ -436,7 +436,7 @@ void Dobby::setupLogging(unsigned targets /*= LogTarget::Console*/)
 #if !defined(RDK)
 
     // we use the AI logging code in the Logger component, which by default
-    // logs to stdout/stderr.  This is no use to us if we're running as a deamon
+    // logs to stdout/stderr.  This is no use to us if we're running as a daemon
     // so instead check if the logging pipe is set in the env and if so redirect
     // output there.
     const char *env = getenv("ETHAN_LOGGING_PIPE");

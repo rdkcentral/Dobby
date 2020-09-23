@@ -53,7 +53,7 @@ To send the container output to journald, set the following options:
 | `sink`                     | `journald`                                                                                                                                                                                                                                 |
 | `journaldOptions.priority` | Priority level (severity) for container log messages. Value should be a string. Note it is not possible to distinguish between stdout and stderr output.
 
-Each container is identified in journald by its hostname, which is set by Dobby to the container ID when first starting the contianer.
+Each container is identified in journald by its hostname, which is set by Dobby to the container ID when first starting the container.
 
 Note that the PID shown next to each container message in `journalctl -f` will be the PID of the DobbyDaemon, not the PID of the container. The container PID can be retrieved from the `OBJECT_PID` field of the message:
 

@@ -44,7 +44,7 @@ set( CMAKE_SYSROOT "${RDK_TOOLCHAIN_BASE}/arm-rdk-linux-gnueabi/sysroot" )
 set( CMAKE_FIND_ROOT_PATH "${RDK_TOOLCHAIN_BASE}/arm-rdk-linux-gnueabi/sysroot" )
 
 # there seems to be an issue with --sysroot from CMAKE_SYSROOT when checking
-# if the compilier works, so for now assume the compilier works
+# if the compiler works, so for now assume the compiler works
 set( CMAKE_C_COMPILER_WORKS TRUE )
 set( CMAKE_CXX_COMPILER_WORKS TRUE )
 

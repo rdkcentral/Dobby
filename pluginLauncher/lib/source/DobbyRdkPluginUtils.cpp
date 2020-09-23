@@ -463,7 +463,7 @@ bool DobbyRdkPluginUtils::addEnvironmentVar(const std::shared_ptr<rt_dobby_schem
         }
     }
 
-    // Increase the number of enviromental variables
+    // Increase the number of environmental variables
     cfg->process->env_len += 1;
 
     // Update env var in OCI bundle config

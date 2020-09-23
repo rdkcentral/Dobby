@@ -302,7 +302,7 @@ bool GpuPlugin::setupContainerGpuLimit(const std::string cgroupDirPath,
         return false;
     }
 
-    // bind mount the container specfic cgroup into the container
+    // bind mount the container specific cgroup into the container
     if (!mUtils->callInNamespace(containerPid, CLONE_NEWNS,
                                  &GpuPlugin::bindMountGpuCgroup,
                                  this, sourcePath, targetPath))

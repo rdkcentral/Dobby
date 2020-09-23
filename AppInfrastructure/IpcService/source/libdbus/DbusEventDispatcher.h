@@ -48,7 +48,7 @@ namespace AI_IPC
  *  however those objects still have a corresponding fd that are added to the
  *  poll loop managed by this dispatchers.
  *
- *  In addition the dispatcher has an API to allow you to call arbitary
+ *  In addition the dispatcher has an API to allow you to call arbitrary
  *  functions in the context of it's dispatcher thread.  This is used by the
  *  higher level DbusConnection object to make libdbus API calls on the
  *  connection from the dispatch thread, and thereby avoid the many varied

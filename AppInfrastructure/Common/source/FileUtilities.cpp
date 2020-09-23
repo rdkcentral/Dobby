@@ -833,7 +833,7 @@ std::string AICommon::fileMD5(int fd)
     const off_t originalPos = lseek(fd, 0, SEEK_CUR);
     if ((originalPos < 0) || (lseek(fd, 0, SEEK_SET) < 0))
     {
-        AI_LOG_SYS_ERROR(errno, "Failed to seek to begining of file");
+        AI_LOG_SYS_ERROR(errno, "Failed to seek to beginning of file");
         return std::string();
     }
 

@@ -222,7 +222,7 @@ int StorageHelper::loopDeviceAssociate(int fileFd, std::string* loopDevPath /*= 
  *  @param[in]  sourceFile  The path to the image file.
  *  @param[out] loopDevice  The path to the loop device that was attached.
  *
- *  @return the file desciptor to the loop device if attached, otherise -1.
+ *  @return the file descriptor to the loop device if attached, otherwise -1.
  */
 int StorageHelper::attachLoopDevice(const std::string& sourceFile,
                                        std::string* loopDevice)
@@ -646,7 +646,7 @@ bool StorageHelper::Test_attachLoopDevice(std::string& imagePath)
     }
     else
     {
-        AI_LOG_INFO("Successfuly attached loop device =%s", loopDevice.c_str());
+        AI_LOG_INFO("Successfully attached loop device =%s", loopDevice.c_str());
     }
 
     return true;

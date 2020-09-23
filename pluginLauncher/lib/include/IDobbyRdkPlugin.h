@@ -119,7 +119,7 @@ public:
 // -----------------------------------------------------------------------------
 /**
  *  @define PUBLIC_FN
- *  @brief Macro for setting the visiblity on the symbols
+ *  @brief Macro for setting the visibility on the symbols
  *
  *  See https://gcc.gnu.org/wiki/Visibility for details on why this is a good
  *  idea.

@@ -128,7 +128,7 @@ For more information about a command, run `DobbyTool help [command]`. For exampl
 $ DobbyTool help start
 start             start [options...] <id> <specfile/bundlepath> [command]
 
-Starts a container using the given spec file or bundle path. Can optionally specify the command to run inside the contianer. Any arguments after command are treated as arguments to the command.
+Starts a container using the given spec file or bundle path. Can optionally specify the command to run inside the container. Any arguments after command are treated as arguments to the command.
 ```
 
 ## DobbyPluginLauncher

@@ -334,7 +334,7 @@ bool DobbyIPCUtils::ipcEmitSignal(const IDobbyIPCUtils::BusType& bus,
  *
  *  @param[in]  serviceName The service to query.
  *
- *  @return true if the service is available, otherise false.
+ *  @return true if the service is available, otherwise false.
  */
 bool DobbyIPCUtils::ipcServiceAvailable(const BusType& bus,
                                      const std::string& serviceName) const

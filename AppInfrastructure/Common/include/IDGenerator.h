@@ -51,7 +51,7 @@ namespace AICommon
  *
  *  The api has a get() and a put() operation, obviously get() returns a new
  *  id and put() releases the id back to the pool.  The id's returned are
- *  not sequencial, instead they are created using a pseudo random repeating
+ *  not sequential, instead they are created using a pseudo random repeating
  *  sequence (fibonacci LFSR).
  *
  *  When the pool is exhausted get() will return -1.

@@ -140,7 +140,7 @@ int DobbyFileAccessFixer::fixRuntimePerms(const char* filePath,
     switch (typeFlag)
     {
         case FTW_D:
-            // fix directory permisions
+            // fix directory permissions
             if ((statBuf->st_mode & 0777) != 0555)
             {
                 chmodFile(filePath, (statBuf->st_mode & 07777), 0555);
@@ -194,7 +194,7 @@ bool DobbyFileAccessFixer::fixOptRuntimePerms() const
 {
     AI_LOG_FN_ENTRY();
 
-    // Recurse throug every entry in the the /opt/runtime dir
+    // Recurse through every entry in the the /opt/runtime dir
     if (nftw("/opt/runtimes", fixRuntimePerms, 128, FTW_PHYS) != 0)
     {
         AI_LOG_SYS_ERROR_EXIT(errno, "failed to walk '/opt/runtimes' dir");

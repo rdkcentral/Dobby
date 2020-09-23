@@ -450,7 +450,7 @@ void LoggingPlugin::FileSink(const ContainerInfo &containerInfo, bool exitEof, b
         }
     }
 
-    // Seperate sections of log file for reabability
+    // Separate sections of log file for reabability
     // (useful if we're writing lots of buffer dumps)
     std::string marker = "---------------------------------------------\n";
     write(outputFd, marker.c_str(), marker.length());
