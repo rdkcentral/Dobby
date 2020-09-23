@@ -1514,6 +1514,9 @@ std::string DobbyManager::statsOfContainer(int32_t cd) const
             case DobbyContainer::State::Stopping:
                 jsonStats["state"] = "stopping";
                 break;
+            case DobbyContainer::State::Paused:
+                jsonStats["state"] = "paused";
+                break;
         }
 
         // convert the json stats to a string and return
