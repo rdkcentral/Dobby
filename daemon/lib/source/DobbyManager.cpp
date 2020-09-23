@@ -1217,7 +1217,15 @@ bool DobbyManager::pauseContainer(int32_t cd)
         return false;
     }
 
-    AI_LOG_WARN("Container '%s' was not running so could not be paused", id.c_str());
+    if (container->state == DobbyContainer::State::Paused)
+    {
+        AI_LOG_WARN("Container '%s' is already paused", id.c_str());
+    }
+    else
+    {
+        AI_LOG_WARN("Container '%s' is not running so could not be paused", id.c_str());
+    }
+
     AI_LOG_FN_EXIT();
     return false;
 }
@@ -1270,7 +1278,7 @@ bool DobbyManager::resumeContainer(int32_t cd)
         return false;
     }
 
-    AI_LOG_WARN("Container '%s' was not running so could not be paused", id.c_str());
+    AI_LOG_WARN("Container '%s' is not paused so could not be resumed", id.c_str());
     AI_LOG_FN_EXIT();
     return false;
 }
