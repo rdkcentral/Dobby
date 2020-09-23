@@ -12,7 +12,7 @@
 - [Running commands inside the container](#running-commands-inside-the-container)
 
 # Preface
-There are a number of things that could go wrong when runnign containers. This document explains some common issues encountered when starting containers, and where to look for logs to help troubleshoot
+There are a number of things that could go wrong when running containers. This document explains some common issues encountered when starting containers, and where to look for logs to help troubleshoot
 
 # Log Files
 If a container does not start, there are a few important log files to look at.
@@ -64,14 +64,14 @@ The output should look similar to the below, where all cgroups are enabled
 ```
 # cat /proc/cgroups
 #subsys_name	hierarchy	num_cgroups	enabled
-cpuset	        8	        1	        1
-cpu	            4	        1	        1
-cpuacct	        4	        1	        1
-blkio	        5	        1	        1
-memory	        2	        3	        1
-devices	        6	        72	        1
-freezer	        3	        1	        1
-net_cls	        7	        1	        1
+cpuset          8           1           1
+cpu             4           1           1
+cpuacct         4           1           1
+blkio           5           1           1
+memory          2           3           1
+devices         6           72          1
+freezer         3           1           1
+net_cls         7           1           1
 ```
 
 ### Raspberry Pi
@@ -114,7 +114,7 @@ To disable user namespacing en
 # Running commands inside the container
 If the container is starting but not behaving as expected, it can often be useful to run commands inside the container. The easiest way to do this is with `DobbyTool exec` (assuming `DobbyTool` is installed on the STB).
 
-The `exec` command accepts two parameters - the id of the running container and the command(s) to run inside the contianer. For example:
+The `exec` command accepts two parameters - the id of the running container and the command(s) to run inside the container. For example:
 
 ```
 $ DobbyTool start sleep sleepy-thunder_bundle
