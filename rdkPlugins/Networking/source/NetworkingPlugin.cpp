@@ -20,6 +20,7 @@
 #include "NetworkingPlugin.h"
 #include "DnsmasqSetup.h"
 #include "PortForwarding.h"
+#include "HttpProxy.h"
 #include "NetworkSetup.h"
 
 #include <fcntl.h>
@@ -105,6 +106,7 @@ unsigned NetworkingPlugin::hookHints() const
 {
     return (
         IDobbyRdkPlugin::HintFlags::PostInstallationFlag |
+        IDobbyRdkPlugin::HintFlags::PreCreationFlag |
         IDobbyRdkPlugin::HintFlags::CreateRuntimeFlag |
         IDobbyRdkPlugin::HintFlags::PostHaltFlag
     );
@@ -142,10 +144,35 @@ bool NetworkingPlugin::postInstallation()
         NetworkSetup::addNetworkNamespace(mContainerConfig);
     }
 
+    // setup HTTP Proxy if needed
+    if (mPluginData->http_proxy)
+    {
+        if (!HttpProxy::setupHttpProxy(mUtils, mContainerConfig))
+        {
+            AI_LOG_ERROR_EXIT("failed to setup HTTP Proxy");
+            return false;
+        }
+    }
+
     AI_LOG_FN_EXIT();
     return true;
 }
 
+/**
+ * @brief Dobby Hook - run in host namespace before container creation process
+ */
+bool NetworkingPlugin::preCreation()
+{
+    // add proxy to container root CA if needed
+    if (mPluginData->http_proxy && mPluginData->http_proxy->proxy_root_ca_cert)
+    {
+        if (!HttpProxy::addProxyToRootCABundle(mUtils, mContainerConfig, mRootfsPath))
+        {
+            AI_LOG_ERROR_EXIT("failed to add proxy to root CA bundle");
+            return false;
+        }
+    }
+}
 
 /**
  * @brief OCI Hook - Run in host namespace
@@ -350,6 +377,16 @@ bool NetworkingPlugin::postHalt()
         if (!PortForwarding::removePortForwards(mNetfilter, mHelper, mContainerId, mPluginData->port_forwarding))
         {
             success = false;
+        }
+    }
+
+    // remove copied root CA bundle if one was created for HTTP proxy
+    if (mPluginData->http_proxy && mPluginData->http_proxy->proxy_root_ca_cert)
+    {
+        if (!HttpProxy::cleanup(mRootfsPath))
+        {
+            AI_LOG_ERROR_EXIT("failed to remove container's root CA bundle");
+            return false;
         }
     }
 

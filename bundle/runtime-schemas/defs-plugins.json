@@ -234,6 +234,35 @@
                                     }
                                 }
                             }
+                        },
+                        "httpProxy": {
+                            "type": "object",
+                            "properties": {
+                                "proxy": {
+                                    "type": "object",
+                                    "required": [
+                                        "host",
+                                        "port"
+                                    ],
+                                    "properties": {
+                                        "host": {
+                                            "type": "string"
+                                        },
+                                        "port": {
+                                            "$ref": "defs.json#/definitions/uint16"
+                                        }
+                                    }
+                                },
+                                "ignoreProxy": {
+                                    "$ref": "defs.json#/definitions/ArrayOfStrings"
+                                },
+                                "ignoreProxyOnBridge": {
+                                    "type": "boolean"
+                                },
+                                "proxyRootCACert": {
+                                    "type": "string"
+                                }
+                            }
                         }
                     }
                 }

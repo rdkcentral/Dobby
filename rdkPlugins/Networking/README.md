@@ -34,6 +34,21 @@ Add the following section to your OCI runtime configuration `config.json` file t
                             "protocol": "udp"
                         }
                     ]
+                },
+                "httpProxy": {
+                    "proxy": {
+                        "host": "192.168.0.1",
+                        "port": 8080
+                    },
+                    "ignoreProxy": [
+                        "*.google.com",
+                        "localhost"
+                    ],
+                    "ignoreProxyOnBridge": true,
+                    "proxyRootCACert": "-----BEGIN CERTIFICATE-----
+                                        MIIFUjCCBDqgAwIBAgIGAXMRbOeHMA0GCSqGSIb3DQEBCwUAMIGtMT4wPAYDVQQDDDVDaGFybGVz
+                                        IFByb3h5IENBICgyIEp1bCAyMDIwLCBCZW5zLU1hY0Jvb2stUHJvLmxvY2FsKTElMCMGA1UECwwc
+                                        aHR0cHM6Ly9jaGFybGVzcHJveHkuY2..."
                 }
             }
         }
@@ -101,9 +116,9 @@ If the `dnsmasq` field is empty, Networking plugin defaults to not setting up dn
 Only usable with network types 'open' and 'nat'.
 
 ```json
-    "data": {
-        "dnsmasq": "true"
-    }
+"data": {
+    "dnsmasq": "true"
+}
 ```
 
 ### Port forwarding
@@ -124,20 +139,20 @@ Host to container port forwarding can be used to allow containered processes to 
 `hostToContainer` forwards incoming packets to specified port(s) on the host to the container instead.
 
 ```json
-    "data": {
-        "portForwarding": {
-            "hostToContainer": [
-                {
-                    "port": 1234,
-                    "protocol": "tcp"
-                },
-                {
-                    "port": 5678,
-                    "protocol": "udp"
-                }
-            ]
-        }
+"data": {
+    "portForwarding": {
+        "hostToContainer": [
+            {
+                "port": 1234,
+                "protocol": "tcp"
+            },
+            {
+                "port": 5678,
+                "protocol": "udp"
+            }
+        ]
     }
+}
 ```
 
 
@@ -148,22 +163,69 @@ Container to host port forwarding can be used to allow containers access to the 
 `containerToHost` adds firewall rules to allow containers to access the specified port(s) on the host via the bridge device.
 
 ```json
-    "data": {
-        "portForwarding": {
-            "containerToHost": [
-                {
-                    "port": 1234,
-                    "protocol": "tcp"
-                },
-                {
-                    "port": 5678,
-                    "protocol": "udp"
-                }
-            ]
-        }
+"data": {
+    "portForwarding": {
+        "containerToHost": [
+            {
+                "port": 1234,
+                "protocol": "tcp"
+            },
+            {
+                "port": 5678,
+                "protocol": "udp"
+            }
+        ]
     }
+}
 ```
 
+### HTTP Proxy
+
+The `httpProxy` field can be used to set HTTP proxy environment variables and add additional root CA certificates to the container.
+
+##### Proxy host address and port number
+
+The given `proxy.host` and `proxy.port` data fields will be set to the `http_proxy` environment variable in the container.
+
+This environment variable is used to point to the proxy server.
+
+##### Ignore domains
+
+The domains given in the `ignoreProxy` data field are added to the `no_proxy` environment variable in the container.
+
+The ignored domains are excluded from proxying.
+
+##### Ignore proxy on the Dobby bridge device
+
+If `ignoreProxyOnBridge` is set to true, the dobby bridge device's address is added to the `no_proxy` environment variable in the container.
+
+##### Additional root CA certificate
+
+The `proxyRootCACert` field is optional. If it is included, the certificate is prepended to the host's root CA certificate in the container.
+
+Use the full certificate, starting with `-----BEGIN CERTIFICATE-----` and ending with `-----END CERTIFICATE-----`.
+
+Example json:
+
+```json
+"data": {
+    "httpProxy": {
+        "proxy": {
+            "host": "192.168.0.1",
+            "port": 8080
+        },
+        "ignoreProxy": [
+            "*.google.com",
+            "localhost"
+        ],
+        "ignoreProxyOnBridge": true,
+        "proxyRootCACert": "-----BEGIN CERTIFICATE-----
+                            MIIFUjCCBDqgAwIBAgIGAXMRbOeHMA0GCSqGSIb3DQEBCwUAMIGtMT4wPAYDVQQDDDVDaGFybGVz
+                            IFByb3h5IENBICgyIEp1bCAyMDIwLCBCZW5zLU1hY0Jvb2stUHJvLmxvY2FsKTElMCMGA1UECwwc
+                            aHR0cHM6Ly9jaGFybGVzcHJveHkuY2..."
+    }
+}
+```
 
 ## Settings
 
