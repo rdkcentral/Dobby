@@ -77,12 +77,15 @@ bool HttpProxy::setupHttpProxy(const std::shared_ptr<DobbyRdkPluginUtils> &utils
         noProxyList += cfg->ignore_proxy[i];
     }
 
-    // add the 'no_proxy' environment var
-    std::string noProxyEnvVar = std::string("no_proxy=") + noProxyList;
-    if (!utils->addEnvironmentVar(config, noProxyEnvVar))
+    // add the 'no_proxy' environment var if there are any domains to ignore
+    if (!noProxyList.empty())
     {
-        AI_LOG_ERROR_EXIT("failed to add no_proxy environment variable");
-        return false;
+        std::string noProxyEnvVar = std::string("no_proxy=") + noProxyList;
+        if (!utils->addEnvironmentVar(config, noProxyEnvVar))
+        {
+            AI_LOG_ERROR_EXIT("failed to add no_proxy environment variable");
+            return false;
+        }
     }
 
     // add the 'http_proxy' environment var
