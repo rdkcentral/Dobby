@@ -55,7 +55,6 @@ public:
 
 public:
     bool postInstallation() override;
-    bool preCreation() override;
     bool createRuntime() override;
     bool postHalt() override;
 

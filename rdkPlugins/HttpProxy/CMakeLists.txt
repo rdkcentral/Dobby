@@ -15,22 +15,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-project(NetworkingPlugin)
+project(HttpProxyPlugin)
 
 
 add_library( ${PROJECT_NAME}
         SHARED
-        source/NetworkingPlugin.cpp
-        source/NetworkSetup.cpp
-        source/BridgeInterface.cpp
-        source/Netlink.cpp
-        source/Netfilter.cpp
-        source/DnsmasqSetup.cpp
-        source/NetworkingHelper.cpp
-        source/PortForwarding.cpp
-
-        # proxy to talk to DobbyDaemon
-        ../Common/source/DobbyRdkPluginProxy.cpp
+        source/HttpProxyPlugin.cpp
 )
 
 install(
@@ -41,13 +31,6 @@ install(
 
 target_link_libraries( ${PROJECT_NAME}
         DobbyRdkPluginCommonLib
-        IpcService
-
-        # 3rd party libraries
-        systemd
-        Threads::Threads
-        LIBNL::libnl
-        LIBNL::libnl-route
 )
 
 target_include_directories( ${PROJECT_NAME}
@@ -55,13 +38,7 @@ target_include_directories( ${PROJECT_NAME}
         include
 
         PRIVATE
-        ${LIBNL_INCLUDE_DIR}
-        ../../protocol/include
-        $<TARGET_PROPERTY:IpcService,INTERFACE_INCLUDE_DIRECTORIES>
-
+        ../Networking/include
 )
 
 set_target_properties( ${PROJECT_NAME} PROPERTIES SOVERSION 1 )
-
-# uncomment to use workaround functions for libnl bridge creation
-#target_compile_definitions( ${PROJECT_NAME} PRIVATE ENABLE_LIBNL_BRIDGE_WORKAROUND )

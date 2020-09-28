@@ -34,21 +34,6 @@ Add the following section to your OCI runtime configuration `config.json` file t
                             "protocol": "udp"
                         }
                     ]
-                },
-                "httpProxy": {
-                    "proxy": {
-                        "host": "192.168.0.1",
-                        "port": 8080
-                    },
-                    "ignoreProxy": [
-                        "*.google.com",
-                        "localhost"
-                    ],
-                    "ignoreProxyOnBridge": true,
-                    "proxyRootCACert": "-----BEGIN CERTIFICATE-----
-                                        MIIFUjCCBDqgAwIBAgIGAXMRbOeHMA0GCSqGSIb3DQEBCwUAMIGtMT4wPAYDVQQDDDVDaGFybGVz
-                                        IFByb3h5IENBICgyIEp1bCAyMDIwLCBCZW5zLU1hY0Jvb2stUHJvLmxvY2FsKTElMCMGA1UECwwc
-                                        aHR0cHM6Ly9jaGFybGVzcHJveHkuY2..."
                 }
             }
         }
@@ -175,53 +160,6 @@ Container to host port forwarding can be used to allow containers access to the 
                 "protocol": "udp"
             }
         ]
-    }
-}
-```
-
-### HTTP Proxy
-
-The `httpProxy` field can be used to set HTTP proxy environment variables and add additional root CA certificates to the container.
-
-##### Proxy host address and port number
-
-The given `proxy.host` and `proxy.port` data fields will be set to the `http_proxy` environment variable in the container.
-
-This environment variable is used to point to the proxy server.
-
-##### Ignore domains
-
-The domains given in the `ignoreProxy` data field are added to the `no_proxy` environment variable in the container.
-
-The ignored domains are excluded from proxying.
-
-##### Ignore proxy on the Dobby bridge device
-
-If `ignoreProxyOnBridge` is set to true, the dobby bridge device's address is added to the `no_proxy` environment variable in the container.
-
-##### Additional root CA certificate
-
-The `proxyRootCACert` field is optional. If it is included, the certificate is prepended to the host's root CA certificate in the container.
-
-Use the full certificate, starting with `-----BEGIN CERTIFICATE-----` and ending with `-----END CERTIFICATE-----`.
-
-Note that any newline control character will need to be replaced with `\n` in the certificate string.
-
-Example json:
-
-```json
-"data": {
-    "httpProxy": {
-        "proxy": {
-            "host": "192.168.0.1",
-            "port": 8080
-        },
-        "ignoreProxy": [
-            "*.google.com",
-            "localhost"
-        ],
-        "ignoreProxyOnBridge": true,
-        "proxyRootCACert": "-----BEGIN CERTIFICATE-----\nMIIFUjCCBDqgAwIBAgIGAXMRbOeHMA0GCSqGSIb3DQEBCwUAMIGtMT4wPAYDVQQDDDVDaGFybGVz\nIFByb3h5IENBICgyIEp1bCAyMDIwLCBCZW5zLU1hY0Jvb2stUHJvLmxvY2FsKTElMCMGA1UECwwc\naHR0cHM6Ly9jaGFybGVzcHJveHkuY2..."
     }
 }
 ```

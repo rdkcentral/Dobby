@@ -234,35 +234,6 @@
                                     }
                                 }
                             }
-                        },
-                        "httpProxy": {
-                            "type": "object",
-                            "properties": {
-                                "proxy": {
-                                    "type": "object",
-                                    "required": [
-                                        "host",
-                                        "port"
-                                    ],
-                                    "properties": {
-                                        "host": {
-                                            "type": "string"
-                                        },
-                                        "port": {
-                                            "$ref": "defs.json#/definitions/uint16"
-                                        }
-                                    }
-                                },
-                                "ignoreProxy": {
-                                    "$ref": "defs.json#/definitions/ArrayOfStrings"
-                                },
-                                "ignoreProxyOnBridge": {
-                                    "type": "boolean"
-                                },
-                                "proxyRootCACert": {
-                                    "type": "string"
-                                }
-                            }
                         }
                     }
                 }
@@ -379,6 +350,46 @@
                 }
             }
         },
+        "HttpProxy": {
+            "required": [
+                "required",
+                "data"
+            ],
+            "properties": {
+                "required": {
+                    "type": "boolean"
+                },
+                "data": {
+                    "type": "object",
+                    "properties": {
+                        "proxy": {
+                            "type": "object",
+                            "required": [
+                                "host",
+                                "port"
+                            ],
+                            "properties": {
+                                "host": {
+                                    "type": "string"
+                                },
+                                "port": {
+                                    "$ref": "defs.json#/definitions/uint16"
+                                }
+                            }
+                        },
+                        "ignoreProxy": {
+                            "$ref": "defs.json#/definitions/ArrayOfStrings"
+                        },
+                        "ignoreProxyOnBridge": {
+                            "type": "boolean"
+                        },
+                        "proxyRootCACert": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "TestRdkPlugin": {
             "type": "object",
             "required": [
@@ -454,6 +465,9 @@
                 },
                 "rtscheduling": {
                     "$ref": "#/definitions/RtScheduling"
+                },
+                "httpproxy": {
+                    "$ref": "#/definitions/HttpProxy"
                 },
                 "testrdkplugin": {
                     "$ref": "#/definitions/TestRdkPlugin"

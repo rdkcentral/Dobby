@@ -17,9 +17,10 @@
 * limitations under the License.
 */
 
-#ifndef HTTPPROX_H
-#define HTTPPROX_H
+#ifndef HTTPPROXYPLUGIN_H
+#define HTTPPROXYPLUGIN_H
 
+#include <RdkPluginBase.h>
 #include "DobbyRdkPluginUtils.h"
 
 #include <string>
@@ -27,7 +28,7 @@
 
 // -----------------------------------------------------------------------------
 /**
- *  @namespace HttpProxy
+ *  @class HttpProxyPlugin
  *
  *  @brief Used to set http proxy environment variables and optionally add
  *  additional root ca certificates to the container.
@@ -38,23 +39,42 @@
  *  file.
  *
  */
-namespace HttpProxy
+
+class HttpProxyPlugin : public RdkPluginBase
 {
+public:
+    HttpProxyPlugin(std::shared_ptr<rt_dobby_schema>& containerConfig,
+                    const std::shared_ptr<DobbyRdkPluginUtils> &utils,
+                    const std::string &rootfsPath,
+                    const std::string &hookStdin);
 
-bool setupHttpProxy(const std::shared_ptr<DobbyRdkPluginUtils> &utils,
-                    const std::shared_ptr<rt_dobby_schema> &config,
-                    const std::string &rootfsPath);
+public:
+    inline std::string name() const override
+    {
+        return mName;
+    };
 
-bool addProxyToRootCABundle(const std::shared_ptr<DobbyRdkPluginUtils> &utils,
-                            const std::shared_ptr<rt_dobby_schema> &config,
-                            const std::string &rootfsPath);
+    unsigned hookHints() const override;
 
-bool cleanup(const std::string &rootfsPath);
+public:
+    bool postInstallation() override;
+    bool preCreation() override;
+    bool postHalt() override;
+
+
+private:
+    bool setupHttpProxy();
+    bool addProxyToRootCABundle();
+    bool cleanup();
+    bool addCACertificateMount();
+
+private:
+    bool mValid;
+    const std::string mName;
+    std::shared_ptr<rt_dobby_schema> mContainerConfig;
+    const std::string mMountedCACertsPath;
+    const rt_defs_plugins_http_proxy_data *mPluginData;
+    const std::shared_ptr<DobbyRdkPluginUtils> mUtils;
 };
-
-
-bool addCACertificateMount(const std::shared_ptr<DobbyRdkPluginUtils> &utils,
-                           const std::shared_ptr<rt_dobby_schema> &config,
-                           const std::string &rootfsPath);
 
 #endif // HTTPPROXYPLUGIN_H

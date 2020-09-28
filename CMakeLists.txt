@@ -246,6 +246,7 @@ option(PLUGIN_TESTPLUGIN "Include TestPlugin plugin" OFF)
 option(PLUGIN_GPU "Include GPU plugin" OFF)
 option(PLUGIN_LOCALTIME "Include LocalTime plugin" OFF)
 option(PLUGIN_RTSCHEDULING "Include RtScheduling plugin" OFF)
+option(PLUGIN_HTTPPROXY "Include HttpProxy plugin" OFF)
 
 if(PLUGIN_TESTPLUGIN)
     add_subdirectory(rdkPlugins/TestPlugin)
@@ -279,6 +280,9 @@ if(PLUGIN_RTSCHEDULING)
     add_subdirectory(rdkPlugins/RtScheduling)
 endif()
 
+if(PLUGIN_HTTPPROXY)
+    add_subdirectory(rdkPlugins/HttpProxy)
+endif()
 
 # Export targets in Dobby package
 # ---------------------------------------------------------
