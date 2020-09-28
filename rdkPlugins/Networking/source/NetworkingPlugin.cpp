@@ -147,7 +147,7 @@ bool NetworkingPlugin::postInstallation()
     // setup HTTP Proxy if needed
     if (mPluginData->http_proxy)
     {
-        if (!HttpProxy::setupHttpProxy(mUtils, mContainerConfig))
+        if (!HttpProxy::setupHttpProxy(mUtils, mContainerConfig, mRootfsPath))
         {
             AI_LOG_ERROR_EXIT("failed to setup HTTP Proxy");
             return false;
@@ -172,6 +172,9 @@ bool NetworkingPlugin::preCreation()
             return false;
         }
     }
+
+    AI_LOG_FN_EXIT();
+    return true;
 }
 
 /**

@@ -33,11 +33,13 @@
  *
  *  @param[in]  utils           Instance of DobbyRdkPluginUtils class.
  *  @param[in]  config          libocispec bundle config structure.
+ *  @param[in]  rootfsPath      The absolute path to the rootfs of the container.
  *
  *  @return true on success, false on failure.
  */
 bool HttpProxy::setupHttpProxy(const std::shared_ptr<DobbyRdkPluginUtils> &utils,
-                               const std::shared_ptr<rt_dobby_schema> &config)
+                               const std::shared_ptr<rt_dobby_schema> &config,
+                               const std::string &rootfsPath)
 {
     AI_LOG_FN_ENTRY();
 
@@ -93,10 +95,57 @@ bool HttpProxy::setupHttpProxy(const std::shared_ptr<DobbyRdkPluginUtils> &utils
         return false;
     }
 
+    // if we're adding a proxy certificate, add a mount for it
+    if (config->rdk_plugins->networking->data->http_proxy->proxy_root_ca_cert)
+    {
+        if (!addCACertificateMount(utils, config, rootfsPath))
+        {
+            AI_LOG_ERROR_EXIT("failed to add CA certificate mount");
+            return false;
+        }
+    }
+
     AI_LOG_FN_EXIT();
     return true;
 }
 
+// -----------------------------------------------------------------------------
+/**
+ *  @brief Adds a mount to the new ca-certificates.crt file created in the
+ *  container's bundle directory in the preCreation hook.
+ *
+ *  @param[in]  utils           Instance of DobbyRdkPluginUtils class.
+ *  @param[in]  config          libocispec bundle config structure.
+ *  @param[in]  rootfsPath      The absolute path to the rootfs of the container.
+ *
+ *  @return true on success, false on failure.
+ */
+bool addCACertificateMount(const std::shared_ptr<DobbyRdkPluginUtils> &utils,
+                           const std::shared_ptr<rt_dobby_schema> &config,
+                           const std::string &rootfsPath)
+{
+    AI_LOG_FN_ENTRY();
+
+    // get real path of the ca-certificates
+    char caCertsPath[PATH_MAX];
+    realpath("/etc/ssl/certs/ca-certificates.crt", caCertsPath);
+
+    const std::string bundlePath = rootfsPath + "../";
+    const std::string newCertsPath = bundlePath + "ca-certificates.crt";
+
+    // add a bind mount to the ca-certificates.crt file in the container's
+    // bundle. This file is created in the preCreation hook.
+    if (!utils->addMount(config, newCertsPath, caCertsPath, "bind",
+                         { "bind", "rec", "ro" }))
+    {
+        AI_LOG_ERROR_EXIT("failed to add bind mount from '%s' to '%s'",
+                          newCertsPath.c_str(), caCertsPath);
+        return false;
+    }
+
+    AI_LOG_FN_EXIT();
+    return true;
+}
 
 // -----------------------------------------------------------------------------
 /**
@@ -121,7 +170,7 @@ bool HttpProxy::addProxyToRootCABundle(const std::shared_ptr<DobbyRdkPluginUtils
 {
     AI_LOG_FN_ENTRY();
 
-    const std::string bundlePath = rootfsPath + "/..";
+    const std::string bundlePath = rootfsPath + "../";
 
     // if there's no root CA certificate, we can just exit
     if (config->rdk_plugins->networking->data->http_proxy->proxy_root_ca_cert == nullptr)
@@ -145,23 +194,11 @@ bool HttpProxy::addProxyToRootCABundle(const std::shared_ptr<DobbyRdkPluginUtils
     std::string newCerts(config->rdk_plugins->networking->data->http_proxy->proxy_root_ca_cert);
     newCerts.append(existingCerts);
 
-    // write the new certs file into the container bundle directory to be mounted
-    const std::string newCertsPath = bundlePath + "/ca-certificates.crt";
+    // write the new certs file into the container bundle directory
+    const std::string newCertsPath = bundlePath + "ca-certificates.crt";
     if (!utils->writeTextFile(newCertsPath, newCerts, O_CREAT | O_TRUNC, 0644))
     {
         AI_LOG_ERROR_EXIT("failed to write new ca bundle @ '%s'", newCertsPath.c_str());
-        return false;
-    }
-
-    // a bind mount - this is needed as typically we bind mount the real
-    // /etc/ssl/certs into the container and therefore overlay the new
-    // CA bundle we've created - by doing a new bind mount it should correct
-    // that
-    if (!utils->addMount(config, newCertsPath, caCertsPath, "bind",
-                         { "bind", "rec", "ro" }))
-    {
-        AI_LOG_ERROR_EXIT("failed to add bind mount from '%s' to '%s'",
-                          newCertsPath.c_str(), caCertsPath);
         return false;
     }
 

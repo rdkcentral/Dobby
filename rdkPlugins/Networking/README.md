@@ -205,6 +205,8 @@ The `proxyRootCACert` field is optional. If it is included, the certificate is p
 
 Use the full certificate, starting with `-----BEGIN CERTIFICATE-----` and ending with `-----END CERTIFICATE-----`.
 
+Note that any newline control character will need to be replaced with `\n` in the certificate string.
+
 Example json:
 
 ```json
@@ -219,10 +221,7 @@ Example json:
             "localhost"
         ],
         "ignoreProxyOnBridge": true,
-        "proxyRootCACert": "-----BEGIN CERTIFICATE-----
-                            MIIFUjCCBDqgAwIBAgIGAXMRbOeHMA0GCSqGSIb3DQEBCwUAMIGtMT4wPAYDVQQDDDVDaGFybGVz
-                            IFByb3h5IENBICgyIEp1bCAyMDIwLCBCZW5zLU1hY0Jvb2stUHJvLmxvY2FsKTElMCMGA1UECwwc
-                            aHR0cHM6Ly9jaGFybGVzcHJveHkuY2..."
+        "proxyRootCACert": "-----BEGIN CERTIFICATE-----\nMIIFUjCCBDqgAwIBAgIGAXMRbOeHMA0GCSqGSIb3DQEBCwUAMIGtMT4wPAYDVQQDDDVDaGFybGVz\nIFByb3h5IENBICgyIEp1bCAyMDIwLCBCZW5zLU1hY0Jvb2stUHJvLmxvY2FsKTElMCMGA1UECwwc\naHR0cHM6Ly9jaGFybGVzcHJveHkuY2..."
     }
 }
 ```

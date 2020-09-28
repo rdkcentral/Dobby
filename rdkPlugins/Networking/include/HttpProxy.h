@@ -42,15 +42,19 @@ namespace HttpProxy
 {
 
 bool setupHttpProxy(const std::shared_ptr<DobbyRdkPluginUtils> &utils,
-                    const std::shared_ptr<rt_dobby_schema> &config);
+                    const std::shared_ptr<rt_dobby_schema> &config,
+                    const std::string &rootfsPath);
 
 bool addProxyToRootCABundle(const std::shared_ptr<DobbyRdkPluginUtils> &utils,
                             const std::shared_ptr<rt_dobby_schema> &config,
                             const std::string &rootfsPath);
 
 bool cleanup(const std::string &rootfsPath);
-
-
 };
+
+
+bool addCACertificateMount(const std::shared_ptr<DobbyRdkPluginUtils> &utils,
+                           const std::shared_ptr<rt_dobby_schema> &config,
+                           const std::string &rootfsPath);
 
 #endif // HTTPPROXYPLUGIN_H
