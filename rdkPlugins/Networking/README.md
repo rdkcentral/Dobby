@@ -101,9 +101,9 @@ If the `dnsmasq` field is empty, Networking plugin defaults to not setting up dn
 Only usable with network types 'open' and 'nat'.
 
 ```json
-"data": {
-    "dnsmasq": "true"
-}
+    "data": {
+        "dnsmasq": "true"
+    }
 ```
 
 ### Port forwarding
@@ -124,20 +124,20 @@ Host to container port forwarding can be used to allow containered processes to 
 `hostToContainer` forwards incoming packets to specified port(s) on the host to the container instead.
 
 ```json
-"data": {
-    "portForwarding": {
-        "hostToContainer": [
-            {
-                "port": 1234,
-                "protocol": "tcp"
-            },
-            {
-                "port": 5678,
-                "protocol": "udp"
-            }
-        ]
+    "data": {
+        "portForwarding": {
+            "hostToContainer": [
+                {
+                    "port": 1234,
+                    "protocol": "tcp"
+                },
+                {
+                    "port": 5678,
+                    "protocol": "udp"
+                }
+            ]
+        }
     }
-}
 ```
 
 
@@ -148,21 +148,22 @@ Container to host port forwarding can be used to allow containers access to the 
 `containerToHost` adds firewall rules to allow containers to access the specified port(s) on the host via the bridge device.
 
 ```json
-"data": {
-    "portForwarding": {
-        "containerToHost": [
-            {
-                "port": 1234,
-                "protocol": "tcp"
-            },
-            {
-                "port": 5678,
-                "protocol": "udp"
-            }
-        ]
+    "data": {
+        "portForwarding": {
+            "containerToHost": [
+                {
+                    "port": 1234,
+                    "protocol": "tcp"
+                },
+                {
+                    "port": 5678,
+                    "protocol": "udp"
+                }
+            ]
+        }
     }
-}
 ```
+
 
 ## Settings
 

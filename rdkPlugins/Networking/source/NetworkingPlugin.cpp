@@ -146,6 +146,7 @@ bool NetworkingPlugin::postInstallation()
     return true;
 }
 
+
 /**
  * @brief OCI Hook - Run in host namespace
  */
