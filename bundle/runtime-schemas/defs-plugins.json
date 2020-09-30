@@ -234,6 +234,24 @@
                                     }
                                 }
                             }
+                        },
+                        "multicastForwarding": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "required": [
+                                    "ip",
+                                    "port"
+                                ],
+                                "properties": {
+                                    "ip": {
+                                        "type": "string"
+                                    },
+                                    "port": {
+                                        "$ref": "defs.json#/definitions/uint16"
+                                    }
+                                }
+                            }
                         }
                     }
                 }
