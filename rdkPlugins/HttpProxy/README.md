@@ -26,13 +26,13 @@ The HttpProxy plugin sets HTTP proxy environment variables and add additional ro
     }
 }
 ```
-If you already have other RDK plugins in the bundle, then just add the networking plugin. Do not create multiple `rdkPlugin` sections.
+If you already have other RDK plugins in the bundle, then just add the httpproxy plugin. Do not create multiple `rdkPlugin` sections.
 
 ## Options
 
 ### Proxy host address and port number
 
-The given `proxy.host` and `proxy.port` data fields will be set to the `http_proxy` environment variable in the container.
+The given `proxy.host` and `proxy.port` data fields will be set to add the `http_proxy="http://<host>:<port>` environment variable in the container.
 
 This environment variable is used to point to the proxy server.
 
@@ -71,6 +71,8 @@ The ignored domains are excluded from proxying.
 
 If `ignoreProxyOnBridge` is set to true, the dobby bridge device's address is added to the `no_proxy` environment variable in the container.
 
+This allows any traffic to the host machine's localhost from the container to be ignored for proxying.
+
 #### Example
 ```json
 "data": {
@@ -84,7 +86,9 @@ If `ignoreProxyOnBridge` is set to true, the dobby bridge device's address is ad
 
 ### Additional root CA certificate
 
-The `proxyRootCACert` field is optional. If it is included, the certificate is prepended to the host's root CA certificate in the container.
+The `proxyRootCACert` field is optional. If it is included, the certificate is prepended to a copy of the host's `ca-certificates.crt` and then mounted into the container.
+
+Adding proxy root CA certificate to the container's `ca-certificates.crt` allows HTTPS traffic inspection.
 
 Use the full certificate, starting with `-----BEGIN CERTIFICATE-----` and ending with `-----END CERTIFICATE-----`.
 

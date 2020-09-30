@@ -207,7 +207,7 @@ bool HttpProxyPlugin::setupHttpProxy()
 
     // add the 'httpproxy' environment var
     char httpProxyEnvVar[256];
-    snprintf(httpProxyEnvVar, sizeof(httpProxyEnvVar), "httpproxy=http://%s:%d",
+    snprintf(httpProxyEnvVar, sizeof(httpProxyEnvVar), "http_proxy=http://%s:%d",
              proxyHost.c_str(), proxyPort);
     if (!mUtils->addEnvironmentVar(mContainerConfig, httpProxyEnvVar))
     {
@@ -237,7 +237,7 @@ bool HttpProxyPlugin::addCACertificateMount()
     // add a bind mount to the ca-certificates.crt file in the container's
     // bundle. This file is created in the preCreation hook.
     if (!mUtils->addMount(mContainerConfig, mMountedCACertsPath, hostCACertsPath, "bind",
-                         { "bind", "rec", "ro" }))
+                         { "bind", "ro" }))
     {
         AI_LOG_ERROR_EXIT("failed to add bind mount from '%s' to '%s'",
                           mMountedCACertsPath.c_str(), hostCACertsPath);
