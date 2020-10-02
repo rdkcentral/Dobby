@@ -39,12 +39,7 @@
 #include <netinet/ip.h>
 #include <netdb.h>
 
-#if defined (DEV_VM)
-    #define SMCROUTE_PATH "/usr/sbin/smcroute"
-#else
-    #define SMCROUTE_PATH "/usr/sbin/smcroutectl"
-#endif
-
+#define SMCROUTE_PATH "/usr/sbin/smcroutectl"
 #define EBTABLES_PATH "/sbin/ebtables"
 
 // -----------------------------------------------------------------------------
@@ -335,28 +330,6 @@ bool executeCommand(const std::string &command)
  */
 bool addSmcrouteRules(const std::vector<std::string> &extIfaces, const std::string &address)
 {
-#if defined(DEV_VM)
-    // The Vagrant development VM is on Ubuntu 16.04, which uses smcroute v2.0.0. The interface
-    // used with the older version is a bit different, and we also need to explicitly join the
-    // multicast group with "smcroute -j".
-
-    for (const auto &extIface : extIfaces)
-    {
-        if (!executeCommand(SMCROUTE_PATH " -j " + extIface + " " + address))
-        {
-            AI_LOG_ERROR_EXIT("failed to join multicast group %s (%s) with "
-                              "smcroute", address.c_str(), extIface.c_str());
-            return false;
-        }
-
-        if (!executeCommand(SMCROUTE_PATH " -a " + extIface + " 0.0.0.0 " + address + " " + BRIDGE_NAME))
-        {
-            AI_LOG_ERROR_EXIT("failed to add smcroute rule for ip %s, interface"
-                              " %s", address.c_str(), extIface.c_str());
-            return false;
-        }
-    }
-#else
     for (const auto &extIface : extIfaces)
     {
         if (!executeCommand(SMCROUTE_PATH " add " + extIface + " " + address + " " + BRIDGE_NAME))
@@ -366,10 +339,8 @@ bool addSmcrouteRules(const std::vector<std::string> &extIfaces, const std::stri
             return false;
         }
     }
-#endif // defined(DEV_VM)
 
     return true;
-
 }
 
 // -----------------------------------------------------------------------------
@@ -387,27 +358,6 @@ bool addSmcrouteRules(const std::vector<std::string> &extIfaces, const std::stri
  */
 bool removeSmcrouteRules(const std::vector<std::string> &extIfaces, const std::string &address)
 {
-#if defined(DEV_VM)
-    // The Vagrant development VM is on Ubuntu 16.04, which uses smcroute v2.0.0. The interface
-    // used with the older version is a bit different, and we also need to explicitly leave the
-    // multicast group with "smcroute -l".
-    for (const auto &extIface : extIfaces)
-    {
-        if (!executeCommand(SMCROUTE_PATH " -l " + extIface + " " + address))
-        {
-            AI_LOG_ERROR_EXIT("failed to join multicast group %s (%s) with "
-                              "smcroute", address.c_str(), extIface.c_str());
-            return false;
-        }
-
-        if (!executeCommand(SMCROUTE_PATH " -r " + extIface + " 0.0.0.0 " + address))
-        {
-            AI_LOG_ERROR_EXIT("failed to add smcroute rule for ip %s, interface"
-                              " %s", address.c_str(), extIface.c_str());
-            return false;
-        }
-    }
-#else
     for (const auto &extIface : extIfaces)
     {
         if (!executeCommand(SMCROUTE_PATH " remove " + extIface + " " + address))
@@ -418,7 +368,6 @@ bool removeSmcrouteRules(const std::vector<std::string> &extIfaces, const std::s
             return false;
         }
     }
-#endif // defined(DEV_VM)
 
     return true;
 }
