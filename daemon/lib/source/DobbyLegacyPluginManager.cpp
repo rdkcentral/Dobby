@@ -17,16 +17,17 @@
 * limitations under the License.
 */
 /*
- * File:   DobbyPluginManager.cpp
+ * File:   DobbyLegacyPluginManager.cpp
  *
  */
-#include "DobbyPluginManager.h"
+#include "DobbyLegacyPluginManager.h"
 #include "IDobbyPlugin.h"
 #include "IDobbyEnv.h"
 #include "IDobbyUtils.h"
 #include "DobbyAsync.h"
 
 #include <Logging.h>
+#include <Tracing.h>
 
 #include <stdio.h>
 #include <errno.h>
@@ -43,10 +44,11 @@
 
 
 
-DobbyPluginManager::DobbyPluginManager(const std::shared_ptr<IDobbyEnv>& env,
-                                       const std::shared_ptr<IDobbyUtils>& utils,
-                                       const std::string& path /*= std::string(DEFAULT_PLUGIN_PATH)*/)
-    : mEnvironment(env)
+DobbyLegacyPluginManager::DobbyLegacyPluginManager(const std::shared_ptr<IDobbyEnv>& env,
+                                                   const std::shared_ptr<IDobbyUtils>& utils,
+                                                   const std::string& path /*= std::string(DEFAULT_PLUGIN_PATH)*/)
+    : mRwLock(PTHREAD_RWLOCK_INITIALIZER)
+    , mEnvironment(env)
     , mUtilities(utils)
 {
     AI_LOG_FN_ENTRY();
@@ -58,7 +60,7 @@ DobbyPluginManager::DobbyPluginManager(const std::shared_ptr<IDobbyEnv>& env,
     AI_LOG_FN_EXIT();
 }
 
-DobbyPluginManager::~DobbyPluginManager()
+DobbyLegacyPluginManager::~DobbyLegacyPluginManager()
 {
     AI_LOG_FN_ENTRY();
 
@@ -96,7 +98,7 @@ DobbyPluginManager::~DobbyPluginManager()
  *  @param[in]  path            The path to scan for hook libraries.
  *
  */
-void DobbyPluginManager::loadPlugins(const std::string& path)
+void DobbyLegacyPluginManager::loadPlugins(const std::string& path)
 {
     AI_LOG_FN_ENTRY();
 
@@ -229,7 +231,7 @@ void DobbyPluginManager::loadPlugins(const std::string& path)
  *  @param[in]  path        The path to scan for plugins libraries.
  *
  */
-void DobbyPluginManager::refreshPlugins(const std::string& path /*= std::string(DEFAULT_PLUGIN_PATH)*/)
+void DobbyLegacyPluginManager::refreshPlugins(const std::string& path /*= std::string(DEFAULT_PLUGIN_PATH)*/)
 {
     pthread_rwlock_wrlock(&mRwLock);
 
@@ -246,7 +248,7 @@ void DobbyPluginManager::refreshPlugins(const std::string& path /*= std::string(
  *
  *  @return The plugin interface shared pointer.
  */
-std::shared_ptr<IDobbyPlugin> DobbyPluginManager::getPlugin(const std::string& name) const
+std::shared_ptr<IDobbyPlugin> DobbyLegacyPluginManager::getPlugin(const std::string& name) const
 {
     std::shared_ptr<IDobbyPlugin> plugin;
 
@@ -291,11 +293,13 @@ std::shared_ptr<IDobbyPlugin> DobbyPluginManager::getPlugin(const std::string& n
  *  @return true if all plugins executed the hook method without failure,
  *  otherwise false.
  */
-bool DobbyPluginManager::executeHooks(const std::map<std::string, Json::Value>& plugins,
-                                      const HookFn& hookFn,
-                                      const unsigned asyncFlag,
-                                      const unsigned syncFlag) const
+bool DobbyLegacyPluginManager::executeHooks(const std::map<std::string, Json::Value>& plugins,
+                                            const HookFn& hookFn,
+                                            const unsigned asyncFlag,
+                                            const unsigned syncFlag) const
 {
+    AI_TRACE_EVENT("Plugins", "executeHooks");
+
     AI_LOG_FN_ENTRY();
 
     std::list<std::shared_ptr<DobbyAsyncResult>> hookResults;
@@ -381,16 +385,19 @@ bool DobbyPluginManager::executeHooks(const std::map<std::string, Json::Value>& 
  *  @return true if all plugins executed the hook method without failure,
  *  otherwise false.
  */
-bool DobbyPluginManager::executePostConstructionHooks(const std::map<std::string, Json::Value>& plugins,
-                                                      const ContainerId& id,
-                                                      const std::shared_ptr<IDobbyStartState>& startupState,
-                                                      const std::string& rootfsPath) const
+bool DobbyLegacyPluginManager::executePostConstructionHooks(const std::map<std::string, Json::Value>& plugins,
+                                                            const ContainerId& id,
+                                                            const std::shared_ptr<IDobbyStartState>& startupState,
+                                                            const std::string& rootfsPath) const
 {
-    const HookFn hookFn = std::bind(&IDobbyPlugin::postConstruction,
-                                    std::placeholders::_1,              // IDobbyPlugin*
-                                    id, startupState, rootfsPath,       // Hook details
-                                    std::placeholders::_2);             // Hook json data
+    HookFn hookFn =
+        [id, startupState, rootfsPath](IDobbyPlugin *plugin, const Json::Value &data)
+        {
+            AI_TRACE_EVENT("Plugins", "plugin::PostConstruction",
+                           "name", plugin->name());
 
+            return plugin->postConstruction(id, startupState, rootfsPath, data);
+        };
 
     return executeHooks(plugins, hookFn,
                         IDobbyPlugin::PostConstructionAsync,
@@ -414,16 +421,19 @@ bool DobbyPluginManager::executePostConstructionHooks(const std::map<std::string
  *  @return true if all plugins executed the hook method without failure,
  *  otherwise false.
  */
-bool DobbyPluginManager::executePreStartHooks(const std::map<std::string, Json::Value>& plugins,
-                                              const ContainerId& id,
-                                              pid_t pid,
-                                              const std::string& rootfsPath) const
+bool DobbyLegacyPluginManager::executePreStartHooks(const std::map<std::string, Json::Value>& plugins,
+                                                    const ContainerId& id,
+                                                    pid_t pid,
+                                                    const std::string& rootfsPath) const
 {
-    const HookFn hookFn = std::bind(&IDobbyPlugin::preStart,
-                                    std::placeholders::_1,      // IDobbyPlugin*
-                                    id, pid, rootfsPath,        // Hook details
-                                    std::placeholders::_2);     // Hook json data
+    HookFn hookFn =
+        [id, pid, rootfsPath](IDobbyPlugin *plugin, const Json::Value &data)
+        {
+            AI_TRACE_EVENT("Plugins", "plugin::PreStart",
+                           "name", plugin->name());
 
+            return plugin->preStart(id, pid, rootfsPath, data);
+        };
 
     return executeHooks(plugins, hookFn,
                         IDobbyPlugin::PreStartAsync,
@@ -447,16 +457,19 @@ bool DobbyPluginManager::executePreStartHooks(const std::map<std::string, Json::
  *  @return true if all plugins executed the hook method without failure,
  *  otherwise false.
  */
-bool DobbyPluginManager::executePostStartHooks(const std::map<std::string, Json::Value>& plugins,
-                                               const ContainerId& id,
-                                               pid_t pid,
-                                               const std::string& rootfsPath) const
+bool DobbyLegacyPluginManager::executePostStartHooks(const std::map<std::string, Json::Value>& plugins,
+                                                     const ContainerId& id,
+                                                     pid_t pid,
+                                                     const std::string& rootfsPath) const
 {
-    const HookFn hookFn = std::bind(&IDobbyPlugin::postStart,
-                                    std::placeholders::_1,      // IDobbyPlugin*
-                                    id, pid, rootfsPath,        // Hook details
-                                    std::placeholders::_2);     // Hook json data
+    HookFn hookFn =
+        [id, pid, rootfsPath](IDobbyPlugin *plugin, const Json::Value &data)
+        {
+            AI_TRACE_EVENT("Plugins", "plugin::PostStart",
+                           "name", plugin->name());
 
+            return plugin->postStart(id, pid, rootfsPath, data);
+        };
 
     return executeHooks(plugins, hookFn,
                         IDobbyPlugin::PostStartAsync,
@@ -479,15 +492,18 @@ bool DobbyPluginManager::executePostStartHooks(const std::map<std::string, Json:
  *  @return true if all plugins executed the hook method without failure,
  *  otherwise false.
  */
-bool DobbyPluginManager::executePostStopHooks(const std::map<std::string, Json::Value>& plugins,
-                                              const ContainerId& id,
-                                              const std::string& rootfsPath) const
+bool DobbyLegacyPluginManager::executePostStopHooks(const std::map<std::string, Json::Value>& plugins,
+                                                    const ContainerId& id,
+                                                    const std::string& rootfsPath) const
 {
-    const HookFn hookFn = std::bind(&IDobbyPlugin::postStop,
-                                    std::placeholders::_1,      // IDobbyPlugin*
-                                    id, rootfsPath,             // Hook details
-                                    std::placeholders::_2);     // Hook json data
+    HookFn hookFn =
+        [id, rootfsPath](IDobbyPlugin *plugin, const Json::Value &data)
+        {
+            AI_TRACE_EVENT("Plugins", "plugin::PostStop",
+                           "name", plugin->name());
 
+            return plugin->postStop(id, rootfsPath, data);
+        };
 
     return executeHooks(plugins, hookFn,
                         IDobbyPlugin::PostStopAsync,
@@ -510,15 +526,18 @@ bool DobbyPluginManager::executePostStopHooks(const std::map<std::string, Json::
  *  @return true if all plugins executed the hook method without failure,
  *  otherwise false.
  */
-bool DobbyPluginManager::executePreDestructionHooks(const std::map<std::string, Json::Value>& plugins,
-                                                    const ContainerId& id,
-                                                    const std::string& rootfsPath) const
+bool DobbyLegacyPluginManager::executePreDestructionHooks(const std::map<std::string, Json::Value>& plugins,
+                                                          const ContainerId& id,
+                                                          const std::string& rootfsPath) const
 {
-    const HookFn hookFn = std::bind(&IDobbyPlugin::preDestruction,
-                                    std::placeholders::_1,      // IDobbyPlugin*
-                                    id, rootfsPath,             // Hook details
-                                    std::placeholders::_2);     // Hook json data
+    HookFn hookFn =
+        [id, rootfsPath](IDobbyPlugin *plugin, const Json::Value &data)
+        {
+            AI_TRACE_EVENT("Plugins", "plugin::PreDestruction",
+                           "name", plugin->name());
 
+            return plugin->preDestruction(id, rootfsPath, data);
+        };
 
     return executeHooks(plugins, hookFn,
                         IDobbyPlugin::PreDestructionAsync,

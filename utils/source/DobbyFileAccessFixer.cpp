@@ -75,7 +75,6 @@ void DobbyFileAccessFixer::chmodFile(const char* filePath,
 // -----------------------------------------------------------------------------
 /**
  *  @brief Fixes the access perms on /opt/libexec/DobbyInit
- *  @ref NGDEV-65250
  *
  *  DobbyInit needs to be executable by everyone as it's the init process of
  *  all containers.
@@ -141,7 +140,7 @@ int DobbyFileAccessFixer::fixRuntimePerms(const char* filePath,
     switch (typeFlag)
     {
         case FTW_D:
-            // fix directory permisions
+            // fix directory permissions
             if ((statBuf->st_mode & 0777) != 0555)
             {
                 chmodFile(filePath, (statBuf->st_mode & 07777), 0555);
@@ -186,7 +185,6 @@ int DobbyFileAccessFixer::fixRuntimePerms(const char* filePath,
 // -----------------------------------------------------------------------------
 /**
  *  @brief Fixes the access perms on everything in /opt/runtimes
- *  @ref NGDEV-65250
  *
  *  Everything in here needs to be readable by everyone, in addition anything
  *  marked as executable needs to be executable by everyone.
@@ -196,7 +194,7 @@ bool DobbyFileAccessFixer::fixOptRuntimePerms() const
 {
     AI_LOG_FN_ENTRY();
 
-    // Recurse throug every entry in the the /opt/runtime dir
+    // Recurse through every entry in the the /opt/runtime dir
     if (nftw("/opt/runtimes", fixRuntimePerms, 128, FTW_PHYS) != 0)
     {
         AI_LOG_SYS_ERROR_EXIT(errno, "failed to walk '/opt/runtimes' dir");
@@ -210,7 +208,6 @@ bool DobbyFileAccessFixer::fixOptRuntimePerms() const
 // -----------------------------------------------------------------------------
 /**
  *  @brief Fixes the perms on the opengl dev nodes
- *  @ref NGDEV-60179
  *
  *  The opengl dev nodes for both the ST and Broadcom currently have perms
  *  that don't allow un-privilaged apps to access them.
@@ -317,7 +314,6 @@ bool DobbyFileAccessFixer::fixGfxDriverPerms() const
 // -----------------------------------------------------------------------------
 /**
  *  @brief Fixes the core pattern filter
- *  @ref NGDEV-123877
  *
  *
  */

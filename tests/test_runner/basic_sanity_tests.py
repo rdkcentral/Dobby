@@ -99,7 +99,7 @@ def read_asynchronous(proc, string_to_find, timeout):
 
     """
 
-    # as this function should not be used outside asynchrounous read, it is moved inside it
+    # as this function should not be used outside asynchronous read, it is moved inside it
     def wait_for_string(proc, string_to_find):
         """Waits indefinitely until string is found in process. Must be run with timeout multiprocess.
 
@@ -163,7 +163,7 @@ def start_dobby_daemon():
 
     """
     if test_utils.selected_platform == test_utils.Platforms.xi_6:
-        subprocess.run(["systemctl", "stop", "sky-dobby"])
+        subprocess.run(["systemctl", "stop", "dobby"])
     else:
         subprocess.run(["sudo", "pkill", "DobbyDaemon"])
 

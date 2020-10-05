@@ -78,9 +78,9 @@ static void generateJunk(const std::string & filePath, unsigned length, unsigned
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 static std::string runCommandGetOutput(const std::string & command) {
-    char data[1024];
     FILE * fp = popen(command.c_str(), "r");
     if (fp) {
+        char data[1024];
         char * dataBack = fgets(data, sizeof(data), fp);
         pclose(fp);
         if (dataBack) {

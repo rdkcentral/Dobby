@@ -220,8 +220,8 @@ static void checkForOOM(void)
 
 static void reportLoggingPipeInode(int logPipeFd)
 {
-    // this code to log pipe inode number is to provide extra info for
-    // NGDEV-77043 where debug context name is incorrect. It should be removed
+    // this code to log pipe inode number is to provide extra info in the
+    // case of debug context name is incorrect. It should be removed
     // as soon as we are sure a pipe mis-connection is not the cause of this
     // problem
     if (logPipeFd >= 0)
@@ -268,7 +268,8 @@ static int doForkExec(int argc, char * argv[])
     }
 #endif
 
-    // print the logging pipe indode number for NGDEV-77043
+    // print the logging pipe indode number to make sure that proper app
+    // name is shown in logs
 #if (AI_BUILD_TYPE == AI_DEBUG)
     reportLoggingPipeInode(logPipeFd);
 #endif

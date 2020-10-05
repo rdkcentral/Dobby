@@ -56,7 +56,8 @@ namespace NetworkSetup
                    const std::shared_ptr<NetworkingHelper> &helper,
                    const std::string &rootfsPath,
                    const std::string &containerId,
-                   const NetworkType networkType);
+                   const NetworkType networkType,
+                   const std::string &hookStdin);
 
     bool removeVethPair(const std::shared_ptr<Netfilter> &netfilter,
                         const std::shared_ptr<NetworkingHelper> &helper,

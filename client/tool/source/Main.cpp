@@ -60,51 +60,19 @@
 
 #define ARRAY_LENGTH(x)   (sizeof(x) / sizeof((x)[0]))
 
+#if defined(LEGACY_COMPONENTS)
+    #define ACCEPTED_START_PATHS "specfile/bundlepath"
+#else
+    #define ACCEPTED_START_PATHS "bundlepath"
+#endif // defined(LEGACY_COMPONENTS)
+
+
 //
-static std::string gDBusService("com.sky.dobby.test");
+static std::string gDBusService(DOBBY_SERVICE ".test");
 
 //
 static char** gCmdlineArgv = NULL;
 static int gCmdlineArgc = 0;
-
-// -----------------------------------------------------------------------------
-/**
- * @brief Opens a connection to the Hamiltron WindowManager
- *
- *
- *
- */
-static int openHamiltronConnection(const std::shared_ptr<const IReadLineContext>& readLine)
-{
-    int sock = socket(AF_UNIX, SOCK_STREAM | SOCK_CLOEXEC, 0);
-    if (sock < 0)
-    {
-        readLine->printLnError("failed to create socket (%d - %s)", errno,
-                               strerror(errno));
-        return -1;
-    }
-
-    struct sockaddr_un addr;
-    bzero(&addr, sizeof(addr));
-
-    addr.sun_family = AF_UNIX;
-
-    int nameSize = snprintf(addr.sun_path, sizeof(addr.sun_path),
-                            "/tmp/wayland-ethan/wayland-0") + 1;
-    assert((nameSize > 0) && (nameSize < (int)sizeof(addr.sun_path)));
-
-
-    socklen_t size = offsetof(struct sockaddr_un, sun_path) + nameSize;
-    if (connect(sock, (struct sockaddr*)&addr, size) != 0)
-    {
-        readLine->printLnError("failed to connect to socket @ '%s' (%d - %s)",
-                               addr.sun_path, errno, strerror(errno));
-        close(sock);
-        return -1;
-    }
-
-    return sock;
-}
 
 // -----------------------------------------------------------------------------
 /**
@@ -207,14 +175,7 @@ static void startCommand(const std::shared_ptr<IDobbyProxy> &dobbyProxy,
     // Command will be in the form "start --<option1> --<optionN> <id> <specfile> <commands>"
     while (i < args.size() && args[i].c_str()[0] == '-')
     {
-        if (args[i] == "--hamiltron")
-        {
-            int hamiltronFd = openHamiltronConnection(readLine);
-            if (hamiltronFd < 0)
-                return;
-            files.push_back(hamiltronFd);
-        }
-        else if (args[i] == "--westeros-socket")
+        if (args[i] == "--westeros-socket")
         {
             // TODO:: This won't work if the arg is in the form --westeros-socket=/path/to/socket
             // The next arg should be the path to socket
@@ -239,7 +200,7 @@ static void startCommand(const std::shared_ptr<IDobbyProxy> &dobbyProxy,
     // If we parsed any options, check we've still got enough remaining args
     if (args.size() - i < 2)
     {
-        readLine->printLnError("must provide at least two args; <id> <specfile/bundlepath>");
+        readLine->printLnError("must provide at least two args; <id> <" ACCEPTED_START_PATHS ">");
         return;
     }
 
@@ -258,7 +219,7 @@ static void startCommand(const std::shared_ptr<IDobbyProxy> &dobbyProxy,
     const std::string path = buf;
     if (path.empty())
     {
-        readLine->printLnError("invalid path to spec file or bundle '%s'", id.c_str());
+        readLine->printLnError("invalid path '%s'", id.c_str());
         return;
     }
     i++;
@@ -286,11 +247,10 @@ static void startCommand(const std::shared_ptr<IDobbyProxy> &dobbyProxy,
         return;
     }
 
-    // If path is to a file, expect it to be a dobby spec, otherwise expect
-    // it to be the path to a bundle.
+    // check if path points to a directory
     if (S_ISDIR(statbuf.st_mode))
     {
-        // check that the path contains a config file
+        // path points to a directory check that the path contains a config file
         struct dirent *dir;
         DIR *d = opendir(path.c_str());
         if (d == nullptr)
@@ -321,7 +281,9 @@ static void startCommand(const std::shared_ptr<IDobbyProxy> &dobbyProxy,
     }
     else
     {
-        // check that the file in path has a '.json' filename extension
+#if defined(LEGACY_COMPONENTS)
+        // Path does not point to a directory, check that the file in path has
+        // a '.json' filename extension.
         if (path.find(".json") == std::string::npos)
         {
             readLine->printLnError("please provide the path to a bundle or a "
@@ -346,6 +308,10 @@ static void startCommand(const std::shared_ptr<IDobbyProxy> &dobbyProxy,
         std::string jsonSpec(buffer, length);
         delete[] buffer;
         cd = dobbyProxy->startContainerFromSpec(id, jsonSpec, files, command, displaySocketPath);
+#else
+        readLine->printLnError("please provide the path to a bundle directory");
+        return;
+#endif // defined(LEGACY_COMPONENTS)
     }
 
     if (cd < 0)
@@ -623,7 +589,7 @@ static void infoCommand(const std::shared_ptr<IDobbyProxy>& dobbyProxy,
     }
 }
 
-#if (AI_BUILD_TYPE == AI_DEBUG)
+#if (AI_BUILD_TYPE == AI_DEBUG) && defined(LEGACY_COMPONENTS)
 // -----------------------------------------------------------------------------
 /**
  * @brief
@@ -666,9 +632,7 @@ static void dumpCommand(const std::shared_ptr<IDobbyProxy>& dobbyProxy,
         }
     }
 }
-#endif // (AI_BUILD_TYPE == AI_DEBUG)
 
-#if (AI_BUILD_TYPE == AI_DEBUG)
 // -----------------------------------------------------------------------------
 /**
  * @brief
@@ -682,7 +646,7 @@ static void bundleCommand(const std::shared_ptr<IDobbyProxy>& dobbyProxy,
 {
     if (args.size() < 2)
     {
-        readLine->printLnError("must provide at least two args; <id> <specfile>");
+        readLine->printLnError("must provide at least two args; <id> <" ACCEPTED_START_PATHS ">");
         return;
     }
 
@@ -720,7 +684,72 @@ static void bundleCommand(const std::shared_ptr<IDobbyProxy>& dobbyProxy,
         readLine->printLnError("failed to create bundle with container id '%s'", id.c_str());
     }
 }
-#endif // (AI_BUILD_TYPE == AI_DEBUG)
+#endif // (AI_BUILD_TYPE == AI_DEBUG) && defined(LEGACY_COMPONENTS)
+
+#if (AI_ENABLE_TRACING)
+// -----------------------------------------------------------------------------
+/**
+ * @brief
+ *
+ *
+ *
+ */
+static void traceStartCommand(const std::shared_ptr<IDobbyProxy>& dobbyProxy,
+                              const std::shared_ptr<const IReadLineContext>& readLine,
+                              const std::vector<std::string>& args)
+{
+    if (args.size() < 1)
+    {
+        readLine->printLnError("must provide at least one arg; <file>");
+        return;
+    }
+
+    std::string path = args[0];
+    if (path.empty())
+    {
+        readLine->printLnError("invalid trace file path '%s'", path.c_str());
+        return;
+    }
+
+    // open / create the trace file
+    int fd = open(path.c_str(), O_CLOEXEC | O_CREAT | O_TRUNC | O_RDWR, 0644);
+    if (fd < 0)
+    {
+        readLine->printLnError("Failed to open / create trace file 's' (%d - %s)",
+                               path.c_str(), errno, strerror(errno));
+        return;
+    }
+
+    if (dobbyProxy->startInProcessTracing(fd, ""))
+    {
+        readLine->printLn("started tracing to file '%s'", path.c_str());
+    }
+    else
+    {
+        readLine->printLnError("failed to start tracing, check Dobby log for details");
+    }
+
+    close(fd);
+}
+
+// -----------------------------------------------------------------------------
+/**
+ * @brief
+ *
+ *
+ *
+ */
+static void traceStopCommand(const std::shared_ptr<IDobbyProxy>& dobbyProxy,
+                             const std::shared_ptr<const IReadLineContext>& readLine,
+                             const std::vector<std::string>& args)
+{
+    (void) readLine;
+    (void) args;
+
+    dobbyProxy->stopInProcessTracing();
+}
+
+#endif // (AI_ENABLE_TRACING)
 
 // -----------------------------------------------------------------------------
 /**
@@ -782,7 +811,7 @@ static void shutdownCommand(const std::shared_ptr<IDobbyProxy>& dobbyProxy,
 
 // -----------------------------------------------------------------------------
 /**
- * @brief Initilises the interactive commands
+ * @brief Initialises the interactive commands
  *
  *
  *
@@ -800,11 +829,10 @@ static void initCommands(const std::shared_ptr<IReadLine>& readLine,
 
     readLine->addCommand("start",
                          std::bind(startCommand, dobbyProxy, std::placeholders::_1, std::placeholders::_2),
-                         "start [options...] <id> <specfile/bundlepath> [command]",
-                         "Starts a container using the given spec file or bundle path. Can optionally "
-                         "specify the command to run inside the contianer. Any arguments after command "
-                         "are treated as arguments to the command.\n",
-                         "  --hamiltron          Create a container with a hamiltron connection.\n"
+                         "start [options...] <id> <" ACCEPTED_START_PATHS "> [command]",
+                         "Starts a container using the given path. Can optionally specify the command "
+                         "to run inside the container. Any arguments after command are treated as "
+                         "arguments to the command.\n",
                          "  --westeros-socket    Mount the specified westeros socket into the container\n");
 
     readLine->addCommand("stop",
@@ -843,7 +871,7 @@ static void initCommands(const std::shared_ptr<IReadLine>& readLine,
                          "Gets the json stats for the given container\n",
                          "\n");
 
-#if (AI_BUILD_TYPE == AI_DEBUG)
+#if (AI_BUILD_TYPE == AI_DEBUG) && defined(LEGACY_COMPONENTS)
     readLine->addCommand("dumpspec",
                          std::bind(dumpCommand, dobbyProxy, std::placeholders::_1, std::placeholders::_2),
                          "dumpspec <id> [options...]",
@@ -856,7 +884,24 @@ static void initCommands(const std::shared_ptr<IReadLine>& readLine,
                          "Creates a bundle containing rootfs and config.json for runc\n"
                          "but doesn't actually run it.  Useful for debugging runc issues\n",
                          "\n");
-#endif // (AI_BUILD_TYPE == AI_DEBUG)
+#endif //(AI_BUILD_TYPE == AI_DEBUG) && defined(LEGACY_COMPONENTS)
+
+#if (AI_ENABLE_TRACING)
+    readLine->addCommand("trace-start",
+                         std::bind(traceStartCommand, dobbyProxy, std::placeholders::_1, std::placeholders::_2),
+                         "trace-start <file> [options...]",
+                         "Starts the 'in process' tracing of DobbyDaemon, storing the trace\n"
+                         "in <file>. The trace is in Perfetto format (https://perfetto.dev/) \n",
+                         "  --filter=STR   A category filter string (not yet implemented)\n");
+
+    readLine->addCommand("trace-stop",
+                         std::bind(traceStopCommand, dobbyProxy, std::placeholders::_1, std::placeholders::_2),
+                         "trace-stop",
+                         "Stops the 'in process' running on the DobbyDaemon.  This doesn't\n"
+                         "stop any system level tracing enabled via the traced daemon\n",
+                         "\n");
+#endif // (AI_ENABLE_TRACING)
+
 
     readLine->addCommand("set-dbus",
                          std::bind(setDbusCommand, dobbyProxy, std::placeholders::_1, std::placeholders::_2),
@@ -900,7 +945,6 @@ static void displayUsage()
     printf("\n");
     printf("  -a, --dbus-address=ADDRESS    The dbus address to talk to, if not set attempts\n");
     printf("                                to find the dbus socket in the usual places\n");
-    printf("  -s, --service=SERVICE         The dbus service the file mapper daemon is on [%s]\n", gDBusService.c_str());
     printf("\n");
 }
 
@@ -945,10 +989,6 @@ static void parseArgs(const int argc, char **argv)
                 exit(EXIT_SUCCESS);
                 break;
 
-            case 's':
-                gDBusService = reinterpret_cast<const char*>(optarg);
-                break;
-
             case '?':
                 if (optopt == 'c')
                     fprintf(stderr, "Warning: Option -%c requires an argument.\n", optopt);
@@ -989,7 +1029,7 @@ int main(int argc, char * argv[])
     parseArgs(argc, argv);
 
     // Setup the AI logging stuff
-    AICommon::initLogging(nullptr);
+    // AICommon::initLogging(nullptr);
 
     // Create the ReadLine object
     std::shared_ptr<IReadLine> readLine = IReadLine::create();

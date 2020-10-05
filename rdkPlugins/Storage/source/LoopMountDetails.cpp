@@ -82,7 +82,7 @@ bool LoopMountDetails::onPreCreate()
                                             mUserId,
                                             mMount.fsImageType))
     {
-        // loging already provided by createFileIfNeeded
+        // logging already provided by createFileIfNeeded
         return false;
     }
 
@@ -130,12 +130,12 @@ bool LoopMountDetails::doLoopMount(const std::string& loopDevice)
     // step 1 - create directories within the rootfs
     if (!DobbyRdkPluginUtils::mkdirRecursive(mTempMountPointOutsideContainer, 0700))
     {
-        // loging already provided by mkdirRecursive
+        // logging already provided by mkdirRecursive
         return false;
     }
     else if (!DobbyRdkPluginUtils::mkdirRecursive(mMountPointOutsideContainer, 0700))
     {
-        // loging already provided by mkdirRecursive
+        // logging already provided by mkdirRecursive
         return false;
     }
 
@@ -185,7 +185,7 @@ bool LoopMountDetails::setPermissions()
 
     bool success = false;
 
-    // We need to check the permisions on the image root dir, they
+    // We need to check the permissions on the image root dir, they
     // should allow full read/write by the user inside the container.
     // In an ideal world we wouldn't do this here, instead when the fs
     // data.img is created it should be passed '-E root_owner=uid:gid',

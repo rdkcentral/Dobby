@@ -1,12 +1,7 @@
 {
-    "dbus": {
-      "serviceName": "com.sky.dobby",
-      "objectPath": "/com/sky/dobby"
-    },
-
     "paths": {
-      "workspaceDir": "/tmp/sky",
-      "persistentDir": "/opt/persistent/sky"
+      "workspaceDir": "/tmp/rdk",
+      "persistentDir": "/opt/persistent/rdk"
     },
 
     "logging": {

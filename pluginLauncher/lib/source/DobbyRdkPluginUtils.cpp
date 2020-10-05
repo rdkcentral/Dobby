@@ -59,19 +59,30 @@ DobbyRdkPluginUtils::~DobbyRdkPluginUtils()
  *  function only parses the pid from a string.
  *
  *  NOTE: Only works with OCI hooks.
- *  @param[in]  stdin            stdin contents from the context of the hook
  *
- *  @return container pid, 0 if none found
+ *  @param[in]  stdin            stdin contents from the context of the hook.
+ *
+ *  @return container pid, 0 if none found.
  */
 pid_t DobbyRdkPluginUtils::getContainerPid(const std::string &stdin) const
 {
     if (stdin.empty())
     {
+        AI_LOG_ERROR_EXIT("container stdin empty - couldn't get pid");
         return 0;
     }
 
     // get pid from hook's stdin json '"pid":xxxxx'
-    std::size_t pidPosition = stdin.find("\"pid\":") + 6;
+    std::size_t pidPosition = stdin.find("\"pid\":");
+    if (pidPosition == std::string::npos)
+    {
+        AI_LOG_ERROR_EXIT("could not find \"pid\" in container stdin");
+        return 0;
+    }
+
+    // traverse 6 characters to get the position of the actual pid
+    pidPosition += 6;
+
     std::string tmp = stdin.substr(pidPosition, 5);
     std::string pidStr = tmp.substr(0, tmp.find(","));
 
@@ -228,27 +239,6 @@ bool DobbyRdkPluginUtils::callInNamespaceImpl(pid_t pid, int nsType,
 
     AI_LOG_FN_EXIT();
     return success;
-}
-
-// -----------------------------------------------------------------------------
-/**
- *  @brief Get stdin from hookpoint
- *
- *  @return content of stdin
- */
-std::string DobbyRdkPluginUtils::getHookStdin() const
-{
-    std::lock_guard<std::mutex> locker(mLock);
-
-    char buf[1000];
-
-    if (read(STDIN_FILENO, buf, sizeof(buf)) < 0)
-    {
-        AI_LOG_SYS_ERROR(errno, "failed to read stdin");
-        return std::string();
-    }
-
-    return std::string(buf);
 }
 
 // -------------------------------------------------------------------------
@@ -473,7 +463,7 @@ bool DobbyRdkPluginUtils::addEnvironmentVar(const std::shared_ptr<rt_dobby_schem
         }
     }
 
-    // Increase the number of enviromental variables
+    // Increase the number of environmental variables
     cfg->process->env_len += 1;
 
     // Update env var in OCI bundle config

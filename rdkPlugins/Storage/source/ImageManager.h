@@ -39,14 +39,14 @@ public:
 
     static bool createFSImage(const std::string & filepath,
                               uid_t userId,
-                              size_t size = (12 * 1024 * 1024),
-                              const std::string fs = "ext4");
+                              size_t size,
+                              const std::string & fs);
 
     static bool createFSImageAt(int dirFd,
                                 const std::string & filepath,
                                 uid_t userId,
-                                size_t size = (12 * 1024 * 1024),
-                                const std::string fs = "ext4");
+                                size_t size,
+                                const std::string & fs);
 
     static void deleteFSImage(const std::string & filepath);
 

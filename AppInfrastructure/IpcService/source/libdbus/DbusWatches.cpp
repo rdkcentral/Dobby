@@ -501,7 +501,7 @@ void DbusWatches::toggleWatch(DBusWatch *watch)
             }
             else
             {
-                AI_LOG_SYS_ERROR(errno, "failed to modifiy watch from epoll");
+                AI_LOG_SYS_ERROR(errno, "failed to modify watch from epoll");
             }
         }
     }

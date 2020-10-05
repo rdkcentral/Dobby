@@ -243,27 +243,27 @@ bool ImageManager::checkFSImageAt(int dirFd,
 
 
 /**
- * @brief Create a filesytem image of the given size and format
+ * @brief Create a filesystem image of the given size and format
  *
  * This function creates an empty file of the given size and then uses one
  * of the mkfs tools to write a file system structure into the file.
  *
  *
  * @warning If this function aborts in the middle of the process there is
- * a possiblity it could leak temporary files.  Some sort of clean-up needs
+ * a possibility it could leak temporary files.  Some sort of clean-up needs
  * be down at start-up to remove previous temporary files.
  *
  * @param[in] filepath The fully qualified path to the filesystem image
  * @param[in] userId   The user id to set set in the xattr of the image
- * @param[in] size     This size of the image to create in bytes (12MB)
+ * @param[in] size     This size of the image to create in bytes
  * @param[in] fs       The filesystem type of image file (ext4)
  *
  * @return true on success and false on the failure.
  */
 bool ImageManager::createFSImage(const std::string & filepath,
                                 uid_t userId,
-                                size_t size /*= (12 * 1024 * 1024)*/,
-                                const std::string fs /*= "ext4"*/)
+                                size_t size,
+                                const std::string & fs)
 {
     return createFSImageAt(AT_FDCWD, filepath, userId, size, fs);
 }
@@ -271,8 +271,8 @@ bool ImageManager::createFSImage(const std::string & filepath,
 bool ImageManager::createFSImageAt(int dirFd,
                                     const std::string & filepath,
                                     uid_t userId,
-                                    size_t size /*= (12 * 1024 * 1024)*/,
-                                    const std::string fs /*= "ext4"*/)
+                                    size_t size,
+                                    const std::string & fs)
 {
     AI_LOG_FN_ENTRY();
 

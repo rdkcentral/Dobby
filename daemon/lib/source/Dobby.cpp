@@ -28,11 +28,19 @@
 #include "DobbyEnv.h"
 #include "DobbyUtils.h"
 #include "DobbyIPCUtils.h"
-#include "DobbyTemplate.h"
 #include "DobbyWorkQueue.h"
 #include "DobbyState.h"
 
+#if defined(LEGACY_COMPONENTS)
+#  include "DobbyTemplate.h"
+#endif // defined(LEGACY_COMPONENTS)
+
 #include <Logging.h>
+#include <Tracing.h>
+
+#if defined(AI_ENABLE_TRACING)
+    #include <PerfettoTracing.h>
+#endif
 
 #if defined(RDK)
 #  define SD_JOURNAL_SUPPRESS_LOCATION
@@ -75,15 +83,17 @@ Dobby::Dobby(const std::string& dbusAddress,
     , mWorkQueue(new DobbyWorkQueue)
     , mPluginWorkQueue(new DobbyWorkQueue)
     , mIpcService(ipcService)
-    , mService(settings->dbusServiceName())
-    , mObjectPath(settings->dbusObjectPath())
+    , mService(DOBBY_SERVICE)
+    , mObjectPath(DOBBY_OBJECT)
     , mShutdown(false)
     , mWatchdogTimerId(-1)
 {
     AI_LOG_FN_ENTRY();
 
+#if defined(LEGACY_COMPONENTS)
     // initialise the template code with the settings
     DobbyTemplate::setSettings(settings);
+#endif //defined(LEGACY_COMPONENTS)
 
     // create the two callback function objects for notifying when a container
     // has start and stopped
@@ -213,7 +223,7 @@ void Dobby::configSignals()
     struct sigaction action;
     bzero(&action, sizeof(action));
     action.sa_sigaction = nullSigChildHandler;
-    action.sa_flags = SA_SIGINFO;
+    action.sa_flags = SA_SIGINFO | SA_RESTART;
     sigemptyset(&action.sa_mask);
 
     sigaction(SIGCHLD, &action, NULL);
@@ -223,7 +233,7 @@ void Dobby::configSignals()
     // shutdown from upstart which issues a SIGTERM to terminate the daemon
     bzero(&action, sizeof(action));
     action.sa_handler = sigTermHandler;
-    action.sa_flags = 0;
+    action.sa_flags = SA_RESTART;
     sigemptyset(&action.sa_mask);
 
     sigaction(SIGTERM, &action, NULL);
@@ -235,7 +245,7 @@ void Dobby::configSignals()
 /**
  *  @brief Writes logging output to the console.
  *
- *  This duplicates code in the Logging component, but unfortunatly we can't
+ *  This duplicates code in the Logging component, but unfortunately we can't
  *  use the function there without messing up the API for all other things
  *  that use it.
  *
@@ -426,7 +436,7 @@ void Dobby::setupLogging(unsigned targets /*= LogTarget::Console*/)
 #if !defined(RDK)
 
     // we use the AI logging code in the Logger component, which by default
-    // logs to stdout/stderr.  This is no use to us if we're running as a deamon
+    // logs to stdout/stderr.  This is no use to us if we're running as a daemon
     // so instead check if the logging pipe is set in the env and if so redirect
     // output there.
     const char *env = getenv("ETHAN_LOGGING_PIPE");
@@ -589,8 +599,13 @@ void Dobby::initIpcMethods()
         {   DOBBY_ADMIN_INTERFACE,       DOBBY_ADMIN_METHOD_SET_LOG_LEVEL,          &Dobby::setLogLevel            },
         {   DOBBY_ADMIN_INTERFACE,       DOBBY_ADMIN_METHOD_SET_AI_DBUS_ADDR,       &Dobby::setAIDbusAddress       },
 
+#if defined(LEGACY_COMPONENTS)
         {   DOBBY_CTRL_INTERFACE,        DOBBY_CTRL_METHOD_START,                   &Dobby::startFromSpec          },
         {   DOBBY_CTRL_INTERFACE,        DOBBY_CTRL_METHOD_START_FROM_SPEC,         &Dobby::startFromSpec          },
+#else
+        {   DOBBY_CTRL_INTERFACE,        DOBBY_CTRL_METHOD_START,                   &Dobby::startFromBundle        },
+#endif //defined(LEGACY_COMPONENTS)
+
         {   DOBBY_CTRL_INTERFACE,        DOBBY_CTRL_METHOD_START_FROM_BUNDLE,       &Dobby::startFromBundle        },
         {   DOBBY_CTRL_INTERFACE,        DOBBY_CTRL_METHOD_STOP,                    &Dobby::stop                   },
         {   DOBBY_CTRL_INTERFACE,        DOBBY_CTRL_METHOD_PAUSE,                   &Dobby::pause                  },
@@ -600,11 +615,19 @@ void Dobby::initIpcMethods()
         {   DOBBY_CTRL_INTERFACE,        DOBBY_CTRL_METHOD_GETINFO,                 &Dobby::getInfo                },
         {   DOBBY_CTRL_INTERFACE,        DOBBY_CTRL_METHOD_LIST,                    &Dobby::list                   },
 
-#if (AI_BUILD_TYPE == AI_DEBUG)
+#if (AI_BUILD_TYPE == AI_DEBUG) && defined(LEGACY_COMPONENTS)
         {   DOBBY_DEBUG_INTERFACE,       DOBBY_DEBUG_METHOD_CREATE_BUNDLE,          &Dobby::createBundle           },
         {   DOBBY_DEBUG_INTERFACE,       DOBBY_DEBUG_METHOD_GET_SPEC,               &Dobby::getSpec                },
+#endif //(AI_BUILD_TYPE == AI_DEBUG) && defined(LEGACY_COMPONENTS)
+
+#if (AI_BUILD_TYPE == AI_DEBUG)
         {   DOBBY_DEBUG_INTERFACE,       DOBBY_DEBUG_METHOD_GET_OCI_CONFIG,         &Dobby::getOCIConfig           },
 #endif // (AI_BUILD_TYPE == AI_DEBUG)
+
+#if defined(AI_ENABLE_TRACING)
+        {   DOBBY_DEBUG_INTERFACE,       DOBBY_DEBUG_START_INPROCESS_TRACING,       &Dobby::startInProcessTracing  },
+        {   DOBBY_DEBUG_INTERFACE,       DOBBY_DEBUG_STOP_INPROCESS_TRACING,        &Dobby::stopInProcessTracing   },
+#endif // defined(AI_ENABLE_TRACING)
 
         {   DOBBY_RDKPLUGIN_INTERFACE,   DOBBY_RDKPLUGIN_GET_BRIDGE_CONNECTIONS,    &Dobby::getBridgeConnections   },
         {   DOBBY_RDKPLUGIN_INTERFACE,   DOBBY_RDKPLUGIN_GET_ADDRESS,               &Dobby::getIpAddress           },
@@ -889,6 +912,7 @@ void Dobby::setAIDbusAddress(std::shared_ptr<AI_IPC::IAsyncReplySender> replySen
     AI_LOG_FN_EXIT();
 }
 
+#if defined(LEGACY_COMPONENTS)
 // -----------------------------------------------------------------------------
 /**
  *  @brief Starts a new container from the supplied json spec document.
@@ -990,6 +1014,7 @@ void Dobby::startFromSpec(std::shared_ptr<AI_IPC::IAsyncReplySender> replySender
 
     AI_LOG_FN_EXIT();
 }
+#endif //defined(LEGACY_COMPONENTS)
 
 // -----------------------------------------------------------------------------
 /**
@@ -1510,11 +1535,11 @@ void Dobby::list(std::shared_ptr<AI_IPC::IAsyncReplySender> replySender)
     AI_LOG_FN_EXIT();
 }
 
-#if (AI_BUILD_TYPE == AI_DEBUG)
+#if (AI_BUILD_TYPE == AI_DEBUG) && defined(LEGACY_COMPONENTS)
 // -----------------------------------------------------------------------------
 /**
  *  @brief Debugging utility that can be used to create a bundle based on
- *  a sky spec file
+ *  a dobby spec file
  *
  *  This can be useful for debugging container issues, as it allows the daemon
  *  to create the bundle but not actually run it, and therefore it can be
@@ -1569,9 +1594,7 @@ void Dobby::createBundle(std::shared_ptr<AI_IPC::IAsyncReplySender> replySender)
         AI_LOG_ERROR("failed to send reply");
     }
 }
-#endif // (AI_BUILD_TYPE == AI_DEBUG)
 
-#if (AI_BUILD_TYPE == AI_DEBUG)
 // -----------------------------------------------------------------------------
 /**
  *  @brief Debugging utility to retrieve the original spec file for a running
@@ -1623,7 +1646,7 @@ void Dobby::getSpec(std::shared_ptr<AI_IPC::IAsyncReplySender> replySender)
 
     AI_LOG_FN_EXIT();
 }
-#endif // (AI_BUILD_TYPE == AI_DEBUG)
+#endif //(AI_BUILD_TYPE == AI_DEBUG) && defined(LEGACY_COMPONENTS)
 
 #if (AI_BUILD_TYPE == AI_DEBUG)
 // -----------------------------------------------------------------------------
@@ -1655,7 +1678,7 @@ void Dobby::getOCIConfig(std::shared_ptr<AI_IPC::IAsyncReplySender> replySender)
             [manager = mManager, descriptor, replySender]()
             {
                 // Read the config.json
-                std::string configJson = manager->jsonConfigOfContainer(descriptor);
+                std::string configJson = manager->ociConfigOfContainer(descriptor);
 
                 // Fire off the reply
                 replySender->sendReply({ configJson });
@@ -1865,6 +1888,78 @@ void Dobby::getExtIfaces(std::shared_ptr<AI_IPC::IAsyncReplySender> replySender)
 }
 
 
+#if defined(AI_ENABLE_TRACING)
+// -----------------------------------------------------------------------------
+/**
+ *  @brief Debugging utility to start the Perfetto in-process trace to a file
+ *  enabling the given trace categories.
+ *
+ *
+ *
+ */
+void Dobby::startInProcessTracing(std::shared_ptr<AI_IPC::IAsyncReplySender> replySender)
+{
+    AI_LOG_FN_ENTRY();
+
+    // Pessimist
+    bool result = false;
+
+    // Expecting two args: (UnixFd traceFile, string categoryFilter)
+    // Expecting a single arg:  (int32_t cd)
+    AI_IPC::UnixFd traceFileFd;
+    std::string categoryFilter;
+    if (!AI_IPC::parseVariantList
+            <AI_IPC::UnixFd, std::string>
+            (replySender->getMethodCallArguments(), &traceFileFd, &categoryFilter))
+    {
+        AI_LOG_ERROR("error getting the args");
+    }
+    else
+    {
+        AI_LOG_INFO(DOBBY_DEBUG_START_INPROCESS_TRACING "(%d, '%s')",
+                    traceFileFd.fd(), categoryFilter.c_str());
+
+        result = PerfettoTracing::startInProcessTracing(traceFileFd.fd(),
+                                                        categoryFilter);
+    }
+
+    // Fire off a reply with boolean result
+    if (!replySender->sendReply( { result }))
+    {
+        AI_LOG_ERROR("failed to send reply");
+    }
+
+    AI_LOG_FN_EXIT();
+}
+
+// -----------------------------------------------------------------------------
+/**
+ *  @brief Debugging utility to stop the Perfetto in-process tracing.
+ *
+ *
+ *
+ */
+void Dobby::stopInProcessTracing(std::shared_ptr<AI_IPC::IAsyncReplySender> replySender)
+{
+    AI_LOG_FN_ENTRY();
+
+    // Expecting no arguments
+
+    AI_LOG_INFO(DOBBY_DEBUG_STOP_INPROCESS_TRACING "()");
+
+    PerfettoTracing::stopInProcessTracing();
+
+    // Fire off empty reply
+    if (!replySender->sendReply( { true }))
+    {
+        AI_LOG_ERROR("failed to send reply");
+    }
+
+    AI_LOG_FN_EXIT();
+}
+
+#endif // defined(AI_ENABLE_TRACING)
+
 // -----------------------------------------------------------------------------
 /**
  *  @brief Called by the DobbyManager code when a container has started
@@ -1954,11 +2049,12 @@ void Dobby::initWatchdog()
     }
     else if (ret > 0)
     {
-        AI_LOG_INFO("starting watchdog timer with period %" PRId64,
-                    (usecTimeout / 2));
+        usecTimeout /= 4;
+
+        AI_LOG_INFO("starting watchdog timer with period %" PRId64, usecTimeout);
 
         mWatchdogTimerId =
-            mUtilities->startTimer(std::chrono::microseconds(usecTimeout / 2),
+            mUtilities->startTimer(std::chrono::microseconds(usecTimeout),
                                    false,
                                    std::bind(&Dobby::onWatchdogTimer, this));
     }

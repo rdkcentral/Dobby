@@ -34,6 +34,7 @@
 #include <sstream>
 #include <random>
 
+#if defined(LEGACY_COMPONENTS)
 // -----------------------------------------------------------------------------
 /**
  *  @brief Constructor only intended for debugging.
@@ -41,7 +42,7 @@
  *  Creates a bundle directory at the given path and doesn't delete it at
  *  when destructed.  This is used for the debug dbus interface:
  *
- *      "com.sky.dobby.debug1.CreateBundle"
+ *      "org.rdk.dobby.debug1.CreateBundle"
  *
  *  Which is helpful for debugging container start-up issues.
  *
@@ -202,6 +203,7 @@ DobbyBundle::DobbyBundle(const std::shared_ptr<const IDobbyUtils>& utils,
 
     AI_LOG_FN_EXIT();
 }
+#endif //defined(LEGACY_COMPONENTS)
 
 // -----------------------------------------------------------------------------
 /**

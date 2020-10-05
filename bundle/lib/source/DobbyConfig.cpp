@@ -23,65 +23,36 @@
 
 #include "DobbyConfig.h"
 
+#include <atomic>
 #include <glob.h>
 #include <sys/stat.h>
-
+#include <fstream>
 
 #define OCI_VERSION_CURRENT         "1.0.2"         // currently used version of OCI in bundles
 #define OCI_VERSION_CURRENT_DOBBY   "1.0.2-dobby"   // currently used version of extended OCI in bundles
 
-std::mutex DobbyConfig::mGpuDevNodesLock;
-std::string DobbyConfig::mGpuDevNodes;
-std::string DobbyConfig::mGpuDevNodesPerms;
-bool DobbyConfig::mInitialisedGpuDevNodes = false;
-
-/**
- *  @brief Map of RDK plugins currently in development.
- *
- *  Contains RDK plugins with matching Dobby syshooks used until
- *  development is finished. If an RDK plugin is in development,
- *  (i.e. in this map), its respective syshooks are used instead.
- *
- *  TODO: Remove entry when RDK plugin development is finalised.
- */
-const std::map<std::string, std::list<std::string>> DobbyConfig::mRdkPluginsInDevelopment =
-{
-    { RDK_GPU_PLUGIN_NAME,
-    {
-#if !defined(RDK)
-        "GpuMemHook"
-#endif
-    }}
-};
 
 // -----------------------------------------------------------------------------
 /**
- *  @brief Populates the static strings used for setting the GPU container
- *  mappings.
+ *  @brief Takes a list of glob patterns corresponding to dev node paths and
+ *  returns a list of structs with their details.
  *
- *  This function is only expected to be run once the first time it is required,
- *  it then stores the strings in static fields and uses them for all
- *  subsequent container starts.
+ *  If the glob pattern doesn't match a device node then it is ignored, this
+ *  is not an error.
  *
  *  @param[in]  devNodes    The list of dev nodes paths (or glob patterns).
  *
  */
-void DobbyConfig::initGpuDevNodes(const std::list<std::string>& devNodes)
+std::list<DobbyConfig::DevNode> DobbyConfig::scanDevNodes(const std::list<std::string> &devNodes)
 {
-    std::lock_guard<std::mutex> locker(mGpuDevNodesLock);
-
-    // just in case we have multi-threaded container start
-    if (mInitialisedGpuDevNodes)
-    {
-        return;
-    }
+    std::list<DobbyConfig::DevNode> nodes;
 
     // sanity check any dev nodes to add
     if (devNodes.empty())
     {
-        mInitialisedGpuDevNodes = true;
-        return;
+        return nodes;
     }
+
 
     // create a glob structure to hold the list of dev nodes
     glob_t devNodeBuf;
@@ -94,10 +65,10 @@ void DobbyConfig::initGpuDevNodes(const std::list<std::string>& devNodes)
 
     if (devNodeBuf.gl_pathc == 0)
     {
-        AI_LOG_ERROR("no GPU dev nodes found despite some being listed in the "
+        AI_LOG_ERROR("no dev nodes found despite some being listed in the "
                     "JSON config file");
         globfree(&devNodeBuf);
-        return;
+        return nodes;
     }
 
     struct stat buf;
@@ -126,42 +97,17 @@ void DobbyConfig::initGpuDevNodes(const std::list<std::string>& devNodes)
             continue;
 #endif
 
-        AI_LOG_INFO("adding gpu dev node '%s' to the template", devNode);
+        AI_LOG_INFO("found dev node '%s'", devNode);
 
-        // the following creates some json telling crun to create the nodes
-        devNodesStream << "{ \"path\": \"" << devNode << "\","
-                    << "  \"type\": \"c\","
-                    << "  \"major\": "       << major(buf.st_rdev)   << ","
-                    << "  \"minor\": "       << minor(buf.st_rdev)   << ","
-                    << "  \"fileMode\": "    << (buf.st_mode & 0666) << ","
-                    << "  \"uid\": 0,"
-                    << "  \"gid\": 0 },\n";
-
-        // and this creates the json for the devices cgroup to tell it that
-        // the graphics nodes are readable and writeable
-        devNodesPermStream << ",\n{ \"allow\": true, "
-                        <<      "\"access\": \"rw\", "
-                        <<      "\"type\": \"c\","
-                        <<      "\"major\": " << major(buf.st_rdev) << ", "
-                        <<      "\"minor\": " << minor(buf.st_rdev) << " }";
-
+        nodes.emplace_back(DevNode{ devNode,
+                                    major(buf.st_rdev),
+                                    minor(buf.st_rdev),
+                                    (buf.st_mode & 0666) });
     }
 
     globfree(&devNodeBuf);
 
-
-    // trim off the final comma (',') and newline
-    std::string devNodesString = devNodesStream.str();
-    if (!devNodesString.empty())
-        devNodesString.pop_back();
-    if (!devNodesString.empty())
-        devNodesString.pop_back();
-
-    // and finally set the global template value
-    mGpuDevNodes = devNodesString;
-    mGpuDevNodesPerms = devNodesPermStream.str();
-
-    mInitialisedGpuDevNodes = true;
+    return nodes;
 }
 
 // -----------------------------------------------------------------------------
@@ -209,7 +155,7 @@ bool DobbyConfig::addMount(const std::string& source,
     std::list<std::string> mountOptionsFinal(mountOptions);
 
     // we only support the standard flags; bind, ro, sync, nosuid, noexec, etc
-    static const std::map<unsigned long, std::string> mountFlagsNames =
+    static const std::vector<std::pair<unsigned long, std::string>> mountFlagsNames =
     {
         {   MS_BIND | MS_REC,   "rbind"         },
         {   MS_BIND,            "bind"          },
@@ -227,14 +173,13 @@ bool DobbyConfig::addMount(const std::string& source,
     };
 
     // convert the mount flags to their string equivalents
-    std::map<unsigned long, std::string>::const_iterator it = mountFlagsNames.begin();
-    for (; it != mountFlagsNames.end(); ++it)
+    for (const auto &entry : mountFlagsNames)
     {
-        const unsigned long& mountFlag = it->first;
+        const unsigned long mountFlag = entry.first;
         if ((mountFlag & mountFlags) == mountFlag)
         {
             // add options to options list to be written to the bundle config
-            mountOptionsFinal.emplace_back(it->second);
+            mountOptionsFinal.emplace_back(entry.second);
 
             // clear the mount flags bit such that we can display a warning
             // if the caller supplies a flag we don't support
@@ -307,7 +252,7 @@ bool DobbyConfig::addEnvironmentVar(const std::string& envVar)
         }
     }
 
-    // Increase the number of enviromental variables
+    // Increase the number of environment variables
     cfg->process->env_len += 1;
 
     // Update env var in OCI bundle config
@@ -400,6 +345,11 @@ bool DobbyConfig::writeConfigJsonImpl(const std::string& filePath) const
     if (json_buf == nullptr || err)
     {
         AI_LOG_ERROR_EXIT("Failed to generate json from container config with code '%s'", err);
+        fclose(file);
+        if (json_buf != nullptr)
+        {
+            free(json_buf);
+        }
         return false;
     }
 
@@ -407,6 +357,8 @@ bool DobbyConfig::writeConfigJsonImpl(const std::string& filePath) const
     if (fputs(json_buf, file) == EOF)
     {
         AI_LOG_ERROR_EXIT("Failed to write config file.");
+        fclose(file);
+        free(json_buf);
         return false;
     }
     fclose(file);
@@ -458,27 +410,40 @@ bool DobbyConfig::findPluginLauncherHookEntry(rt_defs_hook** hook, int len)
  */
 void DobbyConfig::setPluginHookEntry(rt_defs_hook* entry, const std::string& name, const std::string& configPath)
 {
-#if (AI_BUILD_TYPE == AI_DEBUG)
-    int args_len = 6;
-    std::string args[args_len] = {
+    std::string verbosity;
+
+    // match plugin launcher verbosity to the daemon's
+    switch(__ai_debug_log_level) {
+        case AI_DEBUG_LEVEL_DEBUG:
+            verbosity = "-vv";
+            break;
+        case AI_DEBUG_LEVEL_INFO:
+            verbosity = "-v";
+            break;
+        default:
+            verbosity = "";
+            break;
+    }
+
+    std::vector<std::string> args = {
         "DobbyPluginLauncher",
-        "-v",
-#else
-    int args_len = 5;
-    std::string args[args_len] = {
-        "DobbyPluginLauncher",
-#endif
         "-h",
         name,
         "-c",
         configPath
     };
 
+    // add verbosity level if needed
+    if (!verbosity.empty())
+    {
+        args.emplace_back(verbosity);
+    }
+
     entry->path = strdup(PLUGINLAUNCHER_PATH);
-    entry->args_len = args_len;
+    entry->args_len = args.size();;
     entry->args = (char**)calloc(entry->args_len, sizeof(char*));
 
-    for (int i = 0; i < args_len; i++)
+    for (int i = 0; i < args.size(); i++)
     {
         entry->args[i] = strdup(args[i].c_str());
     }
@@ -558,7 +523,7 @@ bool DobbyConfig::updateBundleConfig(const ContainerId& id, std::shared_ptr<rt_d
     cfg->hostname = strdup(id.c_str());
 
     // if there are any rdk plugins, set up DobbyPluginLauncher in config
-    if (cfg->rdk_plugins->plugins_count && findRdkPlugins(cfg->rdk_plugins))
+    if (cfg->rdk_plugins->plugins_count)
     {
         // bindmount DobbyPluginLauncher to container
         if(!addMount(PLUGINLAUNCHER_PATH, PLUGINLAUNCHER_PATH, "bind", 0,
@@ -594,34 +559,6 @@ bool DobbyConfig::updateBundleConfig(const ContainerId& id, std::shared_ptr<rt_d
     return true;
 }
 
-// -----------------------------------------------------------------------------
-/**
- *  @brief Checks if a matching rdkPlugin shared library is available for all
- *  defined rdkPlugins in config. If false is returned, DobbyPluginLauncher
- *  hooks should not be added to config.
- *
- *  @param[in]  rdkPlugins      rdkPlugins in config file
- *
- *  TODO: remove this function once rdkPlugin development has finalised
- *
- */
-bool DobbyConfig::findRdkPlugins(rt_defs_plugins_rdk_plugins *rdkPlugins)
-{
-    // if plugin isn't found in mRdkPluginsInDevelopment, we can expect it to
-    // exist as a shared library i.e. as an rdkPlugin, not as a syshook. If
-    // even one rdkPlugin can be used, we can return true
-    for (int i = 0; i < rdkPlugins->plugins_count; i++)
-    {
-        if (mRdkPluginsInDevelopment.find(rdkPlugins->names_of_plugins[i]) ==
-            mRdkPluginsInDevelopment.end())
-        {
-            // didn't find plugin in mRdkPluginsInDevelopment, hooks needed
-            return true;
-        }
-    }
-
-    return false;
-}
 
 // -----------------------------------------------------------------------------
 /**
@@ -648,11 +585,11 @@ bool DobbyConfig::convertToCompliant(const ContainerId& id, std::shared_ptr<rt_d
     // check config version and process as needed
     if (!strcmp(cfg->oci_version, OCI_VERSION_CURRENT_DOBBY))
     {
-        // copy config.json to config-dobby.json
-        if (!writeConfigJsonImpl(bundlePath + "/config-dobby.json"))
-        {
-            return false;
-        }
+        // Make a backup of the original config, useful for checking whether a new config
+        // is available.
+        std::ifstream srcCfg(bundlePath + "/config.json", std::ios::binary);
+        std::ofstream dstCfg(bundlePath + "/config-dobby.json", std::ios::binary);
+        dstCfg << srcCfg.rdbuf();
 
         if (!updateBundleConfig(id, cfg, bundlePath))
         {

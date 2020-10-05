@@ -36,7 +36,7 @@
 
 // -----------------------------------------------------------------------------
 /**
- *  @brief Modifies a rule set replacing all entires which have '%y' in them
+ *  @brief Modifies a rule set replacing all entries which have '%y' in them
  *  with actual address names.
  *
  *  @param[in]  ruleSet                 Iptables ruleset to expand.
@@ -89,7 +89,7 @@ void expandRuleSetAddresses(Netfilter::RuleSet *ruleSet, const std::string &addr
 
 // -----------------------------------------------------------------------------
 /**
- *  @brief Modifies a rule set replacing all entires which have '%1' in them
+ *  @brief Modifies a rule set replacing all entries which have '%1' in them
  *  with actual external interface names.
  *
  *  @param[in]  ruleSet                 Iptables ruleset to expand.
@@ -685,7 +685,8 @@ bool NetworkSetup::setupVeth(const std::shared_ptr<DobbyRdkPluginUtils> &utils,
                              const std::shared_ptr<NetworkingHelper> &helper,
                              const std::string &rootfsPath,
                              const std::string &containerId,
-                             const NetworkType networkType)
+                             const NetworkType networkType,
+                             const std::string &hookStdin)
 {
     AI_LOG_FN_ENTRY();
 
@@ -698,7 +699,7 @@ bool NetworkSetup::setupVeth(const std::shared_ptr<DobbyRdkPluginUtils> &utils,
     }
 
     // step 2 - get container process pid
-    pid_t containerPid = utils->getContainerPid(utils->getHookStdin());
+    pid_t containerPid = utils->getContainerPid(hookStdin);
     if (!containerPid)
     {
         AI_LOG_ERROR_EXIT("couldn't find container pid");

@@ -56,7 +56,7 @@ int32_t DobbyContainer::allocDescriptor()
     // sanity check we haven't used up all the container ids
     if (mUsedIds.count() >= (1024 - 1))
     {
-        AI_LOG_FATAL("consumed all posible container ids");
+        AI_LOG_FATAL("consumed all possible container ids");
         return -1;
     }
 

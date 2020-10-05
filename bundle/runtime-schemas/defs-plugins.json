@@ -310,6 +310,86 @@
                 }
             }
         },
+        "LocalTime": {
+            "type": "object",
+            "required": [
+                "required",
+                "data"
+            ],
+            "properties": {
+                "required": {
+                    "type": "boolean"
+                },
+                "data": {
+                    "type": "object",
+                    "properties": {
+                    }
+                }
+            }
+        },
+        "RtScheduling": {
+            "type": "object",
+            "required": [
+                "required",
+                "data"
+            ],
+            "properties": {
+                "required": {
+                    "type": "boolean"
+                },
+                "data": {
+                    "type": "object",
+                    "properties": {
+                        "rtlimit": {
+                            "$ref": "defs.json#/definitions/int32"
+                        },
+                        "rtdefault": {
+                            "$ref": "defs.json#/definitions/int32"
+                        }
+                    }
+                }
+            }
+        },
+        "HttpProxy": {
+            "required": [
+                "required",
+                "data"
+            ],
+            "properties": {
+                "required": {
+                    "type": "boolean"
+                },
+                "data": {
+                    "type": "object",
+                    "properties": {
+                        "proxy": {
+                            "type": "object",
+                            "required": [
+                                "host",
+                                "port"
+                            ],
+                            "properties": {
+                                "host": {
+                                    "type": "string"
+                                },
+                                "port": {
+                                    "$ref": "defs.json#/definitions/uint16"
+                                }
+                            }
+                        },
+                        "ignoreProxy": {
+                            "$ref": "defs.json#/definitions/ArrayOfStrings"
+                        },
+                        "ignoreProxyOnBridge": {
+                            "type": "boolean"
+                        },
+                        "proxyRootCACert": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "TestRdkPlugin": {
             "type": "object",
             "required": [
@@ -379,6 +459,15 @@
                 },
                 "drm": {
                     "$ref": "#/definitions/DRM"
+                },
+                "localtime": {
+                    "$ref": "#/definitions/LocalTime"
+                },
+                "rtscheduling": {
+                    "$ref": "#/definitions/RtScheduling"
+                },
+                "httpproxy": {
+                    "$ref": "#/definitions/HttpProxy"
                 },
                 "testrdkplugin": {
                     "$ref": "#/definitions/TestRdkPlugin"

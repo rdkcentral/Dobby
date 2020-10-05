@@ -41,7 +41,8 @@ class NetworkingPlugin : public RdkPluginBase
 public:
     NetworkingPlugin(std::shared_ptr<rt_dobby_schema> &cfg,
                      const std::shared_ptr<DobbyRdkPluginUtils> &utils,
-                     const std::string &rootfsPath);
+                     const std::string &rootfsPath,
+                     const std::string &hookStdin);
     ~NetworkingPlugin();
 
 public:
@@ -70,6 +71,8 @@ private:
     const std::string mContainerId;
     NetworkType mNetworkType;
     std::shared_ptr<Netfilter> mNetfilter;
+    const std::string mHookStdin;
+
 
     std::shared_ptr<DobbyRdkPluginProxy> mDobbyProxy;
     std::shared_ptr<AI_IPC::IIpcService> mIpcService;

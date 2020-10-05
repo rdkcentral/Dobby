@@ -167,7 +167,7 @@ Container to host port forwarding can be used to allow containers access to the 
 
 ## Settings
 
-The Networking plugin uses external interfaces defined in the Dobby settings file (default location `/etc/sky/dobby.json`) to create iptables rules and enable port forwarding on the interfaces.
+The Networking plugin uses external interfaces defined in the Dobby settings file (default location `/etc/dobby.json`) to create iptables rules and enable port forwarding on the interfaces.
 
 To set up external interfaces for the Networking plugin, add the following to the settings file:
 
@@ -198,3 +198,21 @@ On some machines, there is no IPv6 DNS support and to resolve host names, IPv4 m
 On some machines, it may take a couple of seconds for IPv6 routing to be set up after launching a container, causing routing failures if attempting to send packets via IPv6 for the first couple of seconds.
 
 A delay of ~2 seconds may be needed before attempting to connect anything outside the container via the IPv6 protocol.
+
+### Raspberry Pi 3 issues with nat and none network types
+
+On Raspberry Pi 3, using `nat` or `none` networks currently fails.
+
+With Platco build:
+```
+ERR: < M:Netlink.cpp F:createVeth L:1167 > failed to create veth pair ('veth0' : 'eth0') (12 - Object not found)
+```
+
+With rdk-hybrid-generic build:
+```
+ERR: < M:Netlink.cpp F:applyChangesToLink L:565 > failed to apply changes (10 - Operation not supported)
+```
+
+The issues have not been solved yet. There are two GitHub issues for it waiting for further investigation - [49](https://github.com/rdkcentral/Dobby/issues/49) and [50](https://github.com/rdkcentral/Dobby/issues/50).
+
+A workaround is to only use the `open` network type to have access from the container to the outside, or manually adding the `network` namespace to the config `linux.namespaces` if the goal is to have restricted access to the network.

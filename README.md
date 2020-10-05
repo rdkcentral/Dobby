@@ -16,8 +16,6 @@ Dobby has the following dependencies
 * libdbus
 * boost (1.61)
 
-The STB kernel should also have veth support enabled to allow for NAT networking: https://cateee.net/lkddb/web-lkddb/VETH.html
-
 ## Build
 Dobby is a CMake project and can be built with the standard CMake workflow. To build, run the following commands.
 
@@ -36,12 +34,22 @@ During the CMake configure stage, CMake will also configure the `libocispec` sub
 If the schema files in the `bundle/runtime-schemas` directory are changed, then you will need to re-run CMake again to regenerate the headers.
 
 ### CMake Configuration Settings
-* `-DPLUGIN_PATH=""` - specifiy a different location to load RDK plugins from.
-* `-DRDK_PLATFORM=DEV_VM` - specifiy which platform Dobby is running on. Defaults to `XI6` if none specified. Valid options include
+* `-DPLUGIN_PATH=""` - specify a different location to load RDK plugins from.
+* `-DRDK_PLATFORM=DEV_VM` - specify which platform Dobby is running on. Defaults to `XI6` if none specified. Valid options include
   * `XI6`
   * `XI1`
   * `LLAMA`
   * `DEV_VM`
+* `-DLEGACY_COMPONENTS=[ON|OFF]` - option to enable or disable legacy components (legacy plugins, Dobby specs, ...)
+* `-DENABLE_LTO=[ON|OFF]` - option to enable or disable link time optimisation for Dobby.
+* `-DENABLE_PERFETTO_TRACING=[ON|OFF]` - option to enable or disable Perfetto tracing. Can not be enabled for release builds.
+* `-DDOBBY_SERVICE=""` - specify the Dobby dbus service name. Defaults to `org.rdk.dobby` if none specified.
+* `-DDOBBY_OBJECT=""` - specify the Dobby dbus object path. Defaults to `/org/rdk/dobby` if none specified.
+
+In addition to all the above, each RDK plugin has a setting for enabling it for builds. The `Logging`, `Networking`, `IPC` and `Storage` plugins are enabled by default.
+
+Use `-DPLUGIN_[PLUGINNAME]=[ON|OFF]` to enable or disable plugins for your build.
+
 
 ## Development
 If you with to develop Dobby further, detailed instructions on setting up a development environment can be found in the `develop` directory in this repo, including a Vagrant VM with all the necessary dependencies pre-installed.
@@ -50,7 +58,7 @@ If you with to develop Dobby further, detailed instructions on setting up a deve
 ## DobbyDaemon
 This is the main component of Dobby. This daemon is responsible for managing, controlling and creating containers. The daemon runs in the background and communicates over dbus. It connects on a few dbus addresses - one for admin, one for debugging and the other for Dobby commands.
 
-DobbyDaemon can be started as a systemd service at system boot (the systemd service file can be found at `daemon/process/sky-dobby.service`) or run manually on the command line by running:
+DobbyDaemon can be started as a systemd service at system boot (the systemd service file can be found at `daemon/process/dobby.service`) or run manually on the command line by running:
 
 ```
 DobbyDaemon --nofork
@@ -66,9 +74,8 @@ Usage: DobbyDaemon <option(s)>
   -v, --verbose                 Increase the log level
   -V, --version                 Display this program's version number
 
-  -f, --settings-file=PATH      Path to a JSON dobby settings file [/etc/sky/dobby.json]
+  -f, --settings-file=PATH      Path to a JSON dobby settings file [/etc/dobby.json]
   -a, --dbus-address=ADDRESS    The dbus address to put the admin service on [system bus]
-  -s, --service=SERVICE         The dbus service to put Dobby on [com.sky.dobby]
   -p, --priority=PRIORITY       Sets the SCHED_RR priority of the daemon [RR,12]
   -n, --nofork                  Do not fork and daemonise the process
   -k, --noconsole               Disable console output
@@ -121,7 +128,7 @@ For more information about a command, run `DobbyTool help [command]`. For exampl
 $ DobbyTool help start
 start             start [options...] <id> <specfile/bundlepath> [command]
 
-Starts a container using the given spec file or bundle path. Can optionally specify the command to run inside the contianer. Any arguments after command are treated as arguments to the command.
+Starts a container using the given spec file or bundle path. Can optionally specify the command to run inside the container. Any arguments after command are treated as arguments to the command.
 ```
 
 ## DobbyPluginLauncher

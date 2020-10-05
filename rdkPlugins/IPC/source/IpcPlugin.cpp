@@ -41,7 +41,8 @@ REGISTER_RDK_PLUGIN(IpcPlugin);
  */
 IpcPlugin::IpcPlugin(std::shared_ptr<rt_dobby_schema> &containerConfig,
                              const std::shared_ptr<DobbyRdkPluginUtils> &utils,
-                             const std::string &rootfsPath)
+                             const std::string &rootfsPath,
+                             const std::string &hookStdin)
     : mName("ipc"),
       mContainerConfig(containerConfig),
       mRootfsPath(rootfsPath),
@@ -126,11 +127,8 @@ bool IpcPlugin::postInstallation()
                               "DBUS_ID_MAPPING=1");
 #endif
 
-    bool success = true;
-
-
     // create the directory in the rootfs for the mount
-    success = DobbyRdkPluginUtils::mkdirRecursive(mRootfsPath + mDbusRunDir, 0755);
+    bool success = DobbyRdkPluginUtils::mkdirRecursive(mRootfsPath + mDbusRunDir, 0755);
 
     // perform bind mounts into the rootfs of the container
     if (!systemBus.empty() && success)
@@ -278,7 +276,7 @@ bool IpcPlugin::addSocketAndEnv(const std::shared_ptr<DobbyRdkPluginUtils> utils
  *
  *  This uses basic string operations
  *
- *  @param[in]  address     The dbus address tring to parse
+ *  @param[in]  address     The dbus address trying to parse
  *
  *  @return on success the path to the dbus socket, on failure an empty string.
  */

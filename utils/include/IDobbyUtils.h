@@ -157,7 +157,7 @@ public:
      *  @brief Runs the e2fsck tool on a file system image to check it's integrity
      *
      *  This function does a fork/exec to launch the process, it drops root
-     *  privilages and runs the tool as user 1000:1000, therefore the file
+     *  privileges and runs the tool as user 1000:1000, therefore the file
      *  that is being checked should be readable and writeble by user 1000.
      *
      *  If this function returns false the image file should probably be
@@ -182,7 +182,7 @@ public:
      *  @brief Runs the mke2fs tool to format a file system image
      *
      *  This function does a fork/exec to launch the process, it drops root
-     *  privilages and runs the tool as user 1000:1000, therefore the file
+     *  privileges and runs the tool as user 1000:1000, therefore the file
      *  that it's formatting should be readable and writeble by user 1000.
      *
      *
@@ -206,8 +206,8 @@ public:
      *  @brief Logs and deletes any files found in the lost+found directory of
      *  the mount point.
      *
-     *  This was added for NGDEV-133724; we should be clearing the lost+found to
-     *  avoid cruft building up and taking all the space in the loop mount.
+     *  We should be clearing the lost+found to avoid cruft building up and
+     *  taking all the space in the loop mount.
      *
      *
      *  @param[in]  mountPoint      The absolute path to the mounted device,
@@ -260,7 +260,7 @@ public:
      *  @param[in]  dirFd           If specified the path should be relative to
      *                              to this directory.
      *  @param[in]  path            The path to file to write to.
-     *  @param[in]  maxLen          The maxiumum number of characters to read,
+     *  @param[in]  maxLen          The maximum number of characters to read,
      *                              defaults to 4096.
      *
      *  @return the string read from the file, on failure an empty string.
@@ -599,8 +599,72 @@ public:
 
 };
 
+// -----------------------------------------------------------------------------
+/**
+ *  @class IDobbyUtils_v3
+ *  @brief Third version of the interface containing extra functions for
+ *  working with ebtables.
+ *
+ *
+ *
+ */
+class IDobbyUtils_v3 : public virtual IDobbyUtils_v2
+{
+public:
+    using IDobbyUtils_v1::mkdirRecursive;
+    using IDobbyUtils_v1::rmdirRecursive;
+    using IDobbyUtils_v1::rmdirContents;
+    using IDobbyUtils_v1::loopDeviceAssociate;
+    using IDobbyUtils_v1::checkExtImageFile;
+    using IDobbyUtils_v1::formatExtImageFile;
+    using IDobbyUtils_v1::cleanMountLostAndFound;
+    using IDobbyUtils_v1::writeTextFile;
+    using IDobbyUtils_v1::writeTextFileAt;
+    using IDobbyUtils_v1::readTextFile;
+    using IDobbyUtils_v1::readTextFileAt;
+    using IDobbyUtils_v1::getNamespaceFd;
+    using IDobbyUtils_v1::cancelTimer;
+    using IDobbyUtils_v1::getDriverMajorNumber;
+    using IDobbyUtils_v1::deviceAllowed;
 
-using IDobbyUtils = IDobbyUtils_v2;
+    using IDobbyUtils_v2::setIntegerMetaData;
+    using IDobbyUtils_v2::getIntegerMetaData;
+    using IDobbyUtils_v2::setStringMetaData;
+    using IDobbyUtils_v2::getStringMetaData;
+    using IDobbyUtils_v2::clearContainerMetaData;
+
+public:
+
+    // -------------------------------------------------------------------------
+    /**
+     *  @brief Inserts the given ebtables rule to the existing set.
+     *
+     *  This doesn't flush out any old rules, it just adds the new one at
+     *  the beginning of the table.
+     *
+     *  @param[in]  args  The args of one rule to add.
+     *
+     *  @return true if the rule was added, otherwise false.
+     */
+    virtual bool insertEbtablesRule(const std::string &args) const = 0;
+
+    // -------------------------------------------------------------------------
+    /**
+     *  @brief Deletes the given ebtables rule from the existing set.
+     *
+     *  This only performs a delete, if the a rule is not
+     *  currently installed then false is returned
+     *
+     *  @param[in]  args     The set of one rule to remove.
+     *
+     *  @return true if the rules were removed, otherwise false.
+     */
+    virtual bool deleteEbtablesRule(const std::string &args) const = 0;
+
+};
+
+
+using IDobbyUtils = IDobbyUtils_v3;
 
 
 

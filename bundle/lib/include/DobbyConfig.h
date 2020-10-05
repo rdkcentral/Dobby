@@ -61,8 +61,8 @@
 #define RDK_STORAGE_PLUGIN_NAME         "storage"
 #define RDK_DRM_PLUGIN_NAME             "drm"
 #define RDK_GPU_PLUGIN_NAME             "gpu"
-
-#define GPU_MEMLIMIT_DEFAULT            64 * 1024 * 1024
+#define RDK_LOCALTIME_PLUGIN_NAME       "localtime"
+#define RDK_RTSCHEDULING_PLUGIN_NAME    "rtscheduling"
 
 
 // -----------------------------------------------------------------------------
@@ -101,8 +101,6 @@ public:
     virtual bool isValid() const = 0;
     virtual uid_t userId() const = 0;
     virtual gid_t groupId() const = 0;
-    virtual bool gpuEnabled() const = 0;
-    virtual size_t gpuMemLimit() const = 0;
     virtual IDobbyIPCUtils::BusType systemDbus() const = 0;
     virtual IDobbyIPCUtils::BusType sessionDbus() const = 0;
     virtual IDobbyIPCUtils::BusType debugDbus() const = 0;
@@ -112,21 +110,17 @@ public:
     virtual bool restartOnCrash() const = 0;
     virtual const std::string& rootfsPath() const = 0;
     virtual std::shared_ptr<rt_dobby_schema> config() const = 0;
-    virtual const std::map<std::string, Json::Value>& legacyPlugins() const = 0;
     virtual const std::map<std::string, Json::Value>& rdkPlugins() const = 0;
-    virtual const std::list<std::string> sysHooks() const = 0;
+
+#if defined(LEGACY_COMPONENTS)
+    virtual const std::map<std::string, Json::Value>& legacyPlugins() const = 0;
 
     /**
      *  @brief Get Dobby spec, defaults to empty
      */
     virtual const std::string spec() const
     { return std::string(); }
-
-    /**
-     *  @brief DEPRECATED - Rt priority used in Dobby specs
-     */
-    virtual int rtPriorityDefault() const
-    { return 0; }
+#endif //defined(LEGACY_COMPONENTS)
 
 
 // non-virtual methods for default use
@@ -152,14 +146,15 @@ protected:
                             std::shared_ptr<rt_dobby_schema> cfg,
                             const std::string& bundlePath);
 
-    static void initGpuDevNodes(const std::list<std::string>& devNodes);
+    struct DevNode
+    {
+        std::string path;
+        dev_t major;
+        dev_t minor;
+        mode_t mode;
+    };
 
-    static std::mutex mGpuDevNodesLock;
-    static bool mInitialisedGpuDevNodes;
-    static std::string mGpuDevNodes;
-    static std::string mGpuDevNodesPerms;
-
-    static const std::map<std::string, std::list<std::string>> mRdkPluginsInDevelopment;
+    static std::list<DevNode> scanDevNodes(const std::list<std::string> &devNodes);
 
     mutable std::mutex mLock;
 
@@ -167,7 +162,6 @@ private:
     void addPluginLauncherHooks(std::shared_ptr<rt_dobby_schema> cfg, const std::string& bundlePath);
     void setPluginHookEntry(rt_defs_hook* entry, const std::string& name, const std::string& configPath);
     bool findPluginLauncherHookEntry(rt_defs_hook** hook, int len);
-    bool findRdkPlugins(rt_defs_plugins_rdk_plugins *rdkPlugins);
 };
 
 

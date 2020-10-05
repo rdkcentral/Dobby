@@ -66,7 +66,7 @@ extern void __ai_debug_log_sys_printf(int err, int level, const char *file,
 /**
  * Debugging macros.
  *
- * Primatives for debugging.
+ * Primitives for debugging.
  *
  */
 #define __AI_LOG_PRINTF(level, fmt, ...) \

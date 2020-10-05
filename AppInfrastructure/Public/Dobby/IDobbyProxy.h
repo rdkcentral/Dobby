@@ -24,7 +24,11 @@
 #ifndef IDOBBYPROXY_H
 #define IDOBBYPROXY_H
 
+#if defined(DOBBY_BUILD)
 #include <Common/Notifier.h>
+#else
+#include <Dobby/Public/Common/Notifier.h>
+#endif
 
 #include <cstdint>
 #include <list>
@@ -45,7 +49,7 @@ namespace AI_IPC
  *  @brief Interface for the AI notifier API.
  *
  *  Contains a single event notifier method that is called whenever either
- *  of the 'com.sky.dobby.ctrl1.Started' or 'com.sky.dobby.ctrl1.Stopped'
+ *  of the 'org.rdk.dobby.ctrl1.Started' or 'org.rdk.dobby.ctrl1.Stopped'
  *  signals are received.
  *
  */
@@ -73,7 +77,7 @@ public:
 // -----------------------------------------------------------------------------
 /**
  *  @interface IDobbyProxy
- *  @brief Wrapper around an IpcService object that provides simplier method
+ *  @brief Wrapper around an IpcService object that provides simpler method
  *  calls to the Dobby 'hypervisor' daemon.
  *
  *  All the methods are constant because the class doesn't have any internal
@@ -181,6 +185,13 @@ public:
     virtual std::string getSpec(int32_t descriptor) const = 0;
 
     virtual std::string getOCIConfig(int32_t descriptor) const = 0;
+
+#if (AI_ENABLE_TRACING)
+    virtual bool startInProcessTracing(int traceFileFd,
+                                       const std::string &categoryFilter) const = 0;
+
+    virtual bool stopInProcessTracing() const = 0;
+#endif // (AI_ENABLE_TRACING)
 
 #endif // (AI_BUILD_TYPE == AI_DEBUG)
 

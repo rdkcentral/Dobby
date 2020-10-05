@@ -49,8 +49,14 @@ target_link_libraries(DobbyDaemon
         IpcService
         AppInfraLogging
         AppInfraCommon
-
+        AppInfraTracing
 )
+
+if (AI_ENABLE_TRACING)
+        target_link_libraries(DobbyDaemon
+                DobbyTracing
+        )
+endif()
 
 target_compile_definitions(
         DobbyDaemon
@@ -85,19 +91,10 @@ target_link_libraries( # Specifies the target exec
         # Import the 3rd party libraries
         systemd
         JsonCpp::JsonCpp
-        CTemplate::libctemplate
         DBUS::libdbus
-        LIBNL::libnl
-        LIBNL::libnl-route
-
-        # iptc
-        # ip4tc
 
         # Adds pthread support (if it's a separate library on target)
         Threads::Threads
-
-        # Adds dlopen support (if it's a separate library on target)
-        ${CMAKE_DL_LIBS}
 
         )
 
@@ -126,20 +123,28 @@ endif()
 install(
         FILES       "${DOBBY_SETTINGS_FILE}"
         RENAME      dobby.json
-        DESTINATION /etc/sky/ )
+        DESTINATION /etc/ )
 
-
+configure_file(dobby.service.in dobby.service @ONLY)
 
 # Install a systemd launch service config and enables it by default
 install(
-        FILES       sky-dobby.service
+        FILES       ${CMAKE_CURRENT_BINARY_DIR}/dobby.service
         DESTINATION /lib/systemd/system/ )
 
 # The following doesn't seem to work in RDK, disabling for now
 # install(
 #        CODE "execute_process( \
 #            COMMAND ${CMAKE_COMMAND} -E create_symlink \
-#            /lib/systemd/system/sky-dobby.service \
-#            $DESTDIR/${CMAKE_INSTALL_PREFIX}/etc/systemd/system/multi-user.target.wants/sky-dobby.service \
+#            /lib/systemd/system/dobby.service \
+#            $DESTDIR/${CMAKE_INSTALL_PREFIX}/etc/systemd/system/multi-user.target.wants/dobby.service \
 #            )" )
 
+if (LEGACY_COMPONENTS)
+target_link_libraries( DobbyDaemon
+        # Import the 3rd party libraries
+        CTemplate::libctemplate
+        # Adds dlopen support (if it's a separate library on target)
+        ${CMAKE_DL_LIBS}
+)
+endif()

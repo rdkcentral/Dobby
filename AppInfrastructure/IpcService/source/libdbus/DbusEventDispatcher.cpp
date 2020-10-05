@@ -297,7 +297,7 @@ void DbusEventDispatcher::eventDispatcherThreadFn()
 
             if (++failures > 5)
             {
-                AI_LOG_FATAL("too many errors occured on poll, shutting down loop");
+                AI_LOG_FATAL("too many errors occurred on poll, shutting down loop");
                 break;
             }
             else

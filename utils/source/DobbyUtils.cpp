@@ -374,8 +374,8 @@ bool DobbyUtils::rmdirContents(int dirFd) const
  *  @brief Logs and deletes any files found in the lost+found directory of
  *  the mount point.
  *
- *  This was added for NGDEV-133724; we should be clearing the lost+found to
- *  avoid cruft building up and taking all the space in the loop mount.
+ *  We should be clearing the lost+found to avoid cruft building up and
+ *  taking all the space in the loop mount.
  *
  *
  *  @param[in]  mountPoint      The absolute path to the mounted device,
@@ -545,7 +545,7 @@ void DobbyUtils::nsThread(int newNsFd, int nsType, bool* success,
 {
     AI_LOG_FN_ENTRY();
 
-    // unshare the specifc namespace from the thread
+    // unshare the specific namespace from the thread
     if (unshare(nsType) != 0)
     {
         AI_LOG_SYS_ERROR_EXIT(errno, "failed to unshare");
@@ -869,7 +869,7 @@ int DobbyUtils::loopDeviceAssociate(int fileFd, std::string* loopDevPath /*= nul
  *  @brief Run the E2FS tool inside the given directory with given args
  *
  *  This function does a fork/exec to launch the process, it drops root
- *  privilages and runs the tool as user 1000:1000, therefore the file that is
+ *  privileges and runs the tool as user 1000:1000, therefore the file that is
  *  being checked should be readable and writeble by user 1000.
  *
  *  If this function returns false the image file should probably be deleted /
@@ -957,7 +957,7 @@ int DobbyUtils::runE2fsTool(int dirFd, std::list<std::string>* consoleOutput,
                 close(devnull);
         }
 
-        // for extra safety drop root priviledge, but first change into the
+        // for extra safety drop root privilege, but first change into the
         // directory containing the image
         if (dirFd != AT_FDCWD)
         {
@@ -1048,7 +1048,7 @@ int DobbyUtils::runE2fsTool(int dirFd, std::list<std::string>* consoleOutput,
  *  @brief Runs the e2fsck tool on a file system image to check it's integrity
  *
  *  This function does a fork/exec to launch the process, it drops root
- *  privilages and runs the tool as user 1000:1000, therefore the file that is
+ *  privileges and runs the tool as user 1000:1000, therefore the file that is
  *  being checked should be readable and writeble by user 1000.
  *
  *  If this function returns false the image file should probably be deleted /
@@ -1146,7 +1146,7 @@ bool DobbyUtils::checkExtImageFile(int dirFd, const std::string& imageFileName,
  *  @brief Runs the mke2fs tool to format a file system image
  *
  *  This function does a fork/exec to launch the process, it drops root
- *  privilages and runs the tool as user 1000:1000, therefore the file that it's
+ *  privileges and runs the tool as user 1000:1000, therefore the file that it's
  *  formatting should be readable and writeble by user 1000.
  *
  *
@@ -1281,7 +1281,7 @@ bool DobbyUtils::writeTextFile(const std::string& path,
  *  @param[in]  dirFd           If specified the path should be relative to
  *                              to this directory.
  *  @param[in]  path            The path to file to write to.
- *  @param[in]  maxLen          The maxiumum number of characters to read,
+ *  @param[in]  maxLen          The maximum number of characters to read,
  *                              defaults to 4096.
  *
  *  @return the string read from the file, on failure an empty string.
@@ -1599,4 +1599,66 @@ void DobbyUtils::clearContainerMetaData(const ContainerId &id)
                 ++it;
         }
     }
+}
+
+// -------------------------------------------------------------------------
+/**
+ *  @brief Inserts the given ebtables rule to the existing set.
+ *
+ *  This doesn't flush out any old rules, it just adds the new one at
+ *  the beginning of the table.
+ *
+ *  @param[in]  args  The args of one rule to add.
+ *
+ *  @return true if the rule was added, otherwise false.
+ */
+bool DobbyUtils::insertEbtablesRule(const std::string &args) const
+{
+    // TODO: replace with library call rather than using ebtables tool
+    return executeCommand("ebtables -I " + args);
+}
+
+// -------------------------------------------------------------------------
+/**
+ *  @brief Deletes the given ebtables rule from the existing set.
+ *
+ *  This only performs a delete, if the a rule is not
+ *  currently installed then false is returned
+ *
+ *  @param[in]  args     The set of one rule to remove.
+ *
+ *  @return true if the rules were removed, otherwise false.
+ */
+bool DobbyUtils::deleteEbtablesRule(const std::string &args) const
+{
+    // TODO: replace with library call rather than using ebtables tool
+    return executeCommand("ebtables -D " + args);
+}
+
+bool DobbyUtils::executeCommand(const std::string &command) const
+{
+    std::string noOutputCommand = command + " &> /dev/null";
+
+    FILE* pipe = popen(noOutputCommand.c_str(), "re");
+    if (!pipe)
+    {
+        AI_LOG_SYS_ERROR(errno, "popen failed");
+        return false;
+    }
+
+    int returnCode = pclose(pipe);
+    if (returnCode < 0)
+    {
+        AI_LOG_SYS_ERROR(errno, "failed to exec command `%s`",
+                         noOutputCommand.c_str());
+        return false;
+    }
+    else if (returnCode > 0)
+    {
+        AI_LOG_ERROR("failed to exec command `%s`, command returned code %d",
+                     noOutputCommand.c_str(), returnCode);
+        return false;
+    }
+
+    return true;
 }

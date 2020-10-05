@@ -34,9 +34,7 @@
  *  @brief Utility object to fix the various incorrectly 'hardened' file
  *  permissions.
  *
- *  @ref NGDEV-60179, NGDEV-65250
- *
- *  The 'hardening' process continously 'over hardens' various files to the
+ *  The 'hardening' process continuously 'over hardens' various files to the
  *  point where things become unusable.  This object is used to go through and
  *  fix-up the files before launching the DobbyDaemon.
  *

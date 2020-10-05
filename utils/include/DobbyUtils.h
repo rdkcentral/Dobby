@@ -142,6 +142,13 @@ public:
 
     void clearContainerMetaData(const ContainerId &id) override;
 
+public:
+    bool insertEbtablesRule(const std::string &args) const override;
+    bool deleteEbtablesRule(const std::string &args) const override;
+
+private:
+    bool executeCommand(const std::string &command) const;
+
 private:
     std::mutex mMetaDataLock;
     std::map<std::pair<ContainerId, std::string>, int> mIntegerMetaData;

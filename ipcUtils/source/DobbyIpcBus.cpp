@@ -103,7 +103,7 @@ const std::string& DobbyIpcBus::socketPath() const
  *  the fields.  If the address supplied is not a unix socket then an empty
  *  string is returned.
  *
- *  @param[in]  address     The dbus address tring to parse
+ *  @param[in]  address     The dbus address trying to parse
  *
  *  @return on success the path to the dbus socket, on failure an empty string.
  */
@@ -183,10 +183,10 @@ bool DobbyIpcBus::connect(const std::string& dbusAddress)
     // tear down the old service
     disconnectNoLock();
 
-    // create a psuedo unique name for our service (this is only needed
+    // create a pseudo unique name for our service (this is only needed
     // because we may already have a connection to the bus in question).
     char serviceName[64];
-    sprintf(serviceName, "com.sky.dobby.pid%d", getpid());
+    sprintf(serviceName, "org.rdk.dobby.pid%d", getpid());
 
     // create IPCServices that attach to the dbus daemon, this throws an
     // exception if it can't connect, nb the default timeout is set to
@@ -205,7 +205,7 @@ bool DobbyIpcBus::connect(const std::string& dbusAddress)
     // install a signal handler to watch for services arriving / leaving the bus
     registerServiceWatcher();
 
-    // start the ipc serivce thread, if it fails we destroy the service object
+    // start the ipc service thread, if it fails we destroy the service object
     // and give up ... hope it doesn't fail
     if (!mService->start())
     {
@@ -340,7 +340,7 @@ void DobbyIpcBus::disconnectNoLock()
  *
  *  Installs a signal listener for the 'org.freedesktop.DBus.NameOwnerChanged'
  *  signal which is used to tell when services arrive and leave the bus, we
- *  use it to implment the DobbyUtils::ipcServiceNotify() method
+ *  use it to implement the DobbyUtils::ipcServiceNotify() method
  *
  *  The method updates the @a mNotifierSignal internal string to hold the
  *  the registered handler.  It is assumed that the handler is not already
@@ -442,7 +442,7 @@ bool DobbyIpcBus::emitSignal(const AI_IPC::Signal& signal,
  *
  *  @param[in]  serviceName The service to query.
  *
- *  @return true if the service is available, otherise false.
+ *  @return true if the service is available, otherwise false.
  */
 bool DobbyIpcBus::serviceAvailable(const std::string& serviceName) const
 {
@@ -548,7 +548,7 @@ void DobbyIpcBus::unregisterHandler(int handlerId)
     std::map<int, SignalHandler>::iterator it = mSignalHandlers.find(handlerId);
     if (it != mSignalHandlers.end())
     {
-        // if we have a running ipc service then unreigster the signal
+        // if we have a running ipc service then unregister the signal
         if (mService && !it->second.regId.empty())
         {
             mService->unregisterHandler(it->second.regId);
