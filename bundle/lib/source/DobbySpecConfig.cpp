@@ -539,7 +539,7 @@ bool DobbySpecConfig::parseSpec(ctemplate::TemplateDictionary* dictionary,
         ProcessorMap::const_iterator fn = processors.find(it.name());
         if (fn != processors.end())
         {
-            AI_LOG_INFO("Processing %s", fn->first.c_str());
+            AI_LOG_DEBUG("Processing %s", fn->first.c_str());
             // the following is super ugly, but allows us to call the function
             // pointers as methods within our own class
             const ProcessorFunc& method = fn->second.second;
