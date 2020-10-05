@@ -150,7 +150,7 @@ private:
                             Json::Value& loopMntData);
 
 private:
-    bool insertIntoRdkPluginJson(const std::string& pluginName,
+    void insertIntoRdkPluginJson(const std::string& pluginName,
                                  const Json::Value& pluginData);
     bool processRdkPlugins(const Json::Value& value,
                            ctemplate::TemplateDictionary* dictionary);

@@ -2523,7 +2523,7 @@ bool DobbySpecConfig::processCapabilities(const Json::Value& value,
  *
  *  @return true if correctly processed the value, otherwise false.
  */
-bool DobbySpecConfig::insertIntoRdkPluginJson(const std::string& pluginName,
+void DobbySpecConfig::insertIntoRdkPluginJson(const std::string& pluginName,
                                               const Json::Value& pluginData)
 {
     Json::Value& existingData = mRdkPluginsJson[pluginName]["data"];
@@ -2573,7 +2573,7 @@ bool DobbySpecConfig::processRdkPlugins(const Json::Value& value,
     {
         if (!value.isObject())
         {
-            AI_LOG_ERROR("invalid rdkPlugins field");
+            AI_LOG_ERROR_EXIT("invalid rdkPlugins field");
             return false;
         }
 
