@@ -135,7 +135,7 @@ static const ctemplate::StaticTemplateString ENABLE_RDK_PLUGINS =
     STS_INIT(ENABLE_RDK_PLUGINS, "ENABLE_RDK_PLUGINS");
 static const ctemplate::StaticTemplateString RDK_PLUGIN_SECTION =
     STS_INIT(RDK_PLUGIN_SECTION, "RDK_PLUGIN_SECTION");
-    static const ctemplate::StaticTemplateString RDK_PLUGIN_NAME =
+static const ctemplate::StaticTemplateString RDK_PLUGIN_NAME =
     STS_INIT(RDK_PLUGIN_NAME, "RDK_PLUGIN_NAME");
 static const ctemplate::StaticTemplateString RDK_PLUGIN_DATA =
     STS_INIT(RDK_PLUGIN_DATA, "RDK_PLUGIN_DATA");
@@ -615,13 +615,21 @@ bool DobbySpecConfig::parseSpec(ctemplate::TemplateDictionary* dictionary,
     dictionary->ShowSection(ENABLE_RDK_PLUGINS);
 
 #if RDK_PLATFORM == XI1
-    // Enable localtime rdk plugin by default if on Xi1. The localtime plugin
-    // takes no input params, so we simply enable the rdkPlugin rather than
-    // processing it via a processing function.
-    enableLocaltimePlugin();
+    // step 6.5 - enable localtime rdk plugin by default if on Xi1. The
+    // localtime plugin takes no input params, so we simply enable the
+    // rdkPlugin rather than processing it via a processing function.
+    mRdkPluginsJson[RDK_LOCALTIME_PLUGIN_NAME]["data"] = "{}";
+    mRdkPluginsJson[RDK_LOCALTIME_PLUGIN_NAME]["required"] = false;
 #endif
 
-    // step 7 - write dictionary to config file so that libocispec can continue
+    // step 7 - process RDK plugins json into dictionary
+    if (!processRdkPlugins(mSpec["rdkPlugins"], mDictionary))
+    {
+        AI_LOG_ERROR_EXIT("failed to process rdkPlugins");
+        return false;
+    }
+
+    // step 8 - write dictionary to config file so that libocispec can continue
     // processing the config from here on out
     if (!DobbyTemplate::applyAt(bundleFd, "config.json", mDictionary, false))
     {
@@ -635,38 +643,15 @@ bool DobbySpecConfig::parseSpec(ctemplate::TemplateDictionary* dictionary,
 
 // -----------------------------------------------------------------------------
 /**
- * @brief Populates mRdkPlugin with the enabled RDK plugin's data and required
- * fields.
- *
- * @param[in]   pluginName      rdkPlugin name
- * @param[in]   pluginRequired  set to true to raise errors if plugin not found
- * @param[in]   pluginData      json field containing the plugin data
- *
- * @return JSON string of the input object
- *
- */
-void DobbySpecConfig::addRdkPlugin(const std::string& pluginName,
-                                   const bool pluginRequired,
-                                   const Json::Value& pluginData)
-{
-    Json::Value pluginJson;
-    pluginJson["required"] = pluginRequired;
-    pluginJson["data"] = pluginData;
-
-    mRdkPlugins.emplace(pluginName, pluginJson);
-}
-
-// -----------------------------------------------------------------------------
-/**
  * @brief Use the JsonCpp streamwriter builder to convert a Json object into
  * a string for use in ctemplate
  *
- * @param[in]   JsonObject  object to convert to string
+ * @param[in]   jsonObject  object to convert to string
  *
  * @return JSON string of the input object
  *
  */
-std::string DobbySpecConfig::createRdkPluginDataString(const Json::Value& jsonObject)
+std::string DobbySpecConfig::jsonToString(const Json::Value& jsonObject)
 {
     Json::StreamWriterBuilder builder;
      // Do not indent json
@@ -675,38 +660,6 @@ std::string DobbySpecConfig::createRdkPluginDataString(const Json::Value& jsonOb
     return Json::writeString(builder, jsonObject);
 }
 
-// -----------------------------------------------------------------------------
-/**
- * @brief Enables an RDK plugin with the specified name in the output OCI spec
- */
-void DobbySpecConfig::enableRdkPlugin(ctemplate::TemplateDictionary*& subDict,
-                                    const std::string& pluginName,
-                                    const bool required)
-{
-    subDict = mDictionary->AddSectionDictionary(RDK_PLUGIN_SECTION);
-    subDict->SetValue(RDK_PLUGIN_NAME, pluginName.c_str());
-    subDict->SetValue(RDK_PLUGIN_REQUIRED, required ? "true": "false");
-}
-
-// -----------------------------------------------------------------------------
-/**
- *  @brief Simply enables the localtime rdkPlugin on platforms where it's
- *  needed.
- *
- *  The plugin takes no input parameters, so we don't need to parse input from
- *  the spec.
- *
- *  @return true if correctly processed the value, otherwise false.
- */
-void DobbySpecConfig::enableLocaltimePlugin()
-{
-    ctemplate::TemplateDictionary *subDict;
-    enableRdkPlugin(subDict, RDK_LOCALTIME_PLUGIN_NAME, false);
-
-    Json::Value rdkPluginData;
-    subDict->SetValue(RDK_PLUGIN_DATA, "{}");
-    addRdkPlugin(RDK_LOCALTIME_PLUGIN_NAME, false, rdkPluginData);
-}
 
 // -----------------------------------------------------------------------------
 /**
@@ -988,16 +941,11 @@ bool DobbySpecConfig::processRtPriority(const Json::Value& value,
     }
 
     // Write values to the rdk plugin
-    ctemplate::TemplateDictionary* subDict;
-    enableRdkPlugin(subDict, RDK_RTSCHEDULING_PLUGIN_NAME, false);
-
     Json::Value rdkPluginData;
     rdkPluginData["rtlimit"] = rtPriorityLimit;
     rdkPluginData["rtdefault"] = rtPriorityDefault;
-
-    std::string pluginData = createRdkPluginDataString(rdkPluginData);
-    subDict->SetValue(RDK_PLUGIN_DATA, pluginData);
-    addRdkPlugin(RDK_RTSCHEDULING_PLUGIN_NAME, false, rdkPluginData);
+    mRdkPluginsJson[RDK_RTSCHEDULING_PLUGIN_NAME]["data"] = rdkPluginData;
+    mRdkPluginsJson[RDK_RTSCHEDULING_PLUGIN_NAME]["required"] = false;
 
     return true;
 }
@@ -1082,17 +1030,12 @@ bool DobbySpecConfig::processConsole(const Json::Value& value,
 
     // We've got this far, so console is enabled - set console settings in
     // the RDK logging plugin
-    ctemplate::TemplateDictionary* subDict;
-    enableRdkPlugin(subDict, RDK_LOGGING_PLUGIN_NAME, false);
-
     Json::Value rdkPluginData;
     rdkPluginData["sink"] = "file";
     rdkPluginData["fileOptions"]["path"] = mConsolePath;
     rdkPluginData["fileOptions"]["limit"] = static_cast<int>(mConsoleLimit);
-
-    std::string pluginData = createRdkPluginDataString(rdkPluginData);
-    subDict->SetValue(RDK_PLUGIN_DATA, pluginData);
-    addRdkPlugin(RDK_LOGGING_PLUGIN_NAME, false, rdkPluginData);
+    mRdkPluginsJson[RDK_LOGGING_PLUGIN_NAME]["data"] = rdkPluginData;
+    mRdkPluginsJson[RDK_LOGGING_PLUGIN_NAME]["required"] = false;
 
     return true;
 }
@@ -1134,7 +1077,7 @@ bool DobbySpecConfig::processDbus(const Json::Value& value,
     };
 
     bool enableDbusPlugin = false;
-    Json::Value dbusBuses;
+    Json::Value rdkPluginData;
 
     // process the system dbus field
     {
@@ -1150,7 +1093,7 @@ bool DobbySpecConfig::processDbus(const Json::Value& value,
 
             mSystemDbus = it->second;
 
-            dbusBuses["system"] = system.asString();
+            rdkPluginData["system"] = system.asString();
             enableDbusPlugin = true;
         }
         else if (!system.isNull())
@@ -1174,7 +1117,7 @@ bool DobbySpecConfig::processDbus(const Json::Value& value,
 
             mSessionDbus = it->second;
 
-            dbusBuses["session"] = session.asString();
+            rdkPluginData["session"] = session.asString();
             enableDbusPlugin = true;
         }
         else if (!session.isNull())
@@ -1199,7 +1142,7 @@ bool DobbySpecConfig::processDbus(const Json::Value& value,
 
             mDebugDbus = it->second;
 
-            dbusBuses["debug"] = debug.asString();
+            rdkPluginData["debug"] = debug.asString();
             enableDbusPlugin = true;
         }
         else if (!debug.isNull())
@@ -1213,12 +1156,8 @@ bool DobbySpecConfig::processDbus(const Json::Value& value,
     // If we have any buses, set up the IPC RDK plugin
     if (enableDbusPlugin)
     {
-        ctemplate::TemplateDictionary* subDict;
-        enableRdkPlugin(subDict, RDK_IPC_PLUGIN_NAME, false);
-
-        std::string pluginData = createRdkPluginDataString(dbusBuses);
-        subDict->SetValue(RDK_PLUGIN_DATA, pluginData);
-        addRdkPlugin(RDK_IPC_PLUGIN_NAME, false, dbusBuses);
+        mRdkPluginsJson[RDK_IPC_PLUGIN_NAME]["data"] = rdkPluginData;
+        mRdkPluginsJson[RDK_IPC_PLUGIN_NAME]["required"] = false;
     }
 
     return true;
@@ -1476,12 +1415,8 @@ bool DobbySpecConfig::processGpu(const Json::Value& value,
 
 
         // Enable the RDK GPU plugin to set gpu memory limit
-        ctemplate::TemplateDictionary* subDict;
-        enableRdkPlugin(subDict, RDK_GPU_PLUGIN_NAME, false);
-
-        std::string pluginData = createRdkPluginDataString(rdkPluginData);
-        subDict->SetValue(RDK_PLUGIN_DATA, pluginData);
-        addRdkPlugin(RDK_GPU_PLUGIN_NAME, false, rdkPluginData);
+        mRdkPluginsJson[RDK_GPU_PLUGIN_NAME]["data"] = rdkPluginData;
+        mRdkPluginsJson[RDK_GPU_PLUGIN_NAME]["required"] = false;
     }
 
     // and any extra environment variables
@@ -1643,12 +1578,8 @@ bool DobbySpecConfig::processNetwork(const Json::Value& value,
     }
 
     // Enable the RDK Networking plugin
-    ctemplate::TemplateDictionary* subDict;
-    enableRdkPlugin(subDict, RDK_NETWORK_PLUGIN_NAME, false);
-
-    std::string pluginData = createRdkPluginDataString(rdkPluginData);
-    subDict->SetValue(RDK_PLUGIN_DATA, pluginData);
-    addRdkPlugin(RDK_NETWORK_PLUGIN_NAME, false, rdkPluginData);
+    mRdkPluginsJson[RDK_NETWORK_PLUGIN_NAME]["data"] = rdkPluginData;
+    mRdkPluginsJson[RDK_NETWORK_PLUGIN_NAME]["required"] = false;
 
     return true;
 }
@@ -2045,12 +1976,8 @@ bool DobbySpecConfig::processMounts(const Json::Value& value,
     // If we need the storage plugin
     if (numLoopMounts > 0)
     {
-        ctemplate::TemplateDictionary* subDict;
-        enableRdkPlugin(subDict, RDK_STORAGE_PLUGIN_NAME, false);
-
-        std::string pluginData = createRdkPluginDataString(rdkPluginData);
-        subDict->SetValue(RDK_PLUGIN_DATA, pluginData);
-        addRdkPlugin(RDK_STORAGE_PLUGIN_NAME, false, rdkPluginData);
+        mRdkPluginsJson[RDK_STORAGE_PLUGIN_NAME]["data"] = rdkPluginData;
+        mRdkPluginsJson[RDK_NETWORK_PLUGIN_NAME]["required"] = false;
     }
 
     return true;
@@ -2267,7 +2194,7 @@ bool DobbySpecConfig::processLegacyPlugins(const Json::Value& value,
         ctemplate::TemplateDictionary* pluginDict = dictionary->AddSectionDictionary(DOBBY_PLUGIN_SECTION);
         pluginDict->SetValue(PLUGIN_NAME, name.asString());
 
-        std::string pluginDataString = createRdkPluginDataString(data);
+        std::string pluginDataString = jsonToString(data);
         pluginDict->SetValue(PLUGIN_DATA, pluginDataString);
     }
 
@@ -2577,6 +2504,62 @@ bool DobbySpecConfig::processCapabilities(const Json::Value& value,
     // that match the capabilities we've given the container
     dictionary->SetValue(NO_NEW_PRIVS, "false");
 #endif // !defined(RDK)
+
+    return true;
+}
+
+
+// -----------------------------------------------------------------------------
+/**
+ *  @brief Processes the rdkPlugins field of the json spec
+ *
+ *  The format is a 1-to-1 match with the actual OCI config file's rdkPlugin
+ *  section.
+ *
+ *  If any rdkPlugin has been added to mRdkPluginsJson by the processX methods,
+ *  the plugin will be overwritten if the same field exists in the rdkPlugins
+ *  field.
+ *
+ *  @param[in]  value       The rdkPlugins field from the json spec
+ *  @param[in]  dictionary  Pointer to the OCI dictionary to populate
+ *
+ *  @return true if correctly processed the value, otherwise false.
+ */
+bool DobbySpecConfig::processRdkPlugins(const Json::Value& value,
+                                        ctemplate::TemplateDictionary* dictionary)
+{
+    // if the rdkPlugins field is not empty, process it
+    if (!value.isNull())
+    {
+        if (!value.isObject())
+        {
+            AI_LOG_ERROR("invalid rdkPlugins field");
+            return false;
+        }
+
+        // insert the rdkPlugins field into the json parsed from the spec
+        for (auto pluginName : value.getMemberNames())
+        {
+            mRdkPluginsJson[pluginName] = value[pluginName];
+        }
+    }
+
+    // process the final rdkPlugins from mRdkPluginsJson
+    for (auto pluginName : mRdkPluginsJson.getMemberNames())
+    {
+        const Json::Value pluginJson = mRdkPluginsJson[pluginName];
+        const std::string pluginData = jsonToString(pluginJson["data"]);
+        bool pluginRequired = pluginJson["required"].asBool();
+
+        // add parsed rdkPlugin into mRdkPlugins for Dobby hooks
+        mRdkPlugins.emplace(pluginName, pluginJson);
+
+        // add parsed rdkPlugin into dictionary to be written to OCI config
+        ctemplate::TemplateDictionary* subDict = mDictionary->AddSectionDictionary(RDK_PLUGIN_SECTION);
+        subDict->SetValue(RDK_PLUGIN_NAME, pluginName.c_str());
+        subDict->SetValue(RDK_PLUGIN_DATA, pluginData.c_str());
+        subDict->SetValue(RDK_PLUGIN_REQUIRED, pluginRequired ? "true": "false");
+    }
 
     return true;
 }

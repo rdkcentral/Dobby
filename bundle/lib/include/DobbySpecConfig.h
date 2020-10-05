@@ -149,6 +149,9 @@ private:
                             ctemplate::TemplateDictionary* dictionary,
                             Json::Value& loopMntData);
 
+    bool processRdkPlugins(const Json::Value& value,
+                           ctemplate::TemplateDictionary* dictionary);
+
 private:
     template <std::size_t N>
     std::bitset<N> parseBitset(const std::string& str) const;
@@ -159,14 +162,7 @@ private:
                          const std::string &destination);
 
 private:
-    void addRdkPlugin(const std::string& pluginName,
-                      const bool pluginRequired,
-                      const Json::Value& pluginData);
-    std::string createRdkPluginDataString(const Json::Value& jsonObject);
-    void enableRdkPlugin(ctemplate::TemplateDictionary*& subDict, const std::string& pluginName, const bool required);
-
-private:
-    void enableLocaltimePlugin();
+    std::string jsonToString(const Json::Value& jsonObject);
 
 private:
     static void addGpuDevNodes(const std::shared_ptr<const IDobbySettings::HardwareAccessSettings> &settings,
@@ -186,6 +182,7 @@ private:
 
 private:
     Json::Value mSpec;
+    Json::Value mRdkPluginsJson;
     std::shared_ptr<rt_dobby_schema> mConf;
 
 private:
