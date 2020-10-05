@@ -2508,6 +2508,46 @@ bool DobbySpecConfig::processCapabilities(const Json::Value& value,
     return true;
 }
 
+// -----------------------------------------------------------------------------
+/**
+ *  @brief Inserts rdkPlugin json into existing json
+ *
+ *  Instead of blindly overwriting the plugin data, we only overwrite sections
+ *  of the plugin data that have been set in the rdkPlugin field of the spec.
+ *
+ *  This allows us to set smaller portions of the plugin data and merge them
+ *  with the data set by the processor methods.
+ *
+ *  @param[in]  value       The rdkPlugins field from the json spec
+ *  @param[in]  dictionary  Pointer to the OCI dictionary to populate
+ *
+ *  @return true if correctly processed the value, otherwise false.
+ */
+bool DobbySpecConfig::insertIntoRdkPluginJson(const std::string& pluginName,
+                                              const Json::Value& pluginData)
+{
+    Json::Value& existingData = mRdkPluginsJson[pluginName]["data"];
+
+    // iterate through all data members in the RDK plugin's data field
+    for (auto dataMember : pluginData.getMemberNames())
+    {
+        if (!pluginData[dataMember].isArray())
+        {
+            // if plugin data member is not an array, we can use the data from
+            // the spec's rdkPlugin section to overwrite the member.
+            existingData[dataMember] = pluginData[dataMember];
+        }
+        else
+        {
+            // plugin member is an array, so instead of overwriting, we should
+            // append the new array members to the existing array
+            for (auto arrayElement : dataMember)
+            {
+                existingData[dataMember].append(arrayElement);
+            }
+        }
+    }
+}
 
 // -----------------------------------------------------------------------------
 /**
@@ -2517,8 +2557,8 @@ bool DobbySpecConfig::processCapabilities(const Json::Value& value,
  *  section.
  *
  *  If any rdkPlugin has been added to mRdkPluginsJson by the processX methods,
- *  the plugin will be overwritten if the same field exists in the rdkPlugins
- *  field.
+ *  the plugin's data fields will be overwritten if the same data member exists
+ *  in the rdkPlugins field.
  *
  *  @param[in]  value       The rdkPlugins field from the json spec
  *  @param[in]  dictionary  Pointer to the OCI dictionary to populate
@@ -2537,10 +2577,16 @@ bool DobbySpecConfig::processRdkPlugins(const Json::Value& value,
             return false;
         }
 
-        // insert the rdkPlugins field into the json parsed from the spec
         for (auto pluginName : value.getMemberNames())
         {
-            mRdkPluginsJson[pluginName] = value[pluginName];
+            // insert the rdkPlugins field into the json parsed from the spec
+            insertIntoRdkPluginJson(pluginName, value[pluginName]["data"]);
+
+            // if the required field was given, overwrite existing
+            if (!value[pluginName]["required"].isNull())
+            {
+                mRdkPluginsJson[pluginName]["required"] = value[pluginName]["required"];
+            }
         }
     }
 
@@ -2560,6 +2606,9 @@ bool DobbySpecConfig::processRdkPlugins(const Json::Value& value,
         subDict->SetValue(RDK_PLUGIN_DATA, pluginData.c_str());
         subDict->SetValue(RDK_PLUGIN_REQUIRED, pluginRequired ? "true": "false");
     }
+
+    // we no longer need mRdkPluginsJson, so we can safely clear it
+    mRdkPluginsJson.clear();
 
     return true;
 }
