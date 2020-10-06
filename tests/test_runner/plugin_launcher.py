@@ -28,7 +28,6 @@ tests = (
                     "Runs plugins launcher and check if it runned properly"),
 )
 
-crun_input = '{"pid":12345}'
 
 def execute_test():
 
@@ -50,6 +49,21 @@ def execute_test():
 
         # cannot be simple run_command as we need input in this case
         # status = test_utils.run_command_line(command)
+
+        # The state of the container MUST be passed to hooks over stdin so that they may
+        # do work appropriate to the current state of the container.
+        crun_input = """
+        {
+        "ociVersion": "1.0.2",
+        "id": "%s",
+        "status": "running",
+        "pid":12345,
+        "bundle": "%s",
+        "annotations": {
+            "myKey": "myValue"
+            }
+        }
+        """ % (container_name, bundle_path)
 
         status = subprocess.run(command,
                             stdout=subprocess.PIPE,
