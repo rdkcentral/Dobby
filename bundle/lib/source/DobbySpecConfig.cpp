@@ -1977,7 +1977,7 @@ bool DobbySpecConfig::processMounts(const Json::Value& value,
     if (numLoopMounts > 0)
     {
         mRdkPluginsJson[RDK_STORAGE_PLUGIN_NAME]["data"] = rdkPluginData;
-        mRdkPluginsJson[RDK_NETWORK_PLUGIN_NAME]["required"] = false;
+        mRdkPluginsJson[RDK_STORAGE_PLUGIN_NAME]["required"] = false;
     }
 
     return true;
@@ -2529,7 +2529,7 @@ void DobbySpecConfig::insertIntoRdkPluginJson(const std::string& pluginName,
     Json::Value& existingData = mRdkPluginsJson[pluginName]["data"];
 
     // iterate through all data members in the RDK plugin's data field
-    for (auto dataMember : pluginData.getMemberNames())
+    for (const auto& dataMember : pluginData.getMemberNames())
     {
         if (!pluginData[dataMember].isArray())
         {
@@ -2541,7 +2541,7 @@ void DobbySpecConfig::insertIntoRdkPluginJson(const std::string& pluginName,
         {
             // plugin member is an array, so instead of overwriting, we should
             // append the new array members to the existing array
-            for (auto arrayElement : dataMember)
+            for (const auto& arrayElement : dataMember)
             {
                 existingData[dataMember].append(arrayElement);
             }
@@ -2577,7 +2577,7 @@ bool DobbySpecConfig::processRdkPlugins(const Json::Value& value,
             return false;
         }
 
-        for (auto pluginName : value.getMemberNames())
+        for (const auto& pluginName : value.getMemberNames())
         {
             // insert the rdkPlugins field into the json parsed from the spec
             insertIntoRdkPluginJson(pluginName, value[pluginName]["data"]);
@@ -2591,7 +2591,7 @@ bool DobbySpecConfig::processRdkPlugins(const Json::Value& value,
     }
 
     // process the final rdkPlugins from mRdkPluginsJson
-    for (auto pluginName : mRdkPluginsJson.getMemberNames())
+    for (const auto& pluginName : mRdkPluginsJson.getMemberNames())
     {
         const Json::Value pluginJson = mRdkPluginsJson[pluginName];
         const std::string pluginData = jsonToString(pluginJson["data"]);
