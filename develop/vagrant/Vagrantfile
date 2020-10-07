@@ -157,6 +157,11 @@ Vagrant.configure("2") do |config|
         mkdir ~/smcroute
         cd ~/smcroute
         git clone --depth 1 --branch 2.4.4 https://github.com/troglobit/smcroute.git .
+
+        # Apply patch to add dobby0 configuration if it's missing when trying to add a route
+        cp /vagrant/0001-configure-missing-dobby0-on-route-add.patch ./
+        patch -p1 < 0001-configure-missing-dobby0-on-route-add.patch
+
         ./autogen.sh
         ./configure
         sudo make install -j$(nproc)
