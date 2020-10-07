@@ -28,6 +28,7 @@ add_library( ${PROJECT_NAME}
         source/DnsmasqSetup.cpp
         source/NetworkingHelper.cpp
         source/PortForwarding.cpp
+        source/MulticastForwarder.cpp
 
         # proxy to talk to DobbyDaemon
         ../Common/source/DobbyRdkPluginProxy.cpp
