@@ -16,6 +16,7 @@
 # limitations under the License.
 
 import test_utils
+import subprocess
 
 container_name = "sleepy-thunder"
 hook_name = "createRuntime"
@@ -46,7 +47,29 @@ def execute_test():
                    "-h", hook_name,
                    "-c", bundle_path + "/config.json"]
 
-        status = test_utils.run_command_line(command)
+        # cannot be simple run_command as we need input in this case
+        # status = test_utils.run_command_line(command)
+
+        # The state of the container MUST be passed to hooks over stdin so that they may
+        # do work appropriate to the current state of the container.
+        crun_input = """
+        {
+        "ociVersion": "1.0.2",
+        "id": "%s",
+        "status": "running",
+        "pid":12345,
+        "bundle": "%s",
+        "annotations": {
+            "myKey": "myValue"
+            }
+        }
+        """ % (container_name, bundle_path)
+
+        status = subprocess.run(command,
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE,
+                            input=crun_input,
+                            universal_newlines=True)
 
         result = test.expected_output.lower() in status.stderr.lower()
         output = test_utils.create_simple_test_output(test, result, log_content=status.stderr)
