@@ -147,7 +147,7 @@ IpcService::IpcService( const std::shared_ptr<const AI_DBUS::IDbusServer>& dbusS
                         int defaultTimeoutMs /*= -1*/ )
 : IpcService(dbusServer, serviceName, defaultTimeoutMs)
 {
-    // not doing member initialization on these, as don't wan't to change the parameter list of the old ctor
+    // not doing member initialization on these, as don't want to change the parameter list of the old ctor
     mDbusPackageEntitlements = std::make_shared<DbusEntitlements>(packageManager);
 
     mDbusUserIdSenderIdCache = std::make_shared<DbusUserIdSenderIdCache>(*this, mDbusPackageEntitlements);
@@ -607,9 +607,6 @@ DBusHandlerResult IpcService::handleDbusMessage( DBusMessage *dbusMsg )
     const char *interface = dbus_message_get_interface(dbusMsg);
     const char *name = dbus_message_get_member(dbusMsg);
 
-    bool isSignal = false;
-    bool isMethod = false;
-
 #if (AI_BUILD_TYPE == AI_DEBUG)
     if(objectPath && interface && name)
     {
@@ -626,6 +623,9 @@ DBusHandlerResult IpcService::handleDbusMessage( DBusMessage *dbusMsg )
 
     if( objectPath && isRegisteredObjectPath(objectPath) )
     {
+        bool isSignal = false;
+        bool isMethod = false;
+
         if ( (objectPath != NULL) && (interface != NULL) && (name != NULL) )
         {
             if( dbus_message_is_method_call(dbusMsg, interface, name) )

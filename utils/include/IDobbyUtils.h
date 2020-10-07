@@ -157,7 +157,7 @@ public:
      *  @brief Runs the e2fsck tool on a file system image to check it's integrity
      *
      *  This function does a fork/exec to launch the process, it drops root
-     *  privilages and runs the tool as user 1000:1000, therefore the file
+     *  privileges and runs the tool as user 1000:1000, therefore the file
      *  that is being checked should be readable and writeble by user 1000.
      *
      *  If this function returns false the image file should probably be
@@ -182,7 +182,7 @@ public:
      *  @brief Runs the mke2fs tool to format a file system image
      *
      *  This function does a fork/exec to launch the process, it drops root
-     *  privilages and runs the tool as user 1000:1000, therefore the file
+     *  privileges and runs the tool as user 1000:1000, therefore the file
      *  that it's formatting should be readable and writeble by user 1000.
      *
      *
@@ -260,7 +260,7 @@ public:
      *  @param[in]  dirFd           If specified the path should be relative to
      *                              to this directory.
      *  @param[in]  path            The path to file to write to.
-     *  @param[in]  maxLen          The maxiumum number of characters to read,
+     *  @param[in]  maxLen          The maximum number of characters to read,
      *                              defaults to 4096.
      *
      *  @return the string read from the file, on failure an empty string.

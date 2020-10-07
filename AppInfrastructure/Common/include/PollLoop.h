@@ -43,7 +43,7 @@ namespace AICommon
 // -----------------------------------------------------------------------------
 /**
  *  @class PollLoop
- *  @brief A wrapper around epoll that allows for adding, modifing & deleting
+ *  @brief A wrapper around epoll that allows for adding, modifying & deleting
  *  of source events.
  *
  *  Poll loop sources are a tuple of a shared_ptr<IPollSource>, an fd and a

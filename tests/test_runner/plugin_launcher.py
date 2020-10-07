@@ -25,7 +25,7 @@ tests = (
     test_utils.Test("Run plugin launcher",
                     container_name,
                     "Hook %s completed" % hook_name,
-                    "Runs plugins launcher and check if it runned properly"),
+                    "Runs plugins launcher and check if it ran properly"),
 )
 
 

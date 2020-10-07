@@ -66,7 +66,8 @@ class NlAddress
 {
 public:
     NlAddress()
-        : mAddress(nl_addr_alloc(0))
+        : mAddress(nl_addr_alloc(0)),
+        mAddressFamily(AF_UNSPEC)
     { }
 
     explicit NlAddress(in_addr_t address, in_addr_t netmask = 0xffffffff)

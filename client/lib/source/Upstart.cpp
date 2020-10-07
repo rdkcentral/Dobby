@@ -23,6 +23,7 @@
 #include "Upstart.h"
 
 #include <Logging.h>
+#include <inttypes.h>
 
 #include <chrono>
 
@@ -81,7 +82,7 @@ bool Upstart::invokeMethod(const std::string& method,
     std::chrono::time_point<std::chrono::steady_clock> startTime =
                                             std::chrono::steady_clock::now();
 
-    // fire off the request and wait for the reply, we set a heathy timeout
+    // fire off the request and wait for the reply, we set a healthy timeout
     // value of 60 seconds (in case of long kernel boot-ups)
     AI_IPC::VariantList ipcReply;
     if (!mIpcService->invokeMethod(ipcMethod, ipcArgs, ipcReply, (60 * 1000)))
@@ -96,7 +97,7 @@ bool Upstart::invokeMethod(const std::string& method,
             (std::chrono::steady_clock::now() - startTime);
     if (timeTaken > std::chrono::seconds(2))
     {
-        AI_LOG_WARN("upstart request took a rather long time (%llums)",
+        AI_LOG_WARN("upstart request took a rather long time (%" PRId64 "ms)",
                     timeTaken.count());
     }
 

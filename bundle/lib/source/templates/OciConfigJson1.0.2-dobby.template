@@ -89,12 +89,13 @@ static const char* ociJsonTemplate = R"JSON(
                 "type": "RLIMIT_NPROC",
                 "hard": 300,
                 "soft": 300
-            },
+            }
+            {{#RTLIMIT_ENABLED}},
             {
                 "type": "RLIMIT_RTPRIO",
                 "hard": {{RLIMIT_RTPRIO}},
                 "soft": {{RLIMIT_RTPRIO}}
-            }
+            }{{/RTLIMIT_ENABLED}}
         ],
         "noNewPrivileges": {{NO_NEW_PRIVS}}
     },

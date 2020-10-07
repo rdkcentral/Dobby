@@ -103,7 +103,7 @@ static inline std::shared_ptr<DobbyAsyncResult> DobbyAsync(const std::string &na
 // -----------------------------------------------------------------------------
 /**
  *  @fn DobbyDeferred
- *  @brief Stores the suppied function and executes it when the results are
+ *  @brief Stores the supplied function and executes it when the results are
  *  requested.
  *
  *  You MUST call the getResult() method on the returned object to join the

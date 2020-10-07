@@ -41,7 +41,8 @@ REGISTER_RDK_LOGGER(LoggingPlugin);
  */
 LoggingPlugin::LoggingPlugin(std::shared_ptr<rt_dobby_schema> &containerConfig,
                              const std::shared_ptr<DobbyRdkPluginUtils> &utils,
-                             const std::string &rootfsPath)
+                             const std::string &rootfsPath,
+                             const std::string &hookStdin)
     : mName("Logging"),
       mContainerConfig(containerConfig),
       mUtils(utils)
@@ -449,7 +450,7 @@ void LoggingPlugin::FileSink(const ContainerInfo &containerInfo, bool exitEof, b
         }
     }
 
-    // Seperate sections of log file for reabability
+    // Separate sections of log file for reabability
     // (useful if we're writing lots of buffer dumps)
     std::string marker = "---------------------------------------------\n";
     write(outputFd, marker.c_str(), marker.length());

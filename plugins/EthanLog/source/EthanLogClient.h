@@ -132,7 +132,7 @@ private:
 
     } mTokenBucket;
 
-    int mDropped;
+    unsigned int mDropped;
     std::chrono::steady_clock::time_point mFirstDropped;
     std::chrono::steady_clock::time_point mLastDropped;
 };

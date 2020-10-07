@@ -58,13 +58,6 @@ public:
     static std::shared_ptr<Settings> defaultSettings();
 
 public:
-    void setDBusServiceName(const std::string& name);
-    std::string dbusServiceName() const override;
-
-    void setDBusObjectPath(const std::string& path);
-    std::string dbusObjectPath() const override;
-
-
     std::string workspaceDir() const override;
     std::string persistentDir() const override;
 
@@ -113,8 +106,6 @@ private:
                             const std::shared_ptr<const HardwareAccessSettings>& hwAccess) const;
 
 private:
-    std::string mDBusServiceName;
-    std::string mDBusObjectPath;
     std::string mWorkspaceDir;
     std::string mPersistentDir;
     std::string mConsoleSocketPath;

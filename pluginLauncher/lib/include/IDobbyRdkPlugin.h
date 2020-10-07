@@ -119,7 +119,7 @@ public:
 // -----------------------------------------------------------------------------
 /**
  *  @define PUBLIC_FN
- *  @brief Macro for setting the visiblity on the symbols
+ *  @brief Macro for setting the visibility on the symbols
  *
  *  See https://gcc.gnu.org/wiki/Visibility for details on why this is a good
  *  idea.
@@ -141,16 +141,16 @@ public:
  *  C methods to work around c++ name-mangling
  *
  */
-#define REGISTER_RDK_PLUGIN(_class)                                          \
-    extern "C" PUBLIC_FN IDobbyRdkPlugin *createIDobbyRdkPlugin(std::shared_ptr<rt_dobby_schema>& containerConfig, const std::shared_ptr<DobbyRdkPluginUtils> &utils, const std::string& rootfsPath);   \
-    extern "C" PUBLIC_FN IDobbyRdkPlugin *createIDobbyRdkPlugin(std::shared_ptr<rt_dobby_schema>& containerConfig, const std::shared_ptr<DobbyRdkPluginUtils> &utils, const std::string& rootfsPath)    \
-    {                                                                        \
-        return new _class(containerConfig, utils, rootfsPath);               \
-    }                                                                        \
-    extern "C" PUBLIC_FN void destroyIDobbyRdkPlugin(_class const *_plugin); \
-    extern "C" PUBLIC_FN void destroyIDobbyRdkPlugin(_class const *_plugin)  \
-    {                                                                        \
-        return delete _plugin;                                               \
+#define REGISTER_RDK_PLUGIN(_class)                                                                                                                                                                                                    \
+    extern "C" PUBLIC_FN IDobbyRdkPlugin *createIDobbyRdkPlugin(std::shared_ptr<rt_dobby_schema>& containerConfig, const std::shared_ptr<DobbyRdkPluginUtils> &utils, const std::string& rootfsPath, const std::string &hookStdin);    \
+    extern "C" PUBLIC_FN IDobbyRdkPlugin *createIDobbyRdkPlugin(std::shared_ptr<rt_dobby_schema>& containerConfig, const std::shared_ptr<DobbyRdkPluginUtils> &utils, const std::string& rootfsPath, const std::string &hookStdin)     \
+{                                                                                                                                                                                                                                      \
+        return new _class(containerConfig, utils, rootfsPath, hookStdin);                                                                                                                                                              \
+    }                                                                                                                                                                                                                                  \
+    extern "C" PUBLIC_FN void destroyIDobbyRdkPlugin(_class const *_plugin);                                                                                                                                                           \
+    extern "C" PUBLIC_FN void destroyIDobbyRdkPlugin(_class const *_plugin)                                                                                                                                                            \
+    {                                                                                                                                                                                                                                  \
+        return delete _plugin;                                                                                                                                                                                                         \
     }
 
 #endif // !defined(IDobbyRdkPlugin_H)

@@ -78,7 +78,6 @@ void vethanlog(int level, const char *filename, const char *function,
     char buf[ELOG_MAX_LOG_MSG_LENGTH];
     char *p, *end;
     char *basename;
-    int len;
     
     /* run the sanity checks first */
     if ((level < ETHAN_LOG_FATAL) || (level > ETHAN_LOG_MILESTONE))
@@ -130,7 +129,7 @@ void vethanlog(int level, const char *filename, const char *function,
     *p++ = ELOG_FIELD_DELIM;
     *p++ = 'M';
     if (format) {
-        len = vsnprintf(p, (end - p) - 1, format, ap);
+        int len = vsnprintf(p, (end - p) - 1, format, ap);
         p += ELOG_MIN(len, ((end - p) - 1));
     }
     

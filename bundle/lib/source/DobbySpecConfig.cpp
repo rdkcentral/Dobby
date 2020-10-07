@@ -108,6 +108,8 @@ static const ctemplate::StaticTemplateString MOUNT_OPT =
 static const ctemplate::StaticTemplateString SYSLOG_SECTION =
     STS_INIT(SYSLOG_SECTION, "SYSLOG_SECTION");
 
+static const ctemplate::StaticTemplateString RTLIMIT_ENABLED =
+    STS_INIT(RTLIMIT_ENABLED, "RTLIMIT_ENABLED");
 static const ctemplate::StaticTemplateString RLIMIT_RTPRIO =
     STS_INIT(RLIMIT_RTPRIO, "RLIMIT_RTPRIO");
 
@@ -206,11 +208,7 @@ DobbySpecConfig::DobbySpecConfig(const std::shared_ptr<IDobbyUtils> &utils,
     , mSpecVersion(SpecVersion::Unknown)
     , mUserId(-1)
     , mGroupId(-1)
-    , mRtPriorityDefault(6)
-    , mRtPriorityLimit(6)
     , mRestartOnCrash(false)
-    , mGpuEnabled(false)
-    , mGpuMemLimit(GPU_MEMLIMIT_DEFAULT)
     , mSystemDbus(IDobbyIPCUtils::BusType::NoneBus)
     , mSessionDbus(IDobbyIPCUtils::BusType::NoneBus)
     , mDebugDbus(IDobbyIPCUtils::BusType::NoneBus)
@@ -288,11 +286,7 @@ DobbySpecConfig::DobbySpecConfig(const std::shared_ptr<IDobbyUtils> &utils,
     , mSpecVersion(SpecVersion::Unknown)
     , mUserId(-1)
     , mGroupId(-1)
-    , mRtPriorityDefault(6)
-    , mRtPriorityLimit(6)
     , mRestartOnCrash(false)
-    , mGpuEnabled(false)
-    , mGpuMemLimit(GPU_MEMLIMIT_DEFAULT)
     , mSystemDbus(IDobbyIPCUtils::BusType::NoneBus)
     , mSessionDbus(IDobbyIPCUtils::BusType::NoneBus)
     , mDebugDbus(IDobbyIPCUtils::BusType::NoneBus)
@@ -361,24 +355,9 @@ const std::string& DobbySpecConfig::rootfsPath() const
     return mRootfsPath;
 }
 
-int DobbySpecConfig::rtPriorityDefault() const
-{
-    return mRtPriorityDefault;
-}
-
 bool DobbySpecConfig::restartOnCrash() const
 {
     return mRestartOnCrash;
-}
-
-bool DobbySpecConfig::gpuEnabled() const
-{
-    return mGpuEnabled;
-}
-
-size_t DobbySpecConfig::gpuMemLimit() const
-{
-    return mGpuMemLimit;
 }
 
 IDobbyIPCUtils::BusType DobbySpecConfig::systemDbus() const
@@ -419,11 +398,6 @@ const std::map<std::string, Json::Value>& DobbySpecConfig::legacyPlugins() const
 const std::map<std::string, Json::Value>& DobbySpecConfig::rdkPlugins() const
 {
     return mRdkPlugins;
-}
-
-const std::list<std::string> DobbySpecConfig::sysHooks() const
-{
-    return mEnabledSysHooks;
 }
 
 std::vector<DobbySpecConfig::MountPoint> DobbySpecConfig::mountPoints() const
@@ -628,7 +602,8 @@ bool DobbySpecConfig::parseSpec(ctemplate::TemplateDictionary* dictionary,
 
     if (!(flags & JSON_FLAG_RTPRIORITY))
     {
-        dictionary->SetIntValue(RLIMIT_RTPRIO, mRtPriorityLimit);
+        dictionary->ShowSection(RTLIMIT_ENABLED);
+        dictionary->SetIntValue(RLIMIT_RTPRIO, 6);
     }
 
     if (!(flags & JSON_FLAG_CAPABILITIES))
@@ -639,10 +614,14 @@ bool DobbySpecConfig::parseSpec(ctemplate::TemplateDictionary* dictionary,
     // step 6 - enable the RDK plugins section
     dictionary->ShowSection(ENABLE_RDK_PLUGINS);
 
-    // step 7 - enable syshooks for use whilst RDK plugins are developed
-    setSysHooksAndRdkPlugins();
+#if RDK_PLATFORM == XI1
+    // Enable localtime rdk plugin by default if on Xi1. The localtime plugin
+    // takes no input params, so we simply enable the rdkPlugin rather than
+    // processing it via a processing function.
+    enableLocaltimePlugin();
+#endif
 
-    // step 8 - write dictionary to config file so that libocispec can continue
+    // step 7 - write dictionary to config file so that libocispec can continue
     // processing the config from here on out
     if (!DobbyTemplate::applyAt(bundleFd, "config.json", mDictionary, false))
     {
@@ -698,7 +677,7 @@ std::string DobbySpecConfig::createRdkPluginDataString(const Json::Value& jsonOb
 
 // -----------------------------------------------------------------------------
 /**
- * @brief Enables an RDK plugin with the specified name in the ouput OCI spec
+ * @brief Enables an RDK plugin with the specified name in the output OCI spec
  */
 void DobbySpecConfig::enableRdkPlugin(ctemplate::TemplateDictionary*& subDict,
                                     const std::string& pluginName,
@@ -709,6 +688,25 @@ void DobbySpecConfig::enableRdkPlugin(ctemplate::TemplateDictionary*& subDict,
     subDict->SetValue(RDK_PLUGIN_REQUIRED, required ? "true": "false");
 }
 
+// -----------------------------------------------------------------------------
+/**
+ *  @brief Simply enables the localtime rdkPlugin on platforms where it's
+ *  needed.
+ *
+ *  The plugin takes no input parameters, so we don't need to parse input from
+ *  the spec.
+ *
+ *  @return true if correctly processed the value, otherwise false.
+ */
+void DobbySpecConfig::enableLocaltimePlugin()
+{
+    ctemplate::TemplateDictionary *subDict;
+    enableRdkPlugin(subDict, RDK_LOCALTIME_PLUGIN_NAME, false);
+
+    Json::Value rdkPluginData;
+    subDict->SetValue(RDK_PLUGIN_DATA, "{}");
+    addRdkPlugin(RDK_LOCALTIME_PLUGIN_NAME, false, rdkPluginData);
+}
 
 // -----------------------------------------------------------------------------
 /**
@@ -943,8 +941,11 @@ bool DobbySpecConfig::processUserNs(const Json::Value& value,
  *  @return true if correctly processed the value, otherwise false.
  */
 bool DobbySpecConfig::processRtPriority(const Json::Value& value,
-                                    ctemplate::TemplateDictionary* dictionary)
+                                        ctemplate::TemplateDictionary* dictionary)
 {
+    int rtPriorityDefault;
+    int rtPriorityLimit;
+
     if (mSpecVersion == SpecVersion::Version1_0)
     {
         if (!value.isIntegral())
@@ -953,7 +954,7 @@ bool DobbySpecConfig::processRtPriority(const Json::Value& value,
             return false;
         }
 
-        mRtPriorityDefault = value.asInt();
+        rtPriorityDefault = value.asInt();
     }
     else if (mSpecVersion == SpecVersion::Version1_1)
     {
@@ -966,7 +967,7 @@ bool DobbySpecConfig::processRtPriority(const Json::Value& value,
         const Json::Value& default_ = value["default"];
         if (default_.isIntegral())
         {
-            mRtPriorityDefault = default_.asInt();
+            rtPriorityDefault = default_.asInt();
         }
         else if (!default_.isNull())
         {
@@ -977,7 +978,7 @@ bool DobbySpecConfig::processRtPriority(const Json::Value& value,
         const Json::Value& limit = value["limit"];
         if (limit.isIntegral())
         {
-            mRtPriorityLimit = limit.asInt();
+            rtPriorityLimit = limit.asInt();
         }
         else if (!limit.isNull())
         {
@@ -986,16 +987,17 @@ bool DobbySpecConfig::processRtPriority(const Json::Value& value,
         }
     }
 
-    mRtPriorityDefault = std::min<int>(mRtPriorityDefault, 99);
-    mRtPriorityDefault = std::max<int>(mRtPriorityDefault, 1);
+    // Write values to the rdk plugin
+    ctemplate::TemplateDictionary* subDict;
+    enableRdkPlugin(subDict, RDK_RTSCHEDULING_PLUGIN_NAME, false);
 
-    mRtPriorityLimit = std::min<int>(mRtPriorityLimit, 99);
-    mRtPriorityLimit = std::max<int>(mRtPriorityLimit, 1);
+    Json::Value rdkPluginData;
+    rdkPluginData["rtlimit"] = rtPriorityLimit;
+    rdkPluginData["rtdefault"] = rtPriorityDefault;
 
-    if (mRtPriorityDefault > mRtPriorityLimit)
-        AI_LOG_WARN("the default rtprio is higher than the limit");
-
-    dictionary->SetIntValue(RLIMIT_RTPRIO, mRtPriorityLimit);
+    std::string pluginData = createRdkPluginDataString(rdkPluginData);
+    subDict->SetValue(RDK_PLUGIN_DATA, pluginData);
+    addRdkPlugin(RDK_RTSCHEDULING_PLUGIN_NAME, false, rdkPluginData);
 
     return true;
 }
@@ -1404,16 +1406,19 @@ void DobbySpecConfig::addVpuDevNodes(const std::shared_ptr<const IDobbySettings:
 bool DobbySpecConfig::processGpu(const Json::Value& value,
                              ctemplate::TemplateDictionary* dictionary)
 {
+    bool gpuEnabled;
+    Json::Value rdkPluginData;
+
     const Json::Value& enable = value["enable"];
     const Json::Value& memLimit = value["memLimit"];
 
     if (enable.isBool())
     {
-        mGpuEnabled = enable.asBool();
+        gpuEnabled = enable.asBool();
     }
     else if (enable.isNull())
     {
-        mGpuEnabled = false;
+        gpuEnabled = false;
     }
     else
     {
@@ -1423,11 +1428,12 @@ bool DobbySpecConfig::processGpu(const Json::Value& value,
 
     if (memLimit.isIntegral())
     {
-        mGpuMemLimit = memLimit.asUInt();
+        rdkPluginData["memory"] = memLimit.asUInt();
     }
     else if (memLimit.isNull())
     {
-        mGpuMemLimit = GPU_MEMLIMIT_DEFAULT;
+        // use default memory limit
+        rdkPluginData["memory"] = 64 * 1024 * 1024;
     }
     else
     {
@@ -1435,7 +1441,7 @@ bool DobbySpecConfig::processGpu(const Json::Value& value,
         return false;
     }
 
-    if (mGpuEnabled)
+    if (gpuEnabled)
     {
         // lazily init the GPU dev nodes mapping - we use to do this at start-up
         // but hit an issue on broadcom platforms where the dev nodes aren't
@@ -1467,6 +1473,15 @@ bool DobbySpecConfig::processGpu(const Json::Value& value,
             // store the mount point for rootfs construction
             storeMountPoint(extraMount.type, extraMount.source, extraMount.target);
         }
+
+
+        // Enable the RDK GPU plugin to set gpu memory limit
+        ctemplate::TemplateDictionary* subDict;
+        enableRdkPlugin(subDict, RDK_GPU_PLUGIN_NAME, false);
+
+        std::string pluginData = createRdkPluginDataString(rdkPluginData);
+        subDict->SetValue(RDK_PLUGIN_DATA, pluginData);
+        addRdkPlugin(RDK_GPU_PLUGIN_NAME, false, rdkPluginData);
     }
 
     // and any extra environment variables
@@ -2557,35 +2572,11 @@ bool DobbySpecConfig::processCapabilities(const Json::Value& value,
     }
 
 #if !defined(RDK)
-    // allow the containered apps to inherit any file base capabilties, this
+    // allow the containered apps to inherit any file base capabilities, this
     // is needed if wanting to execute programs that have the file capabilities
     // that match the capabilities we've given the container
     dictionary->SetValue(NO_NEW_PRIVS, "false");
 #endif // !defined(RDK)
 
     return true;
-}
-
-// -----------------------------------------------------------------------------
-/**
- *  @brief Sets the placeholder Dobby syshooks and removes RDK plugins in
- *  development.
- *
- *  NOTE: This should only be used until the RDK plugin is fully developed.
- */
-void DobbySpecConfig::setSysHooksAndRdkPlugins(void)
-{
-    // iterate through all rdk plugins in development to decide which syshooks
-    // should still be used. The RDK plugins are listed in the static variable
-    // DobbyConfig::mRdkPluginsInDevelopment
-    std::map<std::string, std::list<std::string>>::const_iterator it = mRdkPluginsInDevelopment.begin();
-    for (; it != mRdkPluginsInDevelopment.end(); ++it)
-    {
-        mRdkPlugins.erase(it->first);
-        std::list<std::string>::const_iterator jt = it->second.begin();
-        for (; jt != it->second.end(); ++jt)
-        {
-            mEnabledSysHooks.emplace_back(*jt);
-        }
-    }
 }

@@ -79,9 +79,6 @@ static int gPrintPidFd = -1;
 static std::string gDbusAddress;
 
 //
-static std::string gDBusService;
-
-//
 static std::string gSettingsFilePath("/etc/dobby.json");
 
 
@@ -117,7 +114,6 @@ static void displayUsage()
     printf("\n");
     printf("  -f, --settings-file=PATH      Path to a JSON dobby settings file [%s]\n", gSettingsFilePath.c_str());
     printf("  -a, --dbus-address=ADDRESS    The dbus address to put the admin service on [system bus]\n");
-    printf("  -s, --service=SERVICE         The dbus service to put Dobby on [%s]\n", DOBBY_SERVICE);
     printf("  -p, --priority=PRIORITY       Sets the SCHED_RR priority of the daemon [RR,12]\n");
     printf("  -n, --nofork                  Do not fork and daemonise the process\n");
     printf("  -k, --noconsole               Disable console output\n");
@@ -150,7 +146,6 @@ static void parseArgs(int argc, char **argv)
         { "version",        no_argument,        nullptr,    (int)'V' },
         { "settings-file",  required_argument,  nullptr,    (int)'f' },
         { "dbus-address",   required_argument,  nullptr,    (int)'a' },
-        { "service",        required_argument,  nullptr,    (int)'s' },
         { "nofork",         no_argument,        nullptr,    (int)'n' },
         { "priority",       required_argument,  nullptr,    (int)'p' },
         { "noconsole",      no_argument,        nullptr,    (int)'k' },
@@ -199,10 +194,6 @@ static void parseArgs(int argc, char **argv)
                             gSettingsFilePath.c_str());
                     exit(EXIT_FAILURE);
                 }
-                break;
-
-            case 's':
-                gDBusService = reinterpret_cast<const char*>(optarg);
                 break;
 
             case 'n':
@@ -263,12 +254,6 @@ static std::shared_ptr<Settings> createSettings()
     {
         AI_LOG_WARN("missing or inaccessible settings file, using defaults");
         settings = Settings::defaultSettings();
-    }
-
-    // set the dbus details
-    if (!gDBusService.empty())
-    {
-        settings->setDBusServiceName(gDBusService);
     }
 
     // TODO remove
@@ -408,7 +393,7 @@ static std::string getAIDbusAddress(bool privateBus)
 
         globfree(&globbuf);
     }
-    
+
     return path;
 }
 #endif // (AI_BUILD_TYPE == AI_DEBUG)
@@ -492,57 +477,24 @@ int main(int argc, char * argv[])
     PerfettoTracing::initialise();
 #endif
 
+    AI_LOG_INFO("starting dbus service");
+    AI_LOG_INFO("  dbus address '%s'", gDbusAddress.c_str());
+    AI_LOG_INFO("  service name '%s'", DOBBY_SERVICE);
+    AI_LOG_INFO("  object name '%s'", DOBBY_OBJECT);
 
     // Create the IPC service and start it, this spawns a thread and runs the dbus
-    // event loop inside it
+    // event loop inside it.
+    std::shared_ptr<AI_IPC::IIpcService> ipcService;
     try
     {
-        AI_LOG_INFO("starting dbus service");
-        AI_LOG_INFO("  dbus address '%s'", gDbusAddress.c_str());
-        AI_LOG_INFO("  service name '%s'", settings->dbusServiceName().c_str());
-        AI_LOG_INFO("  object name '%s'", settings->dbusObjectPath().c_str());
-
         // Create IPCServices that attach to the dbus daemons
-        std::shared_ptr<AI_IPC::IIpcService> ipcService;
         if (gDbusAddress.empty())
         {
-            ipcService = AI_IPC::createSystemBusIpcService(settings->dbusServiceName());
+            ipcService = AI_IPC::createSystemBusIpcService(DOBBY_SERVICE);
         }
         else
         {
-            ipcService = AI_IPC::createIpcService(gDbusAddress, settings->dbusServiceName());
-        }
-
-        if (!ipcService)
-        {
-            AI_LOG_ERROR("failed to create one of the IPC services");
-            rc = EXIT_FAILURE;
-        }
-        else
-        {
-            // Create the dobby object and hook into the IPC service
-            Dobby dobby(ipcService->getBusAddress(), ipcService, settings);
-
-            // On debug builds try and detect the AI dbus addresses at startup
-#if (AI_BUILD_TYPE == AI_DEBUG)
-            dobby.setDefaultAIDbusAddresses(getAIDbusAddress(true),
-                                            getAIDbusAddress(false));
-#endif // (AI_BUILD_TYPE == AI_DEBUG)
-
-
-            // Start the service, this spawns a thread and runs the dbus event
-            // loop inside it
-            ipcService->start();
-
-            // Milestone
-            AI_LOG_MILESTONE("started Dobby daemon");
-
-            // Wait till the Dobby service is terminated, this is obviously a
-            // blocking call
-            dobby.run();
-
-            // Stop the service and fall out
-            ipcService->stop();
+            ipcService = AI_IPC::createIpcService(gDbusAddress, DOBBY_SERVICE);
         }
     }
     catch (const std::exception& e)
@@ -550,6 +502,38 @@ int main(int argc, char * argv[])
         AI_LOG_ERROR("failed to create IPC service: %s", e.what());
         rc = EXIT_FAILURE;
     }
+
+    if (!ipcService)
+    {
+        AI_LOG_ERROR("failed to create one of the IPC services");
+        rc = EXIT_FAILURE;
+    }
+    else
+    {
+        // Create the dobby object and hook into the IPC service
+        Dobby dobby(ipcService->getBusAddress(), ipcService, settings);
+
+        // On debug builds try and detect the AI dbus addresses at startup
+#if (AI_BUILD_TYPE == AI_DEBUG)
+        dobby.setDefaultAIDbusAddresses(getAIDbusAddress(true),
+                                        getAIDbusAddress(false));
+#endif // (AI_BUILD_TYPE == AI_DEBUG)
+
+        // Start the service, this spawns a thread and runs the dbus event
+        // loop inside it
+        ipcService->start();
+
+        // Milestone
+        AI_LOG_MILESTONE("started Dobby daemon");
+
+        // Wait till the Dobby service is terminated, this is obviously a
+        // blocking call
+        dobby.run();
+
+        // Stop the service and fall out
+        ipcService->stop();
+    }
+
 
     // Milestone
     if (rc == EXIT_SUCCESS)

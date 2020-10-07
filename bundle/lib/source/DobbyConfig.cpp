@@ -31,24 +31,6 @@
 #define OCI_VERSION_CURRENT         "1.0.2"         // currently used version of OCI in bundles
 #define OCI_VERSION_CURRENT_DOBBY   "1.0.2-dobby"   // currently used version of extended OCI in bundles
 
-/**
- *  @brief Map of RDK plugins currently in development.
- *
- *  Contains RDK plugins with matching Dobby syshooks used until
- *  development is finished. If an RDK plugin is in development,
- *  (i.e. in this map), its respective syshooks are used instead.
- *
- *  TODO: Remove entry when RDK plugin development is finalised.
- */
-const std::map<std::string, std::list<std::string>> DobbyConfig::mRdkPluginsInDevelopment =
-{
-    { RDK_GPU_PLUGIN_NAME,
-    {
-#if !defined(RDK)
-        "GpuMemHook"
-#endif
-    }}
-};
 
 // -----------------------------------------------------------------------------
 /**
@@ -270,7 +252,7 @@ bool DobbyConfig::addEnvironmentVar(const std::string& envVar)
         }
     }
 
-    // Increase the number of enviromental variables
+    // Increase the number of environment variables
     cfg->process->env_len += 1;
 
     // Update env var in OCI bundle config
@@ -363,6 +345,11 @@ bool DobbyConfig::writeConfigJsonImpl(const std::string& filePath) const
     if (json_buf == nullptr || err)
     {
         AI_LOG_ERROR_EXIT("Failed to generate json from container config with code '%s'", err);
+        fclose(file);
+        if (json_buf != nullptr)
+        {
+            free(json_buf);
+        }
         return false;
     }
 
@@ -370,6 +357,8 @@ bool DobbyConfig::writeConfigJsonImpl(const std::string& filePath) const
     if (fputs(json_buf, file) == EOF)
     {
         AI_LOG_ERROR_EXIT("Failed to write config file.");
+        fclose(file);
+        free(json_buf);
         return false;
     }
     fclose(file);
@@ -421,27 +410,40 @@ bool DobbyConfig::findPluginLauncherHookEntry(rt_defs_hook** hook, int len)
  */
 void DobbyConfig::setPluginHookEntry(rt_defs_hook* entry, const std::string& name, const std::string& configPath)
 {
-#if (AI_BUILD_TYPE == AI_DEBUG)
-    int args_len = 6;
-    std::string args[args_len] = {
+    std::string verbosity;
+
+    // match plugin launcher verbosity to the daemon's
+    switch(__ai_debug_log_level) {
+        case AI_DEBUG_LEVEL_DEBUG:
+            verbosity = "-vv";
+            break;
+        case AI_DEBUG_LEVEL_INFO:
+            verbosity = "-v";
+            break;
+        default:
+            verbosity = "";
+            break;
+    }
+
+    std::vector<std::string> args = {
         "DobbyPluginLauncher",
-        "-v",
-#else
-    int args_len = 5;
-    std::string args[args_len] = {
-        "DobbyPluginLauncher",
-#endif
         "-h",
         name,
         "-c",
         configPath
     };
 
+    // add verbosity level if needed
+    if (!verbosity.empty())
+    {
+        args.emplace_back(verbosity);
+    }
+
     entry->path = strdup(PLUGINLAUNCHER_PATH);
-    entry->args_len = args_len;
+    entry->args_len = args.size();;
     entry->args = (char**)calloc(entry->args_len, sizeof(char*));
 
-    for (int i = 0; i < args_len; i++)
+    for (int i = 0; i < args.size(); i++)
     {
         entry->args[i] = strdup(args[i].c_str());
     }
@@ -521,7 +523,7 @@ bool DobbyConfig::updateBundleConfig(const ContainerId& id, std::shared_ptr<rt_d
     cfg->hostname = strdup(id.c_str());
 
     // if there are any rdk plugins, set up DobbyPluginLauncher in config
-    if (cfg->rdk_plugins->plugins_count && findRdkPlugins(cfg->rdk_plugins))
+    if (cfg->rdk_plugins->plugins_count)
     {
         // bindmount DobbyPluginLauncher to container
         if(!addMount(PLUGINLAUNCHER_PATH, PLUGINLAUNCHER_PATH, "bind", 0,
@@ -557,34 +559,6 @@ bool DobbyConfig::updateBundleConfig(const ContainerId& id, std::shared_ptr<rt_d
     return true;
 }
 
-// -----------------------------------------------------------------------------
-/**
- *  @brief Checks if a matching rdkPlugin shared library is available for all
- *  defined rdkPlugins in config. If false is returned, DobbyPluginLauncher
- *  hooks should not be added to config.
- *
- *  @param[in]  rdkPlugins      rdkPlugins in config file
- *
- *  TODO: remove this function once rdkPlugin development has finalised
- *
- */
-bool DobbyConfig::findRdkPlugins(rt_defs_plugins_rdk_plugins *rdkPlugins)
-{
-    // if plugin isn't found in mRdkPluginsInDevelopment, we can expect it to
-    // exist as a shared library i.e. as an rdkPlugin, not as a syshook. If
-    // even one rdkPlugin can be used, we can return true
-    for (int i = 0; i < rdkPlugins->plugins_count; i++)
-    {
-        if (mRdkPluginsInDevelopment.find(rdkPlugins->names_of_plugins[i]) ==
-            mRdkPluginsInDevelopment.end())
-        {
-            // didn't find plugin in mRdkPluginsInDevelopment, hooks needed
-            return true;
-        }
-    }
-
-    return false;
-}
 
 // -----------------------------------------------------------------------------
 /**

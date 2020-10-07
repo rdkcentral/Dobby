@@ -48,10 +48,12 @@
  */
 DobbyRdkPluginManager::DobbyRdkPluginManager(std::shared_ptr<rt_dobby_schema> containerConfig,
                                              const std::string &rootfsPath,
+                                             const std::string &hookStdin,
                                              const std::string &pluginPath,
                                              const std::shared_ptr<DobbyRdkPluginUtils> &utils)
     : mContainerConfig(containerConfig),
       mRootfsPath(rootfsPath),
+      mHookStdin(hookStdin),
       mPluginPath(pluginPath),
       mUtils(utils)
 {
@@ -129,17 +131,20 @@ void DobbyRdkPluginManager::loadPlugins()
         return;
     }
 
-    // iterate through all the files in the directory
-    struct dirent *entry;
-    while ((entry = readdir(dir)) != nullptr)
+    int directoriesCount = 0;
+    struct dirent **namelist;
+
+    // Need to sort directories with versionsort so lib.12 would be greater than lib.2
+    directoriesCount = scandir(mPluginPath.c_str(), &namelist, 0, versionsort);
+    for(int i=0; i<directoriesCount;i++)
     {
         // if a symlink verify that the thing we're pointing to is a file
-        if (entry->d_type == DT_LNK)
+        if (namelist[i]->d_type == DT_LNK)
         {
             struct stat buf;
-            if (fstatat(dirfd(dir), entry->d_name, &buf, AT_NO_AUTOMOUNT) != 0)
+            if (fstatat(dirfd(dir), namelist[i]->d_name, &buf, AT_NO_AUTOMOUNT) != 0)
             {
-                AI_LOG_SYS_ERROR(errno, "failed to stat '%s'", entry->d_name);
+                AI_LOG_SYS_ERROR(errno, "failed to stat '%s'", namelist[i]->d_name);
                 continue;
             }
 
@@ -149,7 +154,7 @@ void DobbyRdkPluginManager::loadPlugins()
                 continue;
             }
         }
-        else if (entry->d_type != DT_REG)
+        else if (namelist[i]->d_type != DT_REG)
         {
             // the entry is not a regular file so skip it
             continue;
@@ -157,12 +162,12 @@ void DobbyRdkPluginManager::loadPlugins()
 
         // try and dlopen it
         char libPath[PATH_MAX];
-        snprintf(libPath, sizeof(libPath), "%s/%s", mPluginPath.c_str(), entry->d_name);
+        snprintf(libPath, sizeof(libPath), "%s/%s", mPluginPath.c_str(), namelist[i]->d_name);
 
         void *libHandle = dlopen(libPath, RTLD_LAZY | RTLD_LOCAL);
         if (libHandle == nullptr)
         {
-            AI_LOG_ERROR("Plugin %s failed to load with error %s\n", entry->d_name, dlerror());
+            AI_LOG_ERROR("Plugin %s failed to load with error %s\n", namelist[i]->d_name, dlerror());
             continue;
         }
 
@@ -182,7 +187,7 @@ void DobbyRdkPluginManager::loadPlugins()
         if (!isPlugin && !isLogger)
         {
             dlclose(libHandle);
-            AI_LOG_DEBUG("%s does not contain create/destroy functions, skipping...\n", entry->d_name);
+            AI_LOG_DEBUG("%s does not contain create/destroy functions, skipping...\n", namelist[i]->d_name);
             continue;
         }
 
@@ -194,13 +199,14 @@ void DobbyRdkPluginManager::loadPlugins()
             // execute the register function ... fingers crossed
             typedef IDobbyRdkPlugin *(*CreatePluginFunction)(std::shared_ptr<rt_dobby_schema>& containerConfig,
                                                             const std::shared_ptr<DobbyRdkPluginUtils> &util,
-                                                            const std::string &rootfsPath);
+                                                            const std::string &rootfsPath,
+                                                            const std::string &hookStdin);
             typedef void (*DestroyPluginFunction)(IDobbyRdkPlugin *);
 
             CreatePluginFunction createFunc = reinterpret_cast<CreatePluginFunction>(libCreateFn);
             DestroyPluginFunction destroyFunc = reinterpret_cast<DestroyPluginFunction>(libDestroyFn);
 
-            std::shared_ptr<IDobbyRdkPlugin> loadedPlugin(createFunc(mContainerConfig, mUtils, mRootfsPath),
+            std::shared_ptr<IDobbyRdkPlugin> loadedPlugin(createFunc(mContainerConfig, mUtils, mRootfsPath, mHookStdin),
                                                     destroyFunc);
 
             plugin = std::move(loadedPlugin);
@@ -210,16 +216,17 @@ void DobbyRdkPluginManager::loadPlugins()
             // execute the register function ... fingers crossed
             typedef IDobbyRdkLoggingPlugin *(*CreateLoggerFunction)(std::shared_ptr<rt_dobby_schema>& containerConfig,
                                                             const std::shared_ptr<DobbyRdkPluginUtils> &util,
-                                                            const std::string &rootfsPath);
+                                                            const std::string &rootfsPath,
+                                                            const std::string &hookStdin);
             typedef void (*DestroyLoggerFunction)(IDobbyRdkLoggingPlugin *);
 
             CreateLoggerFunction createFunc = reinterpret_cast<CreateLoggerFunction>(libCreateLoggerFn);
             DestroyLoggerFunction destroyFunc = reinterpret_cast<DestroyLoggerFunction>(libDestroyLoggerFn);
 
-            std::shared_ptr<IDobbyRdkPlugin> loadedPlugin(createFunc(mContainerConfig, mUtils, mRootfsPath),
+            std::shared_ptr<IDobbyRdkPlugin> loadedPlugin(createFunc(mContainerConfig, mUtils, mRootfsPath, mHookStdin),
                                                     destroyFunc);
 
-            std::shared_ptr<IDobbyRdkLoggingPlugin> loadedLogger(createFunc(mContainerConfig, mUtils, mRootfsPath),
+            std::shared_ptr<IDobbyRdkLoggingPlugin> loadedLogger(createFunc(mContainerConfig, mUtils, mRootfsPath, mHookStdin),
                                                      destroyFunc);
 
             logger = std::move(loadedLogger);
@@ -258,6 +265,19 @@ void DobbyRdkPluginManager::loadPlugins()
                         pluginName.c_str(), libPath);
 
             it->second.second.reset();
+
+            if (isLogger)
+            {
+                auto iter = mLoggers.find(pluginName);
+                if(iter != mLoggers.end())
+                {
+                    iter->second.second.reset();
+                    mLoggers.erase(iter);
+                }
+            }
+
+            //  destruct the pointer first then close the library as
+            // the destructor needs to be called from the library.
             dlclose(it->second.first);
             mPlugins.erase(it);
         }
@@ -269,9 +289,13 @@ void DobbyRdkPluginManager::loadPlugins()
         }
 
         AI_LOG_INFO("Loaded plugin '%s' from '%s'\n", pluginName.c_str(), libPath);
+
+        free(namelist[i]);
     }
 
+    free(namelist);
     closedir(dir);
+    close(dirFd);
 
     AI_LOG_FN_EXIT();
 }
@@ -424,7 +448,7 @@ bool DobbyRdkPluginManager::isLoaded(const std::string &pluginName) const
  * @brief Check if a plugin implements the specified hook
  *
  * @param[in]   pluginName  The name of the plugin to check
- * @param[in]   hook        The hook to check if the plugin implemenets
+ * @param[in]   hook        The hook to check if the plugin implements
  *
  * @return True if plugin implements specified hook
  */
@@ -453,7 +477,6 @@ bool DobbyRdkPluginManager::implementsHook(const std::string &pluginName,
  *
  * @param[in]   pluginName      Name of the plugin to run
  * @param[in]   hook            Which hook to execute
- * @param[in]   jsonData        Plugin specific data (passed directly to plugin)
  *
  * @return True if the hook executed successfully
  */

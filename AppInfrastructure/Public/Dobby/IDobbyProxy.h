@@ -24,7 +24,11 @@
 #ifndef IDOBBYPROXY_H
 #define IDOBBYPROXY_H
 
+#if defined(DOBBY_BUILD)
 #include <Common/Notifier.h>
+#else
+#include <Dobby/Public/Common/Notifier.h>
+#endif
 
 #include <cstdint>
 #include <list>
@@ -73,7 +77,7 @@ public:
 // -----------------------------------------------------------------------------
 /**
  *  @interface IDobbyProxy
- *  @brief Wrapper around an IpcService object that provides simplier method
+ *  @brief Wrapper around an IpcService object that provides simpler method
  *  calls to the Dobby 'hypervisor' daemon.
  *
  *  All the methods are constant because the class doesn't have any internal

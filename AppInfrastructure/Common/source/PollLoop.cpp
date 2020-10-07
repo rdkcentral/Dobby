@@ -125,7 +125,7 @@ void PollLoop::enableDeferredTimer()
 
 // -----------------------------------------------------------------------------
 /**
- * @brief Disables the deferred timer evnet source
+ * @brief Disables the deferred timer event source
  *
  *
  *
@@ -281,7 +281,7 @@ bool PollLoop::modSource(const std::shared_ptr<IPollSource>& source, uint32_t ev
                     }
                 }
 
-                // Check if the defered flag is changed, in which case we enable or
+                // Check if the deferred flag is changed, in which case we enable or
                 // disable the defer timer (if not already)
                 if ((it->events ^ events) & EPOLLDEFERRED)
                 {
@@ -632,7 +632,7 @@ void PollLoop::run(const std::string& name, int priority)
 
             if (++failures > 5)
             {
-                AI_LOG_FATAL("too many errors occured on epoll, shutting down loop");
+                AI_LOG_FATAL("too many errors occurred on epoll, shutting down loop");
                 break;
             }
         }
@@ -660,7 +660,7 @@ void PollLoop::run(const std::string& name, int priority)
                     AI_LOG_SYS_ERROR(errno, "failed to read timerfd");
                 }
 
-                // AI_LOG_DEBUG("defered timer tick (%llu expirations)", expirations);
+                // AI_LOG_DEBUG("deferred timer tick (%llu expirations)", expirations);
 
                 // Take the lock protecting access to mSources
                 std::lock_guard<Spinlock> locker(mLock);
@@ -721,7 +721,7 @@ void PollLoop::run(const std::string& name, int priority)
         // the events received
         for (trigItor = triggered.begin(); trigItor != triggered.end(); ++trigItor)
         {
-            // Call process() with a reference back to ourselfs and the events
+            // Call process() with a reference back to ourselves and the events
             // triggered
             trigItor->first->process(shared_from_this(), trigItor->second);
         }

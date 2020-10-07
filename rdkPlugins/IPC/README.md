@@ -27,7 +27,7 @@ To create dbus connection, set the following options in the `data` section of th
 | `debug`             | This will create debug bus, to use it inside container use "DBUS_DEBUG_BUS_ADDRESS"                                                     |
 
 As the all dbus address are expected to be of the form 'unix:path=<path_to_socket>' our path provided in plugin config should be the part of it called "<path_to_socket>".
-Because we would like to support some legacy code there are some valid arguments that are not paths. Those are: "system", "ai-private", "ai-public", but last two are deprecated and if possible they should not be used. Making assigment:
+Because we would like to support some legacy code there are some valid arguments that are not paths. Those are: "system", "ai-private", "ai-public", but last two are deprecated and if possible they should not be used. Making assignment:
 ```json
 "data": {
     "system" : "system"
@@ -63,4 +63,4 @@ There are 2 different ways to fix it:
         "type": "user"
     }
     ```
-2. Apply patch to the dbus. The patch is in this folder named "dbus_user_namespace_fix.txt". This require you to rebuild dbus yourself. IPC plugin sets environment variable "SKY_DBUS_DISABLE_UID_IN_EXTERNAL_AUTH" required by this patch by default. When using this aproach just make sure that your container uid/gid mapping is valid for dbus.
+2. Apply patch to the dbus. The patch is in this folder named "dbus_user_namespace_fix.txt". This require you to rebuild dbus yourself. IPC plugin sets environment variable "SKY_DBUS_DISABLE_UID_IN_EXTERNAL_AUTH" required by this patch by default. When using this approach just make sure that your container uid/gid mapping is valid for dbus.

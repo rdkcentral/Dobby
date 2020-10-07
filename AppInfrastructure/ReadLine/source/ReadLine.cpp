@@ -495,7 +495,7 @@ void ReadLine::run()
     // setup readline
     _rl_callback_handler_install("> ", _commandLineHandler);
 
-    // add ourselfs as a source trigger from input from stdin
+    // add ourselves as a source trigger from input from stdin
     if (!mPollLoop->addSource(shared_from_this(), STDIN_FILENO, EPOLLIN))
     {
         AI_LOG_ERROR_EXIT("failed to add stdin source to poll loop");

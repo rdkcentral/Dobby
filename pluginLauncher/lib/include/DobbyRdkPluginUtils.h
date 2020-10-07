@@ -86,8 +86,6 @@ public:
 
     pid_t getContainerPid(const std::string &stdin) const;
 
-    std::string getHookStdin() const;
-
     bool writeTextFile(const std::string &path,
                        const std::string &str,
                        int flags,
