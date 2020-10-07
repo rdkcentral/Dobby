@@ -21,6 +21,7 @@ Vagrantfile to configure a VirtualBox VM that can be used for Dobby development.
 Builds & installs the following components (plus dependencies):
   * Dobby (https://github.com/rdkcentral/Dobby/)
   * Crun (https://github.com/containers/crun)
+  * Smcroute (https://github.com/troglobit/smcroute)
   * Thunder (https://github.com/rdkcentral/Thunder)
   * OCIContainer NanoService (https://github.com/rdkcentral/rdkservices)
 ################################################################################
@@ -145,6 +146,28 @@ Vagrant.configure("2") do |config|
         ./configure --disable-systemd
         sudo make install -j$(nproc)
         sudo ln -s /usr/local/bin/crun /usr/bin/crun
+    SHELL
+
+    ##################################################
+    #
+    # Clone and build SMCROUTE
+    #
+    config.vm.provision "shell", privileged: false, inline: <<-SHELL
+        figlet SMCROUTE  # ASCII banner
+        mkdir ~/smcroute
+        cd ~/smcroute
+        git clone --depth 1 --branch 2.4.4 https://github.com/troglobit/smcroute.git .
+
+        # Apply patch to add dobby0 configuration if it's missing when trying to add a route
+        cp /vagrant/0001-configure-missing-dobby0-on-route-add.patch ./
+        patch -p1 < 0001-configure-missing-dobby0-on-route-add.patch
+
+        ./autogen.sh
+        ./configure
+        sudo make install -j$(nproc)
+        sudo ln -s /usr/local/sbin/smcroutectl /usr/sbin/smcroutectl
+        sudo mkdir -p /usr/local/var/run
+        sudo systemctl enable smcroute # enable the daemon by default
     SHELL
 
     ##################################################

@@ -20,6 +20,7 @@
 #include "NetworkingPlugin.h"
 #include "DnsmasqSetup.h"
 #include "PortForwarding.h"
+#include "MulticastForwarder.h"
 #include "NetworkSetup.h"
 
 #include <fcntl.h>
@@ -231,6 +232,16 @@ bool NetworkingPlugin::createRuntime()
         }
     }
 
+    // add port forwards if any have been configured
+    if (mPluginData->multicast_forwarding != nullptr)
+    {
+        if (!MulticastForwarder::set(mNetfilter, mPluginData, mHelper->vethName(), mContainerId, extIfaces))
+        {
+            AI_LOG_ERROR_EXIT("failed to add multicast forwards");
+            return false;
+        }
+    }
+
     // apply iptables changes
     if (!mNetfilter->applyRules(AF_INET) || !mNetfilter->applyRules(AF_INET6))
     {
@@ -350,6 +361,16 @@ bool NetworkingPlugin::postHalt()
         if (!PortForwarding::removePortForwards(mNetfilter, mHelper, mContainerId, mPluginData->port_forwarding))
         {
             success = false;
+        }
+    }
+
+    // add port forwards if any have been configured
+    if (mPluginData->multicast_forwarding != nullptr)
+    {
+        if (!MulticastForwarder::removeRules(mNetfilter, mPluginData, mHelper->vethName(), mContainerId, extIfaces))
+        {
+            AI_LOG_ERROR_EXIT("failed to add multicast forwards");
+            return false;
         }
     }
 
