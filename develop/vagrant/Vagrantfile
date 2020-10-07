@@ -135,7 +135,12 @@ Vagrant.configure("2") do |config|
         figlet CRUN  # ASCII banner
         mkdir ~/crun
         cd ~/crun
-        git clone --depth 1 --branch 0.14.1 https://github.com/containers/crun.git .
+        git clone --depth 1 --branch 0.15 https://github.com/containers/crun.git .
+
+        # Apply patch for pid file not being created properly
+        cp /vagrant/0001-container-truncate-pid-file-before-writing-it.patch ./
+        patch -p1 < 0001-container-truncate-pid-file-before-writing-it.patch
+
         ./autogen.sh
         ./configure --disable-systemd
         sudo make install -j$(nproc)
