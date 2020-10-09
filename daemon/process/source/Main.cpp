@@ -64,7 +64,7 @@ static bool gDaemonise = true;
 static bool gNoConsole = false;
 
 //
-static int gLogLevel = -1;
+static int gLogLevel = AI_DEBUG_LEVEL_MILESTONE;
 
 //
 static bool gUseSyslog = false;
@@ -168,8 +168,6 @@ static void parseArgs(int argc, char **argv)
                 break;
 
             case 'v':
-                if (gLogLevel < 0)
-                    gLogLevel = AI_DEBUG_LEVEL_MILESTONE;
                 gLogLevel++;
                 break;
 
@@ -256,8 +254,9 @@ static std::shared_ptr<Settings> createSettings()
         settings = Settings::defaultSettings();
     }
 
-    // TODO remove
+#if (AI_BUILD_TYPE == AI_DEBUG)
     settings->dump();
+#endif
 
     return settings;
 }
@@ -409,7 +408,6 @@ int main(int argc, char * argv[])
 {
     int rc = EXIT_SUCCESS;
 
-    //
     parseArgs(argc, argv);
 
     // Set our priority if requested
@@ -435,10 +433,7 @@ int main(int argc, char * argv[])
 
 
     Dobby::setupLogging(logTargets);
-    if (gLogLevel >= 0)
-    {
-        __ai_debug_log_level = gLogLevel;
-    }
+    __ai_debug_log_level = gLogLevel;
 
 
     // Create object storing Dobby settings
