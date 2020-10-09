@@ -369,7 +369,7 @@ bool NetworkingPlugin::postHalt()
     {
         if (!MulticastForwarder::removeRules(mNetfilter, mPluginData, mHelper->vethName(), mContainerId, extIfaces))
         {
-            AI_LOG_ERROR_EXIT("failed to add multicast forwards");
+            AI_LOG_ERROR_EXIT("failed to remove multicast forwards");
             return false;
         }
     }
