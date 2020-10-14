@@ -33,9 +33,8 @@ target_include_directories( AppInfraCommon
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../Public/Common>
 
-        ${Boost_INCLUDE_DIRS}
-
         PRIVATE
+        ${Boost_INCLUDE_DIRS}
         $<TARGET_PROPERTY:AppInfraLogging,INTERFACE_INCLUDE_DIRECTORIES>
 
         )
