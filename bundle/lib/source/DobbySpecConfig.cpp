@@ -618,7 +618,8 @@ bool DobbySpecConfig::parseSpec(ctemplate::TemplateDictionary* dictionary,
     // step 6.5 - enable localtime rdk plugin by default if on Xi1. The
     // localtime plugin takes no input params, so we simply enable the
     // rdkPlugin rather than processing it via a processing function.
-    mRdkPluginsJson[RDK_LOCALTIME_PLUGIN_NAME]["data"] = "{}";
+    Json::Value rdkPluginData = Json::objectValue;
+    mRdkPluginsJson[RDK_LOCALTIME_PLUGIN_NAME]["data"] = rdkPluginData;
     mRdkPluginsJson[RDK_LOCALTIME_PLUGIN_NAME]["required"] = false;
 #endif
 
