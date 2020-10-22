@@ -219,7 +219,7 @@ add_subdirectory(settings)
 add_subdirectory(bundle/lib)
 
 # Only include DobbyBundleGenerator in debug builds
-if ( BUILD_TYPE STREQUAL "DEBUG" )
+if ( LEGACY_COMPONENTS AND BUILD_TYPE STREQUAL "DEBUG" )
     add_subdirectory(bundle/tool)
 endif()
 
