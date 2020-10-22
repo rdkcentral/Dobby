@@ -33,6 +33,11 @@ During the CMake configure stage, CMake will also configure the `libocispec` sub
 
 If the schema files in the `bundle/runtime-schemas` directory are changed, then you will need to re-run CMake again to regenerate the headers.
 
+When building for the development VM, use the following CMake command:
+```
+cmake -DCMAKE_BUILD_TYPE=Debug -DRDK_PLATFORM=DEV_VM -DCMAKE_INSTALL_PREFIX:PATH=/usr ../
+```
+
 ### CMake Configuration Settings
 * `-DPLUGIN_PATH=""` - specify a different location to load RDK plugins from.
 * `-DRDK_PLATFORM=DEV_VM` - specify which platform Dobby is running on. Defaults to `XI6` if none specified. Valid options include

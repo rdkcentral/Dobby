@@ -1,20 +1,6 @@
 {
     "description": "Definitions required for extended OCI",
     "definitions": {
-        "DataTypeLog": {
-            "type": "object",
-            "properties": {
-                "enabled": {
-                    "type": "boolean"
-                },
-                "limit": {
-                    "$ref": "defs.json#/definitions/int32"
-                },
-                "path": {
-                    "type": "string"
-                }
-            }
-        },
         "EthanLog": {
             "type": "object",
             "required": [
@@ -113,28 +99,9 @@
                 },
                 "data": {
                     "type": "object",
-                    "examples": [
-                        {
-                            "sink": "file",
-                            "fileOptions": {
-                                "path": "/tmp/container.log",
-                                "limit": 65536
-                            }
-                        },
-                        {
-                            "sink": "journald",
-                            "journaldOptions": {
-                                "priority": "LOG_INFO"
-                            }
-                        },
-                        {
-                            "sink": "devnull"
-                        }
-                    ],
                     "required": [
                         "sink"
                     ],
-                    "additionalProperties": true,
                     "properties": {
                         "sink": {
                             "type": "string"
@@ -145,7 +112,6 @@
                                 "path",
                                 "limit"
                             ],
-                            "additionalProperties": true,
                             "properties": {
                                 "path": {
                                     "type": "string"
@@ -160,7 +126,6 @@
                             "required": [
                                 "priority"
                             ],
-                            "additionalProperties": true,
                             "properties": {
                                 "priority": {
                                     "type": "string"
@@ -308,26 +273,6 @@
                 }
             }
         },
-        "DRM": {
-            "type": "object",
-            "required": [
-                "required",
-                "data"
-            ],
-            "properties": {
-                "required": {
-                    "type": "boolean"
-                },
-                "data": {
-                    "type": "object",
-                    "properties": {
-                        "systems": {
-                            "$ref": "defs.json#/definitions/ArrayOfStrings"
-                        }
-                    }
-                }
-            }
-        },
         "LocalTime": {
             "type": "object",
             "required": [
@@ -428,24 +373,6 @@
                 }
             }
         },
-        "DummyPlugin": {
-            "type": "object",
-            "required": [
-                "required",
-                "data"
-            ],
-            "properties": {
-                "required": {
-                    "type": "boolean"
-                },
-                "data": {
-                    "type": "object",
-                    "propertyNames": {
-                        "pattern": "^[A-Za-z_][A-Za-z0-9_]*$"
-                    }
-                }
-            }
-        },
         "LegacyPlugins": {
             "type": "object",
             "properties": {
@@ -474,9 +401,6 @@
                 },
                 "storage": {
                     "$ref": "#/definitions/Storage"
-                },
-                "drm": {
-                    "$ref": "#/definitions/DRM"
                 },
                 "localtime": {
                     "$ref": "#/definitions/LocalTime"
