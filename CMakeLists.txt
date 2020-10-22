@@ -49,18 +49,18 @@ endif()
 
 # Add definition to determine RDK build
 add_definitions( -DRDK )
-add_definitions( -DXI1=1 -DLLAMA=2 -DXI6=6 )
+add_definitions( -DGENERIC=0 -DXI1=1 -DLLAMA=2 )
 
 # Add definition to differentiate between Dobby builds and external projects building DobbyProxy
 add_definitions( -DDOBBY_BUILD )
 
-# If no platform defined then default to XI6
-set( RDK_PLATFORM "XI6" CACHE STRING "The target RDK platform, options are \"XI1\", \"XI6\", \"LLAMA\" or \"DEV_VM\"" )
+# If no platform defined then default to Generic
+set( RDK_PLATFORM "GENERIC" CACHE STRING "The target RDK platform, options are \"GENERIC\" (default), \"XI1\", \"LLAMA\" or \"DEV_VM\"" )
 string( TOUPPER "${RDK_PLATFORM}" RDK_PLATFORM )
 
 # If developer VM defined, configure platform to be Ubuntu VM machine, else configure set-top box
-if( RDK_PLATFORM STREQUAL "XI6" )
-    add_definitions( -DRDK_PLATFORM=XI6 )
+if( RDK_PLATFORM STREQUAL "GENERIC" )
+    add_definitions( -DRDK_PLATFORM=GENERIC )
 elseif( RDK_PLATFORM STREQUAL "XI1" )
     add_definitions( -DRDK_PLATFORM=XI1 )
 elseif( RDK_PLATFORM STREQUAL "LLAMA" )
@@ -71,6 +71,8 @@ elseif( RDK_PLATFORM STREQUAL "DEV_VM" )
 else()
     message( FATAL_ERROR "Unknown RDK_PLATFORM '${RDK_PLATFORM}'" )
 endif()
+
+set( BUILD_REFERENCE "" CACHE STRING "Commit hash used to build Dobby" )
 
 # Option to enable / disable the Perfetto tracing support
 # Can only be enabled in DEBUG builds
@@ -85,7 +87,8 @@ endif()
 # Add defines for DBUS path
 add_definitions( -DDBUS_SYSTEM_ADDRESS="unix:path=/var/run/dbus/system_bus_socket" )
 
-option( LEGACY_COMPONENTS "Enable Dobby legacy components" ON )
+# Default to NOT include the legacy support. Can be enabled for Sky builds as necessary
+option( LEGACY_COMPONENTS "Enable Dobby legacy components" OFF )
 # Add #define if enabled
 if ( LEGACY_COMPONENTS )
     add_definitions( -DLEGACY_COMPONENTS )
@@ -158,6 +161,9 @@ endif()
 include(cmake/libocispec.cmake)
 
 
+# Main source code
+# ------------------------------------------------------------------------------
+
 # Tracing
 if( ENABLE_PERFETTO_TRACING )
     add_subdirectory(tracing)
@@ -165,6 +171,12 @@ endif()
 
 # Enable link time optimization if it's supported
 if( ENABLE_LTO )
+    # For release builds, without this set the build will fail when linking with
+    # pthread_create (https://gcc.gnu.org/legacy-ml/gcc-help/2017-03/msg00080.html)
+    if (BUILD_TYPE STREQUAL "RELEASE")
+        set(CMAKE_LINK_WHAT_YOU_USE TRUE)
+    endif()
+
     if( ${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.9.0" )
         # use cmake's IPO setting to apply LTO flags to compiler
         cmake_policy( SET CMP0069 NEW )
@@ -205,7 +217,9 @@ add_subdirectory(settings)
 
 # Add Bundle Generator code
 add_subdirectory(bundle/lib)
-if ( LEGACY_COMPONENTS )
+
+# Only include DobbyBundleGenerator in debug builds
+if ( BUILD_TYPE STREQUAL "DEBUG" )
     add_subdirectory(bundle/tool)
 endif()
 

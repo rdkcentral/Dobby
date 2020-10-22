@@ -1,0 +1,15 @@
+{
+  "paths": {
+    "workspaceDir": "/var/volatile/rdk",
+    "persistentDir": "/opt/persistent/rdk"
+  },
+
+  "logging": {
+    "consoleSocket": "/tmp/dobbyPty.sock"
+  },
+
+  "network": {
+    "externalInterfaces": [ "eth0", "wlan0" ],
+    "addressRange": "100.64.11.0"
+  }
+}
