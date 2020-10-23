@@ -106,23 +106,9 @@ install( # Specifies the target to install
 
         )
 
-
-# Install the config file for the target platform
-# Generic is just a standard build with no extra settings
-if( RDK_PLATFORM STREQUAL "GENERIC" )
-        set( DOBBY_SETTINGS_FILE "settings/dobby.json" )
-elseif( RDK_PLATFORM STREQUAL "XI1" )
-        set( DOBBY_SETTINGS_FILE "settings/dobby.xi1.json" )
-elseif( RDK_PLATFORM STREQUAL "LLAMA" )
-        set( DOBBY_SETTINGS_FILE "settings/dobby.llama.json" )
-elseif( RDK_PLATFORM STREQUAL "DEV_VM" )
-        set( DOBBY_SETTINGS_FILE "settings/dobby.dev_vm.json" )
-else()
-        message( FATAL_ERROR "Unknown RDK_PLATFORM '${RDK_PLATFORM}'" )
-endif()
-
+# Install the settings file for the target platform
 install(
-        FILES       "${DOBBY_SETTINGS_FILE}"
+        FILES       "settings/${DOBBY_SETTINGS_FILE}"
         RENAME      dobby.json
         DESTINATION /etc/ )
 
