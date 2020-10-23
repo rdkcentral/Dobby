@@ -178,11 +178,9 @@ endif()
 
 # Enable link time optimization if it's supported
 if( ENABLE_LTO )
-    # For release builds, without this set the build will fail when linking with
+    # Without this set the build will fail when linking with
     # pthread_create (https://gcc.gnu.org/legacy-ml/gcc-help/2017-03/msg00080.html)
-    if (BUILD_TYPE STREQUAL "RELEASE")
-        set(CMAKE_LINK_WHAT_YOU_USE TRUE)
-    endif()
+    set(CMAKE_LINK_WHAT_YOU_USE TRUE)
 
     if( ${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.9.0" )
         # use cmake's IPO setting to apply LTO flags to compiler
