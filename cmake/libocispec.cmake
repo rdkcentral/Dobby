@@ -51,6 +51,18 @@ execute_process(
 file(GLOB CUSTOM_SCHEMA_FILES CONFIGURE_DEPENDS "${SCHEMAS_DIR}/*.json")
 file(COPY ${CUSTOM_SCHEMA_FILES} DESTINATION ${LIBOCISPEC_DIR}/runtime-spec/schema/)
 
+# Remove any schemas that Dobby doesn't use and therefore are pointless to generate
+file(REMOVE ${LIBOCISPEC_DIR}/runtime-spec/schema/config-solaris.json)
+file(REMOVE ${LIBOCISPEC_DIR}/runtime-spec/schema/config-windows.json)
+file(REMOVE ${LIBOCISPEC_DIR}/runtime-spec/schema/config-vm.json)
+file(REMOVE ${LIBOCISPEC_DIR}/runtime-spec/schema/defs-solaris.json)
+file(REMOVE ${LIBOCISPEC_DIR}/runtime-spec/schema/defs-windows.json)
+file(REMOVE ${LIBOCISPEC_DIR}/runtime-spec/schema/defs-vm.json)
+
+# We use Dobby schema instead, which is almost identical but has the RDKPlugins additional section
+file(REMOVE ${LIBOCISPEC_DIR}/runtime-spec/schema/config-schema.json)
+
+
 # Get the add_plugin_tables.py script and copy it into libocispec
 file(COPY "${SCHEMAS_DIR}/add_plugin_tables.py" DESTINATION ${LIBOCISPEC_DIR}/src/)
 
