@@ -204,8 +204,6 @@ Multicast forwarding requires the following to be present on the device:
 - `ebtables` version 2.0 or later
 - `smcroute` version 2.4.4 or later
 
-In addition to that, the `smcroute` daemon does not know about the `dobby0` bridge interface at launch, and won't allow adding routes to it by default. To fix that, the patch in `develop/vagrant/0001-configure-missing-dobby0-on-route-add.patch` needs to be applied to `smcroute` to allow configuration of the `dobby0` bridge in `smcroute` if it has not yet been configured.
-
 
 ## Settings
 
