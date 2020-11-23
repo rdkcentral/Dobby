@@ -38,9 +38,19 @@
 #include <netinet/in.h>
 #include <netinet/ip.h>
 #include <netdb.h>
+#include <fstream>
+#include <algorithm>
 
-#define SMCROUTE_PATH "/usr/sbin/smcroutectl"
+#define SMCROUTECTL_PATH "/usr/sbin/smcroutectl"
 #define EBTABLES_PATH "/sbin/ebtables"
+
+#ifdef DEV_VM
+    #define SMCROUTE_CONFIG "/usr/local/etc/smcroute.conf"
+#else
+    // default is /etc/smcroute.conf, but that's readonly in RDK
+    // Daemon is started with -f /opt/smcroute.conf argument
+    #define SMCROUTE_CONFIG "/opt/smcroute.conf"
+#endif
 
 // -----------------------------------------------------------------------------
 /**
@@ -119,7 +129,7 @@ bool MulticastForwarder::set(const std::shared_ptr<Netfilter> &netfilter,
         }
 
         // add smcroute rules
-        if (!addSmcrouteRules(extIfaces, address))
+        if (!addSmcrouteRules(extIfaces, address, containerId))
         {
             AI_LOG_ERROR_EXIT("failed to apply MulticastForwarder smcroute "
                               "rules for '%s', group %s", containerId.c_str(),
@@ -191,7 +201,7 @@ bool MulticastForwarder::removeRules(const std::shared_ptr<Netfilter> &netfilter
             }
         };
 
-        // add ruleset to be inserted to iptables
+        // delete ruleset from iptables
         if (!netfilter->addRules(rules, addrFamily, Netfilter::Operation::Delete))
         {
             AI_LOG_ERROR_EXIT("failed to add MulticastForwarder iptables rules"
@@ -200,7 +210,7 @@ bool MulticastForwarder::removeRules(const std::shared_ptr<Netfilter> &netfilter
         }
 
 
-        // insert ebtables rules
+        // delete ebtables rules
         if (!executeCommand(EBTABLES_PATH " -D " + constructEbtablesRule(address, vethName, addrFamily)))
         {
             AI_LOG_ERROR_EXIT("failed to delete MulticastForwarder ebtables "
@@ -209,8 +219,8 @@ bool MulticastForwarder::removeRules(const std::shared_ptr<Netfilter> &netfilter
             return false;
         }
 
-        // add smcroute rules
-        if (!removeSmcrouteRules(extIfaces, address))
+        // remove smcroute rules
+        if (!removeSmcrouteRules(containerId))
         {
             AI_LOG_ERROR_EXIT("failed to remove MulticastForwarder smcroute "
                               "rules for '%s', group %s", containerId.c_str(),
@@ -244,7 +254,7 @@ bool checkCompatibility()
 
     memset(&buffer, 0, sizeof(buffer));
 
-    if (stat (SMCROUTE_PATH, &buffer) < 0)
+    if (stat (SMCROUTECTL_PATH, &buffer) < 0)
     {
         AI_LOG_SYS_ERROR_EXIT(errno, "Multicast forwarding not supported - smcroutectl not found in PATH");
         return false;
@@ -326,25 +336,40 @@ bool executeCommand(const std::string &command)
  *  @brief Adds the smcroute rule to route multicast traffic from the specified
  *  group to the Dobby bridge device.
  *
- *  This is equivalent to the following on a command line:
+ *  Rule is added to the config file and smcroute is reloaded.
  *
- *      smcroutectl add <IF_DEVICE_NAME> <ADDRESS> <BRIDGE_NAME>
+ *  Rules are tagged with the container id to they can be removed correctly
+ *  on container exit
  *
  *  @param[in]  extIfaces       External interfaces on the device.
  *  @param[in]  address         Address of the multicast group to forward.
+ *  @param[in]  containerId     ID of the container
  *
  *  @return true on success, otherwise false.
  */
-bool addSmcrouteRules(const std::vector<std::string> &extIfaces, const std::string &address)
+bool addSmcrouteRules(const std::vector<std::string> &extIfaces, const std::string &address, const std::string& containerId)
 {
+    // Open the config file in append mode, or create it if it doesn't exist
+    std::ofstream configFile(SMCROUTE_CONFIG, std::ios::out|std::ios::app);
+
+    // Add a comment to mark the start of this container's rules
+    configFile << "#START:" << containerId << "\n";
+
+    // Build up add the rules and write to the config file
     for (const auto &extIface : extIfaces)
     {
-        if (!executeCommand(SMCROUTE_PATH " add " + extIface + " " + address + " " + BRIDGE_NAME))
-        {
-            AI_LOG_ERROR_EXIT("failed to add smcroute rule for ip %s, interface"
-                              " %s", address.c_str(), extIface.c_str());
-            return false;
-        }
+       std::string rule = constructSmcrouteRules(extIface, address);
+       configFile << rule << "\n";
+    }
+
+    // Add a comment to mark the end of this container's rules
+    configFile << "#END:" << containerId << "\n";
+
+    // Rules written, reload smcroute
+    if (!executeCommand(SMCROUTECTL_PATH " restart"))
+    {
+        AI_LOG_ERROR_EXIT("failed to restart smcroute");
+        return false;
     }
 
     return true;
@@ -354,26 +379,64 @@ bool addSmcrouteRules(const std::vector<std::string> &extIfaces, const std::stri
 /**
  *  @brief Removes the smcroute rule.
  *
- *  This is equivalent to the following on a command line:
+ *  Reads the smcroute config file and removes the rules belonging to this
+ *  specific container, then reloads the smcroute with the updated config
  *
- *      smcroutectl remove <IF_DEVICE_NAME> <ADDRESS>
- *
- *  @param[in]  extIfaces       External interfaces on the device.
- *  @param[in]  address         Address of the multicast group to forward.
+ *  @param[in]  containerId     ID of the container
  *
  *  @return true on success, otherwise false.
  */
-bool removeSmcrouteRules(const std::vector<std::string> &extIfaces, const std::string &address)
+bool removeSmcrouteRules(const std::string& containerId)
 {
-    for (const auto &extIface : extIfaces)
+    // Open the config file for reading
+    std::ifstream configFile(SMCROUTE_CONFIG, std::ios::in);
+
+    // Read the config file into memory
+    std::vector<std::string> rules;
+    std::string line;
+
+    // Loop through the file, removing the section between (and inc) the START/END
+    // comments for this container
+    bool skipLine = false;
+    while (std::getline(configFile, line))
     {
-        if (!executeCommand(SMCROUTE_PATH " remove " + extIface + " " + address))
+        if (!skipLine)
         {
-            AI_LOG_ERROR_EXIT("failed to remove MulticastForwarder smcroute rule "
-                              "for ip %s, inbound interface %s",
-                              address.c_str(), extIface.c_str());
-            return false;
+            if (line != "#START:" + containerId)
+            {
+                rules.emplace_back(line);
+                continue;
+            }
+            else
+            {
+                skipLine = true;
+                continue;
+            }
         }
+        else
+        {
+            if (line == "#END:" + containerId)
+            {
+                skipLine = false;
+                continue;
+            }
+        }
+    }
+    configFile.close();
+
+    // Re-write the updated config
+    std::remove(SMCROUTE_CONFIG);
+    std::ofstream updatedConfigFile(SMCROUTE_CONFIG, std::ios::out);
+    for (const auto &rule : rules)
+    {
+        updatedConfigFile << rule << "\n";
+    }
+
+    // Rules written, reload smcroute
+    if (!executeCommand(SMCROUTECTL_PATH " restart"))
+    {
+        AI_LOG_ERROR_EXIT("failed to restart smcroute");
+        return false;
     }
 
     return true;
@@ -499,6 +562,32 @@ std::string constructEbtablesRule(const std::string &address,
              vethName.c_str(),
              addrFamily.c_str(),
              address.c_str());
+
+    return std::string(buf);
+}
+
+// -----------------------------------------------------------------------------
+/**
+ *  @brief Constructs smcroute rule to add layer-3 routing rule for multicast
+ *  traffic
+ *
+ *  Mutlicast traffic originating on <interface> to multicast group <address>
+ *  is forwarded to the dobby bridge device
+ *
+ *  @param[in]  extIface    Host interface to forward traffic from
+ *  @param[in]  address     Multicast group to forward
+ *
+ *  @return smcroute config file line string.
+ */
+std::string constructSmcrouteRules(const std::string &extIface,
+                                   const std::string &address)
+{
+    char buf[256];
+
+    snprintf(buf, sizeof(buf), "mroute from %s group %s to %s",
+             extIface.c_str(),
+             address.c_str(),
+             BRIDGE_NAME);
 
     return std::string(buf);
 }
