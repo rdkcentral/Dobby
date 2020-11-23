@@ -164,6 +164,13 @@ bool MulticastForwarder::removeRules(const std::shared_ptr<Netfilter> &netfilter
 {
     AI_LOG_FN_ENTRY();
 
+    // before attempting to remove rules, check that the required programs exist
+    if (!checkCompatibility())
+    {
+        AI_LOG_FN_EXIT();
+        return false;
+    }
+
     std::mutex lock;
     std::lock_guard<std::mutex> locker(lock);
 
