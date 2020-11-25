@@ -131,7 +131,9 @@ IDobbyRdkPlugin::HintFlags determineHookPoint(const std::string &hookName)
             {"preCreation", IDobbyRdkPlugin::HintFlags::PreCreationFlag},
             {"createruntime", IDobbyRdkPlugin::HintFlags::CreateRuntimeFlag},
             {"createcontainer", IDobbyRdkPlugin::HintFlags::CreateContainerFlag},
+#ifdef USE_STARTCONTAINER_HOOK
             {"startcontainer", IDobbyRdkPlugin::HintFlags::StartContainerFlag},
+#endif
             {"poststart", IDobbyRdkPlugin::HintFlags::PostStartFlag},
             {"posthalt", IDobbyRdkPlugin::HintFlags::PostHaltFlag},
             {"poststop", IDobbyRdkPlugin::HintFlags::PostStopFlag}};

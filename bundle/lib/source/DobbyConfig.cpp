@@ -493,7 +493,7 @@ void DobbyConfig::addPluginLauncherHooks(std::shared_ptr<rt_dobby_schema> cfg, c
     cfg->hooks->poststop = (rt_defs_hook**)realloc(cfg->hooks->poststop, sizeof(rt_defs_hook*) * ++cfg->hooks->poststop_len);
     cfg->hooks->poststop[cfg->hooks->poststop_len-1] = poststopEntry;
 
-
+#ifdef USE_STARTCONTAINER_HOOK
     // startContainer hook paths must resolve in the container namespace,
     // config is in container rootdir
     configPath = "/tmp/config.json";
@@ -503,6 +503,7 @@ void DobbyConfig::addPluginLauncherHooks(std::shared_ptr<rt_dobby_schema> cfg, c
     setPluginHookEntry(startContainerEntry, "startContainer", configPath);
     cfg->hooks->start_container = (rt_defs_hook**)realloc(cfg->hooks->start_container, sizeof(rt_defs_hook*) * ++cfg->hooks->start_container_len);
     cfg->hooks->start_container[cfg->hooks->start_container_len-1] = startContainerEntry;
+#endif
 }
 
 // -----------------------------------------------------------------------------
@@ -525,6 +526,7 @@ bool DobbyConfig::updateBundleConfig(const ContainerId& id, std::shared_ptr<rt_d
     // if there are any rdk plugins, set up DobbyPluginLauncher in config
     if (cfg->rdk_plugins->plugins_count)
     {
+#ifdef USE_STARTCONTAINER_HOOK
         // bindmount DobbyPluginLauncher to container
         if(!addMount(PLUGINLAUNCHER_PATH, PLUGINLAUNCHER_PATH, "bind", 0,
                         { "bind", "ro", "nosuid", "nodev" }))
@@ -538,6 +540,7 @@ bool DobbyConfig::updateBundleConfig(const ContainerId& id, std::shared_ptr<rt_d
         {
             return false;
         }
+#endif
 
         // set up OCI hooks to use DobbyPluginLauncher
         addPluginLauncherHooks(cfg, bundlePath);

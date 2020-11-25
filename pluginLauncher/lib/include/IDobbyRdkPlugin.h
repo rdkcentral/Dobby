@@ -68,7 +68,9 @@ public:
         PreCreationFlag = (1 << 1),
         CreateRuntimeFlag = (1 << 2),
         CreateContainerFlag = (1 << 3),
+#ifdef USE_STARTCONTAINER_HOOK
         StartContainerFlag = (1 << 4),
+#endif
         PostStartFlag = (1 << 5),
         PostHaltFlag = (1 << 6),
         PostStopFlag = (1 << 7),
@@ -103,8 +105,10 @@ public:
     // OCI Hook
     virtual bool createContainer() = 0;
 
+#ifdef USE_STARTCONTAINER_HOOK
     // OCI Hook
     virtual bool startContainer() = 0;
+#endif
 
     // OCI Hook
     virtual bool postStart() = 0;

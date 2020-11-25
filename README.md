@@ -45,6 +45,7 @@ If the schema files in the `bundle/runtime-schemas` directory are changed, then 
 * `-DENABLE_PERFETTO_TRACING=[ON|OFF]` - option to enable or disable Perfetto tracing. Can not be enabled for release builds.
 * `-DDOBBY_SERVICE=""` - specify the Dobby dbus service name. Defaults to `org.rdk.dobby` if none specified.
 * `-DDOBBY_OBJECT=""` - specify the Dobby dbus object path. Defaults to `/org/rdk/dobby` if none specified.
+* `-DUSE_STARTCONTAINER_HOOK=[ON|OFF]` - whether to use the startcontainer OCI hook or not. Defaults to OFF.
 
 In addition to all the above, each RDK plugin has a setting for enabling it for builds. The `Logging`, `Networking`, `IPC` and `Storage` plugins are enabled by default.
 
