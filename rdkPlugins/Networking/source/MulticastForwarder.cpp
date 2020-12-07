@@ -362,6 +362,12 @@ bool addSmcrouteRules(const std::vector<std::string> &extIfaces, const std::stri
        configFile << rule << "\n";
     }
 
+    // For multicast, we also want to forward multicast on localhost (needed for
+    // rtremote). lo must have multicast enabled, otherwise smcroute will ignore
+    // the iface
+    std::string loRule = constructSmcrouteRules("lo", address);
+    configFile << loRule << "\n";
+
     // Add a comment to mark the end of this container's rules
     configFile << "#END:" << containerId << "\n";
 
