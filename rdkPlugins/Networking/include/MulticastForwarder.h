@@ -66,8 +66,8 @@ bool checkCompatibility();
 int checkAddressFamily(const std::string &address);
 bool executeCommand(const std::string &command);
 
-bool addSmcrouteRules(const std::vector<std::string> &extIfaces, const std::string &address);
-bool removeSmcrouteRules(const std::vector<std::string> &extIfaces, const std::string &address);
+bool addSmcrouteRules(const std::vector<std::string> &extIfaces, const std::string &address, const std::string &containerId);
+bool removeSmcrouteRules(const std::string &containerId);
 
 std::string constructPreRoutingIptablesRule(const std::string &containerId,
                                             const std::string &address,
@@ -80,5 +80,7 @@ std::string constructForwardingIptablesRule(const std::string &containerId,
 std::string constructEbtablesRule(const std::string &address,
                                   const std::string &vethName,
                                   const int addressFamily);
+std::string constructSmcrouteRules(const std::string &extIface,
+                                   const std::string &address);
 
 #endif // MULTICASTFORWARDER_H
