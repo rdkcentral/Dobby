@@ -114,6 +114,7 @@ public:
         return true;
     };
 
+#ifdef USE_STARTCONTAINER_HOOK
     /**
      * Hook Name: startContainer
      * Hook Execution Namespace: container
@@ -132,6 +133,7 @@ public:
     {
         return true;
     };
+#endif
 
     /**
      * Hook Name: postStart
