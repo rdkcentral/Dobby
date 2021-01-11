@@ -58,7 +58,9 @@ unsigned TestRdkPlugin::hookHints() const
         IDobbyRdkPlugin::HintFlags::PreCreationFlag |
         IDobbyRdkPlugin::HintFlags::CreateRuntimeFlag |
         IDobbyRdkPlugin::HintFlags::CreateContainerFlag |
+#ifdef USE_STARTCONTAINER_HOOK
         IDobbyRdkPlugin::HintFlags::StartContainerFlag |
+#endif
         IDobbyRdkPlugin::HintFlags::PostStartFlag |
         IDobbyRdkPlugin::HintFlags::PostHaltFlag |
         IDobbyRdkPlugin::HintFlags::PostStopFlag);

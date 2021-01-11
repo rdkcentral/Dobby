@@ -67,7 +67,9 @@ public:
 
     bool createContainer() override;
 
+#ifdef USE_STARTCONTAINER_HOOK
     bool startContainer() override;
+#endif
 
     bool postStart() override;
 
