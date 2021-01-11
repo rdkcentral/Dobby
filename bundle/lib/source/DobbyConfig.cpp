@@ -612,6 +612,9 @@ bool DobbyConfig::convertToCompliant(const ContainerId& id, std::shared_ptr<rt_d
         if (hooks == nullptr ||
             !(findPluginLauncherHookEntry(hooks->create_runtime, hooks->create_runtime_len) &&
               findPluginLauncherHookEntry(hooks->create_container, hooks->create_container_len) &&
+#ifdef USE_STARTCONTAINER_HOOK
+              findPluginLauncherHookEntry(hooks->start_container, hooks->start_container_len) &&
+#endif
               findPluginLauncherHookEntry(hooks->poststart, hooks->poststart_len) &&
               findPluginLauncherHookEntry(hooks->poststop, hooks->poststop_len)))
         {
