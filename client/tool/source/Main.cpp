@@ -75,7 +75,8 @@ static std::string gDBusService(DOBBY_SERVICE ".test");
 static char** gCmdlineArgv = NULL;
 static int gCmdlineArgc = 0;
 
-std::promise<bool> promise;
+std::mutex gLock;
+std::promise<void> promise;
 
 
 // -----------------------------------------------------------------------------
@@ -94,7 +95,7 @@ void containerStopCallback(int32_t listenerId, const std::string &containerId,
     if (state == IDobbyProxyEvents::ContainerState::Stopped && containerId == *id)
     {
         AI_LOG_INFO("Container %s has stopped", containerId.c_str());
-        promise.set_value(true);
+        promise.set_value();
     }
 }
 
@@ -158,7 +159,8 @@ static void stopCommand(const std::shared_ptr<IDobbyProxy>& dobbyProxy,
     }
 
     // Register an event listener to monitor for the container stop
-    promise = std::promise<bool>();
+    std::lock_guard<std::mutex> locker(gLock);
+    promise = std::promise<void>();
     const void *vp = static_cast<void*>(new std::string(id));
     int listenerId = dobbyProxy->registerListener(&containerStopCallback, vp);
 
@@ -169,7 +171,7 @@ static void stopCommand(const std::shared_ptr<IDobbyProxy>& dobbyProxy,
     }
     else
     {
-        std::future<bool> future = promise.get_future();
+        std::future<void> future = promise.get_future();
         if (!dobbyProxy->stopContainer(cd, withPrejudice))
         {
             readLine->printLnError("failed to stop the container");
@@ -177,7 +179,7 @@ static void stopCommand(const std::shared_ptr<IDobbyProxy>& dobbyProxy,
         else
         {
             // Block here until container has stopped
-            bool success = future.get();
+            future.wait();
             readLine->printLn("stopped container '%s'", id.c_str());
         }
     }
