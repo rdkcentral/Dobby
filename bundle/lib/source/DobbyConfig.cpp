@@ -520,6 +520,8 @@ bool DobbyConfig::setHostnameToContainerId(const ContainerId& id, std::shared_pt
     {
         return true;
     }
+
+    free(cfg->hostname);
     cfg->hostname = strdup(id.c_str());
 
     // write the new config.json to a file
