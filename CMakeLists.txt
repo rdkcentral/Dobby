@@ -185,6 +185,12 @@ if( ENABLE_LTO )
     endif()
 endif()
 
+# Enable the start container hook (disabled by default)
+option(USE_STARTCONTAINER_HOOK "Enable the startContainer OCI hook in RDK plugins" OFF)
+if(USE_STARTCONTAINER_HOOK)
+    add_definitions( -DUSE_STARTCONTAINER_HOOK )
+endif()
+
 # Import AppInfrastructure code
 add_subdirectory( AppInfrastructure/Logging )
 add_subdirectory( AppInfrastructure/Tracing )

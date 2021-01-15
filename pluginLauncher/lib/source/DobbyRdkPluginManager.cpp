@@ -507,8 +507,10 @@ bool DobbyRdkPluginManager::executeHook(const std::string &pluginName,
         return plugin->createContainer();
     case IDobbyRdkPlugin::HintFlags::CreateRuntimeFlag:
         return plugin->createRuntime();
+#ifdef USE_STARTCONTAINER_HOOK
     case IDobbyRdkPlugin::HintFlags::StartContainerFlag:
         return plugin->startContainer();
+#endif
     case IDobbyRdkPlugin::HintFlags::PostStartFlag:
         return plugin->postStart();
     case IDobbyRdkPlugin::HintFlags::PostHaltFlag:
@@ -552,9 +554,11 @@ bool DobbyRdkPluginManager::runPlugins(const IDobbyRdkPlugin::HintFlags &hookPoi
     case IDobbyRdkPlugin::HintFlags::CreateRuntimeFlag:
         hookName = "createRuntime";
         break;
+#ifdef USE_STARTCONTAINER_HOOK
     case IDobbyRdkPlugin::HintFlags::StartContainerFlag:
         hookName = "startContainer";
         break;
+#endif
     case IDobbyRdkPlugin::HintFlags::PostStartFlag:
         hookName = "postStart";
         break;

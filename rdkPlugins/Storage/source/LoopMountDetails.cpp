@@ -128,12 +128,12 @@ bool LoopMountDetails::doLoopMount(const std::string& loopDevice)
     bool status = false;
 
     // step 1 - create directories within the rootfs
-    if (!DobbyRdkPluginUtils::mkdirRecursive(mTempMountPointOutsideContainer, 0700))
+    if (!DobbyRdkPluginUtils::mkdirRecursive(mTempMountPointOutsideContainer, 0755))
     {
         // logging already provided by mkdirRecursive
         return false;
     }
-    else if (!DobbyRdkPluginUtils::mkdirRecursive(mMountPointOutsideContainer, 0700))
+    else if (!DobbyRdkPluginUtils::mkdirRecursive(mMountPointOutsideContainer, 0755))
     {
         // logging already provided by mkdirRecursive
         return false;
