@@ -924,7 +924,7 @@ static void initCommands(const std::shared_ptr<IReadLine>& readLine,
  */
 static void displayVersion()
 {
-    printf("Version: \n");
+    printf("Version: " DOBBY_VERSION  "\n");
 }
 
 // -----------------------------------------------------------------------------

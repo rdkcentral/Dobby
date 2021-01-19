@@ -25,6 +25,7 @@
 #include <Logging.h>
 
 #include <errno.h>
+#include <fcntl.h>
 #include <unistd.h>
 #include <sys/stat.h>
 
@@ -47,6 +48,7 @@ OpenCDMPlugin::OpenCDMPlugin(const std::shared_ptr<IDobbyEnv> &env,
                              const std::shared_ptr<IDobbyUtils> &utils)
     : mName("OpenCDM")
     , mUtilities(utils)
+    , mAppsGroupId(30000)
 {
     AI_LOG_FN_ENTRY();
 
@@ -152,7 +154,7 @@ bool OpenCDMPlugin::postConstruction(const ContainerId& id,
     {
         if (chmod(ocdmSocketPath.c_str(), S_IRWXU | S_IRGRP | S_IWGRP) != 0)
             AI_LOG_SYS_ERROR(errno, "failed to change access on socket");
-        if (chown(ocdmSocketPath.c_str(), 0, 30000) != 0)
+        if (chown(ocdmSocketPath.c_str(), 0, mAppsGroupId) != 0)
             AI_LOG_SYS_ERROR(errno, "failed to change owner off socket");
 
         // mount the socket within the container
@@ -160,9 +162,50 @@ bool OpenCDMPlugin::postConstruction(const ContainerId& id,
             AI_LOG_ERROR("failed to add bind mount for '%s'", ocdmSocketPath.c_str());
     }
 
+    // on newer builds we may also need the /tmp/OCDM directory
+    enableTmpOCDMDir(startupState);
+
     AI_LOG_FN_EXIT();
     return true;
 }
+
+// -----------------------------------------------------------------------------
+/**
+ * @brief Ensures the /tmp/OCDM directory exists and has permissions so
+ * accessible by apps but not (directory) writeable.
+ *
+ * This is added because on newer OCDM builds they've switched the directories
+ * around.
+ */
+bool OpenCDMPlugin::enableTmpOCDMDir(const std::shared_ptr<IDobbyStartState>& startupState) const
+{
+    static const std::string dirPath = "/tmp/OCDM";
+
+    // on newer builds the OCDM files have moved to a dedicate a /tmp/OCDM
+    // directory
+    if ((mkdir(dirPath.c_str(), 0750) != 0) && (errno != EEXIST))
+    {
+        AI_LOG_SYS_ERROR(errno, "failed to create dir @ '%s'", dirPath.c_str());
+        return false;
+    }
+
+    // make sure the directory is accessible by apps but not writable
+    if (chmod(dirPath.c_str(), 0750) != 0)
+    {
+        AI_LOG_SYS_ERROR(errno, "failed to change access on '%s''", dirPath.c_str());
+        return false;
+    }
+    if (chown(dirPath.c_str(), 0, mAppsGroupId) != 0)
+    {
+        AI_LOG_SYS_ERROR(errno, "failed to change owner off '%s''", dirPath.c_str());
+        return false;
+    }
+
+    // can now add to the bind mount list
+    startupState->addMount(dirPath, dirPath, "bind",
+                           (MS_BIND | MS_NOSUID | MS_NODEV | MS_NOEXEC));
+     return true;
+ }
 
 // -----------------------------------------------------------------------------
 /**
@@ -206,13 +249,22 @@ bool OpenCDMPlugin::writeFileIfNotExists(const std::string &filePath) const
     // file doesn't exist, so lets create it
     if (fileExists < 0)
     {
-        std::ofstream output(filePath);
-
-        // set permissions to chmod 0660 and owner root:30000
-        if (chmod(filePath.c_str(), S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP) != 0)
-            AI_LOG_SYS_ERROR(errno, "failed to change access on '%s''", filePath.c_str());
-        if (chown(filePath.c_str(), 0, 30000) != 0)
-            AI_LOG_SYS_ERROR(errno, "failed to change owner off '%s''", filePath.c_str());
+        // create the file if doesn't exist
+        int fd = open(filePath.c_str(), O_CLOEXEC | O_CREAT | O_WRONLY, 0660);
+        if (fd < 0)
+        {
+            AI_LOG_SYS_ERROR(errno, "failed to create file @ '%s'", filePath.c_str());
+        }
+        else
+        {
+            // set permissions to chmod 0660 and owner root:30000
+            if (fchmod(fd, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP) != 0)
+                AI_LOG_SYS_ERROR(errno, "failed to change access on '%s''", filePath.c_str());
+            if (fchown(fd, 0, mAppsGroupId) != 0)
+                AI_LOG_SYS_ERROR(errno, "failed to change owner off '%s''", filePath.c_str());
+            if (close(fd) != 0)
+                AI_LOG_SYS_ERROR(errno, "failed to close file @ '%s'", filePath.c_str());
+        }
 
         AI_LOG_FN_EXIT();
         return true;

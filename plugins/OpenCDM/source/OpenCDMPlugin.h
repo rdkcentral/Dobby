@@ -51,7 +51,7 @@ class OpenCDMPlugin : public PluginBase
 public:
     OpenCDMPlugin(const std::shared_ptr<IDobbyEnv> &env,
                   const std::shared_ptr<IDobbyUtils> &utils);
-    virtual ~OpenCDMPlugin();
+    ~OpenCDMPlugin() override;
 
 public:
     std::string name() const final;
@@ -67,11 +67,13 @@ public:
 private:
     const std::string mName;
     const std::shared_ptr<IDobbyUtils> mUtilities;
+    const gid_t mAppsGroupId;
 
 private:
     std::string ocdmBufferPath(unsigned bufferNum) const;
     std::string ocdmBufferAdminPath(unsigned bufferNum) const;
     bool writeFileIfNotExists(const std::string &filePath) const;
+    bool enableTmpOCDMDir(const std::shared_ptr<IDobbyStartState>& startupState) const;
 };
 
 #endif // !defined(OPENCDMPLUGIN_H)

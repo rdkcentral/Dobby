@@ -22,12 +22,13 @@ cmake_minimum_required( VERSION 3.7.0 )
 include(GNUInstallDirs)
 
 # Project setup
-project( Dobby VERSION "3.0" )
+project( Dobby VERSION "3.0.0" )
 
 
 # Set the major and minor version numbers of dobby (also used by plugins)
 set( DOBBY_MAJOR_VERSION 3 )
 set( DOBBY_MINOR_VERSION 0 )
+set( DOBBY_MICRO_VERSION 0 )
 
 set(INSTALL_CMAKE_DIR lib/cmake/Dobby)
 
@@ -106,6 +107,11 @@ set( DOBBY_OBJECT "/org/rdk/dobby" CACHE STRING "Dobby dbus object path")
 if(NOT DOBBY_OBJECT STREQUAL "/org/rdk/dobby")
     add_definitions( -DDOBBY_OBJECT_OVERRIDE="${DOBBY_OBJECT}")
 endif()
+
+# Set a global define for the build version
+add_definitions(
+        -DDOBBY_VERSION="${DOBBY_MAJOR_VERSION}.${DOBBY_MINOR_VERSION}.${DOBBY_MICRO_VERSION}" )
+
 
 # Enable C++14 support. The following tells cmake to always add the -std=c++14
 # flag (nb - if CMAKE_CXX_EXTENSIONS is ON then we'll get -std=gnu++14 instead)

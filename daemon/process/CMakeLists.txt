@@ -58,14 +58,6 @@ if (AI_ENABLE_TRACING)
         )
 endif()
 
-target_compile_definitions(
-        DobbyDaemon
-
-        PRIVATE
-        -DDOBBY_VERSION="${DOBBY_MAJOR_VERSION}.${DOBBY_MINOR_VERSION}"
-
-        )
-
 # The following is used to export the AI_LOG functions and the JsonCpp API so
 # that plugin hooks can use them rather than having their own version of the
 # logging / JsonCpp library
