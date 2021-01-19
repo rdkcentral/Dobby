@@ -1012,6 +1012,226 @@ bool Netlink::ifaceDown(const std::string& ifaceName)
     return success;
 }
 
+ // -----------------------------------------------------------------------------
+ /**
+ *  @brief Sets the MAC address of the given interface.
+ *
+ *  This is primarily used to set a fixed MAC address for the bridge device.
+ *
+ *  @param[in]  ifaceName       The name of the interface to set.
+ *  @param[in]  address         The MAC address to set.
+ *
+ *  @return true if successfully set.
+ */
+bool Netlink::setIfaceMAC(const std::string& ifaceName,
+                          const std::array<uint8_t, 6>& address)
+{
+    AI_LOG_FN_ENTRY();
+
+    std::lock_guard<std::mutex> locker(mLock);
+
+    if (mSocket == nullptr)
+    {
+        AI_LOG_ERROR_EXIT("invalid socket");
+        return false;
+    }
+
+    // get the current link
+    NlLink current(mSocket, ifaceName);
+    if (!current)
+    {
+        AI_LOG_ERROR_EXIT("failed to get link '%s'", ifaceName.c_str());
+        return false;
+    }
+
+    AI_LOG_INFO("setting '%s' MAC address to %02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx",
+                ifaceName.c_str(), address[0], address[1], address[2],
+                                   address[3], address[4], address[5]);
+
+    // create a new link with just mac changes
+    NlLink newLink;
+
+    // create a mac address object
+    struct nl_addr *mac = nl_addr_build(AF_LLC, address.data(), address.size());
+    if (!mac)
+    {
+        AI_LOG_ERROR_EXIT("failed to create MAC address object");
+        return false;
+    }
+
+    // set the link address
+    rtnl_link_set_addr(newLink, mac);
+    nl_addr_put(mac);
+
+    // and apply the change
+    int err = rtnl_link_change(mSocket, current, newLink, 0);
+    if (err != 0)
+    {
+        AI_LOG_NL_ERROR_EXIT(err, "failed to change MAC address on '%s'",
+                             ifaceName.c_str());
+        return false;
+    }
+
+    AI_LOG_FN_EXIT();
+    return true;
+}
+
+// -----------------------------------------------------------------------------
+/**
+ *  @brief Gets the MAC address of the given interface.
+ *
+ *
+ *  @param[in]  ifaceName       The name of the interface to get.
+ *
+ *  @return the mac address.
+ */
+std::array<uint8_t, 6> Netlink::getIfaceMAC(const std::string& ifaceName)
+{
+    AI_LOG_FN_ENTRY();
+
+    std::array<uint8_t, 6> mac = { 0 };
+
+    std::lock_guard<std::mutex> locker(mLock);
+
+    if (mSocket == nullptr)
+    {
+        AI_LOG_ERROR_EXIT("invalid socket");
+        return mac;
+    }
+
+    // get the current link
+    NlLink iface(mSocket, ifaceName);
+    if (!iface)
+    {
+        AI_LOG_ERROR_EXIT("failed to get link '%s'", ifaceName.c_str());
+        return mac;
+    }
+
+    // get the mac address of the link
+    struct nl_addr *addr = rtnl_link_get_addr(iface);
+    if (!addr)
+    {
+        AI_LOG_ERROR("failed to get MAC address of '%s'", ifaceName.c_str());
+    }
+    else if (nl_addr_get_len(addr) != mac.size())
+    {
+        AI_LOG_ERROR("invalid length of MAC address (%u bytes)",
+                     nl_addr_get_len(addr));
+    }
+    else
+    {
+        const uint8_t *data = reinterpret_cast<const uint8_t*>(nl_addr_get_binary_addr(addr));
+        std::copy(data, data + mac.size(), mac.begin());
+
+        AI_LOG_INFO("'%s' MAC address is %02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx",
+                    ifaceName.c_str(), mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+    }
+
+    AI_LOG_FN_EXIT();
+    return mac;
+}
+
+ // -----------------------------------------------------------------------------
+ /**
+ *  @brief Gets the set of interfaces currently enslaved to a given bridge device.
+ *
+ *
+ *  @param[in]  bridgeName  The name of the bridge device
+ *
+ *  @return a list of interfaces attached to the bridge, or empty list on failure.
+ */
+std::list<Netlink::BridgePortDetails> Netlink::getAttachedIfaces(const std::string& bridgeName)
+{
+    AI_LOG_FN_ENTRY();
+
+    std::list<Netlink::BridgePortDetails> ports;
+
+    std::lock_guard<std::mutex> locker(mLock);
+
+    if (mSocket == nullptr)
+    {
+        AI_LOG_ERROR_EXIT("invalid socket");
+        return ports;
+    }
+
+    // get a list of all bridge devices, plus all the links attached to them
+    struct nl_cache *cache = nullptr;
+    if (rtnl_link_alloc_cache(mSocket, AF_BRIDGE, &cache) < 0)
+    {
+        AI_LOG_ERROR_EXIT("failed to create cache of bridge devices");
+        return ports;
+    }
+
+    // get the bridge interface ifindex from the cache
+    int bridgeIFindex = rtnl_link_name2i(cache, bridgeName.c_str());
+    if (bridgeIFindex <= 0)
+    {
+        AI_LOG_ERROR_EXIT("failed to find bridge device with name '%s'",
+                          bridgeName.c_str());
+        nl_cache_free(cache);
+        return ports;
+    }
+
+
+    // iterate through all bridges and links and get the ones enslaved to our
+    // bridge
+    struct nl_object *object = nl_cache_get_first(cache);
+    while (object)
+    {
+        struct rtnl_link *iface = reinterpret_cast<struct rtnl_link *>(object);
+
+        // get the name and the ifindex
+        int linkIndex = rtnl_link_get_ifindex(iface);
+        int masterIndex = rtnl_link_get_master(iface);
+
+        // skip the actual bridge itself and links not enslaved to the bridge
+        if ((linkIndex == bridgeIFindex) || (masterIndex != bridgeIFindex))
+        {
+            object = nl_cache_get_next(object);
+            continue;
+        }
+
+
+        BridgePortDetails details;
+        bzero(&details, sizeof(details));
+
+        // get the mac address of the link
+        struct nl_addr *mac = rtnl_link_get_addr(iface);
+        if (!mac)
+        {
+            AI_LOG_ERROR("failed to get link MAC address");
+        }
+        else if (nl_addr_get_len(mac) != 6)
+        {
+            AI_LOG_ERROR("invalid length of MAC address (%u bytes)",
+                         nl_addr_get_len(mac));
+        }
+        else
+        {
+            memcpy(details.mac, nl_addr_get_binary_addr(mac), 6);
+        }
+
+        // get the name and the ifindex
+        details.index = linkIndex;
+        strncpy(details.name, rtnl_link_get_name(iface), sizeof(details.name) - 1);
+
+        // store in the set
+        ports.emplace_back(details);
+
+        AI_LOG_INFO("found iface %d: '%s' (%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx) enslaved to '%s''",
+                    details.index, details.name,
+                    details.mac[0], details.mac[1], details.mac[2], details.mac[3], details.mac[4], details.mac[5],
+                    bridgeName.c_str());
+
+        object = nl_cache_get_next(object);
+    }
+
+    nl_cache_free(cache);
+
+    AI_LOG_FN_EXIT();
+    return ports;
+}
+
 // -----------------------------------------------------------------------------
 /**
  *  @brief Queries the interface to determine if it's up or not

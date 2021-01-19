@@ -20,6 +20,7 @@
 #include "NetworkSetup.h"
 #include "Netlink.h"
 #include "BridgeInterface.h"
+#include "TapInterface.h"
 
 #include "Netfilter.h"
 
@@ -364,6 +365,23 @@ bool NetworkSetup::setupBridgeDevice(const std::shared_ptr<DobbyRdkPluginUtils> 
     {
         AI_LOG_ERROR_EXIT("failed to set the ip addresses on the bridge interface");
         return false;
+    }
+
+    // create an (unused) tap device and attach to the bridge, this is purely
+    // to stop the bridge MAC address from changing as we add / remove veths
+    // @see https://backreference.org/2010/07/28/linux-bridge-mac-addresses-and-dynamic-ports/
+    if (!TapInterface::createTapInterface() || !TapInterface::isValid())
+    {
+        AI_LOG_ERROR("failed to create tap device");
+    }
+    else if (!BridgeInterface::attachLink(netlink, TapInterface::name()))
+    {
+        AI_LOG_ERROR("failed to attach '%s' to the bridge",
+                     TapInterface::name().c_str());
+    }
+    else if (!BridgeInterface::setMACAddress(netlink, TapInterface::macAddress(netlink)))
+    {
+        AI_LOG_ERROR("failed to set bridge MAC address");
     }
 
     // step 4 - construct the IPv4 rules to be added to iptables and then add them
@@ -972,6 +990,13 @@ bool NetworkSetup::removeBridgeDevice(const std::shared_ptr<Netfilter> &netfilte
         AI_LOG_ERROR_EXIT("failed to create netlink object");
         return false;
     }
+
+    // Close tap interface
+    // If issue around container losing network connectivity when veths are added
+    // and removed from the bridge will reocur it will mean that we should hold
+    // Tap device even when we destroy bridge, but then it leave the question
+    // where should we delete it. For now we destory it here.
+    TapInterface::destroyTapInterface();
 
     // bring the bridge device down and destroy it
     BridgeInterface::down(netlink);

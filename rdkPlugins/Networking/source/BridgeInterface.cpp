@@ -226,6 +226,85 @@ bool BridgeInterface::disableStp(const std::shared_ptr<DobbyRdkPluginUtils> &uti
     return utils->writeTextFile(path, "0\n", O_TRUNC, 0);
 }
 
+// -----------------------------------------------------------------------------
+/**
+ *  @brief Gets the MAC address of the interface.
+ *
+ *  @param[in]  netlink     Instance of the Netlink class
+ *
+ *  @return the MAC address, or a zero address if failed.
+ */
+std::array<uint8_t, 6> BridgeInterface::macAddress(const std::shared_ptr<Netlink> &netlink)
+{
+    return netlink->getIfaceMAC(BRIDGE_NAME);
+}
+
+// -----------------------------------------------------------------------------
+/**
+ *  @brief Sets the MAC address of the interface.
+ *
+ *  @param[in]  netlink     Instance of the Netlink class
+ *  @param[in]  address         The mac address to set.
+ *
+ *  @return the MAC address, or a zero address if failed.
+ */
+bool BridgeInterface::setMACAddress(const std::shared_ptr<Netlink> &netlink,
+                                    const std::array<uint8_t, 6>& address)
+{
+    return netlink->setIfaceMAC(BRIDGE_NAME, address);
+}
+
+
+// -----------------------------------------------------------------------------
+/**
+ *  @brief Attaches an interface to the bridge.
+ *
+ *  @param[in]  netlink     Instance of the Netlink class
+ *  @param[in]  name           The name of the interface to attach.
+ *
+ *  @return true on success.
+ */
+bool BridgeInterface::attachLink(const std::shared_ptr<Netlink> &netlink,
+                                 const std::string &name)
+ {
+    return netlink->addIfaceToBridge(BRIDGE_NAME, name);
+
+#if 0
+    // check if the number of interfaces now attached to the bridge; if just
+    // one (ie. the one just added), then we also need to manually set the
+    // mac address on the bridge to stop it switching to a lower address if
+    // another veth is added
+    // @see https://backreference.org/2010/07/28/linux-bridge-mac-addresses-and-dynamic-ports/
+    const std::list<Netlink::BridgePortDetails> ports = netlink->getAttachedIfaces(mName);
+    if (ports.empty())
+    {
+        AI_LOG_ERROR("odd, veth doesn't seem to be attached to the bridge");
+    }
+    else if (ports.size() == 1)
+    {
+        // a bit of extra debugging check
+#if (AI_BUILD_TYPE == AI_DEBUG)
+        if (vethPair->name() != ports.front().name)
+        {
+            AI_LOG_ERROR("odd, the enslaved bridge port name doesn't match; "
+                         "expected '%s', actual '%s'",
+                         vethPair->name().c_str(), ports.front().name);
+        }
+#endif
+
+        // set the bridge MAC to match the link just added
+        if (!netlink->setIfaceMAC(mName, ports.front().mac))
+        {
+            AI_LOG_ERROR("failed to fix the bridge MAC address");
+        }
+    }
+
+    return true;
+#endif
+}
+
+
+
 #if defined(ENABLE_LIBNL_BRIDGE_WORKAROUND)
 
 // -----------------------------------------------------------------------------
