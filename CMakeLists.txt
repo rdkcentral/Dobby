@@ -249,8 +249,16 @@ add_subdirectory(pluginLauncher/tool)
 # Client library
 add_subdirectory( client/lib )
 
-# Add the dobby tool on debug builds
-if( BUILD_TYPE STREQUAL "DEBUG" )
+# Add DobbyTool. Defaults to include in debug and exclude in release, but can
+# be overridden
+if( BUILD_TYPE STREQUAL "DEBUG")
+    set( ENABLE_DOBBYTOOL_DEFAULT ON )
+else()
+    set( ENABLE_DOBBYTOOL_DEFAULT OFF )
+endif()
+
+option(ENABLE_DOBBYTOOL "Include DobbyTool" ENABLE_DOBBYTOOL_DEFAULT)
+if(ENABLE_DOBBYTOOL)
     add_subdirectory( client/tool )
 endif()
 
