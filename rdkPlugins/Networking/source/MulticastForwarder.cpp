@@ -371,6 +371,8 @@ bool addSmcrouteRules(const std::vector<std::string> &extIfaces, const std::stri
     // Add a comment to mark the end of this container's rules
     configFile << "#END:" << containerId << "\n";
 
+    configFile.close();
+
     // Rules written, reload smcroute
     if (!executeCommand(SMCROUTECTL_PATH " restart"))
     {
@@ -437,6 +439,8 @@ bool removeSmcrouteRules(const std::string& containerId)
     {
         updatedConfigFile << rule << "\n";
     }
+
+    updatedConfigFile.close();
 
     // Rules written, reload smcroute
     if (!executeCommand(SMCROUTECTL_PATH " restart"))
