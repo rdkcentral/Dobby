@@ -9,10 +9,10 @@ Dobby has the following dependencies
 * crun (>=0.13)
 * jsoncpp
 * yajl 2 (for libocispec)
-* ctemplate
+* ctemplate (if using `LEGACY_COMPONENTS`)
 * libsystemd
-* libnl
-* libnl-route
+* libnl (if using Networking plugin)
+* libnl-route (if using Networking plugin)
 * libdbus
 * boost (1.61)
 
@@ -34,25 +34,26 @@ During the CMake configure stage, CMake will also configure the `libocispec` sub
 If the schema files in the `bundle/runtime-schemas` directory are changed, then you will need to re-run CMake again to regenerate the headers.
 
 ### CMake Configuration Settings
-* `-DPLUGIN_PATH=""` - specify a different location to load RDK plugins from.
-* `-DRDK_PLATFORM=DEV_VM` - specify which platform Dobby is running on. Defaults to `XI6` if none specified. Valid options include
-  * `XI6`
-  * `XI1`
-  * `LLAMA`
-  * `DEV_VM`
-* `-DLEGACY_COMPONENTS=[ON|OFF]` - option to enable or disable legacy components (legacy plugins, Dobby specs, ...)
-* `-DENABLE_LTO=[ON|OFF]` - option to enable or disable link time optimisation for Dobby.
-* `-DENABLE_PERFETTO_TRACING=[ON|OFF]` - option to enable or disable Perfetto tracing. Can not be enabled for release builds.
-* `-DDOBBY_SERVICE=""` - specify the Dobby dbus service name. Defaults to `org.rdk.dobby` if none specified.
-* `-DDOBBY_OBJECT=""` - specify the Dobby dbus object path. Defaults to `/org/rdk/dobby` if none specified.
-* `-DUSE_STARTCONTAINER_HOOK=[ON|OFF]` - whether to use the startcontainer OCI hook or not. Defaults to OFF.
+| Option                      | Valid Options                                        | Description                                                                                                                                                                                                                                                         |
+| :-------------------------- | :--------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `-CMAKE_BUILD_TYPE`         | Debug/Release                                        | Build the Debug or Release version                                                                                                                                                                                                                                  |
+| `-DENABLE_DOBBYTOOL`        | ON/OFF                                               | Include DobbyTool in the build. For Debug builds, defaults to ON. For Release builds, defaults to OFF.                                                                                                                                                              |
+| `-DPLUGIN_PATH`             | Valid UNIX path                                      | Specify a different location to load RDK plugins from. Defaults to `/usr/lib/plugins/dobby` if not set                                                                                                                                                              |
+| `-DRDK_PLATFORM`            | `GENERIC`<br/> `XI1`<br/> `LLAMA`<br/> `DEV_VM`<br/> | Specify which platform Dobby is running on. Defaults to `GENERIC` if none specified, which should be suitable for the majority of RDK platforms, including Raspberry Pi. <br/><br/>Changing this affects which settings file from `daemon/process/settings` is used |
+| `-DLEGACY_COMPONENTS`       | ON/OFF                                               | Enable or disable legacy components (legacy plugins, Dobby specs, ...). Defaults to OFF                                                                                                                                                                             |
+| `-DENABLE_LTO`              | ON/OFF                                               | Enable Link Time Optimisation (https://gcc.gnu.org/onlinedocs/gccint/LTO-Overview.html). Requires GCC >4,5 although versions >6 are strongly recommended. Defaults to `OFF`                                                                                         |
+| `-DENABLE_PERFETTO_TRACING` | ON/OFF                                               | Option to enable or disable Perfetto tracing. Can not be enabled for release builds. Requires Perfetto SDK to be installed, and Legacy Components enabled                                                                                                           |
+| `-DDOBBY_SERVICE`           | Reverse domain name string                           | Specify the Dobby dbus service name. Defaults to `org.rdk.dobby` if none specified.                                                                                                                                                                                 |
+| `-DDDOBBY_OBJECT`           | Valid UNIX path                                      | Specify the Dobby dbus object path. Defaults to `/org/rdk/dobby` if none specified.                                                                                                                                                                                 |
+| `-DUSE_STARTCONTAINER_HOOK` | ON/OFF                                               | Whether to use the startcontainer OCI hook or not. Defaults to OFF.                                                                                                                                                                                                 |
 
+
+#### Enable/Disable Plugins
 In addition to all the above, each RDK plugin has a setting for enabling it for builds. The `Logging`, `Networking`, `IPC` and `Storage` plugins are enabled by default.
 
 Use `-DPLUGIN_[PLUGINNAME]=[ON|OFF]` to enable or disable plugins for your build.
 
-
-## Development
+# Development
 If you with to develop Dobby further, detailed instructions on setting up a development environment can be found in the `develop` directory in this repo, including a Vagrant VM with all the necessary dependencies pre-installed.
 
 # Usage
@@ -150,7 +151,7 @@ To use Dobby RDK plugins in a container launched via `DobbyDaemon`, the OCI bund
 
 An example of the `rdkPlugins` object's syntax with the `networking` plugin:
 
-```
+```javascript
 {
    "rdkPlugins":{
       "networking":{        // plugin name
