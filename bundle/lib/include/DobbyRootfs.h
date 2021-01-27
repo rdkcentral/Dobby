@@ -74,6 +74,8 @@ public:
 
     void setPersistence(bool persist);
 
+    void unmountAllAt(const std::string& pathPrefix);
+
 #if defined(LEGACY_COMPONENTS)
 private:
     void cleanUp(bool dontRemoveFiles);
@@ -90,7 +92,6 @@ private:
                               const std::string& fileContents,
                               mode_t mode = 0644) const;
 
-    void unmountAllAt(const std::string& pathPrefix);
 #endif //defined(LEGACY_COMPONENTS)
 
 private:
