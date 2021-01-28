@@ -274,7 +274,7 @@ int main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
-    AI_LOG_INFO("Running hook %s", hookName.c_str());
+    AI_LOG_MILESTONE("Running hook %s", hookName.c_str());
 
     // Work out which hook we need to run
     IDobbyRdkPlugin::HintFlags hookPoint = determineHookPoint(hookName);

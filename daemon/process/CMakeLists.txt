@@ -62,7 +62,7 @@ target_compile_definitions(
         DobbyDaemon
 
         PRIVATE
-        -DDOBBY_VERSION="${DOBBY_MAJOR_VERSION}.${DOBBY_MINOR_VERSION}"
+        -DDOBBY_VERSION="${DOBBY_MAJOR_VERSION}.${DOBBY_MINOR_VERSION}-${BUILD_REFERENCE}"
 
         )
 
@@ -106,22 +106,9 @@ install( # Specifies the target to install
 
         )
 
-
-# Install the config file for the target platform
-if( RDK_PLATFORM STREQUAL "XI6" )
-        set( DOBBY_SETTINGS_FILE "settings/dobby.xi6.json" )
-elseif( RDK_PLATFORM STREQUAL "XI1" )
-        set( DOBBY_SETTINGS_FILE "settings/dobby.xi1.json" )
-elseif( RDK_PLATFORM STREQUAL "LLAMA" )
-        set( DOBBY_SETTINGS_FILE "settings/dobby.llama.json" )
-elseif( RDK_PLATFORM STREQUAL "DEV_VM" )
-        set( DOBBY_SETTINGS_FILE "settings/dobby.dev_vm.json" )
-else()
-        message( FATAL_ERROR "Unknown RDK_PLATFORM '${RDK_PLATFORM}'" )
-endif()
-
+# Install the settings file for the target platform
 install(
-        FILES       "${DOBBY_SETTINGS_FILE}"
+        FILES       "settings/${DOBBY_SETTINGS_FILE}"
         RENAME      dobby.json
         DESTINATION /etc/ )
 
