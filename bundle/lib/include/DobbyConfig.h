@@ -142,6 +142,9 @@ protected:
     bool updateBundleConfig(const ContainerId& id,
                             std::shared_ptr<rt_dobby_schema> cfg,
                             const std::string& bundlePath);
+    bool setHostnameToContainerId(const ContainerId& id,
+                            std::shared_ptr<rt_dobby_schema> cfg,
+                            const std::string& bundlePath);
     bool convertToCompliant(const ContainerId& id,
                             std::shared_ptr<rt_dobby_schema> cfg,
                             const std::string& bundlePath);

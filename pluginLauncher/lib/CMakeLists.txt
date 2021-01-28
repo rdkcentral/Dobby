@@ -40,7 +40,7 @@ target_link_libraries(${PROJECT_NAME}
     AppInfraCommon
 
     DobbyDaemonLib
-    pthread
+    Threads::Threads
 
     libocispec
 
