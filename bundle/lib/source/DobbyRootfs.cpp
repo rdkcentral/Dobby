@@ -145,6 +145,11 @@ DobbyRootfs::~DobbyRootfs()
 {
 #if defined(LEGACY_COMPONENTS)
     cleanUp(mPersist);
+#else
+    if (!mPath.empty())
+    {
+        unmountAllAt(mPath);
+    }
 #endif //defined(LEGACY_COMPONENTS)
 }
 
@@ -166,74 +171,6 @@ int DobbyRootfs::dirFd() const
 void DobbyRootfs::setPersistence(bool persist)
 {
     mPersist = persist;
-}
-
-#if defined(LEGACY_COMPONENTS)
-// -----------------------------------------------------------------------------
-/**
- *  @brief Removes the rootfs directory and all it's contents.
- *
- *
- *  @param[in]  dontRemoveFiles In true then the files and directory(s) are
- *                              left in place.  This may be useful for
- *                              re-creating containers for debugging runc issues
- *                              or for retaining bundles when started from a bundle
- *                              instead of a Dobby spec.
- *
- */
-void DobbyRootfs::cleanUp(bool dontRemoveFiles)
-{
-    AI_LOG_FN_ENTRY();
-
-    // before blindly doing a recursive delete of the directory make sure that
-    // nothing is mounted there.  This is to fix any bugs / sloppy plugins
-    // that do things like bind mounts inside the rootfs and then don't clean
-    // up after themselves
-    if (!mPath.empty())
-    {
-        unmountAllAt(mPath);
-    }
-
-    // if we want to leave the rootfs in place then skip the rest - this is a
-    // debugging feature used to help with diagnosing container issues
-    if (dontRemoveFiles)
-    {
-        AI_LOG_INFO("leaving rootfs in place @ '%s'", mPath.c_str());
-        mPath.clear();
-        return;
-    }
-
-    // can now remove the entire contents of the rootfs dir
-    if (mDirFd >= 0)
-    {
-        if (!mUtilities->rmdirContents(mDirFd))
-        {
-            AI_LOG_ERROR("failed to delete contents of rootfs dir");
-
-            // TODO: if something has gone wrong somewhere then it may not be
-            // possible to delete the rootfs dir as it could contain mount
-            // points ... one solution to this is to iterate through current
-            // mounts and umount anything in the rootfs and then try deleting
-            // again
-        }
-
-        if (close(mDirFd) != 0)
-        {
-            AI_LOG_SYS_ERROR(errno, "failed to close rootfs dir");
-        }
-
-        mDirFd = -1;
-    }
-
-    // the rootfs directory should now be empty, so can now delete it
-    if (!mPath.empty() && (rmdir(mPath.c_str()) != 0))
-    {
-        AI_LOG_SYS_ERROR(errno, "failed to delete rootfs dir");
-    }
-
-    mPath.clear();
-
-    AI_LOG_FN_EXIT();
 }
 
 // -----------------------------------------------------------------------------
@@ -311,6 +248,74 @@ void DobbyRootfs::unmountAllAt(const std::string& pathPrefix)
     }
 
     fclose(fp);
+
+    AI_LOG_FN_EXIT();
+}
+
+#if defined(LEGACY_COMPONENTS)
+// -----------------------------------------------------------------------------
+/**
+ *  @brief Removes the rootfs directory and all it's contents.
+ *
+ *
+ *  @param[in]  dontRemoveFiles In true then the files and directory(s) are
+ *                              left in place.  This may be useful for
+ *                              re-creating containers for debugging runc issues
+ *                              or for retaining bundles when started from a bundle
+ *                              instead of a Dobby spec.
+ *
+ */
+void DobbyRootfs::cleanUp(bool dontRemoveFiles)
+{
+    AI_LOG_FN_ENTRY();
+
+    // before blindly doing a recursive delete of the directory make sure that
+    // nothing is mounted there.  This is to fix any bugs / sloppy plugins
+    // that do things like bind mounts inside the rootfs and then don't clean
+    // up after themselves
+    if (!mPath.empty())
+    {
+        unmountAllAt(mPath);
+    }
+
+    // if we want to leave the rootfs in place then skip the rest - this is a
+    // debugging feature used to help with diagnosing container issues
+    if (dontRemoveFiles)
+    {
+        AI_LOG_INFO("leaving rootfs in place @ '%s'", mPath.c_str());
+        mPath.clear();
+        return;
+    }
+
+    // can now remove the entire contents of the rootfs dir
+    if (mDirFd >= 0)
+    {
+        if (!mUtilities->rmdirContents(mDirFd))
+        {
+            AI_LOG_ERROR("failed to delete contents of rootfs dir");
+
+            // TODO: if something has gone wrong somewhere then it may not be
+            // possible to delete the rootfs dir as it could contain mount
+            // points ... one solution to this is to iterate through current
+            // mounts and umount anything in the rootfs and then try deleting
+            // again
+        }
+
+        if (close(mDirFd) != 0)
+        {
+            AI_LOG_SYS_ERROR(errno, "failed to close rootfs dir");
+        }
+
+        mDirFd = -1;
+    }
+
+    // the rootfs directory should now be empty, so can now delete it
+    if (!mPath.empty() && (rmdir(mPath.c_str()) != 0))
+    {
+        AI_LOG_SYS_ERROR(errno, "failed to delete rootfs dir");
+    }
+
+    mPath.clear();
 
     AI_LOG_FN_EXIT();
 }

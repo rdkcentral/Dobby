@@ -307,6 +307,15 @@ bool LoopMountDetails::removeNonPersistentImage()
 
     bool success = true;
 
+    // There could be situation where container was created but not started, as
+    // the cleanup is done after container start it would mean that we could
+    // left temp directories mounted. As postStop is done always we need to
+    // check if we have already cleaned up, and if not then clean temp.
+    if (access(mTempMountPointOutsideContainer.c_str(), F_OK) != -1)
+    {
+        success = cleanupTempDirectory();
+    }
+
     if (!mMount.persistent)
     {
         if (unlink(mMount.fsImagePath.c_str()))
