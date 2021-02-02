@@ -120,7 +120,7 @@ endif()
 
 # Set a global define for the build version
 add_definitions(
-        -DDOBBY_VERSION="${DOBBY_MAJOR_VERSION}.${DOBBY_MINOR_VERSION}.${DOBBY_MICRO_VERSION}" )
+        -DDOBBY_VERSION="${DOBBY_MAJOR_VERSION}.${DOBBY_MINOR_VERSION}.${DOBBY_MICRO_VERSION}-${BUILD_REFERENCE}" )
 
 
 # Enable C++14 support. The following tells cmake to always add the -std=c++14
