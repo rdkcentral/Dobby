@@ -28,64 +28,124 @@
 #include <linux/if_tun.h>
 
 #define TAP_NAME "dobby_tap0"
+#define TUNDEV "/dev/net/tun"
+
+ifreq createInterfaceStruct()
+{
+    struct ifreq ifr;
+    bzero(&ifr, sizeof(ifr));
+
+    // set the flags
+    ifr.ifr_flags = IFF_TAP | IFF_NO_PI | IFF_ONE_QUEUE;
+    strncpy(ifr.ifr_name, TAP_NAME, IFNAMSIZ);
+    return ifr;
+}
 
 // -----------------------------------------------------------------------------
 /**
- *  @brief Creates the Dobby bridge device.
+ *  @brief Creates the Dobby tap device.
+ *
+ *  @remark Based on implementation in iproute2 source code (iptuntap.c)
  *
  *  @return true on success, false on failure.
  */
-bool TapInterface::createTapInterface()
+bool TapInterface::createTapInterface(const std::shared_ptr<Netlink> &netlink)
 {
-    if (mFd >= 0)
+    AI_LOG_FN_ENTRY();
+
+    // Does the interface already exist?
+    if (netlink->ifaceExists(std::string(TAP_NAME)))
     {
-        // Tap device already open
+        AI_LOG_INFO("Tap device already exists");
         return true;
     }
-    mFd = open("/dev/net/tun", O_CLOEXEC | O_RDWR);
-    if (mFd < 0)
+
+    int fd = open(TUNDEV, O_RDWR);
+    if (fd < 0)
     {
         AI_LOG_SYS_ERROR(errno, "failed to open '/dev/net/tun'");
         return false;
     }
-    struct ifreq ifr;
-    bzero(&ifr, sizeof(ifr));
-    // set the flags
-    ifr.ifr_flags = IFF_TAP | IFF_NO_PI | IFF_ONE_QUEUE;
-    strncpy(ifr.ifr_name, TAP_NAME, IFNAMSIZ);
+
+    struct ifreq ifr = createInterfaceStruct();
+
     // ask for kernel for new device
-    int ret = ioctl(mFd, TUNSETIFF, (void *) &ifr);
-    if (ret != 0)
+    if (ioctl(fd, TUNSETIFF, (void *)&ifr) != 0)
     {
-        AI_LOG_SYS_ERROR(errno, "failed to create tap device '%s'", TAP_NAME);
-        close(mFd);
-        mFd = -1;
+        close(fd);
+        AI_LOG_SYS_ERROR_EXIT(errno, "failed to create tap device '%s'", TAP_NAME);
         return false;
     }
+
+    // Without TUNSETPERSIST, the tap device is destroyed when the fd is closed
+    // (i.e. when the plugin finishes)
+    if (ioctl(fd, TUNSETPERSIST, 1) != 0)
+    {
+        AI_LOG_SYS_ERROR_EXIT(errno, "Failed to set TUNSETPERSIST");
+        return false;
+    }
+
+    valid = true;
+    close(fd);
+
+    AI_LOG_FN_EXIT();
     return true;
 }
 
 // -----------------------------------------------------------------------------
 /**
- *  @brief Destroys the Dobby bridge device.
+ *  @brief Destroys the Dobby tap device if it exists
  *
  *  @return true on success, false on failure.
  */
-bool TapInterface::destroyTapInterface()
+bool TapInterface::destroyTapInterface(const std::shared_ptr<Netlink> &netlink)
 {
-    if ((mFd >= 0) && (close(mFd) != 0))
+    AI_LOG_FN_ENTRY();
+
+    // Does the interface already exist?
+    if (!netlink->ifaceExists(std::string(TAP_NAME)))
     {
-        AI_LOG_SYS_ERROR(errno, "failed to close the tap fd");
+        AI_LOG_ERROR("Tap device doesn't exist - cannot destroy");
+        return true;
+    }
+
+    int fd = open(TUNDEV, O_RDWR);
+    if (fd < 0)
+    {
+        AI_LOG_SYS_ERROR(errno, "failed to open '/dev/net/tun'");
         return false;
     }
-    mFd = -1;
+
+    struct ifreq ifr = createInterfaceStruct();
+
+    // Since the tap device exists, this will reference the existing device,
+    // not create a new one
+    if (ioctl(fd, TUNSETIFF, (void *)&ifr) != 0)
+    {
+        close(fd);
+        AI_LOG_SYS_ERROR_EXIT(errno, "failed to create tap device '%s'", TAP_NAME);
+        return false;
+    }
+
+    // Set persist to false. Now when we close the fd, the interface will
+    // be deleted
+    if (ioctl(fd, TUNSETPERSIST, 0) != 0)
+    {
+        AI_LOG_SYS_ERROR_EXIT(errno, "Failed to set TUNSETPERSIST");
+        return false;
+    }
+
+    valid = false;
+    close(fd);
+
     return true;
 }
 
 bool TapInterface::isValid()
 {
-    return (mFd >= 0);
+    return valid;
 }
+
 const std::string TapInterface::name()
 {
     return std::string(TAP_NAME);
@@ -101,8 +161,15 @@ const std::string TapInterface::name()
  */
 bool TapInterface::up(const std::shared_ptr<Netlink> &netlink)
 {
-    if  (mFd < 0)
+    AI_LOG_FN_ENTRY();
+
+    if (valid)
+    {
+        AI_LOG_FN_EXIT();
         return false;
+    }
+
+    AI_LOG_FN_EXIT();
     return netlink->ifaceUp(TAP_NAME);
 }
 
@@ -116,8 +183,15 @@ bool TapInterface::up(const std::shared_ptr<Netlink> &netlink)
  */
 bool TapInterface::down(const std::shared_ptr<Netlink> &netlink)
 {
-    if  (mFd < 0)
+    AI_LOG_FN_ENTRY();
+
+    if (valid)
+    {
+        AI_LOG_FN_EXIT();
         return false;
+    }
+
+    AI_LOG_FN_EXIT();
     return netlink->ifaceDown(TAP_NAME);
 }
 
@@ -143,7 +217,7 @@ std::array<uint8_t, 6> TapInterface::macAddress(const std::shared_ptr<Netlink> &
  *
  *  @return true on success, false on failure.
  */
-bool TapInterface::setMACAddress(const std::shared_ptr<Netlink> &netlink, const std::array<uint8_t, 6>& address)
+bool TapInterface::setMACAddress(const std::shared_ptr<Netlink> &netlink, const std::array<uint8_t, 6> &address)
 {
     return netlink->setIfaceMAC(TAP_NAME, address);
 }

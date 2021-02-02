@@ -370,7 +370,7 @@ bool NetworkSetup::setupBridgeDevice(const std::shared_ptr<DobbyRdkPluginUtils> 
     // create an (unused) tap device and attach to the bridge, this is purely
     // to stop the bridge MAC address from changing as we add / remove veths
     // @see https://backreference.org/2010/07/28/linux-bridge-mac-addresses-and-dynamic-ports/
-    if (!TapInterface::createTapInterface() || !TapInterface::isValid())
+    if (!TapInterface::createTapInterface(netlink) || !TapInterface::isValid())
     {
         AI_LOG_ERROR("failed to create tap device");
     }
@@ -996,7 +996,7 @@ bool NetworkSetup::removeBridgeDevice(const std::shared_ptr<Netfilter> &netfilte
     // and removed from the bridge will reocur it will mean that we should hold
     // Tap device even when we destroy bridge, but then it leave the question
     // where should we delete it. For now we destory it here.
-    TapInterface::destroyTapInterface();
+    TapInterface::destroyTapInterface(netlink);
 
     // bring the bridge device down and destroy it
     BridgeInterface::down(netlink);

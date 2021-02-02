@@ -64,6 +64,7 @@ public:
     bool ifaceDown(const std::string& ifaceName);
 
     bool ifaceIsUp(const std::string& ifaceName) const;
+    bool ifaceExists(const std::string& ifaceName) const;
 
     bool setIfaceAddress(const std::string& ifaceName,
                          const in_addr_t address, const in_addr_t netmask);
@@ -91,8 +92,6 @@ public:
     };
 
     std::list<BridgePortDetails> getAttachedIfaces(const std::string& bridgeName);
-
-    bool createTapDevice(const std::string& tapName);
 
 public:
     bool createBridge(const std::string& bridgeName);

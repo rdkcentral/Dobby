@@ -1270,6 +1270,42 @@ bool Netlink::ifaceIsUp(const std::string& ifaceName) const
 
 // -----------------------------------------------------------------------------
 /**
+ *  @brief Checks if an interface with a given name exists (interface could be
+ *  either up or down)
+ *
+ *
+ *  @param[in]  ifaceName       The name of the interface to check
+ *
+ *  @return true if the interface exists, otherwise false.
+ */
+bool Netlink::ifaceExists(const std::string& ifaceName) const
+{
+    AI_LOG_FN_ENTRY();
+
+    std::lock_guard<std::mutex> locker(mLock);
+
+    if (mSocket == nullptr)
+    {
+        AI_LOG_ERROR_EXIT("invalid socket");
+        return false;
+    }
+
+    // get the link
+    NlLink link(mSocket, ifaceName);
+    if (!link)
+    {
+        AI_LOG_INFO("Interface %s does not exist", ifaceName.c_str());
+        AI_LOG_FN_EXIT();
+        return false;
+    }
+
+    AI_LOG_FN_EXIT();
+    return true;
+}
+
+
+// -----------------------------------------------------------------------------
+/**
  *  @brief Returns the number of the next free veth device.
  *
  *  This works by scanning /sys/class/net/ for devices with names "veth%d",
@@ -1614,8 +1650,8 @@ bool Netlink::delIfaceFromBridge(const std::string& bridgeName,
         ret = rtnl_link_get_kernel(mSocket, masterIndex, nullptr, &master);
         if ((ret != 0) || (master == nullptr))
         {
-            AI_LOG_ERROR("failed to get master device at index %d (%d)",
-                         masterIndex, ret);
+            AI_LOG_NL_ERROR(ret, "failed to get master device at index %d",
+                         masterIndex);
         }
         else
         {
@@ -1631,8 +1667,8 @@ bool Netlink::delIfaceFromBridge(const std::string& bridgeName,
                 ret = rtnl_link_release(mSocket, iface);
                 if (ret != 0)
                 {
-                    AI_LOG_ERROR("failed to release '%s' from bridge '%s' (%d)",
-                                 ifaceName.c_str(), bridgeName.c_str(), ret);
+                    AI_LOG_NL_ERROR(ret, "failed to release '%s' from bridge '%s'",
+                                 ifaceName.c_str(), bridgeName.c_str());
                 }
                 else
                 {
