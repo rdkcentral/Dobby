@@ -172,15 +172,6 @@
         "linux": {
             "$ref": "config-linux.json#/linux"
         },
-        "solaris": {
-            "$ref": "config-solaris.json#/solaris"
-        },
-        "windows": {
-            "$ref": "config-windows.json#/windows"
-        },
-        "vm": {
-            "$ref": "config-vm.json#/vm"
-        },
         "legacyPlugins": {
             "$ref": "defs-plugins.json#/definitions/LegacyPlugins"
         },

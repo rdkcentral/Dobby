@@ -41,11 +41,7 @@
 
 // Can override the plugin path at build time by setting -DPLUGIN_PATH=/path/to/plugins/
 #ifndef PLUGIN_PATH
-    #ifdef DEV_VM
-        #define PLUGIN_PATH "/usr/local/lib/plugins/dobby"
-    #else
-        #define PLUGIN_PATH "/usr/lib/plugins/dobby"
-    #endif
+    #define PLUGIN_PATH "/usr/lib/plugins/dobby"
 #endif
 
 static std::string configPath;
@@ -278,7 +274,7 @@ int main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
-    AI_LOG_INFO("Running hook %s", hookName.c_str());
+    AI_LOG_MILESTONE("Running hook %s", hookName.c_str());
 
     // Work out which hook we need to run
     IDobbyRdkPlugin::HintFlags hookPoint = determineHookPoint(hookName);

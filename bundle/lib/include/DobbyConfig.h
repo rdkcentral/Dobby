@@ -35,12 +35,7 @@
 #  include <jsoncpp/json.h>
 #endif
 
-#ifdef DEV_VM
-    #define PLUGINLAUNCHER_PATH "/usr/local/bin/DobbyPluginLauncher"
-#else
-    #define PLUGINLAUNCHER_PATH "/usr/bin/DobbyPluginLauncher"
-#endif
-
+#define PLUGINLAUNCHER_PATH "/usr/bin/DobbyPluginLauncher"
 
 #include "rt_dobby_schema.h"
 
@@ -54,12 +49,10 @@
 #include <sys/mount.h>
 
 // Names of the RDK Plugins in the extended bundle
-#define RDK_RDKSERVICES_PLUGIN_NAME     "rdkServices"
 #define RDK_NETWORK_PLUGIN_NAME         "networking"
 #define RDK_LOGGING_PLUGIN_NAME         "logging"
 #define RDK_IPC_PLUGIN_NAME             "ipc"
 #define RDK_STORAGE_PLUGIN_NAME         "storage"
-#define RDK_DRM_PLUGIN_NAME             "drm"
 #define RDK_GPU_PLUGIN_NAME             "gpu"
 #define RDK_LOCALTIME_PLUGIN_NAME       "localtime"
 #define RDK_RTSCHEDULING_PLUGIN_NAME    "rtscheduling"
@@ -140,6 +133,9 @@ public:
 protected:
     bool writeConfigJsonImpl(const std::string& filePath) const;
     bool updateBundleConfig(const ContainerId& id,
+                            std::shared_ptr<rt_dobby_schema> cfg,
+                            const std::string& bundlePath);
+    bool setHostnameToContainerId(const ContainerId& id,
                             std::shared_ptr<rt_dobby_schema> cfg,
                             const std::string& bundlePath);
     bool convertToCompliant(const ContainerId& id,

@@ -508,6 +508,34 @@ void DobbyConfig::addPluginLauncherHooks(std::shared_ptr<rt_dobby_schema> cfg, c
 
 // -----------------------------------------------------------------------------
 /**
+ *  @brief Sets the container hostname to the container ID
+ *
+ *  @param[in]  id              container identifier
+ *  @param[in]  cfg             libocispec config structure instance
+ *  @param[in]  bundlePath      path to the container bundle
+ */
+bool DobbyConfig::setHostnameToContainerId(const ContainerId& id, std::shared_ptr<rt_dobby_schema> cfg, const std::string& bundlePath)
+{
+    // change hostname to container id only if necessary
+    if (!strcmp(cfg->hostname, id.c_str()))
+    {
+        return true;
+    }
+
+    free(cfg->hostname);
+    cfg->hostname = strdup(id.c_str());
+
+    // write the new config.json to a file
+    if (!writeConfigJsonImpl(bundlePath + "/config.json"))
+    {
+        return false;
+    }
+
+    return true;
+}
+
+// -----------------------------------------------------------------------------
+/**
  *  @brief Convert the input config.json into an OCI compliant bundle config
  *         that adds support for DobbyPluginLauncher to work with rdkPlugins.
  *
@@ -647,7 +675,12 @@ bool DobbyConfig::convertToCompliant(const ContainerId& id, std::shared_ptr<rt_d
         }
         else
         {
-            // hooks are set up just fine, so we can start
+            // hooks are set up just fine, just need to update the hostname if necessary
+            if (!setHostnameToContainerId(id, cfg, bundlePath))
+            {
+                AI_LOG_ERROR_EXIT("Failed to set container hostname");
+                return false;
+            }
             return true;
         }
     }

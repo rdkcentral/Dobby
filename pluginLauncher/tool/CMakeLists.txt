@@ -37,6 +37,8 @@ target_link_libraries(${PROJECT_NAME}
     DobbyPluginLauncherLib
     AppInfraLogging
 
+    libocispec
+
     # Export the logging symbols so plugins can use AI_LOG correctly
     -Wl,--dynamic-list=${CMAKE_CURRENT_LIST_DIR}/exported.syms
 

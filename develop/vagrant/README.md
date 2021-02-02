@@ -50,9 +50,9 @@ The Dobby source code will be cloned to `~/srcDobby` and can be viewed/developed
 ```
 cd ~/srcDobby/build
 
-cmake -DCMAKE_BUILD_TYPE=Debug -DRDK_PLATFORM=DEV_VM ../
-
-sudo make install -j6
+cmake -DCMAKE_BUILD_TYPE=Debug -DRDK_PLATFORM=DEV_VM -DCMAKE_INSTALL_PREFIX:PATH=/usr ../
+make -j6
+sudo make install
 ```
 
 There are two key components of Dobby that are used for testing - `DobbyDaemon` and `DobbyTool`. `DobbyDaemon` is the main Dobby engine and is responsible for the creation and management of containers. `DobbyTool` is a debugging tool that allows manually creating, inspecting and listing containers. The daemon must be running as root for the DobbyTool to work.

@@ -49,6 +49,7 @@
 #include <sys/un.h>
 #include <linux/limits.h>
 #include <dirent.h>
+#include <future>
 
 #include <list>
 #include <string>
@@ -73,6 +74,30 @@ static std::string gDBusService(DOBBY_SERVICE ".test");
 //
 static char** gCmdlineArgv = NULL;
 static int gCmdlineArgc = 0;
+
+std::mutex gLock;
+std::promise<void> promise;
+
+
+// -----------------------------------------------------------------------------
+/**
+ * @brief Called when a container stop event occurs. Used to ensure we wait
+ * until the container has actually stopped before exiting.
+ *
+ */
+void containerStopCallback(int32_t listenerId, const std::string &containerId,
+                           IDobbyProxyEvents::ContainerState state,
+                           const void *params)
+{
+    const std::string *id = static_cast<const std::string *>(params);
+
+    // Interested in stop events only
+    if (state == IDobbyProxyEvents::ContainerState::Stopped && containerId == *id)
+    {
+        AI_LOG_INFO("Container %s has stopped", containerId.c_str());
+        promise.set_value();
+    }
+}
 
 // -----------------------------------------------------------------------------
 /**
@@ -133,6 +158,12 @@ static void stopCommand(const std::shared_ptr<IDobbyProxy>& dobbyProxy,
         }
     }
 
+    // Register an event listener to monitor for the container stop
+    std::lock_guard<std::mutex> locker(gLock);
+    promise = std::promise<void>();
+    const void *vp = static_cast<void*>(new std::string(id));
+    int listenerId = dobbyProxy->registerListener(&containerStopCallback, vp);
+
     int32_t cd = getContainerDescriptor(dobbyProxy, id);
     if (cd < 0)
     {
@@ -140,15 +171,21 @@ static void stopCommand(const std::shared_ptr<IDobbyProxy>& dobbyProxy,
     }
     else
     {
+        std::future<void> future = promise.get_future();
         if (!dobbyProxy->stopContainer(cd, withPrejudice))
         {
             readLine->printLnError("failed to stop the container");
         }
         else
         {
+            // Block here until container has stopped
+            future.wait();
             readLine->printLn("stopped container '%s'", id.c_str());
         }
     }
+
+    // Always make sure we unregister our callback
+    dobbyProxy->unregisterListener(listenerId);
 }
 
 // -----------------------------------------------------------------------------
