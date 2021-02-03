@@ -102,17 +102,17 @@ bool TapInterface::destroyTapInterface(const std::shared_ptr<Netlink> &netlink)
 {
     AI_LOG_FN_ENTRY();
 
-    // Does the interface already exist?
+    // Does the interface already exist? If not, then don't do anything
     if (!netlink->ifaceExists(std::string(TAP_NAME)))
     {
-        AI_LOG_ERROR("Tap device doesn't exist - cannot destroy");
+        AI_LOG_WARN("Tap device %s doesn't exist - cannot destroy", TAP_NAME);
         return true;
     }
 
     int fd = open(TUNDEV, O_RDWR);
     if (fd < 0)
     {
-        AI_LOG_SYS_ERROR(errno, "failed to open '/dev/net/tun'");
+        AI_LOG_SYS_ERROR_EXIT(errno, "failed to open '/dev/net/tun'");
         return false;
     }
 
@@ -123,7 +123,7 @@ bool TapInterface::destroyTapInterface(const std::shared_ptr<Netlink> &netlink)
     if (ioctl(fd, TUNSETIFF, (void *)&ifr) != 0)
     {
         close(fd);
-        AI_LOG_SYS_ERROR_EXIT(errno, "failed to create tap device '%s'", TAP_NAME);
+        AI_LOG_SYS_ERROR_EXIT(errno, "failed to open existing device '%s'", TAP_NAME);
         return false;
     }
 
@@ -131,13 +131,14 @@ bool TapInterface::destroyTapInterface(const std::shared_ptr<Netlink> &netlink)
     // be deleted
     if (ioctl(fd, TUNSETPERSIST, 0) != 0)
     {
-        AI_LOG_SYS_ERROR_EXIT(errno, "Failed to set TUNSETPERSIST");
+        AI_LOG_SYS_ERROR_EXIT(errno, "Failed to reset TUNSETPERSIST");
         return false;
     }
 
     valid = false;
     close(fd);
 
+    AI_LOG_FN_EXIT();
     return true;
 }
 
