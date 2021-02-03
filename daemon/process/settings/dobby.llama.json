@@ -19,7 +19,7 @@
   },
 
   "vpu": {
-    "devNodes": [ "/dev/dri/renderD128", "/dev/video[1-2][0-9]" ],
+    "devNodes": [ "/dev/dri/renderD128", "/dev/video[1-2][0-9]", "/dev/tee[0-9]" ],
     "groupIds": [ "vpu", "audio" ],
     "extraMounts": [
       {
