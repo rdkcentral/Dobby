@@ -82,14 +82,16 @@ public:
                                    const std::string& jsonSpec,
                                    const std::list<int>& files,
                                    const std::string& command = "",
-                                   const std::string& displaySocket = "") const override;
+                                   const std::string& displaySocket = "",
+                                   const std::vector<std::string>& envVars = std::vector<std::string>()) const override;
 
 
     int32_t startContainerFromBundle(const std::string& id,
                                      const std::string& bundlePath,
                                      const std::list<int>& files,
                                      const std::string& command = "",
-                                     const std::string& displaySocket = "") const override;
+                                     const std::string& displaySocket = "",
+                                     const std::vector<std::string>& envVars = std::vector<std::string>()) const override;
 
     bool stopContainer(int32_t cd, bool withPrejudice) const override;
 
