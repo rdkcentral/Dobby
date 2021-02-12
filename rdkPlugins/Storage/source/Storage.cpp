@@ -41,8 +41,7 @@ REGISTER_RDK_PLUGIN(Storage);
  */
 Storage::Storage(std::shared_ptr<rt_dobby_schema> &containerSpec,
                 const std::shared_ptr<DobbyRdkPluginUtils> &utils,
-                const std::string &rootfsPath,
-                const std::string &hookStdin)
+                const std::string &rootfsPath)
     : mName("Storage"),
       mContainerConfig(containerSpec),
       mRootfsPath(rootfsPath),

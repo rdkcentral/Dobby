@@ -78,10 +78,10 @@ public:
  *
  */
 #define REGISTER_RDK_LOGGER(_class)                                                                                                                                                                                                        \
-    extern "C" PUBLIC_FN IDobbyRdkLoggingPlugin *createIDobbyRdkLogger(std::shared_ptr<rt_dobby_schema> &containerConfig, const std::shared_ptr<DobbyRdkPluginUtils> &utils, const std::string &rootfsPath, const std::string &hookStdin); \
-    extern "C" PUBLIC_FN IDobbyRdkLoggingPlugin *createIDobbyRdkLogger(std::shared_ptr<rt_dobby_schema> &containerConfig, const std::shared_ptr<DobbyRdkPluginUtils> &utils, const std::string &rootfsPath, const std::string &hookStdin)  \
+    extern "C" PUBLIC_FN IDobbyRdkLoggingPlugin *createIDobbyRdkLogger(std::shared_ptr<rt_dobby_schema> &containerConfig, const std::shared_ptr<DobbyRdkPluginUtils> &utils, const std::string &rootfsPath); \
+    extern "C" PUBLIC_FN IDobbyRdkLoggingPlugin *createIDobbyRdkLogger(std::shared_ptr<rt_dobby_schema> &containerConfig, const std::shared_ptr<DobbyRdkPluginUtils> &utils, const std::string &rootfsPath)  \
     {                                                                                                                                                                                                                                      \
-        return new _class(containerConfig, utils, rootfsPath, hookStdin);                                                                                                                                                                  \
+        return new _class(containerConfig, utils, rootfsPath);                                                                                                                                                                  \
     }                                                                                                                                                                                                                                      \
     extern "C" PUBLIC_FN void destroyIDobbyRdkLogger(_class const *_plugin);                                                                                                                                                               \
     extern "C" PUBLIC_FN void destroyIDobbyRdkLogger(_class const *_plugin)                                                                                                                                                                \

@@ -23,8 +23,9 @@
 #include <netinet/in.h>
 #include <string>
 
-// path to file in container rootfs where the container's ip address is stored
-#define ADDRESS_FILE_PATH       "/dobbyaddress"
+// TODO:: This would be better stored in the dobby workspace dir rather than /tmp,
+// but we don't programatically know the workspace dir in this code.
+#define ADDRESS_FILE_PREFIX       "/tmp/dobbyAddress_"
 
 #define BRIDGE_NAME             "dobby0"
 

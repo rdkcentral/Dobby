@@ -36,13 +36,22 @@
 #include <iostream>
 #include <map>
 
-DobbyRdkPluginUtils::DobbyRdkPluginUtils()
+DobbyRdkPluginUtils::DobbyRdkPluginUtils(const std::shared_ptr<rt_dobby_schema> &cfg)
+    : mConf(cfg)
 {
     AI_LOG_FN_ENTRY();
 
     AI_LOG_FN_EXIT();
 }
 
+DobbyRdkPluginUtils::DobbyRdkPluginUtils(const std::shared_ptr<rt_dobby_schema> &cfg,
+                                         const std::shared_ptr<const rt_state_schema> &state)
+    : mConf(cfg), mState(state)
+{
+    AI_LOG_FN_ENTRY();
+
+    AI_LOG_FN_EXIT();
+}
 
 DobbyRdkPluginUtils::~DobbyRdkPluginUtils()
 {
@@ -58,43 +67,47 @@ DobbyRdkPluginUtils::~DobbyRdkPluginUtils()
  *  The stdin needs to be read from within the context of the hook. This
  *  function only parses the pid from a string.
  *
- *  NOTE: Only works with OCI hooks.
- *
- *  @param[in]  stdin            stdin contents from the context of the hook.
+ *  \warning Only returns a valid PID once the container is running. Only works
+ *  for OCI hooks.
  *
  *  @return container pid, 0 if none found.
  */
-pid_t DobbyRdkPluginUtils::getContainerPid(const std::string &stdin) const
+pid_t DobbyRdkPluginUtils::getContainerPid() const
 {
-    if (stdin.empty())
+    // Must be running a non-OCI hook point
+    if (!mState)
     {
-        AI_LOG_ERROR_EXIT("container stdin empty - couldn't get pid");
+        AI_LOG_ERROR_EXIT("Unknown container state - couldn't get pid. Are you running in a non-OCI hook?");
         return 0;
     }
 
-    // get pid from hook's stdin json '"pid":xxxxx'
-    std::size_t pidPosition = stdin.find("\"pid\":");
-    if (pidPosition == std::string::npos)
+    if (!mState->pid_present)
     {
-        AI_LOG_ERROR_EXIT("could not find \"pid\" in container stdin");
+        AI_LOG_ERROR_EXIT("PID not available");
         return 0;
     }
+    return static_cast<pid_t>(mState->pid);
+}
 
-    // traverse 6 characters to get the position of the actual pid
-    pidPosition += 6;
-
-    std::string tmp = stdin.substr(pidPosition, 5);
-    std::string pidStr = tmp.substr(0, tmp.find(","));
-
-    // convert to pid_t
-    pid_t pid = static_cast<pid_t>(strtol(pidStr.c_str(), NULL, 0));
-    if (!pid)
+// -------------------------------------------------------------------------
+/**
+ *  @brief Gets the container ID
+ *
+ *  Since Dobby sets the container hostname to match the container ID, we can
+ *  use the hostname. Ideally we'd use the state from stdin, but that's only
+ *  available during OCI hooks.
+ *
+ *  @return Container ID as string
+ */
+std::string DobbyRdkPluginUtils::getContainerId() const
+{
+    if (!mConf)
     {
-        AI_LOG_ERROR_EXIT("failed to to convert '%s' to a pid", pidStr.c_str());
-        return 0;
+        AI_LOG_ERROR_EXIT("Failed to load config");
+        return "";
     }
 
-    return pid;
+    return std::string(mConf->hostname);
 }
 
 // -----------------------------------------------------------------------------
@@ -113,8 +126,8 @@ pid_t DobbyRdkPluginUtils::getContainerPid(const std::string &stdin) const
  *                          was the success.
  *  @param[in]  func        The function to execute in the new namespace.
  */
-void DobbyRdkPluginUtils::nsThread(int newNsFd, int nsType, bool* success,
-                                   std::function<bool()>& func) const
+void DobbyRdkPluginUtils::nsThread(int newNsFd, int nsType, bool *success,
+                                   std::function<bool()> &func) const
 {
     AI_LOG_FN_ENTRY();
 
@@ -165,7 +178,7 @@ void DobbyRdkPluginUtils::nsThread(int newNsFd, int nsType, bool* success,
  *  @return true if successifully entered the namespace, otherwise false.
  */
 bool DobbyRdkPluginUtils::callInNamespaceImpl(pid_t pid, int nsType,
-                                     const std::function<bool()>& func) const
+                                              const std::function<bool()> &func) const
 {
     AI_LOG_FN_ENTRY();
 
@@ -175,18 +188,18 @@ bool DobbyRdkPluginUtils::callInNamespaceImpl(pid_t pid, int nsType,
     // determine the type of namespace to enter
     switch (nsType)
     {
-        case CLONE_NEWIPC:
-            strcpy(nsName, "ipc");
-            break;
-        case CLONE_NEWNET:
-            strcpy(nsName, "net");
-            break;
-        case CLONE_NEWNS:
-            strcpy(nsName, "mnt");
-            break;
-        // the following namespaces are tricky and have special restrictions,
-        // at the moment no hook should be using them so disable until needed
-        /*
+    case CLONE_NEWIPC:
+        strcpy(nsName, "ipc");
+        break;
+    case CLONE_NEWNET:
+        strcpy(nsName, "net");
+        break;
+    case CLONE_NEWNS:
+        strcpy(nsName, "mnt");
+        break;
+    // the following namespaces are tricky and have special restrictions,
+    // at the moment no hook should be using them so disable until needed
+    /*
         case CLONE_NEWPID:
             strcpy(nsName, "pid");
             break;
@@ -197,14 +210,14 @@ bool DobbyRdkPluginUtils::callInNamespaceImpl(pid_t pid, int nsType,
             strcpy(nsName, "uts");
             break;
         */
-        case CLONE_NEWPID:
-        case CLONE_NEWUSER:
-        case CLONE_NEWUTS:
-            AI_LOG_ERROR_EXIT("unsupported nsType (%d)", nsType);
-            return false;
-        default:
-            AI_LOG_ERROR_EXIT("invalid nsType (%d)", nsType);
-            return false;
+    case CLONE_NEWPID:
+    case CLONE_NEWUSER:
+    case CLONE_NEWUTS:
+        AI_LOG_ERROR_EXIT("unsupported nsType (%d)", nsType);
+        return false;
+    default:
+        AI_LOG_ERROR_EXIT("invalid nsType (%d)", nsType);
+        return false;
     }
 
     bool success;
@@ -269,7 +282,7 @@ bool DobbyRdkPluginUtils::writeTextFile(const std::string &path,
         return false;
     }
 
-    const char* size = str.c_str();
+    const char *size = str.c_str();
     ssize_t remaining = static_cast<ssize_t>(str.length());
 
     while (remaining > 0)
@@ -329,10 +342,9 @@ std::string DobbyRdkPluginUtils::readTextFile(const std::string &path) const
  *  @brief Public api to allow for adding additional mounts to a container's
  *  config file.
  *
- *  This can only obviously be called before the config file is persisted to
- *  disk.
+ *  \warning This can only obviously be called before the config file is persisted to
+ *  disk (i.e. during the postInstallation hook)
  *
- *  @param[in]  cfg             Pointer to OCI config struct
  *  @param[in]  source          The mount source
  *  @param[in]  destination     The mount destination
  *  @param[in]  type            The file system type of the mount
@@ -340,8 +352,7 @@ std::string DobbyRdkPluginUtils::readTextFile(const std::string &path) const
  *
  *  @return true if the mount point was added, otherwise false.
  */
-bool DobbyRdkPluginUtils::addMount(const std::shared_ptr<rt_dobby_schema> &cfg,
-                                   const std::string &source,
+bool DobbyRdkPluginUtils::addMount(const std::string &source,
                                    const std::string &destination,
                                    const std::string &type,
                                    const std::list<std::string> &mountOptions) const
@@ -351,9 +362,9 @@ bool DobbyRdkPluginUtils::addMount(const std::shared_ptr<rt_dobby_schema> &cfg,
     AI_LOG_FN_ENTRY();
 
     // allocate memory for mount
-    rt_defs_mount *newMount = (rt_defs_mount*)calloc(1, sizeof(rt_defs_mount));
+    rt_defs_mount *newMount = (rt_defs_mount *)calloc(1, sizeof(rt_defs_mount));
     newMount->options_len = mountOptions.size();
-    newMount->options = (char**)calloc(newMount->options_len, sizeof(char*));
+    newMount->options = (char **)calloc(newMount->options_len, sizeof(char *));
 
     // add mount options to bundle config
     int i = 0;
@@ -368,9 +379,9 @@ bool DobbyRdkPluginUtils::addMount(const std::shared_ptr<rt_dobby_schema> &cfg,
     newMount->source = strdup(source.c_str());
 
     // allocate memory for new mount and place it in the config struct
-    cfg->mounts_len++;
-    cfg->mounts = (rt_defs_mount**)realloc(cfg->mounts, sizeof(rt_defs_mount*) * cfg->mounts_len);
-    cfg->mounts[cfg->mounts_len-1] = newMount;
+    mConf->mounts_len++;
+    mConf->mounts = (rt_defs_mount **)realloc(mConf->mounts, sizeof(rt_defs_mount *) * mConf->mounts_len);
+    mConf->mounts[mConf->mounts_len - 1] = newMount;
 
     AI_LOG_FN_EXIT();
     return true;
@@ -391,7 +402,7 @@ bool DobbyRdkPluginUtils::addMount(const std::shared_ptr<rt_dobby_schema> &cfg,
  *
  *  @return true on success, false on failure.
  */
-bool DobbyRdkPluginUtils::mkdirRecursive(const std::string& path, mode_t mode)
+bool DobbyRdkPluginUtils::mkdirRecursive(const std::string &path, mode_t mode)
 {
     AI_LOG_FN_ENTRY();
 
@@ -447,28 +458,27 @@ bool DobbyRdkPluginUtils::mkdirRecursive(const std::string& path, mode_t mode)
  *
  *  @return true if the env var was added, otherwise false.
  */
-bool DobbyRdkPluginUtils::addEnvironmentVar(const std::shared_ptr<rt_dobby_schema> &cfg,
-                                            const std::string& envVar) const
+bool DobbyRdkPluginUtils::addEnvironmentVar(const std::string &envVar) const
 {
     AI_LOG_FN_ENTRY();
 
     std::lock_guard<std::mutex> locker(mLock);
 
     // check if env var already exists in config
-    for (int i = 0; i < cfg->process->env_len; ++i)
+    for (int i = 0; i < mConf->process->env_len; ++i)
     {
-        if (0 == strcmp(cfg->process->env[i], envVar.c_str()))
+        if (0 == strcmp(mConf->process->env[i], envVar.c_str()))
         {
             return true;
         }
     }
 
     // Increase the number of environmental variables
-    cfg->process->env_len += 1;
+    mConf->process->env_len += 1;
 
     // Update env var in OCI bundle config
-    cfg->process->env = (char**)realloc(cfg->process->env, sizeof(char*) * cfg->process->env_len);
-    cfg->process->env[cfg->process->env_len-1] = strdup(envVar.c_str());
+    mConf->process->env = (char **)realloc(mConf->process->env, sizeof(char *) * mConf->process->env_len);
+    mConf->process->env[mConf->process->env_len - 1] = strdup(envVar.c_str());
 
     AI_LOG_FN_EXIT();
     return true;

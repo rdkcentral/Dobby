@@ -47,7 +47,6 @@ class DobbyRdkPluginManager
 public:
     DobbyRdkPluginManager(std::shared_ptr<rt_dobby_schema> containerConfig,
                           const std::string &rootfsPath,
-                          const std::string &hookStdin,
                           const std::string &pluginPath,
                           const std::shared_ptr<DobbyRdkPluginUtils> &utils);
     ~DobbyRdkPluginManager();
@@ -76,8 +75,8 @@ private:
     std::map<std::string, std::pair<void *, std::shared_ptr<IDobbyRdkPlugin>>> mPlugins;
     const std::string mPluginPath;
     const std::string mRootfsPath;
-    const std::string mHookStdin;
     const std::shared_ptr<DobbyRdkPluginUtils> mUtils;
+
     std::shared_ptr<rt_dobby_schema> mContainerConfig;
 };
 
