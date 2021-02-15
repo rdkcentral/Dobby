@@ -40,11 +40,7 @@
 #include <memory>
 #include <future>
 
-
-
-#if defined(DEV_VM)
-#   define DEFAULT_PLUGIN_PATH   "/usr/local/lib/plugins/dobby"
-#elif defined(RDK)
+#if defined(RDK)
 #   define DEFAULT_PLUGIN_PATH   "/usr/lib/plugins/dobby"
 #else
 #   define DEFAULT_PLUGIN_PATH   "/opt/libexec"

@@ -20,6 +20,9 @@
 
 # TODO:: Do this in a more "bitbake-like" way instead of with submodules
 
+# ------------------------------------------------------------------------------
+# Generate the libocispec code from the schemas
+
 # Where the libocispec submodule lives
 set(LIBOCISPEC_DIR
     ${CMAKE_SOURCE_DIR}/libocispec
@@ -48,6 +51,18 @@ execute_process(
 file(GLOB CUSTOM_SCHEMA_FILES CONFIGURE_DEPENDS "${SCHEMAS_DIR}/*.json")
 file(COPY ${CUSTOM_SCHEMA_FILES} DESTINATION ${LIBOCISPEC_DIR}/runtime-spec/schema/)
 
+# Remove any schemas that Dobby doesn't use and therefore are pointless to generate
+file(REMOVE ${LIBOCISPEC_DIR}/runtime-spec/schema/config-solaris.json)
+file(REMOVE ${LIBOCISPEC_DIR}/runtime-spec/schema/config-windows.json)
+file(REMOVE ${LIBOCISPEC_DIR}/runtime-spec/schema/config-vm.json)
+file(REMOVE ${LIBOCISPEC_DIR}/runtime-spec/schema/defs-solaris.json)
+file(REMOVE ${LIBOCISPEC_DIR}/runtime-spec/schema/defs-windows.json)
+file(REMOVE ${LIBOCISPEC_DIR}/runtime-spec/schema/defs-vm.json)
+
+# We use Dobby schema instead, which is almost identical but has the RDKPlugins additional section
+file(REMOVE ${LIBOCISPEC_DIR}/runtime-spec/schema/config-schema.json)
+
+
 # Get the add_plugin_tables.py script and copy it into libocispec
 file(COPY "${SCHEMAS_DIR}/add_plugin_tables.py" DESTINATION ${LIBOCISPEC_DIR}/src/)
 
@@ -69,19 +84,17 @@ execute_process(
 execute_process(
     WORKING_DIRECTORY ${LIBOCISPEC_DIR}
     COMMAND mkdir -p ./schemas/rt
-    COMMAND mkdir -p ./schemas/img
 )
 
 execute_process(
     WORKING_DIRECTORY ${LIBOCISPEC_DIR}
     COMMAND cp -r ./runtime-spec/schema/. ./schemas/rt/
-    COMMAND cp -r ./image-spec/schema/. ./schemas/img/
 )
 
 # Now run the generator to make our code
 execute_process(
     WORKING_DIRECTORY ${LIBOCISPEC_DIR}
-    COMMAND python3 ./src/generate.py --gen-common --gen-ref --root=./schemas --out=./src ./schemas/rt ./schemas/img
+    COMMAND python3 ./src/generate.py --gen-common --gen-ref --root=./schemas --out=./src ./schemas/rt
 )
 
 # DobbyConfig needs to be able to see a list of plugins' names and pointers to their structs
@@ -96,8 +109,13 @@ file(GLOB_RECURSE LIBOCISPEC_GENERATED_FILES
     ${LIBOCISPEC_GENERATED_DIR}/*.c)
 list(REMOVE_ITEM LIBOCISPEC_GENERATED_FILES "${LIBOCISPEC_GENERATED_DIR}/validate.c")
 
+
+# ------------------------------------------------------------------------------
+# Create a library for libocispec
+
 # Create a new library called libocispec from the generated files
 add_library(libocispec
+    SHARED
     ${LIBOCISPEC_GENERATED_FILES}
 )
 
@@ -114,6 +132,13 @@ target_link_libraries(libocispec
     yajl
 )
 
-set_target_properties(libocispec
-    PROPERTIES POSITION_INDEPENDENT_CODE ON
+install(
+    TARGETS libocispec
+    LIBRARY DESTINATION lib
+)
+
+set_target_properties(libocispec PROPERTIES
+    POSITION_INDEPENDENT_CODE ON
+    SOVERSION 0
+    PREFIX ""
 )

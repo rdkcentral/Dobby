@@ -61,6 +61,12 @@ namespace BridgeInterface
                           int value);
 
     bool disableStp(const std::shared_ptr<DobbyRdkPluginUtils> &utils);
+
+    bool attachLink(const std::shared_ptr<Netlink> &netlink,
+                    const std::string &name);
+    std::array<uint8_t, 6> macAddress(const std::shared_ptr<Netlink> &netlink);
+    bool setMACAddress(const std::shared_ptr<Netlink> &netlink,
+                       const std::array<uint8_t, 6>& address);
 };
 
 bool netlinkFlagsWorkaround(short int mask, short int flags);

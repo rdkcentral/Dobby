@@ -69,11 +69,7 @@
 
 // Can override the plugin path at build time by setting -DPLUGIN_PATH=/path/to/plugins/
 #ifndef PLUGIN_PATH
-    #ifdef DEV_VM
-        #define PLUGIN_PATH     "/usr/local/lib/plugins/dobby"
-    #else
-        #define PLUGIN_PATH     "/usr/lib/plugins/dobby"
-    #endif
+    #define PLUGIN_PATH     "/usr/lib/plugins/dobby"
 #endif
 
 DobbyManager::DobbyManager(const std::shared_ptr<IDobbyEnv> &env,

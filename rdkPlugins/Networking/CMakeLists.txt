@@ -29,6 +29,7 @@ add_library( ${PROJECT_NAME}
         source/NetworkingHelper.cpp
         source/PortForwarding.cpp
         source/MulticastForwarder.cpp
+        source/TapInterface.cpp
 
         # proxy to talk to DobbyDaemon
         ../Common/source/DobbyRdkPluginProxy.cpp
