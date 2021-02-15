@@ -128,7 +128,7 @@ IDobbyRdkPlugin::HintFlags determineHookPoint(const std::string &hookName)
     std::unordered_map<std::string, IDobbyRdkPlugin::HintFlags> const hookMappings =
         {
             {"postinstallation", IDobbyRdkPlugin::HintFlags::PostInstallationFlag},
-            {"preCreation", IDobbyRdkPlugin::HintFlags::PreCreationFlag},
+            {"precreation", IDobbyRdkPlugin::HintFlags::PreCreationFlag},
             {"createruntime", IDobbyRdkPlugin::HintFlags::CreateRuntimeFlag},
             {"createcontainer", IDobbyRdkPlugin::HintFlags::CreateContainerFlag},
 #ifdef USE_STARTCONTAINER_HOOK
