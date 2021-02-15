@@ -251,14 +251,13 @@ add_subdirectory( client/lib )
 
 # Add DobbyTool. Defaults to include in debug and exclude in release, but can
 # be overridden
+set( ENABLE_DOBBYTOOL_DEFAULT OFF )
+option( ENABLE_DOBBYTOOL "Include DobbyTool" ${ENABLE_DOBBYTOOL_DEFAULT} )
 if( BUILD_TYPE STREQUAL "DEBUG")
-    set( ENABLE_DOBBYTOOL_DEFAULT ON )
-else()
-    set( ENABLE_DOBBYTOOL_DEFAULT OFF )
+    set( ENABLE_DOBBYTOOL ON )
 endif()
 
-option(ENABLE_DOBBYTOOL "Include DobbyTool" ENABLE_DOBBYTOOL_DEFAULT)
-if(ENABLE_DOBBYTOOL)
+if( ENABLE_DOBBYTOOL )
     add_subdirectory( client/tool )
 endif()
 
