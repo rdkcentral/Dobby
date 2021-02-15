@@ -41,6 +41,35 @@
                 }
             }
         },
+        "AppServicesRdk": {
+            "type": "object",
+            "required": [
+                "required",
+                "data"
+            ],
+            "properties": {
+                "required": {
+                    "type": "boolean"
+                },
+                "data": {
+                    "type": "object",
+                    "properties": {
+                        "setMenu": {
+                            "type": "string"
+                        },
+                        "additionalPorts": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "defs.json#/definitions/uint16"
+                            }
+                        },
+                        "connLimit": {
+                            "$ref": "defs.json#/definitions/uint32"
+                        }
+                    }
+                }
+            }
+        },
         "GPU": {
             "type": "object",
             "required": [
@@ -56,81 +85,6 @@
                     "properties": {
                         "memory": {
                             "$ref": "defs.json#/definitions/int32"
-                        }
-                    }
-                }
-            }
-        },
-        "IPC": {
-            "type": "object",
-            "required": [
-                "required",
-                "data"
-            ],
-            "properties": {
-                "required": {
-                    "type": "boolean"
-                },
-                "data": {
-                    "type": "object",
-                    "properties": {
-                        "session": {
-                            "type": "string"
-                        },
-                        "system": {
-                            "type": "string"
-                        },
-                        "debug": {
-                            "type": "string"
-                        }
-                    }
-                }
-            }
-        },
-        "Logging": {
-            "type": "object",
-            "required": [
-                "required",
-                "data"
-            ],
-            "properties": {
-                "required": {
-                    "type": "boolean"
-                },
-                "data": {
-                    "type": "object",
-                    "required": [
-                        "sink"
-                    ],
-                    "properties": {
-                        "sink": {
-                            "type": "string"
-                        },
-                        "fileOptions": {
-                            "type": "object",
-                            "required": [
-                                "path",
-                                "limit"
-                            ],
-                            "properties": {
-                                "path": {
-                                    "type": "string"
-                                },
-                                "limit": {
-                                    "type": "integer"
-                                }
-                            }
-                        },
-                        "journaldOptions": {
-                            "type": "object",
-                            "required": [
-                                "priority"
-                            ],
-                            "properties": {
-                                "priority": {
-                                    "type": "string"
-                                }
-                            }
                         }
                     }
                 }
@@ -215,6 +169,81 @@
                                     "port": {
                                         "$ref": "defs.json#/definitions/uint16"
                                     }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "IPC": {
+            "type": "object",
+            "required": [
+                "required",
+                "data"
+            ],
+            "properties": {
+                "required": {
+                    "type": "boolean"
+                },
+                "data": {
+                    "type": "object",
+                    "properties": {
+                        "session": {
+                            "type": "string"
+                        },
+                        "system": {
+                            "type": "string"
+                        },
+                        "debug": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "Logging": {
+            "type": "object",
+            "required": [
+                "required",
+                "data"
+            ],
+            "properties": {
+                "required": {
+                    "type": "boolean"
+                },
+                "data": {
+                    "type": "object",
+                    "required": [
+                        "sink"
+                    ],
+                    "properties": {
+                        "sink": {
+                            "type": "string"
+                        },
+                        "fileOptions": {
+                            "type": "object",
+                            "required": [
+                                "path",
+                                "limit"
+                            ],
+                            "properties": {
+                                "path": {
+                                    "type": "string"
+                                },
+                                "limit": {
+                                    "type": "integer"
+                                }
+                            }
+                        },
+                        "journaldOptions": {
+                            "type": "object",
+                            "required": [
+                                "priority"
+                            ],
+                            "properties": {
+                                "priority": {
+                                    "type": "string"
                                 }
                             }
                         }
@@ -387,6 +416,12 @@
         "RdkPlugins": {
             "type": "object",
             "properties": {
+                "networking": {
+                    "$ref": "#/definitions/Networking"
+                },
+                "appservicesrdk" : {
+                    "$ref": "#/definitions/AppServicesRdk"
+                },
                 "ipc": {
                     "$ref": "#/definitions/IPC"
                 },
@@ -395,9 +430,6 @@
                 },
                 "logging": {
                     "$ref": "#/definitions/Logging"
-                },
-                "networking": {
-                    "$ref": "#/definitions/Networking"
                 },
                 "storage": {
                     "$ref": "#/definitions/Storage"
