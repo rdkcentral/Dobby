@@ -119,7 +119,6 @@ public:
 private:
     mutable std::mutex mLock;
 
-private:
     std::shared_ptr<rt_dobby_schema> mConf;
     std::shared_ptr<const rt_state_schema> mState;
 };

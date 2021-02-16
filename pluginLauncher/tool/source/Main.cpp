@@ -176,7 +176,6 @@ std::shared_ptr<const rt_state_schema> getContainerState()
     // Occasionally, there's some extra special characters after the json.
     // We need to clear them out of the string.
     std::string hookStdin(buf);
-
     if (hookStdin[hookStdin.length()-1] != '}')
     {
         size_t pos = hookStdin.rfind('}');
@@ -217,14 +216,17 @@ bool runPlugins(const IDobbyRdkPlugin::HintFlags &hookPoint, std::shared_ptr<rt_
 
     // Get the OCI hook stdin for the plugins to use
     std::shared_ptr<const rt_state_schema> state = getContainerState();
-    if (!state)
+    std::shared_ptr<DobbyRdkPluginUtils> rdkPluginUtils;
+    if (state)
     {
-        AI_LOG_ERROR_EXIT("Failed to get container state");
-        return false;
+        rdkPluginUtils = std::make_shared<DobbyRdkPluginUtils>(containerConfig, state);
+    }
+    else
+    {
+        AI_LOG_WARN("Failed to get container state from stdin");
+        rdkPluginUtils = std::make_shared<DobbyRdkPluginUtils>(containerConfig);
     }
 
-    // Create an instance of pluginManager to load the plugins
-    std::shared_ptr<DobbyRdkPluginUtils> rdkPluginUtils = std::make_shared<DobbyRdkPluginUtils>(containerConfig, state);
     DobbyRdkPluginManager pluginManager(containerConfig, rootfsPath, PLUGIN_PATH, rdkPluginUtils);
 
     std::vector<std::string> loadedPlugins = pluginManager.listLoadedPlugins();

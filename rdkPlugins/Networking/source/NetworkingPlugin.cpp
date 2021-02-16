@@ -279,29 +279,22 @@ bool NetworkingPlugin::postHalt()
         return false;
     }
 
-    // get address from a file
-    const std::string addressFilePath = ADDRESS_FILE_PREFIX + mUtils->getContainerId();
-    const std::string addressFileStr = mUtils->readTextFile(addressFilePath);
-    if (addressFileStr.empty())
+    ContainerNetworkInfo networkInfo;
+    if (!mUtils->getContainerNetworkInfo(networkInfo))
     {
-        AI_LOG_WARN("failed to get IP address and veth name assigned to "
-                     "container from %s, unable to remove veth pair",
-                     addressFilePath.c_str());
+        AI_LOG_WARN("Failed to get container network info");
         success = false;
     }
     else
     {
-        // parse ip address and vethname from the read string
-        std::string addressStr = addressFileStr.substr(0, addressFileStr.find("/"));
-        const std::string vethName = addressFileStr.substr(addressStr.length() + 1, addressFileStr.length());
         in_addr_t ipAddress;
-        inet_pton(AF_INET, addressStr.c_str(), &ipAddress);
-        mHelper->storeContainerInterface(htonl(ipAddress), vethName);
+        inet_pton(AF_INET, networkInfo.ipAddress.c_str(), &ipAddress);
+        mHelper->storeContainerInterface(htonl(ipAddress), networkInfo.vethName);
 
         // delete the veth pair for the container
-        if (!NetworkSetup::removeVethPair(mNetfilter, mHelper, vethName, mNetworkType, mUtils->getContainerId()))
+        if (!NetworkSetup::removeVethPair(mNetfilter, mHelper, networkInfo.vethName, mNetworkType, mUtils->getContainerId()))
         {
-            AI_LOG_WARN("failed to remove veth pair %s", vethName.c_str());
+            AI_LOG_WARN("failed to remove veth pair %s", networkInfo.vethName.c_str());
             success = false;
         }
 
@@ -315,6 +308,7 @@ bool NetworkingPlugin::postHalt()
     }
 
     // remove the address file from the host
+    const std::string addressFilePath = ADDRESS_FILE_PREFIX + mUtils->getContainerId();
     if (unlink(addressFilePath.c_str()) == -1)
     {
         AI_LOG_WARN("failed to remove address file for container %s at %s",
@@ -398,11 +392,11 @@ bool NetworkingPlugin::createRemoteService()
     // clients
     char strPid[32];
     sprintf(strPid, ".pid%d", getpid());
-    std::string dbusService = gDBusService + strPid;
+    gDBusService += strPid;
 
     try
     {
-        mIpcService = AI_IPC::createIpcService(DBUS_SYSTEM_ADDRESS, dbusService);
+        mIpcService = AI_IPC::createIpcService(DBUS_SYSTEM_ADDRESS, gDBusService);
         if(!mIpcService->start())
         {
             AI_LOG_ERROR_EXIT("failed to create IPC service");

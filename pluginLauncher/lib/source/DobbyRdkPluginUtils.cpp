@@ -46,7 +46,8 @@ DobbyRdkPluginUtils::DobbyRdkPluginUtils(const std::shared_ptr<rt_dobby_schema> 
 
 DobbyRdkPluginUtils::DobbyRdkPluginUtils(const std::shared_ptr<rt_dobby_schema> &cfg,
                                          const std::shared_ptr<const rt_state_schema> &state)
-    : mConf(cfg), mState(state)
+    : mConf(cfg)
+    , mState(state)
 {
     AI_LOG_FN_ENTRY();
 
@@ -180,8 +181,8 @@ bool DobbyRdkPluginUtils::getContainerNetworkInfo(ContainerNetworkInfo &networkI
  *                          was the success.
  *  @param[in]  func        The function to execute in the new namespace.
  */
-void DobbyRdkPluginUtils::nsThread(int newNsFd, int nsType, bool *success,
-                                   std::function<bool()> &func) const
+void DobbyRdkPluginUtils::nsThread(int newNsFd, int nsType, bool* success,
+                                   std::function<bool()>& func) const
 {
     AI_LOG_FN_ENTRY();
 
@@ -232,7 +233,7 @@ void DobbyRdkPluginUtils::nsThread(int newNsFd, int nsType, bool *success,
  *  @return true if successifully entered the namespace, otherwise false.
  */
 bool DobbyRdkPluginUtils::callInNamespaceImpl(pid_t pid, int nsType,
-                                              const std::function<bool()> &func) const
+                                     const std::function<bool()>& func) const
 {
     AI_LOG_FN_ENTRY();
 
@@ -242,18 +243,18 @@ bool DobbyRdkPluginUtils::callInNamespaceImpl(pid_t pid, int nsType,
     // determine the type of namespace to enter
     switch (nsType)
     {
-    case CLONE_NEWIPC:
-        strcpy(nsName, "ipc");
-        break;
-    case CLONE_NEWNET:
-        strcpy(nsName, "net");
-        break;
-    case CLONE_NEWNS:
-        strcpy(nsName, "mnt");
-        break;
-    // the following namespaces are tricky and have special restrictions,
-    // at the moment no hook should be using them so disable until needed
-    /*
+        case CLONE_NEWIPC:
+            strcpy(nsName, "ipc");
+            break;
+        case CLONE_NEWNET:
+            strcpy(nsName, "net");
+            break;
+        case CLONE_NEWNS:
+            strcpy(nsName, "mnt");
+            break;
+        // the following namespaces are tricky and have special restrictions,
+        // at the moment no hook should be using them so disable until needed
+        /*
         case CLONE_NEWPID:
             strcpy(nsName, "pid");
             break;
@@ -264,14 +265,14 @@ bool DobbyRdkPluginUtils::callInNamespaceImpl(pid_t pid, int nsType,
             strcpy(nsName, "uts");
             break;
         */
-    case CLONE_NEWPID:
-    case CLONE_NEWUSER:
-    case CLONE_NEWUTS:
-        AI_LOG_ERROR_EXIT("unsupported nsType (%d)", nsType);
-        return false;
-    default:
-        AI_LOG_ERROR_EXIT("invalid nsType (%d)", nsType);
-        return false;
+        case CLONE_NEWPID:
+        case CLONE_NEWUSER:
+        case CLONE_NEWUTS:
+            AI_LOG_ERROR_EXIT("unsupported nsType (%d)", nsType);
+            return false;
+        default:
+            AI_LOG_ERROR_EXIT("invalid nsType (%d)", nsType);
+            return false;
     }
 
     bool success;
@@ -336,7 +337,7 @@ bool DobbyRdkPluginUtils::writeTextFile(const std::string &path,
         return false;
     }
 
-    const char *size = str.c_str();
+    const char* size = str.c_str();
     ssize_t remaining = static_cast<ssize_t>(str.length());
 
     while (remaining > 0)
@@ -396,8 +397,8 @@ std::string DobbyRdkPluginUtils::readTextFile(const std::string &path) const
  *  @brief Public api to allow for adding additional mounts to a container's
  *  config file.
  *
- *  \warning This can only obviously be called before the config file is persisted to
- *  disk (i.e. during the postInstallation hook)
+ *  This can only obviously be called before the config file is persisted to
+ *  disk.
  *
  *  @param[in]  source          The mount source
  *  @param[in]  destination     The mount destination
@@ -416,9 +417,9 @@ bool DobbyRdkPluginUtils::addMount(const std::string &source,
     AI_LOG_FN_ENTRY();
 
     // allocate memory for mount
-    rt_defs_mount *newMount = (rt_defs_mount *)calloc(1, sizeof(rt_defs_mount));
+    rt_defs_mount *newMount = (rt_defs_mount*)calloc(1, sizeof(rt_defs_mount));
     newMount->options_len = mountOptions.size();
-    newMount->options = (char **)calloc(newMount->options_len, sizeof(char *));
+    newMount->options = (char**)calloc(newMount->options_len, sizeof(char*));
 
     // add mount options to bundle config
     int i = 0;
@@ -434,8 +435,8 @@ bool DobbyRdkPluginUtils::addMount(const std::string &source,
 
     // allocate memory for new mount and place it in the config struct
     mConf->mounts_len++;
-    mConf->mounts = (rt_defs_mount **)realloc(mConf->mounts, sizeof(rt_defs_mount *) * mConf->mounts_len);
-    mConf->mounts[mConf->mounts_len - 1] = newMount;
+    mConf->mounts = (rt_defs_mount**)realloc(mConf->mounts, sizeof(rt_defs_mount *) * mConf->mounts_len);
+    mConf->mounts[mConf->mounts_len-1] = newMount;
 
     AI_LOG_FN_EXIT();
     return true;
@@ -456,7 +457,7 @@ bool DobbyRdkPluginUtils::addMount(const std::string &source,
  *
  *  @return true on success, false on failure.
  */
-bool DobbyRdkPluginUtils::mkdirRecursive(const std::string &path, mode_t mode)
+bool DobbyRdkPluginUtils::mkdirRecursive(const std::string& path, mode_t mode)
 {
     AI_LOG_FN_ENTRY();
 
@@ -512,7 +513,7 @@ bool DobbyRdkPluginUtils::mkdirRecursive(const std::string &path, mode_t mode)
  *
  *  @return true if the env var was added, otherwise false.
  */
-bool DobbyRdkPluginUtils::addEnvironmentVar(const std::string &envVar) const
+bool DobbyRdkPluginUtils::addEnvironmentVar(const std::string& envVar) const
 {
     AI_LOG_FN_ENTRY();
 
@@ -531,8 +532,8 @@ bool DobbyRdkPluginUtils::addEnvironmentVar(const std::string &envVar) const
     mConf->process->env_len += 1;
 
     // Update env var in OCI bundle config
-    mConf->process->env = (char **)realloc(mConf->process->env, sizeof(char *) * mConf->process->env_len);
-    mConf->process->env[mConf->process->env_len - 1] = strdup(envVar.c_str());
+    mConf->process->env = (char**)realloc(mConf->process->env, sizeof(char*) * mConf->process->env_len);
+    mConf->process->env[mConf->process->env_len-1] = strdup(envVar.c_str());
 
     AI_LOG_FN_EXIT();
     return true;
