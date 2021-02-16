@@ -265,6 +265,103 @@ bool DobbyConfig::addEnvironmentVar(const std::string& envVar)
 
 // -----------------------------------------------------------------------------
 /**
+ *  Changes the startup command for the container to a custom command.
+ *
+ *  Will automatically add DobbyInit to run the process to ensure sub-reaping
+ *  is handled properly
+ *
+ *  @param[in]  command     The command to run (including arguments/params)
+ */
+bool DobbyConfig::changeProcessArgs(const std::string& command)
+{
+    AI_LOG_FN_ENTRY();
+
+    std::lock_guard<std::mutex> locker(mLock);
+
+    std::shared_ptr<rt_dobby_schema> cfg = config();
+    if (cfg == nullptr)
+    {
+        AI_LOG_ERROR("Invalid bundle config");
+        return false;
+    }
+
+    AI_LOG_DEBUG("Adding custom command %s to config", command.c_str());
+    std::vector<std::string> cmd;
+
+    // Always use DobbyInit
+    cmd.push_back("/usr/libexec/DobbyInit");
+
+    // Insert space delimited command string into a vector
+    std::stringstream ss_cmd(command);
+    std::string tmp;
+    while (getline(ss_cmd, tmp, ' '))
+    {
+        cmd.push_back(tmp);
+    }
+
+    // Add the args to the config
+    cfg->process->args = (char **)realloc(cfg->process->args, sizeof(char *) * cmd.size());
+    cfg->process->args_len = cmd.size();
+
+    for (int i = 0; i < cmd.size(); i++)
+    {
+        cfg->process->args[i] = strdup(cmd[i].c_str());
+    }
+
+    AI_LOG_FN_EXIT();
+    return true;
+}
+
+// -----------------------------------------------------------------------------
+/**
+ *  Adds a mount into the container for a westeros socket with the correct
+ *  permissions at /tmp/westeros
+ *
+ *  Sets WAYLAND_DISPLAY and XDG_RUNTIME_DIR environment variables
+ *  to ensure container actually uses the display
+ *
+ *  @param[in]  socketPath     Path to westeros socket on host
+ */
+bool DobbyConfig::addWesterosMount(const std::string& socketPath)
+{
+    AI_LOG_FN_ENTRY();
+
+    std::shared_ptr<rt_dobby_schema> cfg = config();
+    if (cfg == nullptr)
+    {
+        AI_LOG_ERROR("Invalid bundle config");
+        return false;
+    }
+
+    AI_LOG_DEBUG("Adding westeros socket bind mount %s -> /tmp/westeros to config", socketPath.c_str());
+
+    // Mount options
+    std::list<std::string> mountOptions = {
+        "bind",
+        "rw",
+        "nosuid",
+        "nodev",
+        "noexec"
+    };
+
+    if (!addMount(socketPath, "/tmp/westeros", "bind", 0, mountOptions))
+    {
+        AI_LOG_ERROR("Failed to add Westeros mount");
+        return false;
+    }
+
+    if (!addEnvironmentVar("WAYLAND_DISPLAY=westeros") && !addEnvironmentVar("XDG_RUNTIME_DIR=/tmp"))
+    {
+        AI_LOG_ERROR("Failed to set westeros environment variables");
+        return false;
+    }
+
+    AI_LOG_FN_EXIT();
+    return true;
+}
+
+// -----------------------------------------------------------------------------
+/**
  *  @brief Get OCI bundle config json as string
  *
  *  @return OCI config json
