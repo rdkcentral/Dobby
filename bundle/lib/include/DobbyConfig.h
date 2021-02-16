@@ -124,6 +124,8 @@ public:
                   unsigned long mountFlags,
                   const std::list<std::string>& mountOptions);
     bool addEnvironmentVar(const std::string& envVar);
+    bool changeProcessArgs(const std::string& command);
+    bool addWesterosMount(const std::string& socketPath);
     bool writeConfigJson(const std::string& filePath) const;
 
     const std::string configJson() const;
