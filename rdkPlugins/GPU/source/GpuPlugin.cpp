@@ -31,13 +31,10 @@ REGISTER_RDK_PLUGIN(GpuPlugin);
 
 GpuPlugin::GpuPlugin(std::shared_ptr<rt_dobby_schema> &containerConfig,
                      const std::shared_ptr<DobbyRdkPluginUtils> &utils,
-                     const std::string &rootfsPath,
-                     const std::string &hookStdin)
+                     const std::string &rootfsPath)
     : mName("Gpu"),
       mContainerConfig(containerConfig),
-      mUtils(utils),
-      mContainerId(mContainerConfig->hostname),
-      mHookStdin(hookStdin)
+      mUtils(utils)
 {
     AI_LOG_FN_ENTRY();
     AI_LOG_FN_EXIT();
@@ -75,7 +72,7 @@ bool GpuPlugin::createRuntime()
     }
 
     // get the container pid
-    pid_t containerPid = mUtils->getContainerPid(mHookStdin);
+    pid_t containerPid = mUtils->getContainerPid();
     if (!containerPid)
     {
         AI_LOG_ERROR_EXIT("couldn't find container pid");
@@ -117,7 +114,7 @@ bool GpuPlugin::postStop()
     }
 
     // remove the container's gpu cgroup directory
-    const std::string cgroupPath = cgroupDirPath + "/" + mContainerId.c_str();
+    const std::string cgroupPath = cgroupDirPath + "/" + mUtils->getContainerId();
     if (rmdir(cgroupPath.c_str()) < 0)
     {
         // we could be called at stop time even though the createRuntime hook
@@ -126,7 +123,7 @@ bool GpuPlugin::postStop()
         if (errno != ENOENT)
         {
             AI_LOG_SYS_ERROR(errno, "failed to delete gpu cgroup dir '%s'",
-                             mContainerId.c_str());
+                             mUtils->getContainerId().c_str());
         }
     }
 
@@ -271,14 +268,14 @@ bool GpuPlugin::setupContainerGpuLimit(const std::string cgroupDirPath,
     // setup the paths for the bind mount, i.e.
     //   source:   "/sys/fs/cgroup/gpu/<id>"
     //   target:   "/sys/fs/cgroup/gpu"
-    const std::string sourcePath(cgroupDirPath + "/" + mContainerId);
+    const std::string sourcePath(cgroupDirPath + "/" + mUtils->getContainerId());
     const std::string targetPath(cgroupDirPath);
 
     // create a new cgroup (we're ok with it already existing)
     if ((mkdir(sourcePath.c_str(), 0755) != 0) && (errno != EEXIST))
     {
         AI_LOG_SYS_ERROR_EXIT(errno, "failed to create gpu cgroup dir '%s'",
-                              mContainerId.c_str());
+                              mUtils->getContainerId().c_str());
         return false;
     }
 
@@ -288,7 +285,7 @@ bool GpuPlugin::setupContainerGpuLimit(const std::string cgroupDirPath,
                                O_CREAT | O_TRUNC, 0700))
     {
         AI_LOG_ERROR_EXIT("failed to put the container '%s' into the cgroup",
-                          mContainerId.c_str());
+                          mUtils->getContainerId().c_str());
         return false;
     }
 
@@ -298,7 +295,7 @@ bool GpuPlugin::setupContainerGpuLimit(const std::string cgroupDirPath,
                                O_CREAT | O_TRUNC, 0700))
     {
         AI_LOG_ERROR_EXIT("failed to set the gpu memory limit for container "
-                          "'%s'", mContainerId.c_str());
+                          "'%s'", mUtils->getContainerId().c_str());
         return false;
     }
 

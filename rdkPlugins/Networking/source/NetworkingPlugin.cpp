@@ -34,18 +34,15 @@ static std::string gDBusService(DOBBY_SERVICE ".plugin.networking");
 
 NetworkingPlugin::NetworkingPlugin(std::shared_ptr<rt_dobby_schema> &cfg,
                                    const std::shared_ptr<DobbyRdkPluginUtils> &utils,
-                                   const std::string &rootfsPath,
-                                   const std::string &hookStdin)
+                                   const std::string &rootfsPath)
     : mName("Networking"),
       mContainerConfig(cfg),
       mUtils(utils),
       mRootfsPath(rootfsPath),
       mIpcService(nullptr),
       mDobbyProxy(nullptr),
-      mContainerId(cfg->hostname),
       mNetworkType(NetworkType::None),
-      mNetfilter(std::make_shared<Netfilter>()),
-      mHookStdin(hookStdin)
+      mNetfilter(std::make_shared<Netfilter>())
 {
     AI_LOG_FN_ENTRY();
 
@@ -204,8 +201,7 @@ bool NetworkingPlugin::createRuntime()
 
     // setup veth, ip address and iptables rules for container
     if (!NetworkSetup::setupVeth(mUtils, mNetfilter, mDobbyProxy, mHelper,
-                                 mRootfsPath, mContainerId, mNetworkType,
-                                 mHookStdin))
+                                 mRootfsPath, mUtils->getContainerId(), mNetworkType))
     {
         AI_LOG_ERROR_EXIT("failed to setup virtual ethernet device");
         return false;
@@ -215,7 +211,7 @@ bool NetworkingPlugin::createRuntime()
     if (mNetworkType != NetworkType::None && mPluginData->dnsmasq)
     {
         if (!DnsmasqSetup::set(mUtils, mNetfilter, mHelper, mRootfsPath,
-                               mContainerId, mNetworkType))
+                               mUtils->getContainerId(), mNetworkType))
         {
             AI_LOG_ERROR_EXIT("failed to setup container for dnsmasq use");
             return false;
@@ -225,7 +221,7 @@ bool NetworkingPlugin::createRuntime()
     // add port forwards if any have been configured
     if (mPluginData->port_forwarding != nullptr)
     {
-        if (!PortForwarding::addPortForwards(mNetfilter, mHelper, mContainerId, mPluginData->port_forwarding))
+        if (!PortForwarding::addPortForwards(mNetfilter, mHelper, mUtils->getContainerId(), mPluginData->port_forwarding))
         {
             AI_LOG_ERROR_EXIT("failed to add port forwards");
             return false;
@@ -235,7 +231,7 @@ bool NetworkingPlugin::createRuntime()
     // add port forwards if any have been configured
     if (mPluginData->multicast_forwarding != nullptr)
     {
-        if (!MulticastForwarder::set(mNetfilter, mPluginData, mHelper->vethName(), mContainerId, extIfaces))
+        if (!MulticastForwarder::set(mNetfilter, mPluginData, mHelper->vethName(), mUtils->getContainerId(), extIfaces))
         {
             AI_LOG_ERROR_EXIT("failed to add multicast forwards");
             return false;
@@ -283,29 +279,22 @@ bool NetworkingPlugin::postHalt()
         return false;
     }
 
-    // get address from a file in the container
-    const std::string addressFilePath = mRootfsPath + ADDRESS_FILE_PATH;
-    const std::string addressFileStr = mUtils->readTextFile(addressFilePath);
-    if (addressFileStr.empty())
+    ContainerNetworkInfo networkInfo;
+    if (!mUtils->getContainerNetworkInfo(networkInfo))
     {
-        AI_LOG_WARN("failed to get IP address and veth name assigned to "
-                     "container from %s, unable to remove veth pair",
-                     addressFilePath.c_str());
+        AI_LOG_WARN("Failed to get container network info");
         success = false;
     }
     else
     {
-        // parse ip address and vethname from the read string
-        std::string addressStr = addressFileStr.substr(0, addressFileStr.find("/"));
-        const std::string vethName = addressFileStr.substr(addressStr.length() + 1, addressFileStr.length());
         in_addr_t ipAddress;
-        inet_pton(AF_INET, addressStr.c_str(), &ipAddress);
-        mHelper->storeContainerInterface(htonl(ipAddress), vethName);
+        inet_pton(AF_INET, networkInfo.ipAddress.c_str(), &ipAddress);
+        mHelper->storeContainerInterface(htonl(ipAddress), networkInfo.vethName);
 
         // delete the veth pair for the container
-        if (!NetworkSetup::removeVethPair(mNetfilter, mHelper, vethName, mNetworkType, mContainerId))
+        if (!NetworkSetup::removeVethPair(mNetfilter, mHelper, networkInfo.vethName, mNetworkType, mUtils->getContainerId()))
         {
-            AI_LOG_WARN("failed to remove veth pair %s", vethName.c_str());
+            AI_LOG_WARN("failed to remove veth pair %s", networkInfo.vethName.c_str());
             success = false;
         }
 
@@ -313,16 +302,17 @@ bool NetworkingPlugin::postHalt()
         if (!mDobbyProxy->freeIpAddress(ipAddress))
         {
             AI_LOG_WARN("failed to return address %s of container %s back to the"
-                        "address pool", mHelper->ipv4AddrStr().c_str(), mContainerId.c_str());
+                        "address pool", mHelper->ipv4AddrStr().c_str(), mUtils->getContainerId().c_str());
             success = false;
         }
     }
 
-    // remove the address file from the container
+    // remove the address file from the host
+    const std::string addressFilePath = ADDRESS_FILE_PREFIX + mUtils->getContainerId();
     if (unlink(addressFilePath.c_str()) == -1)
     {
         AI_LOG_WARN("failed to remove address file for container %s at %s",
-                    mContainerId.c_str(), addressFilePath.c_str());
+                    mUtils->getContainerId().c_str(), addressFilePath.c_str());
         success = false;
     }
 
@@ -349,7 +339,7 @@ bool NetworkingPlugin::postHalt()
     // if dnsmasq iptables rules were set up for container, "uninstall" them
     if (mNetworkType != NetworkType::None && mPluginData->dnsmasq)
     {
-        if (!DnsmasqSetup::removeRules(mNetfilter, mHelper, mContainerId))
+        if (!DnsmasqSetup::removeRules(mNetfilter, mHelper, mUtils->getContainerId()))
         {
             success = false;
         }
@@ -358,7 +348,7 @@ bool NetworkingPlugin::postHalt()
     // remove port forwards if any have been configured
     if (mPluginData->port_forwarding != nullptr)
     {
-        if (!PortForwarding::removePortForwards(mNetfilter, mHelper, mContainerId, mPluginData->port_forwarding))
+        if (!PortForwarding::removePortForwards(mNetfilter, mHelper, mUtils->getContainerId(), mPluginData->port_forwarding))
         {
             success = false;
         }
@@ -367,7 +357,7 @@ bool NetworkingPlugin::postHalt()
     // add port forwards if any have been configured
     if (mPluginData->multicast_forwarding != nullptr)
     {
-        if (!MulticastForwarder::removeRules(mNetfilter, mPluginData, mHelper->vethName(), mContainerId, extIfaces))
+        if (!MulticastForwarder::removeRules(mNetfilter, mPluginData, mHelper->vethName(), mUtils->getContainerId(), extIfaces))
         {
             AI_LOG_ERROR_EXIT("failed to remove multicast forwards");
             return false;

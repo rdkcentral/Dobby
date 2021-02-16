@@ -33,13 +33,11 @@ REGISTER_RDK_PLUGIN(RtSchedulingPlugin);
 
 RtSchedulingPlugin::RtSchedulingPlugin(std::shared_ptr<rt_dobby_schema> &containerConfig,
                                        const std::shared_ptr<DobbyRdkPluginUtils> &utils,
-                                       const std::string &rootfsPath,
-                                       const std::string &hookStdin)
+                                       const std::string &rootfsPath)
     : mName("RtScheduling"),
       mUtils(utils),
       mConfig(containerConfig),
-      mRootfsPath(rootfsPath),
-      mHookStdin(hookStdin)
+      mRootfsPath(rootfsPath)
 {
     AI_LOG_FN_ENTRY();
     AI_LOG_FN_EXIT();
@@ -144,7 +142,7 @@ bool RtSchedulingPlugin::createRuntime()
     }
 
     // get the container pid
-    pid_t containerPid = mUtils->getContainerPid(mHookStdin);
+    pid_t containerPid = mUtils->getContainerPid();
     if (!containerPid)
     {
         AI_LOG_ERROR_EXIT("couldn't find container pid");

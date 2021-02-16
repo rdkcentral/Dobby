@@ -648,9 +648,9 @@ int32_t DobbyManager::startContainerFromSpec(const ContainerId &id,
         const std::string rootfsPath = rootfs->path();
 
         std::shared_ptr<rt_dobby_schema> containerConfig(config->config());
-        std::shared_ptr<DobbyRdkPluginUtils> rdkPluginUtils = std::make_shared<DobbyRdkPluginUtils>();
+        std::shared_ptr<DobbyRdkPluginUtils> rdkPluginUtils = std::make_shared<DobbyRdkPluginUtils>(config->config());
         std::shared_ptr<DobbyRdkPluginManager> rdkPluginManager =
-            std::make_shared<DobbyRdkPluginManager>(containerConfig, rootfsPath, "", PLUGIN_PATH, rdkPluginUtils);
+            std::make_shared<DobbyRdkPluginManager>(containerConfig, rootfsPath, PLUGIN_PATH, rdkPluginUtils);
 
         std::vector<std::string> loadedPlugins = rdkPluginManager->listLoadedPlugins();
         AI_LOG_DEBUG("Loaded %zd RDK plugins\n", loadedPlugins.size());
@@ -813,9 +813,9 @@ int32_t DobbyManager::startContainerFromBundle(const ContainerId &id,
         const std::string rootfsPath = rootfs->path();
 
         std::shared_ptr<rt_dobby_schema> containerConfig(config->config());
-        std::shared_ptr<DobbyRdkPluginUtils> rdkPluginUtils = std::make_shared<DobbyRdkPluginUtils>();
+        std::shared_ptr<DobbyRdkPluginUtils> rdkPluginUtils = std::make_shared<DobbyRdkPluginUtils>(config->config());
         std::shared_ptr<DobbyRdkPluginManager> rdkPluginManager =
-            std::make_shared<DobbyRdkPluginManager>(containerConfig, rootfsPath, "", PLUGIN_PATH, rdkPluginUtils);
+            std::make_shared<DobbyRdkPluginManager>(containerConfig, rootfsPath, PLUGIN_PATH, rdkPluginUtils);
 
         std::vector<std::string> loadedPlugins = rdkPluginManager->listLoadedPlugins();
         AI_LOG_DEBUG("Loaded %zd RDK plugins\n", loadedPlugins.size());

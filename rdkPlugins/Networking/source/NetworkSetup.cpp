@@ -537,12 +537,14 @@ bool saveContainerAddress(const std::shared_ptr<DobbyRdkPluginUtils> &utils,
         return false;
     }
 
+    // Create a temp file we can mount into the container
+    std::string tmpFilename = ADDRESS_FILE_PREFIX + utils->getContainerId();
+
     // combine ip address and veth name strings
     const std::string fileContent(std::string() + helper->ipv4AddrStr() + "/" + vethName);
 
-    // write address and veth name to a file in the container rootfs
-    const std::string filePath(rootfsPath + ADDRESS_FILE_PATH);
-    if (!utils->writeTextFile(filePath, fileContent, O_CREAT | O_TRUNC, 0644))
+    // write address and veth name to a file
+    if (!utils->writeTextFile(tmpFilename, fileContent, O_CREAT | O_TRUNC, 0644))
     {
         AI_LOG_ERROR_EXIT("failed to write ip address file");
         return false;
@@ -703,8 +705,7 @@ bool NetworkSetup::setupVeth(const std::shared_ptr<DobbyRdkPluginUtils> &utils,
                              const std::shared_ptr<NetworkingHelper> &helper,
                              const std::string &rootfsPath,
                              const std::string &containerId,
-                             const NetworkType networkType,
-                             const std::string &hookStdin)
+                             const NetworkType networkType)
 {
     AI_LOG_FN_ENTRY();
 
@@ -717,7 +718,7 @@ bool NetworkSetup::setupVeth(const std::shared_ptr<DobbyRdkPluginUtils> &utils,
     }
 
     // step 2 - get container process pid
-    pid_t containerPid = utils->getContainerPid(hookStdin);
+    pid_t containerPid = utils->getContainerPid();
     if (!containerPid)
     {
         AI_LOG_ERROR_EXIT("couldn't find container pid");
@@ -1032,7 +1033,7 @@ void NetworkSetup::addSysfsMount(const std::shared_ptr<DobbyRdkPluginUtils> &uti
     }
 
     // add the mount
-    utils->addMount(cfg, source, destination, "sysfs",
+    utils->addMount(source, destination, "sysfs",
                     { "nosuid", "noexec", "nodev", "ro" }
     );
 }
@@ -1063,7 +1064,7 @@ void NetworkSetup::addResolvMount(const std::shared_ptr<DobbyRdkPluginUtils> &ut
     }
 
     // add the mount
-    utils->addMount(cfg, source, destination, "bind",
+    utils->addMount(source, destination, "bind",
                     { "ro", "rbind", "rprivate", "nosuid", "noexec", "nodev", }
     );
 }

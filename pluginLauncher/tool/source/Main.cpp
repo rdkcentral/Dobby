@@ -20,6 +20,8 @@
  * Dobby Plugin Launcher tool
  */
 #include <rt_dobby_schema.h>
+#include <rt_state_schema.h>
+
 #include "IDobbyRdkPlugin.h"
 #include "DobbyRdkPluginManager.h"
 #include "DobbyRdkPluginUtils.h"
@@ -150,26 +152,25 @@ IDobbyRdkPlugin::HintFlags determineHookPoint(const std::string &hookName)
 
 // -----------------------------------------------------------------------------
 /**
- *  @brief Get stdin from hookpoint.
- *
- *  Returns a json file containing information of the container such as id, pid,
- *  rootfs etc.
+ *  @brief Gets the state of the container as defined in the OCI spec here:
+ *  https://github.com/opencontainers/runtime-spec/blob/master/runtime.md#state
  *
  *  Only available with OCI container hooks.
  *
- *  @return content of stdin, empty on failure.
+ *  @return State object. nullptr if not available
  */
-std::string getOCIHookStdin()
+std::shared_ptr<const rt_state_schema> getContainerState()
 {
     std::mutex lock;
     std::lock_guard<std::mutex> locker(lock);
 
     char buf[1000];
+    bzero(buf, sizeof(buf));
 
     if (read(STDIN_FILENO, buf, sizeof(buf)) < 0)
     {
         AI_LOG_SYS_ERROR(errno, "failed to read stdin");
-        return std::string();
+        return nullptr;
     }
 
     // Occasionally, there's some extra special characters after the json.
@@ -185,7 +186,18 @@ std::string getOCIHookStdin()
         }
     }
 
-    return hookStdin;
+    parser_error err;
+    auto state = std::shared_ptr<const rt_state_schema>(
+                    rt_state_schema_parse_data(hookStdin.c_str(), nullptr, &err),
+                    free_rt_state_schema);
+
+    if (state.get() == nullptr || err)
+    {
+        AI_LOG_ERROR_EXIT("Failed to parse container state, err '%s'", err);
+        return nullptr;
+    }
+
+    return state;
 }
 
 /**
@@ -203,16 +215,19 @@ bool runPlugins(const IDobbyRdkPlugin::HintFlags &hookPoint, std::shared_ptr<rt_
     AI_LOG_DEBUG("Loading plugins from %s", PLUGIN_PATH);
 
     // Get the OCI hook stdin for the plugins to use
-    const std::string hookStdin = getOCIHookStdin();
-    if (hookStdin.empty())
+    std::shared_ptr<const rt_state_schema> state = getContainerState();
+    std::shared_ptr<DobbyRdkPluginUtils> rdkPluginUtils;
+    if (state)
     {
-        AI_LOG_ERROR_EXIT("empty hook stdin, nothing to pass to plugins");
-        return false;
+        rdkPluginUtils = std::make_shared<DobbyRdkPluginUtils>(containerConfig, state);
+    }
+    else
+    {
+        AI_LOG_WARN("Failed to get container state from stdin");
+        rdkPluginUtils = std::make_shared<DobbyRdkPluginUtils>(containerConfig);
     }
 
-    // Create an instance of pluginManager to load the plugins
-    std::shared_ptr<DobbyRdkPluginUtils> rdkPluginUtils = std::make_shared<DobbyRdkPluginUtils>();
-    DobbyRdkPluginManager pluginManager(containerConfig, rootfsPath, hookStdin, PLUGIN_PATH, rdkPluginUtils);
+    DobbyRdkPluginManager pluginManager(containerConfig, rootfsPath, PLUGIN_PATH, rdkPluginUtils);
 
     std::vector<std::string> loadedPlugins = pluginManager.listLoadedPlugins();
     std::vector<std::string> loadedLoggers = pluginManager.listLoadedLoggers();
@@ -299,7 +314,6 @@ int main(int argc, char *argv[])
     std::shared_ptr<rt_dobby_schema> containerConfig(
         rt_dobby_schema_parse_file(configPath.c_str(), NULL, &err),
         free_rt_dobby_schema);
-
 
     if (containerConfig == nullptr)
     {
