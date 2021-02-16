@@ -112,15 +112,16 @@ std::string DobbyRdkPluginUtils::getContainerId() const
 
 // -------------------------------------------------------------------------
 /**
- *  @brief Gets the container ID
+ *  @brief Gets network info about the container (veth/IP)
  *
- *  Since Dobby sets the container hostname to match the container ID, we can
- *  use the hostname. Ideally we'd use the state from stdin, but that's only
- *  available during OCI hooks.
+ * Designed to allow other plugins to create their own iptables rules once the
+ * networking plugin has run.
  *
- *  @return Container ID as string
+ * @params[out] networkInfo     struct containing veth/ip address
+ *
+ * @returns true if successfully got info, false for failure
  */
-bool DobbyRdkPluginUtils::getContainerNetworkInfo(ContainerNetworkInfo& networkInfo)
+bool DobbyRdkPluginUtils::getContainerNetworkInfo(ContainerNetworkInfo &networkInfo)
 {
     // Attempt to find the file
     const std::string containerId = getContainerId();
@@ -144,7 +145,8 @@ bool DobbyRdkPluginUtils::getContainerNetworkInfo(ContainerNetworkInfo& networkI
     if (addressFileStr.empty())
     {
         AI_LOG_ERROR_EXIT("failed to get IP address and veth name assigned to"
-                     "container from %s", fileName.c_str());
+                          "container from %s",
+                          fileName.c_str());
         return false;
     }
 
