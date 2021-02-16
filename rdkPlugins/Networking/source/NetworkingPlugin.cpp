@@ -140,14 +140,6 @@ bool NetworkingPlugin::postInstallation()
         NetworkSetup::addNetworkNamespace(mContainerConfig);
     }
 
-    // Create a blank /dobbyaddress file in rootfs that will have the actual
-    // info mounted on
-    if (!mUtils->writeTextFile(std::string(mRootfsPath + "/dobbyaddress"), "", O_CREAT | O_TRUNC, 0644))
-    {
-        AI_LOG_ERROR_EXIT("Failed to create /dobbyaddress file in rootfs");
-        return false;
-    }
-
     AI_LOG_FN_EXIT();
     return true;
 }
@@ -287,9 +279,8 @@ bool NetworkingPlugin::postHalt()
         return false;
     }
 
-    // get address from a file in the container
+    // get address from a file
     const std::string addressFilePath = ADDRESS_FILE_PREFIX + mUtils->getContainerId();
-
     const std::string addressFileStr = mUtils->readTextFile(addressFilePath);
     if (addressFileStr.empty())
     {

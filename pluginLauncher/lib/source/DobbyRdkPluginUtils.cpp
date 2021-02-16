@@ -110,6 +110,58 @@ std::string DobbyRdkPluginUtils::getContainerId() const
     return std::string(mConf->hostname);
 }
 
+// -------------------------------------------------------------------------
+/**
+ *  @brief Gets the container ID
+ *
+ *  Since Dobby sets the container hostname to match the container ID, we can
+ *  use the hostname. Ideally we'd use the state from stdin, but that's only
+ *  available during OCI hooks.
+ *
+ *  @return Container ID as string
+ */
+bool DobbyRdkPluginUtils::getContainerNetworkInfo(ContainerNetworkInfo& networkInfo)
+{
+    // Attempt to find the file
+    const std::string containerId = getContainerId();
+    if (containerId.empty())
+    {
+        AI_LOG_ERROR_EXIT("Could not get container network info - could not get ID");
+        return false;
+    }
+
+    const std::string fileName = ADDRESS_FILE_PREFIX + getContainerId();
+
+    struct stat buffer;
+    if (stat(fileName.c_str(), &buffer) != 0)
+    {
+        AI_LOG_WARN("Could not get container network info - file %s does not exist. Has the network plugin run yet?", fileName.c_str());
+        return false;
+    }
+
+    // Parse the file
+    const std::string addressFileStr = readTextFile(fileName);
+    if (addressFileStr.empty())
+    {
+        AI_LOG_ERROR_EXIT("failed to get IP address and veth name assigned to"
+                     "container from %s", fileName.c_str());
+        return false;
+    }
+
+    const std::string ip = addressFileStr.substr(0, addressFileStr.find("/"));
+
+    // check if string contains a veth name after the ip address
+    if (addressFileStr.length() <= ip.length() + 1)
+    {
+        AI_LOG_ERROR("failed to get veth name from %s", fileName.c_str());
+        return false;
+    }
+
+    networkInfo.ipAddress = ip;
+    networkInfo.vethName = addressFileStr.substr(ip.length() + 1, addressFileStr.length());
+    return true;
+}
+
 // -----------------------------------------------------------------------------
 /**
  *  @brief Thread helper function that implements the setns syscall

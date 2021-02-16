@@ -500,24 +500,6 @@ bool NetworkSetup::setupBridgeDevice(const std::shared_ptr<DobbyRdkPluginUtils> 
     return true;
 }
 
-bool bindMountDobbyAddress(const std::shared_ptr<DobbyRdkPluginUtils> &utils, const std::string &rootfsPath, const std::string &source)
-{
-    AI_LOG_FN_ENTRY();
-
-    std::string path = rootfsPath + "/dobbyaddress";
-
-    // try and do the bind mount
-    if (mount(source.c_str(), path.c_str(), nullptr, MS_BIND | MS_RDONLY, nullptr) < 0)
-    {
-        AI_LOG_SYS_ERROR_EXIT(errno, "failed to bind mount '%s' to %s",
-                         source.c_str(), path.c_str());
-        return false;
-    }
-
-    AI_LOG_FN_EXIT();
-    return true;
-}
-
 // -----------------------------------------------------------------------------
 /**
  *  @brief Saves an ip address to a container and register the veth name to it.
@@ -565,15 +547,6 @@ bool saveContainerAddress(const std::shared_ptr<DobbyRdkPluginUtils> &utils,
     if (!utils->writeTextFile(tmpFilename, fileContent, O_CREAT | O_TRUNC, 0644))
     {
         AI_LOG_ERROR_EXIT("failed to write ip address file");
-        return false;
-    }
-
-    // Bind mount our dobby address file into the container so other plugins
-    // can find out our IP/veth (needed if they need to manipulate iptables)
-    if (!utils->callInNamespace(utils->getContainerPid(), CLONE_NEWNS,
-                                 &bindMountDobbyAddress, utils, rootfsPath, tmpFilename))
-    {
-        AI_LOG_ERROR_EXIT("hook failed to enter mount namespace");
         return false;
     }
 

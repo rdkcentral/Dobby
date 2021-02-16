@@ -34,6 +34,14 @@
 #include <list>
 #include <mutex>
 
+#define ADDRESS_FILE_PREFIX       "/tmp/dobbyAddress_"
+
+typedef struct ContainerNetworkInfo
+{
+    std::string vethName;
+    std::string ipAddress;
+} ContainerNetworkInfo;
+
 // -----------------------------------------------------------------------------
 /**
  *  @class DobbyRdkPluginUtils
@@ -87,9 +95,10 @@ public:
     void nsThread(int newNsFd, int nsType, bool* success,
                   std::function<bool()>& func) const;
 
-    pid_t getContainerPid() const;
 
+    pid_t getContainerPid() const;
     std::string getContainerId() const;
+    bool getContainerNetworkInfo(ContainerNetworkInfo &networkInfo);
 
     bool writeTextFile(const std::string &path,
                        const std::string &str,
@@ -107,6 +116,7 @@ public:
 
     bool addEnvironmentVar(const std::string& envVar) const;
 
+private:
     mutable std::mutex mLock;
 
 private:
