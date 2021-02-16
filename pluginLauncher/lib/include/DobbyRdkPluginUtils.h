@@ -34,6 +34,8 @@
 #include <list>
 #include <mutex>
 
+// TODO:: This would be better stored in the dobby workspace dir rather than /tmp,
+// but we don't programatically know the workspace dir in this code.
 #define ADDRESS_FILE_PREFIX       "/tmp/dobbyAddress_"
 
 typedef struct ContainerNetworkInfo

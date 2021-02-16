@@ -23,10 +23,6 @@
 #include <netinet/in.h>
 #include <string>
 
-// TODO:: This would be better stored in the dobby workspace dir rather than /tmp,
-// but we don't programatically know the workspace dir in this code.
-#define ADDRESS_FILE_PREFIX       "/tmp/dobbyAddress_"
-
 #define BRIDGE_NAME             "dobby0"
 
 enum class NetworkType { None, Nat, Open };
