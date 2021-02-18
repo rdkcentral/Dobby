@@ -350,7 +350,7 @@ bool DobbyConfig::addWesterosMount(const std::string& socketPath)
         return false;
     }
 
-    if (!addEnvironmentVar("WAYLAND_DISPLAY=westeros") && !addEnvironmentVar("XDG_RUNTIME_DIR=/tmp"))
+    if (!addEnvironmentVar("WAYLAND_DISPLAY=westeros") || !addEnvironmentVar("XDG_RUNTIME_DIR=/tmp"))
     {
         AI_LOG_ERROR("Failed to set westeros environment variables");
         return false;
