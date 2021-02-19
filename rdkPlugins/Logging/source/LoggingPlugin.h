@@ -50,6 +50,9 @@ public:
     bool postInstallation() override;
 
 public:
+    std::vector<std::string> getDependencies() const override;
+
+public:
     // Logging Specific Methods
     void LoggingLoop(IDobbyRdkLoggingPlugin::ContainerInfo containerInfo,
                      const bool isBuffer,

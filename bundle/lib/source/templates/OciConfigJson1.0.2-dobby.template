@@ -381,6 +381,7 @@ static const char* ociJsonTemplate = R"JSON(
         {{#RDK_PLUGIN_SECTION}}
         "{{RDK_PLUGIN_NAME}}": {
             "required": {{RDK_PLUGIN_REQUIRED}},
+            "dependsOn": {{RDK_PLUGIN_DEPENDS_ON}},
             "data": {{RDK_PLUGIN_DATA}}
         }{{#RDK_PLUGIN_SECTION_separator}},{{/RDK_PLUGIN_SECTION_separator}}
         {{/RDK_PLUGIN_SECTION}}

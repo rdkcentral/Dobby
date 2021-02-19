@@ -51,6 +51,9 @@
                 "required": {
                     "type": "boolean"
                 },
+                "dependsOn": {
+                    "$ref": "defs.json#/definitions/ArrayOfStrings"
+                },
                 "data": {
                     "type": "object",
                     "properties": {
@@ -70,6 +73,9 @@
             "properties": {
                 "required": {
                     "type": "boolean"
+                },
+                "dependsOn": {
+                    "$ref": "defs.json#/definitions/ArrayOfStrings"
                 },
                 "data": {
                     "type": "object",
@@ -96,6 +102,9 @@
             "properties": {
                 "required": {
                     "type": "boolean"
+                },
+                "dependsOn": {
+                    "$ref": "defs.json#/definitions/ArrayOfStrings"
                 },
                 "data": {
                     "type": "object",
@@ -145,6 +154,9 @@
             "properties": {
                 "required": {
                     "type": "boolean"
+                },
+                "dependsOn": {
+                    "$ref": "defs.json#/definitions/ArrayOfStrings"
                 },
                 "data": {
                     "type": "object",
@@ -232,6 +244,9 @@
                 "required": {
                     "type": "boolean"
                 },
+                "dependsOn": {
+                    "$ref": "defs.json#/definitions/ArrayOfStrings"
+                },
                 "data": {
                     "type": "object",
                     "properties": {
@@ -283,6 +298,9 @@
                 "required": {
                     "type": "boolean"
                 },
+                "dependsOn": {
+                    "$ref": "defs.json#/definitions/ArrayOfStrings"
+                },
                 "data": {
                     "type": "object",
                     "properties": {
@@ -299,6 +317,9 @@
             "properties": {
                 "required": {
                     "type": "boolean"
+                },
+                "dependsOn": {
+                    "$ref": "defs.json#/definitions/ArrayOfStrings"
                 },
                 "data": {
                     "type": "object",
@@ -321,6 +342,9 @@
             "properties": {
                 "required": {
                     "type": "boolean"
+                },
+                "dependsOn": {
+                    "$ref": "defs.json#/definitions/ArrayOfStrings"
                 },
                 "data": {
                     "type": "object",
@@ -362,6 +386,9 @@
             "properties": {
                 "required": {
                     "type": "boolean"
+                },
+                "dependsOn": {
+                    "$ref": "defs.json#/definitions/ArrayOfStrings"
                 },
                 "data": {
                     "type": "object",
