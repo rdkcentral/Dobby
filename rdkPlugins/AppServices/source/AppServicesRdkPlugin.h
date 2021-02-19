@@ -47,8 +47,7 @@ class AppServicesRdkPlugin : public RdkPluginBase
 public:
     AppServicesRdkPlugin(std::shared_ptr<rt_dobby_schema>& containerConfig,
                          const std::shared_ptr<DobbyRdkPluginUtils> &utils,
-                         const std::string &rootfsPath,
-                         const std::string &hookStdin);
+                         const std::string &rootfsPath);
 
 public:
     inline std::string name() const override

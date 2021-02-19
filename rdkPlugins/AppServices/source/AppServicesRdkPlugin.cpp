@@ -27,8 +27,7 @@ REGISTER_RDK_PLUGIN(AppServicesRdkPlugin);
 
 AppServicesRdkPlugin::AppServicesRdkPlugin(std::shared_ptr<rt_dobby_schema> &containerConfig,
                                            const std::shared_ptr<DobbyRdkPluginUtils> &utils,
-                                           const std::string &rootfsPath,
-                                           const std::string &hookStdin)
+                                           const std::string &rootfsPath)
     : mName("AppServicesRdk"),
       mContainerConfig(containerConfig),
       mUtils(utils),
@@ -156,21 +155,21 @@ bool AppServicesRdkPlugin::createRuntime()
     Netfilter::RuleSet ruleSet = constructRules();
     if (ruleSet.empty())
     {
-        AI_LOG_ERROR_EXIT("failed to construct AS iptables rules for '%s''", mContainerConfig->hostname);
+        AI_LOG_ERROR_EXIT("failed to construct AS iptables rules for '%s''", mUtils->getContainerId().c_str());
         return false;
     }
 
     // add all rules to cache
     if (!mNetfilter->addRules(ruleSet, AF_INET, Netfilter::Operation::Insert))
     {
-        AI_LOG_ERROR_EXIT("failed to setup AS iptables rules for '%s''", mContainerConfig->hostname);
+        AI_LOG_ERROR_EXIT("failed to setup AS iptables rules for '%s''", mUtils->getContainerId().c_str());
         return false;
     }
 
     // actually apply the rules
     if (!mNetfilter->applyRules(AF_INET))
     {
-        AI_LOG_ERROR_EXIT("Failed to apply AS iptables rules for '%s'", mContainerConfig->hostname);
+        AI_LOG_ERROR_EXIT("Failed to apply AS iptables rules for '%s'", mUtils->getContainerId().c_str());
         return false;
     }
 
@@ -198,21 +197,21 @@ bool AppServicesRdkPlugin::postHalt()
     Netfilter::RuleSet ruleSet = constructRules();
     if (ruleSet.empty())
     {
-        AI_LOG_ERROR_EXIT("failed to construct AS iptables rules for deletion for '%s''", mContainerConfig->hostname);
+        AI_LOG_ERROR_EXIT("failed to construct AS iptables rules for deletion for '%s''", mUtils->getContainerId().c_str());
         return false;
     }
 
     // add all rules to cache
     if (!mNetfilter->addRules(ruleSet, AF_INET, Netfilter::Operation::Delete))
     {
-        AI_LOG_ERROR_EXIT("failed to setup AS iptables rules for deletion for '%s'", mContainerConfig->hostname);
+        AI_LOG_ERROR_EXIT("failed to setup AS iptables rules for deletion for '%s'", mUtils->getContainerId().c_str());
         return false;
     }
 
     // actually delete the rules
     if (!mNetfilter->applyRules(AF_INET))
     {
-        AI_LOG_ERROR_EXIT("Failed to delete AS iptables rules for '%s'", mContainerConfig->hostname);
+        AI_LOG_ERROR_EXIT("Failed to delete AS iptables rules for '%s'", mUtils->getContainerId().c_str());
         return false;
     }
 
@@ -312,30 +311,15 @@ Netfilter::RuleSet AppServicesRdkPlugin::constructRules() const
 
     Netfilter::RuleSet ruleSet;
 
-    // get the ip address and veth name assigned to the container. These are
-    // available in the "/dobbyaddress" file in the container rootfs, supplied
-    // by the networking plugin
-    const std::string addrFilePath = mRootfsPath + "/dobbyaddress";
-    const std::string addressFileStr = mUtils->readTextFile(addrFilePath);
-    if (addressFileStr.empty())
+    // get the ip address and veth name assigned to the container
+    ContainerNetworkInfo networkInfo;
+    if (!mUtils->getContainerNetworkInfo(networkInfo))
     {
-        AI_LOG_ERROR("failed to get IP address and veth name assigned to "
-                     "container from %s", addrFilePath.c_str());
+        AI_LOG_ERROR("failed to get IP address and veth name assigned to container");
         return ruleSet;
     }
-
-    // parse ip address from the read string
-    const std::string ipAddress = addressFileStr.substr(0, addressFileStr.find("/"));
-
-    // check if string contains a veth name after the ip address
-    if (addressFileStr.length() <= ipAddress.length() + 1)
-    {
-        AI_LOG_ERROR("failed to get veth name from %s", addrFilePath.c_str());
-        return ruleSet;
-    }
-
-    // parse veth name from the read string
-    const std::string vethName = addressFileStr.substr(ipAddress.length() + 1, addressFileStr.length());
+    const std::string &ipAddress = networkInfo.ipAddress;
+    const std::string &vethName = networkInfo.vethName;
 
     // add the AS iptables rules
     std::list<std::string> acceptRules;
@@ -390,7 +374,7 @@ std::string AppServicesRdkPlugin::constructDNATRule(const std::string &container
     AI_LOG_FN_ENTRY();
 
     char buf[256];
-    const std::string containerId(mContainerConfig->hostname);
+    const std::string containerId(mUtils->getContainerId().c_str());
 
 #if defined(DEV_VM)
     const std::string comment("asplugin:" + containerId);
@@ -430,7 +414,7 @@ std::string AppServicesRdkPlugin::constructCONNLIMITRule(const std::string &cont
     AI_LOG_FN_ENTRY();
 
     char buf[256];
-    const std::string containerId(mContainerConfig->hostname);
+    const std::string containerId(mUtils->getContainerId().c_str());
 
 #if defined(DEV_VM)
     const std::string comment("asplugin:" + containerId);
@@ -471,7 +455,7 @@ std::string AppServicesRdkPlugin::constructACCEPTRule(const std::string &contain
     AI_LOG_FN_ENTRY();
 
     char buf[256];
-    const std::string containerId(mContainerConfig->hostname);
+    const std::string containerId(mUtils->getContainerId().c_str());
 
 #if defined(DEV_VM)
     const std::string comment("asplugin:" + containerId);
