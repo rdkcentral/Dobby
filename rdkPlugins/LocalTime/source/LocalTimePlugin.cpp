@@ -29,8 +29,7 @@ REGISTER_RDK_PLUGIN(LocalTimePlugin);
 
 LocalTimePlugin::LocalTimePlugin(std::shared_ptr<rt_dobby_schema> &containerConfig,
                                  const std::shared_ptr<DobbyRdkPluginUtils> &utils,
-                                 const std::string &rootfsPath,
-                                 const std::string &hookStdin)
+                                 const std::string &rootfsPath)
     : mName("LocalTime"),
       mRootfsPath(rootfsPath)
 {

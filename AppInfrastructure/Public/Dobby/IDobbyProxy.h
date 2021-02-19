@@ -123,14 +123,16 @@ public:
                                            const std::string& jsonSpec,
                                            const std::list<int>& files,
                                            const std::string& command = "",
-                                           const std::string& displaySocket = "") const = 0;
+                                           const std::string& displaySocket = "",
+                                           const std::vector<std::string>& envVars = std::vector<std::string>()) const = 0;
 
 
     virtual int32_t startContainerFromBundle(const std::string& id,
                                              const std::string& bundlePath,
                                              const std::list<int>& files,
                                              const std::string& command = "",
-                                             const std::string& displaySocket = "") const = 0;
+                                             const std::string& displaySocket = "",
+                                             const std::vector<std::string>& envVars = std::vector<std::string>()) const = 0;
 
     virtual bool stopContainer(int32_t descriptor,
                                bool withPrejudice) const = 0;

@@ -23,9 +23,6 @@
 #include <netinet/in.h>
 #include <string>
 
-// path to file in container rootfs where the container's ip address is stored
-#define ADDRESS_FILE_PATH       "/dobbyaddress"
-
 #define BRIDGE_NAME             "dobby0"
 
 enum class NetworkType { None, Nat, Open };

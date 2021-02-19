@@ -1667,8 +1667,13 @@ bool Netlink::delIfaceFromBridge(const std::string& bridgeName,
                 ret = rtnl_link_release(mSocket, iface);
                 if (ret != 0)
                 {
-                    AI_LOG_NL_ERROR(ret, "failed to release '%s' from bridge '%s'",
+                    // If device not found, ignore - the veth must have been
+                    // automatically cleaned up in the time it took to get here...
+                    if (-ret != NLE_NODEV)
+                    {
+                        AI_LOG_NL_ERROR(ret, "failed to release '%s' from bridge '%s'",
                                  ifaceName.c_str(), bridgeName.c_str());
+                    }
                 }
                 else
                 {

@@ -36,13 +36,23 @@
 #include <iostream>
 #include <map>
 
-DobbyRdkPluginUtils::DobbyRdkPluginUtils()
+DobbyRdkPluginUtils::DobbyRdkPluginUtils(const std::shared_ptr<rt_dobby_schema> &cfg)
+    : mConf(cfg)
 {
     AI_LOG_FN_ENTRY();
 
     AI_LOG_FN_EXIT();
 }
 
+DobbyRdkPluginUtils::DobbyRdkPluginUtils(const std::shared_ptr<rt_dobby_schema> &cfg,
+                                         const std::shared_ptr<const rt_state_schema> &state)
+    : mConf(cfg)
+    , mState(state)
+{
+    AI_LOG_FN_ENTRY();
+
+    AI_LOG_FN_EXIT();
+}
 
 DobbyRdkPluginUtils::~DobbyRdkPluginUtils()
 {
@@ -58,43 +68,101 @@ DobbyRdkPluginUtils::~DobbyRdkPluginUtils()
  *  The stdin needs to be read from within the context of the hook. This
  *  function only parses the pid from a string.
  *
- *  NOTE: Only works with OCI hooks.
- *
- *  @param[in]  stdin            stdin contents from the context of the hook.
+ *  \warning Only returns a valid PID once the container is running. Only works
+ *  for OCI hooks.
  *
  *  @return container pid, 0 if none found.
  */
-pid_t DobbyRdkPluginUtils::getContainerPid(const std::string &stdin) const
+pid_t DobbyRdkPluginUtils::getContainerPid() const
 {
-    if (stdin.empty())
+    // Must be running a non-OCI hook point
+    if (!mState)
     {
-        AI_LOG_ERROR_EXIT("container stdin empty - couldn't get pid");
+        AI_LOG_ERROR_EXIT("Unknown container state - couldn't get pid. Are you running in a non-OCI hook?");
         return 0;
     }
 
-    // get pid from hook's stdin json '"pid":xxxxx'
-    std::size_t pidPosition = stdin.find("\"pid\":");
-    if (pidPosition == std::string::npos)
+    if (!mState->pid_present)
     {
-        AI_LOG_ERROR_EXIT("could not find \"pid\" in container stdin");
+        AI_LOG_ERROR_EXIT("PID not available");
         return 0;
     }
+    return static_cast<pid_t>(mState->pid);
+}
 
-    // traverse 6 characters to get the position of the actual pid
-    pidPosition += 6;
-
-    std::string tmp = stdin.substr(pidPosition, 5);
-    std::string pidStr = tmp.substr(0, tmp.find(","));
-
-    // convert to pid_t
-    pid_t pid = static_cast<pid_t>(strtol(pidStr.c_str(), NULL, 0));
-    if (!pid)
+// -------------------------------------------------------------------------
+/**
+ *  @brief Gets the container ID
+ *
+ *  Since Dobby sets the container hostname to match the container ID, we can
+ *  use the hostname. Ideally we'd use the state from stdin, but that's only
+ *  available during OCI hooks.
+ *
+ *  @return Container ID as string
+ */
+std::string DobbyRdkPluginUtils::getContainerId() const
+{
+    if (!mConf)
     {
-        AI_LOG_ERROR_EXIT("failed to to convert '%s' to a pid", pidStr.c_str());
-        return 0;
+        AI_LOG_ERROR_EXIT("Failed to load config");
+        return "";
     }
 
-    return pid;
+    return std::string(mConf->hostname);
+}
+
+// -------------------------------------------------------------------------
+/**
+ *  @brief Gets network info about the container (veth/IP)
+ *
+ * Designed to allow other plugins to create their own iptables rules once the
+ * networking plugin has run.
+ *
+ * @params[out] networkInfo     struct containing veth/ip address
+ *
+ * @returns true if successfully got info, false for failure
+ */
+bool DobbyRdkPluginUtils::getContainerNetworkInfo(ContainerNetworkInfo &networkInfo)
+{
+    // Attempt to find the file
+    const std::string containerId = getContainerId();
+    if (containerId.empty())
+    {
+        AI_LOG_ERROR_EXIT("Could not get container network info - could not get ID");
+        return false;
+    }
+
+    const std::string fileName = ADDRESS_FILE_PREFIX + getContainerId();
+
+    struct stat buffer;
+    if (stat(fileName.c_str(), &buffer) != 0)
+    {
+        AI_LOG_WARN("Could not get container network info - file %s does not exist. Has the network plugin run yet?", fileName.c_str());
+        return false;
+    }
+
+    // Parse the file
+    const std::string addressFileStr = readTextFile(fileName);
+    if (addressFileStr.empty())
+    {
+        AI_LOG_ERROR_EXIT("failed to get IP address and veth name assigned to"
+                          "container from %s",
+                          fileName.c_str());
+        return false;
+    }
+
+    const std::string ip = addressFileStr.substr(0, addressFileStr.find("/"));
+
+    // check if string contains a veth name after the ip address
+    if (addressFileStr.length() <= ip.length() + 1)
+    {
+        AI_LOG_ERROR("failed to get veth name from %s", fileName.c_str());
+        return false;
+    }
+
+    networkInfo.ipAddress = ip;
+    networkInfo.vethName = addressFileStr.substr(ip.length() + 1, addressFileStr.length());
+    return true;
 }
 
 // -----------------------------------------------------------------------------
@@ -332,7 +400,6 @@ std::string DobbyRdkPluginUtils::readTextFile(const std::string &path) const
  *  This can only obviously be called before the config file is persisted to
  *  disk.
  *
- *  @param[in]  cfg             Pointer to OCI config struct
  *  @param[in]  source          The mount source
  *  @param[in]  destination     The mount destination
  *  @param[in]  type            The file system type of the mount
@@ -340,8 +407,7 @@ std::string DobbyRdkPluginUtils::readTextFile(const std::string &path) const
  *
  *  @return true if the mount point was added, otherwise false.
  */
-bool DobbyRdkPluginUtils::addMount(const std::shared_ptr<rt_dobby_schema> &cfg,
-                                   const std::string &source,
+bool DobbyRdkPluginUtils::addMount(const std::string &source,
                                    const std::string &destination,
                                    const std::string &type,
                                    const std::list<std::string> &mountOptions) const
@@ -368,9 +434,9 @@ bool DobbyRdkPluginUtils::addMount(const std::shared_ptr<rt_dobby_schema> &cfg,
     newMount->source = strdup(source.c_str());
 
     // allocate memory for new mount and place it in the config struct
-    cfg->mounts_len++;
-    cfg->mounts = (rt_defs_mount**)realloc(cfg->mounts, sizeof(rt_defs_mount*) * cfg->mounts_len);
-    cfg->mounts[cfg->mounts_len-1] = newMount;
+    mConf->mounts_len++;
+    mConf->mounts = (rt_defs_mount**)realloc(mConf->mounts, sizeof(rt_defs_mount *) * mConf->mounts_len);
+    mConf->mounts[mConf->mounts_len-1] = newMount;
 
     AI_LOG_FN_EXIT();
     return true;
@@ -447,28 +513,27 @@ bool DobbyRdkPluginUtils::mkdirRecursive(const std::string& path, mode_t mode)
  *
  *  @return true if the env var was added, otherwise false.
  */
-bool DobbyRdkPluginUtils::addEnvironmentVar(const std::shared_ptr<rt_dobby_schema> &cfg,
-                                            const std::string& envVar) const
+bool DobbyRdkPluginUtils::addEnvironmentVar(const std::string& envVar) const
 {
     AI_LOG_FN_ENTRY();
 
     std::lock_guard<std::mutex> locker(mLock);
 
     // check if env var already exists in config
-    for (int i = 0; i < cfg->process->env_len; ++i)
+    for (int i = 0; i < mConf->process->env_len; ++i)
     {
-        if (0 == strcmp(cfg->process->env[i], envVar.c_str()))
+        if (0 == strcmp(mConf->process->env[i], envVar.c_str()))
         {
             return true;
         }
     }
 
     // Increase the number of environmental variables
-    cfg->process->env_len += 1;
+    mConf->process->env_len += 1;
 
     // Update env var in OCI bundle config
-    cfg->process->env = (char**)realloc(cfg->process->env, sizeof(char*) * cfg->process->env_len);
-    cfg->process->env[cfg->process->env_len-1] = strdup(envVar.c_str());
+    mConf->process->env = (char**)realloc(mConf->process->env, sizeof(char*) * mConf->process->env_len);
+    mConf->process->env[mConf->process->env_len-1] = strdup(envVar.c_str());
 
     AI_LOG_FN_EXIT();
     return true;

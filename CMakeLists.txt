@@ -262,9 +262,9 @@ if( BUILD_TYPE STREQUAL "DEBUG")
 else()
     set( ENABLE_DOBBYTOOL_DEFAULT OFF )
 endif()
+option( ENABLE_DOBBYTOOL "Include DobbyTool" ${ENABLE_DOBBYTOOL_DEFAULT} )
 
-option(ENABLE_DOBBYTOOL "Include DobbyTool" ENABLE_DOBBYTOOL_DEFAULT)
-if(ENABLE_DOBBYTOOL)
+if( ENABLE_DOBBYTOOL )
     add_subdirectory( client/tool )
 endif()
 

@@ -208,6 +208,7 @@ static void startCommand(const std::shared_ptr<IDobbyProxy> &dobbyProxy,
     int i = 0;
     std::list<int> files;
     std::string displaySocketPath;
+    std::vector<std::string> envVars;
 
     // Command will be in the form "start --<option1> --<optionN> <id> <specfile> <commands>"
     while (i < args.size() && args[i].c_str()[0] == '-')
@@ -225,6 +226,15 @@ static void startCommand(const std::shared_ptr<IDobbyProxy> &dobbyProxy,
                 return;
             }
             displaySocketPath = westerosPath;
+        }
+        else if (args[i] == "--envvar")
+        {
+            // TODO:: This won't work if the arg is in the form --envvar=foo:bar
+            // The next arg should be the envvar
+            i++;
+
+            std::string var = args[i];
+            envVars.emplace_back(var);
         }
         else
         {
@@ -314,7 +324,7 @@ static void startCommand(const std::shared_ptr<IDobbyProxy> &dobbyProxy,
             return;
         }
 
-        cd = dobbyProxy->startContainerFromBundle(id, path, files, command, displaySocketPath);
+        cd = dobbyProxy->startContainerFromBundle(id, path, files, command, displaySocketPath, envVars);
     }
     else
     {
@@ -870,7 +880,8 @@ static void initCommands(const std::shared_ptr<IReadLine>& readLine,
                          "Starts a container using the given path. Can optionally specify the command "
                          "to run inside the container. Any arguments after command are treated as "
                          "arguments to the command.\n",
-                         "  --westeros-socket    Mount the specified westeros socket into the container\n");
+                         "  --westeros-socket    Mount the specified westeros socket into the container\n"
+                         "  --envvar             Add an environment variable for this container\n");
 
     readLine->addCommand("stop",
                          std::bind(stopCommand, dobbyProxy, std::placeholders::_1, std::placeholders::_2),

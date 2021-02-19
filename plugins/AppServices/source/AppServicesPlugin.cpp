@@ -403,10 +403,9 @@ bool AppServicesPlugin::preStart(const ContainerId& id,
 
     (void) pid;
 
-    // get the ip address and veth name assigned to the container. These are
-    // available in the "/dobbyaddress" file in the container rootfs, supplied
-    // by the networking plugin
-    const std::string addrFilePath = rootfsPath + "/dobbyaddress";
+    // TODO:: When this is replaced with RDK plugin, use utils->getContainerNetworkInfo()
+    // method instead
+    const std::string addrFilePath = "/tmp/dobbyAddress_" + id.str();
     const std::string addressFileStr = mUtilities->readTextFile(addrFilePath, 100);
     if (addressFileStr.empty())
     {

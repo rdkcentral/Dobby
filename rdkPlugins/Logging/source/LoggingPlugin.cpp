@@ -41,8 +41,7 @@ REGISTER_RDK_LOGGER(LoggingPlugin);
  */
 LoggingPlugin::LoggingPlugin(std::shared_ptr<rt_dobby_schema> &containerConfig,
                              const std::shared_ptr<DobbyRdkPluginUtils> &utils,
-                             const std::string &rootfsPath,
-                             const std::string &hookStdin)
+                             const std::string &rootfsPath)
     : mName("Logging"),
       mContainerConfig(containerConfig),
       mUtils(utils)
@@ -190,7 +189,7 @@ LoggingPlugin::LoggingSink LoggingPlugin::GetContainerSink()
 void LoggingPlugin::JournaldSink(const ContainerInfo &containerInfo, bool exitEof)
 {
     AI_LOG_INFO("starting logger for container '%s' to journald (PID: %d)",
-                mContainerConfig->hostname, containerInfo.containerPid);
+                mUtils->getContainerId().c_str(), containerInfo.containerPid);
 
     char buf[8192];
     memset(buf, 0, sizeof(buf));
@@ -241,7 +240,7 @@ void LoggingPlugin::JournaldSink(const ContainerInfo &containerInfo, bool exitEo
         if (bytesRead < 0)
         {
             AI_LOG_INFO("Container %s terminated, terminating logging thread",
-                        mContainerConfig->hostname);
+                        mUtils->getContainerId().c_str());
             break;
         }
         if (bytesRead == 0 && exitEof)
@@ -273,7 +272,7 @@ void LoggingPlugin::JournaldSink(const ContainerInfo &containerInfo, bool exitEo
             // visible
             sd_journal_send("MESSAGE=%s", msg.c_str(),
                             "PRIORITY=%i", LOG_INFO,
-                            "SYSLOG_IDENTIFIER=%s", mContainerConfig->hostname,
+                            "SYSLOG_IDENTIFIER=%s", mUtils->getContainerId().c_str(),
                             "OBJECT_PID=%ld", containerInfo.containerPid,
                             "SYSLOG_PID=%ld", containerInfo.containerPid,
                             NULL);
@@ -308,7 +307,7 @@ void LoggingPlugin::DevNullSink(const ContainerInfo &containerInfo, bool exitEof
     }
 
     AI_LOG_INFO("starting logger for container '%s' to /dev/null",
-                mContainerConfig->hostname);
+                mUtils->getContainerId().c_str());
 
     char buf[8192];
     memset(buf, 0, sizeof(buf));
@@ -324,7 +323,7 @@ void LoggingPlugin::DevNullSink(const ContainerInfo &containerInfo, bool exitEof
         if (ret < 0)
         {
             AI_LOG_INFO("Container %s terminated, terminating logging thread",
-                        mContainerConfig->hostname);
+                        mUtils->getContainerId().c_str());
             break;
         }
         if (ret == 0 && exitEof)
@@ -408,7 +407,7 @@ void LoggingPlugin::FileSink(const ContainerInfo &containerInfo, bool exitEof, b
     }
 
     AI_LOG_DEBUG("starting logger for container '%s' to write to '%s' (limit %zd bytes)",
-                mContainerConfig->hostname, pathName.c_str(), limit);
+                mUtils->getContainerId().c_str(), pathName.c_str(), limit);
 
     // TODO:: Replace with splice/sendfile to avoid copying data in and out of
     // userspace. This should perform OK for our needs for now though
@@ -427,7 +426,7 @@ void LoggingPlugin::FileSink(const ContainerInfo &containerInfo, bool exitEof, b
         if (ret < 0)
         {
             AI_LOG_INFO("Container %s terminated, terminating logging thread",
-                        mContainerConfig->hostname);
+                        mUtils->getContainerId().c_str());
             break;
         }
         if (ret == 0 && exitEof)
