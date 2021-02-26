@@ -704,7 +704,23 @@ static void bundleCommand(const std::shared_ptr<IDobbyProxy>& dobbyProxy,
         return;
     }
 
-    std::ifstream file(args[1], std::ifstream::binary);
+    std::string path = args[1];
+    struct stat statbuf;
+    if (stat(path.c_str(), &statbuf) < 0)
+    {
+        readLine->printLnError("failed to stat '%s' (%d - %s)",
+                               path.c_str(), errno, strerror(errno));
+        return;
+    }
+
+    // Path must point to a Dobby spec file (.json), not a bundle dir
+    if (S_ISDIR(statbuf.st_mode))
+    {
+        readLine->printLnError("Path is not a valid Dobby Spec JSON file");
+        return;
+    }
+
+    std::ifstream file(path, std::ifstream::binary);
     if (!file)
     {
         readLine->printLnError("failed to open '%s'", args[1].c_str());
