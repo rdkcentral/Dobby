@@ -42,18 +42,22 @@
 bool DobbyRdkPluginDependencySolver::addPlugin(const std::string &name)
 {
     AI_LOG_FN_ENTRY();
+    // Plugins names are case-insensitive - use lowercase.
+    std::string lowercaseName;
+    lowercaseName.resize(name.length());
+    std::transform(name.begin(), name.end(), lowercaseName.begin(), ::tolower);
 
-    if (mDescriptorMap.count(name) != 0)
+    if (mDescriptorMap.count(lowercaseName) != 0)
     {
-        AI_LOG_WARN("Plugin %s already added to the solver", name.c_str());
+        AI_LOG_WARN("Plugin %s already added to the solver", lowercaseName.c_str());
         return false;
     }
 
     // Each plugin is represented by a vertex of a directed graph.
     const VertexDescriptor descriptor = boost::add_vertex(mDependencyGraph);
     // Store the name of the plugin as a property of the vertex.
-    boost::put(boost::vertex_name_t{}, mDependencyGraph, descriptor, name);
-    mDescriptorMap.insert(StringVertexDescriptorMap::value_type{ name, descriptor });
+    boost::put(boost::vertex_name_t{}, mDependencyGraph, descriptor, lowercaseName);
+    mDescriptorMap.insert(StringVertexDescriptorMap::value_type{ lowercaseName, descriptor });
 
     AI_LOG_FN_EXIT();
     return true;
@@ -76,20 +80,26 @@ bool DobbyRdkPluginDependencySolver::addPlugin(const std::string &name)
 bool DobbyRdkPluginDependencySolver::addDependency(const std::string &pluginName, const std::string &dependencyName)
 {
     AI_LOG_FN_ENTRY();
+    // Plugins names are case-insensitive - use lowercase.
+    std::string lowercaseName, lowercasedependencyName;
+    lowercaseName.resize(pluginName.length());
+    std::transform(pluginName.begin(), pluginName.end(), lowercaseName.begin(), ::tolower);
+    lowercasedependencyName.resize(dependencyName.length());
+    std::transform(dependencyName.begin(), dependencyName.end(), lowercasedependencyName.begin(), ::tolower);
 
-    if (mDescriptorMap.count(pluginName) == 0)
+    if (mDescriptorMap.count(lowercaseName) == 0)
     {
-        AI_LOG_ERROR("Plugin %s unknown", pluginName.c_str());
+        AI_LOG_ERROR("Plugin %s unknown", lowercaseName.c_str());
         return false;
     }
-    if (mDescriptorMap.count(dependencyName) == 0)
+    if (mDescriptorMap.count(lowercasedependencyName) == 0)
     {
-        AI_LOG_ERROR("Plugin %s unknown", dependencyName.c_str());
+        AI_LOG_ERROR("Plugin %s unknown", lowercasedependencyName.c_str());
         return false;
     }
 
     // Our dependency relation is represented by a directed edge (pluginName->dependencyName) of the graph.
-    boost::add_edge(mDescriptorMap.at(pluginName), mDescriptorMap.at(dependencyName), mDependencyGraph);
+    boost::add_edge(mDescriptorMap.at(lowercaseName), mDescriptorMap.at(lowercasedependencyName), mDependencyGraph);
 
     AI_LOG_FN_EXIT();
     return true;

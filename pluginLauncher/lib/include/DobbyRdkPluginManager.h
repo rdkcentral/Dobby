@@ -61,7 +61,7 @@ public:
     std::shared_ptr<IDobbyRdkLoggingPlugin> getContainerLogger() const;
 
 private:
-    void loadPlugins();
+    bool loadPlugins();
     bool preprocessPlugins();
     bool executeHook(const std::string &pluginName,
                      const IDobbyRdkPlugin::HintFlags hook) const;
@@ -74,6 +74,7 @@ private:
     inline std::shared_ptr<IDobbyRdkLoggingPlugin> getLogger(const std::string &name) const;
 
 private:
+    bool mValid;
     std::map<std::string, std::pair<void *, std::shared_ptr<IDobbyRdkLoggingPlugin>>> mLoggers;
     std::map<std::string, std::pair<void *, std::shared_ptr<IDobbyRdkPlugin>>> mPlugins;
     std::set<std::string> mRequiredPlugins;

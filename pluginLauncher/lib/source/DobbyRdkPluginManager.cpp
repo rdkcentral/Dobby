@@ -57,8 +57,7 @@ DobbyRdkPluginManager::DobbyRdkPluginManager(std::shared_ptr<rt_dobby_schema> co
 {
     AI_LOG_FN_ENTRY();
 
-    loadPlugins();
-    preprocessPlugins();
+    mValid = loadPlugins() && preprocessPlugins();
 
     AI_LOG_FN_EXIT();
 }
@@ -109,8 +108,9 @@ DobbyRdkPluginManager::~DobbyRdkPluginManager()
  *  If loaded successfully the plugins are stored in an internal map, keyed
  *  off the plugin name.
  *
+ * @return False if unable to open the given directory, true otherwise.
  */
-void DobbyRdkPluginManager::loadPlugins()
+bool DobbyRdkPluginManager::loadPlugins()
 {
     AI_LOG_FN_ENTRY();
 
@@ -119,7 +119,7 @@ void DobbyRdkPluginManager::loadPlugins()
     if (dirFd < 0)
     {
         AI_LOG_SYS_ERROR_EXIT(errno, "failed to open dir '%s'", mPluginPath.c_str());
-        return;
+        return false;
     }
 
     DIR *dir = fdopendir(dirFd);
@@ -127,7 +127,7 @@ void DobbyRdkPluginManager::loadPlugins()
     {
         AI_LOG_SYS_ERROR_EXIT(errno, "failed to open dir '%s'", mPluginPath.c_str());
         close(dirFd);
-        return;
+        return false;
     }
 
     int directoriesCount = 0;
@@ -295,6 +295,7 @@ void DobbyRdkPluginManager::loadPlugins()
     close(dirFd);
 
     AI_LOG_FN_EXIT();
+    return true;
 }
 
 // -----------------------------------------------------------------------------
@@ -312,6 +313,13 @@ void DobbyRdkPluginManager::loadPlugins()
 bool DobbyRdkPluginManager::preprocessPlugins()
 {
     AI_LOG_FN_ENTRY();
+
+    // Get all the plugins listed in the container config
+    if (mContainerConfig == nullptr || mContainerConfig->rdk_plugins == nullptr)
+    {
+        AI_LOG_ERROR_EXIT("Container spec is null");
+        return false;
+    }
 
     const auto pluginsInConfig = mContainerConfig->rdk_plugins->names_of_plugins;
     const int rdkPluginCount = mContainerConfig->rdk_plugins->plugins_count;
@@ -622,6 +630,12 @@ bool DobbyRdkPluginManager::runPlugins(const IDobbyRdkPlugin::HintFlags &hookPoi
 {
     AI_LOG_FN_ENTRY();
 
+    if (!mValid)
+    {
+        AI_LOG_ERROR_EXIT("Container config invalid. Plugins will not be run");
+        return false;
+    }
+
     // Get the hook name as string, mostly just for logging purposes
     std::string hookName;
     switch (hookPoint)
@@ -657,15 +671,6 @@ bool DobbyRdkPluginManager::runPlugins(const IDobbyRdkPlugin::HintFlags &hookPoi
         return false;
     }
 
-    bool success = true;
-
-    // Get all the plugins listed in the container config
-    if (mContainerConfig == nullptr || mContainerConfig->rdk_plugins == nullptr)
-    {
-        AI_LOG_ERROR_EXIT("Container spec is null");
-        return false;
-    }
-
     // Determine the order of launching based on the dependencies.
     std::vector<std::string> launchOrder;
     if (hookPoint < IDobbyRdkPlugin::HintFlags::PostHaltFlag)
@@ -678,27 +683,27 @@ bool DobbyRdkPluginManager::runPlugins(const IDobbyRdkPlugin::HintFlags &hookPoi
         // on which other plugins depend are shut down later.
         launchOrder = mDependencySolver.getReversedOrderOfDependency();
     }
+    if (launchOrder.empty())
+    {
+        const bool pluginsRequested = (mContainerConfig->rdk_plugins->plugins_count != 0);
+        if (pluginsRequested)
+        {
+            // There are plugins in the container spec, but no plugin names in the launch order vector.
+            // This means the solver has detected wrong dependencies (cycles).
+            AI_LOG_ERROR_EXIT("Plugin dependency errors detected. Aborting");
+            return false;
+        }
+        else
+        {
+            AI_LOG_WARN("No plugins to run");
+            return true;
+        }
+    }
 
     // Run all the plugins
     for (const std::string &pluginName : launchOrder)
     {
-        const bool required = isRequired(pluginName);
-
-        if (required && !isLoaded(pluginName))
-        {
-            // If the plugin is required, but isn't loaded, then fail early and don't
-            // run any more plugins
-            // TODO:: Implement a more graceful fallback to default plugin implementation
-            AI_LOG_ERROR_EXIT("Required plugin %s isn't loaded", pluginName.c_str());
-            return false;
-        }
-        else if (!isLoaded(pluginName))
-        {
-            // If it's not required, but isn't loaded, then log but carry on
-            AI_LOG_WARN("Non-required plugin %s isn't loaded. Continuing running other plugins.", pluginName.c_str());
-            continue;
-        }
-        else if (!implementsHook(pluginName, hookPoint))
+        if (!implementsHook(pluginName, hookPoint))
         {
             // If the plugin doesn't need to do anything at this hook point, skip
             AI_LOG_INFO("Plugin %s has nothing to do at %s", pluginName.c_str(), hookName.c_str());
@@ -707,11 +712,11 @@ bool DobbyRdkPluginManager::runPlugins(const IDobbyRdkPlugin::HintFlags &hookPoi
 
         // Everything looks good, run the plugin
         AI_LOG_INFO("Running %s plugin", pluginName.c_str());
-        success = executeHook(pluginName,
-                              hookPoint);
+        const bool success = executeHook(pluginName, hookPoint);
 
         // If the plugin has failed and is required, don't bother running any
         // other plugins. If it's not required, just log it
+        const bool required = isRequired(pluginName);
         if (!success && required)
         {
             AI_LOG_ERROR("Required plugin %s %s hook has failed", pluginName.c_str(), hookName.c_str());
