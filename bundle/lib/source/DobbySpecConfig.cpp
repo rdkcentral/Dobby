@@ -2543,10 +2543,17 @@ void DobbySpecConfig::insertIntoRdkPluginJson(const std::string& pluginName,
         else
         {
             // plugin member is an array, so instead of overwriting, we should
-            // append the new array members to the existing array
-            for (const auto& arrayElement : dataMember)
+            // append the new array members to the existing array if there is one
+            if (!existingData[dataMember].isNull())
             {
-                existingData[dataMember].append(arrayElement);
+                for (const auto& arrayElement : pluginData[dataMember])
+                {
+                    existingData[dataMember].append(arrayElement);
+                }
+            }
+            else
+            {
+                existingData[dataMember] = pluginData[dataMember];
             }
         }
     }
