@@ -161,3 +161,25 @@ bool RtSchedulingPlugin::createRuntime()
     AI_LOG_FN_EXIT();
     return true;
 }
+
+// -----------------------------------------------------------------------------
+/**
+ * @brief Should return the names of the plugins this plugin depends on.
+ *
+ * This can be used to determine the order in which the plugins should be
+ * processed when running hooks.
+ *
+ * @return Names of the plugins this plugin depends on.
+ */
+std::vector<std::string> RtSchedulingPlugin::getDependencies() const
+{
+    std::vector<std::string> dependencies;
+    const rt_defs_plugins_rt_scheduling* pluginConfig = mConfig->rdk_plugins->rtscheduling;
+
+    for (size_t i = 0; i < pluginConfig->depends_on_len; i++)
+    {
+        dependencies.push_back(pluginConfig->depends_on[i]);
+    }
+
+    return dependencies;
+}

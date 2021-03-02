@@ -76,6 +76,8 @@ public:
 
     bool postStop() override;
 
+public:
+    std::vector<std::string> getDependencies() const override;
 
 private:
     const std::string mName;

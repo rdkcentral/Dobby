@@ -18,6 +18,7 @@
 project(DobbyPluginLauncherLib)
 
 add_library(${PROJECT_NAME} STATIC
+    source/DobbyRdkPluginDependencySolver.cpp
     source/DobbyRdkPluginManager.cpp
     source/DobbyRdkPluginUtils.cpp
 )

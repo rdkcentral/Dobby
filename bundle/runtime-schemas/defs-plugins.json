@@ -51,6 +51,9 @@
                 "required": {
                     "type": "boolean"
                 },
+                "dependsOn": {
+                    "$ref": "defs.json#/definitions/ArrayOfStrings"
+                },
                 "data": {
                     "type": "object",
                     "properties": {
@@ -80,11 +83,95 @@
                 "required": {
                     "type": "boolean"
                 },
+                "dependsOn": {
+                    "$ref": "defs.json#/definitions/ArrayOfStrings"
+                },
                 "data": {
                     "type": "object",
                     "properties": {
                         "memory": {
                             "$ref": "defs.json#/definitions/int32"
+                        }
+                    }
+                }
+            }
+        },
+        "IPC": {
+            "type": "object",
+            "required": [
+                "required",
+                "data"
+            ],
+            "properties": {
+                "required": {
+                    "type": "boolean"
+                },
+                "dependsOn": {
+                    "$ref": "defs.json#/definitions/ArrayOfStrings"
+                },
+                "data": {
+                    "type": "object",
+                    "properties": {
+                        "session": {
+                            "type": "string"
+                        },
+                        "system": {
+                            "type": "string"
+                        },
+                        "debug": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "Logging": {
+            "type": "object",
+            "required": [
+                "required",
+                "data"
+            ],
+            "properties": {
+                "required": {
+                    "type": "boolean"
+                },
+                "dependsOn": {
+                    "$ref": "defs.json#/definitions/ArrayOfStrings"
+                },
+                "data": {
+                    "type": "object",
+                    "required": [
+                        "sink"
+                    ],
+                    "properties": {
+                        "sink": {
+                            "type": "string"
+                        },
+                        "fileOptions": {
+                            "type": "object",
+                            "required": [
+                                "path",
+                                "limit"
+                            ],
+                            "properties": {
+                                "path": {
+                                    "type": "string"
+                                },
+                                "limit": {
+                                    "type": "integer"
+                                }
+                            }
+                        },
+                        "journaldOptions": {
+                            "type": "object",
+                            "required": [
+                                "priority"
+                            ],
+                            "properties": {
+                                "priority": {
+                                    "type": "string"
+                                }
+                            }
                         }
                     }
                 }
@@ -99,6 +186,9 @@
             "properties": {
                 "required": {
                     "type": "boolean"
+                },
+                "dependsOn": {
+                    "$ref": "defs.json#/definitions/ArrayOfStrings"
                 },
                 "data": {
                     "type": "object",
@@ -176,81 +266,6 @@
                 }
             }
         },
-        "IPC": {
-            "type": "object",
-            "required": [
-                "required",
-                "data"
-            ],
-            "properties": {
-                "required": {
-                    "type": "boolean"
-                },
-                "data": {
-                    "type": "object",
-                    "properties": {
-                        "session": {
-                            "type": "string"
-                        },
-                        "system": {
-                            "type": "string"
-                        },
-                        "debug": {
-                            "type": "string"
-                        }
-                    }
-                }
-            }
-        },
-        "Logging": {
-            "type": "object",
-            "required": [
-                "required",
-                "data"
-            ],
-            "properties": {
-                "required": {
-                    "type": "boolean"
-                },
-                "data": {
-                    "type": "object",
-                    "required": [
-                        "sink"
-                    ],
-                    "properties": {
-                        "sink": {
-                            "type": "string"
-                        },
-                        "fileOptions": {
-                            "type": "object",
-                            "required": [
-                                "path",
-                                "limit"
-                            ],
-                            "properties": {
-                                "path": {
-                                    "type": "string"
-                                },
-                                "limit": {
-                                    "type": "integer"
-                                }
-                            }
-                        },
-                        "journaldOptions": {
-                            "type": "object",
-                            "required": [
-                                "priority"
-                            ],
-                            "properties": {
-                                "priority": {
-                                    "type": "string"
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
         "Storage": {
             "type": "object",
             "required": [
@@ -260,6 +275,9 @@
             "properties": {
                 "required": {
                     "type": "boolean"
+                },
+                "dependsOn": {
+                    "$ref": "defs.json#/definitions/ArrayOfStrings"
                 },
                 "data": {
                     "type": "object",
@@ -312,6 +330,9 @@
                 "required": {
                     "type": "boolean"
                 },
+                "dependsOn": {
+                    "$ref": "defs.json#/definitions/ArrayOfStrings"
+                },
                 "data": {
                     "type": "object",
                     "properties": {
@@ -328,6 +349,9 @@
             "properties": {
                 "required": {
                     "type": "boolean"
+                },
+                "dependsOn": {
+                    "$ref": "defs.json#/definitions/ArrayOfStrings"
                 },
                 "data": {
                     "type": "object",
@@ -350,6 +374,9 @@
             "properties": {
                 "required": {
                     "type": "boolean"
+                },
+                "dependsOn": {
+                    "$ref": "defs.json#/definitions/ArrayOfStrings"
                 },
                 "data": {
                     "type": "object",
@@ -392,6 +419,9 @@
                 "required": {
                     "type": "boolean"
                 },
+                "dependsOn": {
+                    "$ref": "defs.json#/definitions/ArrayOfStrings"
+                },
                 "data": {
                     "type": "object",
                     "properties": {
@@ -416,9 +446,6 @@
         "RdkPlugins": {
             "type": "object",
             "properties": {
-                "networking": {
-                    "$ref": "#/definitions/Networking"
-                },
                 "appservicesrdk" : {
                     "$ref": "#/definitions/AppServicesRdk"
                 },
@@ -430,6 +457,9 @@
                 },
                 "logging": {
                     "$ref": "#/definitions/Logging"
+                },
+                "networking": {
+                    "$ref": "#/definitions/Networking"
                 },
                 "storage": {
                     "$ref": "#/definitions/Storage"

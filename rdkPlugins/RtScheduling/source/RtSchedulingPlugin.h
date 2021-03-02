@@ -54,6 +54,9 @@ public:
     bool postInstallation() override;
     bool createRuntime() override;
 
+public:
+    std::vector<std::string> getDependencies() const override;
+
 private:
     const std::string mName;
     const std::shared_ptr<DobbyRdkPluginUtils> mUtils;
