@@ -41,6 +41,38 @@
                 }
             }
         },
+        "AppServicesRdk": {
+            "type": "object",
+            "required": [
+                "required",
+                "data"
+            ],
+            "properties": {
+                "required": {
+                    "type": "boolean"
+                },
+                "dependsOn": {
+                    "$ref": "defs.json#/definitions/ArrayOfStrings"
+                },
+                "data": {
+                    "type": "object",
+                    "properties": {
+                        "setMenu": {
+                            "type": "string"
+                        },
+                        "additionalPorts": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "defs.json#/definitions/uint16"
+                            }
+                        },
+                        "connLimit": {
+                            "$ref": "defs.json#/definitions/uint32"
+                        }
+                    }
+                }
+            }
+        },
         "GPU": {
             "type": "object",
             "required": [
@@ -414,6 +446,9 @@
         "RdkPlugins": {
             "type": "object",
             "properties": {
+                "appservicesrdk" : {
+                    "$ref": "#/definitions/AppServicesRdk"
+                },
                 "ipc": {
                     "$ref": "#/definitions/IPC"
                 },
