@@ -58,7 +58,7 @@ public:
     unsigned hookHints() const override;
 
 public:
-    bool preCreation() override;
+    bool postInstallation() override;
     bool createRuntime() override;
     bool postHalt() override;
 

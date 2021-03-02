@@ -60,7 +60,7 @@ AppServicesRdkPlugin::AppServicesRdkPlugin(std::shared_ptr<rt_dobby_schema> &con
 unsigned AppServicesRdkPlugin::hookHints() const
 {
     return (
-        IDobbyRdkPlugin::HintFlags::PreCreationFlag |
+        IDobbyRdkPlugin::HintFlags::PostInstallationFlag |
         IDobbyRdkPlugin::HintFlags::CreateRuntimeFlag |
         IDobbyRdkPlugin::HintFlags::PostHaltFlag);
 }
@@ -68,7 +68,7 @@ unsigned AppServicesRdkPlugin::hookHints() const
 // Begin Hook Methods
 
 /**
- * @brief Dobby Hook - run in host namespace before container creation process.
+ * @brief Dobby Hook - run in host namespace *once* when container bundle is downloaded
  *  Updates the /etc/services and /etc/hosts file to point to the mapped
  *  AS server.
  *
@@ -86,7 +86,7 @@ unsigned AppServicesRdkPlugin::hookHints() const
  *
  *  @return True on success, false on failure.
  */
-bool AppServicesRdkPlugin::preCreation()
+bool AppServicesRdkPlugin::postInstallation()
 {
     AI_LOG_FN_ENTRY();
 
