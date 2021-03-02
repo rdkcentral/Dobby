@@ -151,6 +151,28 @@ bool HttpProxyPlugin::postHalt()
 
 // -----------------------------------------------------------------------------
 /**
+ * @brief Should return the names of the plugins this plugin depends on.
+ *
+ * This can be used to determine the order in which the plugins should be
+ * processed when running hooks.
+ *
+ * @return Names of the plugins this plugin depends on.
+ */
+std::vector<std::string> HttpProxyPlugin::getDependencies() const
+{
+    std::vector<std::string> dependencies;
+    const rt_defs_plugins_http_proxy* pluginConfig = mContainerConfig->rdk_plugins->httpproxy;
+
+    for (size_t i = 0; i < pluginConfig->depends_on_len; i++)
+    {
+        dependencies.push_back(pluginConfig->depends_on[i]);
+    }
+
+    return dependencies;
+}
+
+// -----------------------------------------------------------------------------
+/**
  *  @brief Adds the httpproxy and no_proxy environment variables to the
  *  container.
  *

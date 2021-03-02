@@ -188,6 +188,21 @@ public:
     {
         return true;
     };
+
+public:
+    /**
+     * @brief Should return the names of the plugins this plugin depends on.
+     *
+     * This can be used to determine the order in which the plugins should be
+     * processed when running hooks.
+     *
+     * @return Names of the plugins this plugin depends on.
+     */
+    std::vector<std::string> getDependencies() const override
+    {
+        std::vector<std::string> noDependencies;
+        return noDependencies;
+    }
 };
 
 #endif // !defined(RDKPLUGINBASE_H)
