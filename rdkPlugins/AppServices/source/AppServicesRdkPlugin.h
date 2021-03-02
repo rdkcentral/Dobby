@@ -62,6 +62,9 @@ public:
     bool createRuntime() override;
     bool postHalt() override;
 
+public:
+    std::vector<std::string> getDependencies() const override;
+
 private:
     enum LocalServicesPort : in_port_t
     {
