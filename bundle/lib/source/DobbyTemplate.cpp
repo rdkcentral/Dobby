@@ -33,6 +33,7 @@
 #include <limits.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/sysmacros.h>
 
 #include <sstream>
 #include <glob.h>
