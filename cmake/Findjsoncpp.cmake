@@ -23,7 +23,7 @@
 #  JSONCPP_LIBRARY_DIRS
 #  JSONCPP_LIBRARIES
 
-find_path( JSONCPP_INCLUDE_DIR NAMES json.h PREFIX json )
+find_path( JSONCPP_INCLUDE_DIR NAMES json/json.h PATH_SUFFIXES jsoncpp )
 find_library( JSONCPP_LIBRARY NAMES libjsoncpp.so jsoncpp )
 
 #message( "JSONCPP_INCLUDE_DIR include dir = ${JSONCPP_INCLUDE_DIR}" )
