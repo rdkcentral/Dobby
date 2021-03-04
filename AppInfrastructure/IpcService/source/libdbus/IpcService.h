@@ -28,8 +28,8 @@
 
 #include "IpcCommon.h"
 #include "IIpcService.h"
+
 #include "DbusConnection.h"
-#include "IDbusPackageEntitlements.h"
 #include "IDbusUserIdSenderIdCache.h"
 
 #include <ThreadedDispatcher.h>
@@ -45,58 +45,35 @@
 #include <set>
 #include <atomic>
 
-namespace AI_DBUS
-{
-
-class IDbusServer;
-
-}
-
-namespace packagemanager
-{
-    class IPackageManager;
-}
-
-namespace AI_IPC
-{
-
-class IpcService : public IIpcService
+class IpcService : public AI_IPC::IIpcService
+                 , public std::enable_shared_from_this<IpcService>
 {
 public:
-    enum class BusType
+    enum BusType
     {
         SessionBus,
         SystemBus
     };
 
 public:
-    IpcService(const std::shared_ptr<const AI_DBUS::IDbusServer>& dbusServer, const std::string& serviceName, int defaultTimeoutMs = -1);
-
-    IpcService( const std::shared_ptr<const AI_DBUS::IDbusServer>& dbusServer,
-                const std::string& serviceName,
-                const std::shared_ptr<packagemanager::IPackageManager> &packageManager,
-                bool dbusEntitlementCheckNeeded = false,
-                int defaultTimeoutMs = -1);
-
     IpcService(BusType busType, const std::string& serviceName, int defaultTimeoutMs = -1);
-
     IpcService(const std::string& dbusAddress, const std::string& serviceName, int defaultTimeoutMs = -1);
 
     ~IpcService() override;
 
-    virtual std::shared_ptr<IAsyncReplyGetter> invokeMethod(const Method& method, const VariantList& args, int timeoutMs = -1) override;
+    virtual std::shared_ptr<AI_IPC::IAsyncReplyGetter> invokeMethod(const AI_IPC::Method& method, const  AI_IPC::VariantList& args, int timeoutMs = -1) override;
 
-    virtual bool invokeMethod(const Method& method, const VariantList& args, VariantList& replyArgs, int timeoutMs = -1) override;
+    virtual bool invokeMethod(const AI_IPC::Method& method, const  AI_IPC::VariantList& args,  AI_IPC::VariantList& replyArgs, int timeoutMs = -1) override;
 
-    virtual bool emitSignal(const Signal& signal, const VariantList& args) override;
+    virtual bool emitSignal(const AI_IPC::Signal& signal, const  AI_IPC::VariantList& args) override;
 
-    virtual std::string registerMethodHandler(const Method& method, const MethodHandler& handler) override;
+    virtual std::string registerMethodHandler(const AI_IPC::Method& method, const AI_IPC::MethodHandler& handler) override;
 
-    virtual std::string registerSignalHandler(const Signal& signal, const SignalHandler& handler) override;
+    virtual std::string registerSignalHandler(const AI_IPC::Signal& signal, const AI_IPC::SignalHandler& handler) override;
 
     virtual bool unregisterHandler(const std::string& regId) override;
 
-    virtual bool enableMonitor(const std::set<std::string>& matchRules, const MonitorHandler& handler) override;
+    virtual bool enableMonitor(const std::set<std::string>& matchRules, const AI_IPC::MonitorHandler& handler) override;
 
     virtual bool disableMonitor() override;
 
@@ -110,17 +87,19 @@ public:
 
     virtual bool isServiceAvailable(const std::string& serviceName) const override;
 
+    std::string getBusAddress() const override;
+
 private:
 
-    bool invokeMethodAndGetReply(DBusMessage *dbusSendMsg, VariantList& replyArgs);
+    bool invokeMethodAndGetReply(DBusMessage *dbusSendMsg,  AI_IPC::VariantList& replyArgs);
 
     DBusHandlerResult handleDbusMessageCb(DBusMessage *message);
 
     DBusHandlerResult handleDbusMessage(DBusMessage *message);
 
-    DBusHandlerResult handleDbusSignal(const Signal& signal, const VariantList& argList);
+    DBusHandlerResult handleDbusSignal(const AI_IPC::Signal& signal, const  AI_IPC::VariantList& argList);
 
-    DBusHandlerResult handleDbusMethodCall(const Method& method, const VariantList& argList, DBusMessage *message);
+    DBusHandlerResult handleDbusMethodCall(const AI_IPC::Method& method, const  AI_IPC::VariantList& argList, DBusMessage *message);
 
     void unregisterHandlers();
 
@@ -130,17 +109,17 @@ private:
 
     bool isDbusMessageAllowed(const std::string& sender, const std::string& interface);
 
-    const std::shared_ptr<const AI_DBUS::IDbusServer> mDbusServer;
-
     std::string mServiceName;
 
-    std::shared_ptr<DbusConnection> mDbusConnection;
+    std::string mBusAddress;
+
+    std::shared_ptr<AI_IPC::DbusConnection> mDbusConnection;
 
     std::map<std::string, int> mObjectPaths;
 
-    std::map<std::string, std::pair<Method, MethodHandler>> mMethodHandlers;
+    std::map<std::string, std::pair<AI_IPC::Method, AI_IPC::MethodHandler>> mMethodHandlers;
 
-    std::map<std::string, std::pair<Signal, SignalHandler>> mSignalHandlers;
+    std::map<std::string, std::pair<AI_IPC::Signal, AI_IPC::SignalHandler>> mSignalHandlers;
 
     AICommon::ThreadedDispatcher mHandlerDispatcher;
 
@@ -158,19 +137,11 @@ private:
 
     std::atomic<bool> mInMonitorMode;
 
-    MonitorHandler mMonitorCb;
+    AI_IPC::MonitorHandler mMonitorCb;
 
     std::set<std::string> mMonitorMatchRules;
 
 #endif // if (AI_BUILD_TYPE == AI_DEBUG)
-
-    std::shared_ptr<IDbusPackageEntitlements> mDbusPackageEntitlements;
-
-    std::shared_ptr<IDbusUserIdSenderIdCache> mDbusUserIdSenderIdCache;
-
-    bool mDbusEntitlementCheckNeeded;
 };
-
-}
 
 #endif /* AI_IPC_IPCSERVICE_H */

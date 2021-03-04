@@ -58,7 +58,8 @@ target_link_libraries( # Specifies the target exec
 
         # Import the 3rd party libraries
         JsonCpp::JsonCpp
-        systemd
+
+        DBUS::libdbus
 
         # Adds pthread support (if it's a separate library on target)
         Threads::Threads
@@ -67,6 +68,12 @@ target_link_libraries( # Specifies the target exec
         ${CMAKE_DL_LIBS}
 
         )
+
+if (USE_SYSTEMD)
+        target_link_libraries(DobbyTool
+                systemd
+        )
+endif()
 
 install( # Specifies the target to install
         TARGETS DobbyTool

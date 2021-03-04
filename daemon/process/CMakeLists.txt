@@ -81,7 +81,6 @@ target_link_libraries( # Specifies the target exec
         -Wl,--dynamic-list=${CMAKE_CURRENT_LIST_DIR}/exported.syms
 
         # Import the 3rd party libraries
-        systemd
         JsonCpp::JsonCpp
         DBUS::libdbus
 
@@ -89,6 +88,12 @@ target_link_libraries( # Specifies the target exec
         Threads::Threads
 
         )
+
+if(USE_SYSTEMD)
+        target_link_libraries(DobbyDaemon
+                systemd
+        )
+endif(USE_SYSTEMD)
 
 
 install( # Specifies the target to install
@@ -104,12 +109,15 @@ install(
         RENAME      dobby.json
         DESTINATION /etc/ )
 
-configure_file(dobby.service.in dobby.service @ONLY)
 
-# Install a systemd launch service config and enables it by default
-install(
-        FILES       ${CMAKE_CURRENT_BINARY_DIR}/dobby.service
-        DESTINATION /lib/systemd/system/ )
+if (USE_SYSTEMD)
+        configure_file(dobby.service.in dobby.service @ONLY)
+
+        # Install a systemd launch service config and enables it by default
+        install(
+                FILES       ${CMAKE_CURRENT_BINARY_DIR}/dobby.service
+                DESTINATION /lib/systemd/system/ )
+endif()
 
 # The following doesn't seem to work in RDK, disabling for now
 # install(

@@ -46,11 +46,20 @@ target_link_libraries( ${PROJECT_NAME}
         IpcService
 
         # 3rd party libraries
-        systemd
         Threads::Threads
         LIBNL::libnl
         LIBNL::libnl-route
 )
+
+if (USE_SYSTEMD)
+        target_link_libraries( ${PROJECT_NAME}
+                systemd
+        )
+else()
+        target_link_libraries( ${PROJECT_NAME}
+                DBUS::libdbus
+        )
+endif()
 
 target_include_directories( ${PROJECT_NAME}
         PUBLIC

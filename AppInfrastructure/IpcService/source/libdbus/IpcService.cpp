@@ -25,14 +25,11 @@
 
 #include "IpcCommon.h"
 #include "IpcService.h"
-#include "IDbusServer.h"
 #include "AsyncReplySender.h"
 #include "AsyncReplyGetter.h"
 #include "DbusEventDispatcher.h"
 #include "DbusMessageParser.h"
 #include "IpcUtilities.h"
-#include "DbusEntitlements.h"
-#include "DbusUserIdSenderIdCache.h"
 
 #include <Common/Interface.h>
 #include <Logging.h>
@@ -104,60 +101,8 @@ bool validRemoteEntry(const AI_IPC::RemoteEntry& entry)
 
 using namespace AI_IPC;
 
-IpcService::IpcService(const std::shared_ptr<const AI_DBUS::IDbusServer>& dbusServer, const std::string& serviceName, int defaultTimeoutMs /*= -1*/)
-    : mDbusServer(dbusServer)
-    , mServiceName(serviceName)
-    , mHandlerDispatcher("AI_DBUS_DISPATCH")
-    , mRunning(false)
-    , mNextSignalHandlerRegId(1)
-    , mDefaultTimeoutMs(defaultTimeoutMs)
-#if (AI_BUILD_TYPE == AI_DEBUG)
-    , mInMonitorMode(false)
-    , mMonitorCb(nullptr)
-#endif
-    , mDbusEntitlementCheckNeeded(false)
-{
-    AI_LOG_FN_ENTRY();
-
-    if ( !dbusServer || serviceName.empty() )
-    {
-        throw std::runtime_error("Invalid construction parameter for dbus service" );
-    }
-
-    std::string address = dbusServer->getBusAddress();
-
-    if ( address.empty() )
-    {
-        throw std::runtime_error("Invalid dbus address" );
-    }
-
-    mDbusConnection = std::make_shared<DbusConnection>();
-    if ( !mDbusConnection || !mDbusConnection->connect(address, serviceName) )
-    {
-        throw std::runtime_error( "Failed to connect to dbus" );
-    }
-
-    AI_LOG_FN_EXIT();
-}
-
-IpcService::IpcService( const std::shared_ptr<const AI_DBUS::IDbusServer>& dbusServer,
-                        const std::string& serviceName,
-                        const std::shared_ptr<packagemanager::IPackageManager> &packageManager,
-                        bool dbusEntitlementCheckNeeded /* = false*/,
-                        int defaultTimeoutMs /*= -1*/ )
-: IpcService(dbusServer, serviceName, defaultTimeoutMs)
-{
-    // not doing member initialization on these, as don't want to change the parameter list of the old ctor
-    mDbusPackageEntitlements = std::make_shared<DbusEntitlements>(packageManager);
-
-    mDbusUserIdSenderIdCache = std::make_shared<DbusUserIdSenderIdCache>(*this, mDbusPackageEntitlements);
-
-    mDbusEntitlementCheckNeeded = dbusEntitlementCheckNeeded;
-}
-
 IpcService::IpcService(BusType busType, const std::string& serviceName, int defaultTimeoutMs /*= -1*/)
-    : mDbusServer(nullptr)
-    , mServiceName(serviceName)
+    : mServiceName(serviceName)
     , mHandlerDispatcher("AI_DBUS_DISPATCH")
     , mRunning(false)
     , mNextSignalHandlerRegId(1)
@@ -166,7 +111,6 @@ IpcService::IpcService(BusType busType, const std::string& serviceName, int defa
     , mInMonitorMode(false)
     , mMonitorCb(nullptr)
 #endif
-    , mDbusEntitlementCheckNeeded(false)
 {
     AI_LOG_FN_ENTRY();
 
@@ -176,13 +120,35 @@ IpcService::IpcService(BusType busType, const std::string& serviceName, int defa
     }
 
     DBusBusType type;
+    char* env_address;
     switch (busType)
     {
         case BusType::SessionBus:
             type = DBUS_BUS_SESSION;
+
+            env_address = getenv("DBUS_SESSION_BUS_ADDRESS");
+            if (env_address)
+            {
+                mBusAddress = std::string(env_address);
+            }
+            else
+            {
+                AI_LOG_WARN("Attempting to connect to session bus but DBUS_SESSION_BUS_ADDRESS not set");
+                mBusAddress = "";
+            }
             break;
         case BusType::SystemBus:
             type = DBUS_BUS_SYSTEM;
+
+            env_address = getenv("DBUS_SYSTEM_BUS_ADDRESS");
+            if (env_address)
+            {
+                mBusAddress = std::string(env_address);
+            }
+            else
+            {
+                mBusAddress = "unix:path=/var/run/dbus/system_bus_socket";
+            }
             break;
         default:
             throw std::runtime_error( "Invalid bus type" );
@@ -198,17 +164,16 @@ IpcService::IpcService(BusType busType, const std::string& serviceName, int defa
 }
 
 IpcService::IpcService(const std::string& dbusAddress, const std::string& serviceName, int defaultTimeoutMs)
-    : mDbusServer(nullptr)
-    , mServiceName(serviceName)
+    : mServiceName(serviceName)
     , mHandlerDispatcher("AI_DBUS_DISPATCH")
     , mRunning(false)
     , mNextSignalHandlerRegId(1)
     , mDefaultTimeoutMs(defaultTimeoutMs)
+    , mBusAddress(dbusAddress)
 #if (AI_BUILD_TYPE == AI_DEBUG)
     , mInMonitorMode(false)
     , mMonitorCb(nullptr)
 #endif
-    , mDbusEntitlementCheckNeeded(false)
 {
     AI_LOG_FN_ENTRY();
 
@@ -675,51 +640,10 @@ bool IpcService::isDbusMessageAllowed(const std::string& sender, const std::stri
 {
     AI_LOG_FN_ENTRY();
 
-    bool res = true;
-
-    // do the dbus entitlement check only, if:
-    // - the IPCService has been created with a package manager parameter - indicating that the caches need to be created
-    // - the ai configuration enables the entitlement check
-    if( mDbusPackageEntitlements && mDbusEntitlementCheckNeeded)
-    {
-        AI_LOG_INFO("IpcService needs to do dbus capability check - received interface: %s", interface.c_str());
-        // indicating a special IpcService, where Dbus capability check is needed
-
-        if(!mDbusPackageEntitlements->isInterfaceWhiteListed(interface))
-        {
-            AI_LOG_INFO("%s interface is not white listed, checking the entitlements", interface.c_str());
-
-            boost::optional<uid_t> userId = mDbusUserIdSenderIdCache->getUserId(sender);
-
-            if(!userId)
-            {
-                // userId is not in the cache yet - need to get it...
-                // this is expensive, that's why it will be cached
-                uid_t uid = mDbusConnection->getUnixUser(sender);
-
-#if (AI_BUILD_TYPE == AI_DEBUG)
-            // if in debug mode, and if the root user sent the DBus message, don't check the entitlements
-            if( uid == 0 )
-            {
-                AI_LOG_DEBUG("DBus message sent by root in debug build, not checking Dbus entitlements");
-                return true;
-            }
-#endif
-
-                mDbusUserIdSenderIdCache->addSenderIUserId(sender, uid);
-                userId = uid;
-            }
-
-            if( !mDbusPackageEntitlements->isAllowed( *userId, mServiceName, interface ))
-            {
-                res = false;
-            }
-        }
-    }
-
     AI_LOG_FN_EXIT();
 
-    return res;
+    // Always allow dbus messages to Dobby (enforce restictions elsewhere)
+    return true;
 }
 
 DBusHandlerResult IpcService::handleDbusSignal( const Signal& signal, const VariantList& argList )
@@ -919,22 +843,20 @@ void IpcService::unregisterHandlers()
  *  on an old dbus version that doesn't have that support.
  *
  */
-bool IpcService::enableMonitor(const std::set<std::string>& matchRules, const MonitorHandler& handler)
+bool IpcService::enableMonitor(const std::set<std::string> &matchRules, const MonitorHandler &handler)
 {
 #if (AI_BUILD_TYPE != AI_DEBUG)
 
     return false;
 
-#else // if (AI_BUILD_TYPE == AI_DEBUG)
-
+#else  // (AI_BUILD_TYPE == AI_DEBUG)
     AI_LOG_FN_ENTRY();
-
     std::lock_guard<std::mutex> lock(mMutex);
 
     // If already in monitor mode then remove any previous monitor match rules first
-    if ( mInMonitorMode )
+    if (mInMonitorMode)
     {
-        for (const std::string& rule : mMonitorMatchRules)
+        for (const std::string &rule : mMonitorMatchRules)
         {
             mDbusConnection->removeMatch(rule);
         }
@@ -944,17 +866,16 @@ bool IpcService::enableMonitor(const std::set<std::string>& matchRules, const Mo
     mMonitorMatchRules.clear();
 
     // If no match rules were supplied then add the default capture all rule
-    if ( matchRules.empty() )
+    if (matchRules.empty())
     {
-        mMonitorMatchRules.emplace( "eavesdrop=true" );
+        mMonitorMatchRules.emplace("eavesdrop=true");
     }
     else
     {
-        const std::string rulePrefix( "eavesdrop=true," );
-
-        for (const std::string& rule : matchRules)
+        const std::string rulePrefix("eavesdrop=true,");
+        for (const std::string &rule : matchRules)
         {
-            mMonitorMatchRules.emplace( rulePrefix + rule );
+            mMonitorMatchRules.emplace(rulePrefix + rule);
         }
     }
 
@@ -963,7 +884,7 @@ bool IpcService::enableMonitor(const std::set<std::string>& matchRules, const Mo
     mInMonitorMode = true;
 
     // Add all the match rules
-    for (const std::string& rule : mMonitorMatchRules)
+    for (const std::string &rule : mMonitorMatchRules)
     {
         mDbusConnection->addMatch(rule);
     }
@@ -1051,3 +972,7 @@ bool IpcService::isServiceAvailable(const std::string& serviceName) const
     return mDbusConnection->nameHasOwner(serviceName);
 }
 
+std::string IpcService::getBusAddress() const
+{
+    return mBusAddress;
+}

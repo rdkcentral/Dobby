@@ -22,6 +22,7 @@ add_library( AppInfraCommon
         source/Timer.cpp
         source/PollLoop.cpp
         source/AI_MD5.c
+        source/ThreadedDispatcher.cpp
         )
 
 set_target_properties(AppInfraCommon PROPERTIES POSITION_INDEPENDENT_CODE ON)

@@ -43,9 +43,11 @@
 #endif
 
 #if defined(RDK)
-#  define SD_JOURNAL_SUPPRESS_LOCATION
-#  include <systemd/sd-journal.h>
-#  include <systemd/sd-daemon.h>
+    #if defined(USE_SYSTEMD)
+        #define SD_JOURNAL_SUPPRESS_LOCATION
+        #include <systemd/sd-journal.h>
+        #include <systemd/sd-daemon.h>
+    #endif
 #else
 #  include <ethanlog.h>
 #endif
@@ -118,7 +120,7 @@ Dobby::Dobby(const std::string& dbusAddress,
     initIpcMethods();
 
     // enable the notification for the watchdog
-#if defined(RDK)
+#if defined(RDK) && defined(USE_SYSTEMD)
     initWatchdog();
 #endif
 
@@ -315,7 +317,7 @@ void Dobby::logConsolePrinter(int level, const char *file, const char *func,
     writev(fileno((level < AI_DEBUG_LEVEL_INFO) ? stderr : stdout), iov, 5);
 }
 
-#if defined(RDK)
+#if defined(RDK) && defined(USE_SYSTEMD)
 // -----------------------------------------------------------------------------
 /**
  *  @brief Writes logging output to systemd / journald
@@ -386,13 +388,13 @@ void Dobby::logPrinter(int level, const char *file, const char *func,
         logConsolePrinter(level, file, func, line, message);
     }
 
-#if defined(RDK)
+#if defined(RDK) && defined(USE_SYSTEMD)
     if (mLogTargets & LogTarget::Journald)
     {
         logJournaldPrinter(level, file, func, line, message);
     }
 
-#else
+#elif !defined(RDK)
     if (mLogTargets == LogTarget::EthanLog)
     {
         int _level;
@@ -677,7 +679,7 @@ void Dobby::ping(std::shared_ptr<AI_IPC::IAsyncReplySender> replySender)
     }
 
     // If running as systemd service then also use this to wag the dog
-#if defined(RDK)
+#if defined(RDK) && defined(USE_SYSTEMD)
     mWorkQueue->postWork(
         [this]()
         {
@@ -2032,7 +2034,7 @@ void Dobby::onContainerStopped(int32_t cd, const ContainerId& id, int status)
     AI_LOG_FN_EXIT();
 }
 
-#if defined(RDK)
+#if defined(RDK) && defined(USE_SYSTEMD)
 // -----------------------------------------------------------------------------
 /**
  *  @brief Starts a timer to ping ourselves over dbus to send a watchdog
@@ -2087,4 +2089,4 @@ bool Dobby::onWatchdogTimer()
     return true;
 }
 
-#endif // defined(RDK)
+#endif // defined(RDK) && defined(USE_SYSTEMD)

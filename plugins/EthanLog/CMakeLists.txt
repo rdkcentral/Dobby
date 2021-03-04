@@ -45,12 +45,13 @@ set_target_properties( EthanLogPlugin
 
         )
 
-
-target_link_libraries( EthanLogPlugin
-
-        systemd
-
-        )
+if (USE_SYSTEMD)
+        target_link_libraries( EthanLogPlugin
+                systemd
+                )
+else()
+        message( FATAL_ERROR "Ethanlog cannot be built without systemd" )
+endif()
 
 install(
         TARGETS EthanLogPlugin
