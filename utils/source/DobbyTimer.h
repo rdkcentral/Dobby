@@ -27,6 +27,7 @@
 
 #include <time.h>
 
+#include <functional>
 #include <set>
 #include <thread>
 #include <mutex>

@@ -23,8 +23,17 @@
 #  DBUS_LIBRARY_DIRS
 #  DBUS_LIBRARIES
 
+find_package(PkgConfig)
+pkg_check_modules(PC_DBUS QUIET dbus-1)
+
 find_path( DBUS_INCLUDE_DIR NAMES dbus/dbus.h PATH_SUFFIXES dbus-1.0 )
-find_path( DBUS_CFG_INCLUDE_DIR NAMES dbus/dbus-arch-deps.h PATH_SUFFIXES lib/dbus-1.0/include )
+find_path( DBUS_CFG_INCLUDE_DIR
+       NAMES dbus/dbus-arch-deps.h
+       HINTS ${PC_DBUS_INCLUDEDIR}
+             ${PC_DBUS_INCLUDE_DIRS}
+             ${_DBUS_LIBRARY_DIR}
+             ${DBUS_INCLUDE_DIR}
+       PATH_SUFFIXES lib/dbus-1.0/include dbus-1.0/include include NO_DEFAULT_PATH)
 find_library( DBUS_LIBRARY NAMES libdbus-1.so dbus-1 )
 
 # message( "DBUS_INCLUDE_DIR include dir = ${DBUS_INCLUDE_DIR}" )
