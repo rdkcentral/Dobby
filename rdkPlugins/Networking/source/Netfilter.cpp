@@ -37,6 +37,7 @@
 #include <signal.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
+#include <sys/mman.h>
 #include <netinet/in.h>
 #include <ext/stdio_filebuf.h>
 
