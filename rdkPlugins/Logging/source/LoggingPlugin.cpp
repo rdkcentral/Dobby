@@ -157,6 +157,15 @@ void LoggingPlugin::LoggingLoop(ContainerInfo containerInfo,
         AI_LOG_SYS_ERROR(errno, "Failed to close connection");
     }
 
+    // If dumping a buffer, DobbyBufferStream will clean up after itself
+    if (!isBuffer && containerInfo.pttyFd > 0 && fcntl(containerInfo.pttyFd, F_GETFD) != -1)
+    {
+        if (close(containerInfo.pttyFd) != 0)
+        {
+            AI_LOG_SYS_ERROR(errno, "Failed to close container ptty fd");
+        }
+    }
+
     AI_LOG_FN_EXIT();
 }
 
