@@ -76,10 +76,10 @@ public:
 
     void unmountAllAt(const std::string& pathPrefix);
 
-#if defined(LEGACY_COMPONENTS)
 private:
-    void cleanUp(bool dontRemoveFiles);
+    void cleanUp();
 
+#if defined(LEGACY_COMPONENTS)
     bool createMountPoint(int dirfd, const std::string &path, bool isDirectory) const;
 
     bool createStandardMountPoints(int dirfd) const;
