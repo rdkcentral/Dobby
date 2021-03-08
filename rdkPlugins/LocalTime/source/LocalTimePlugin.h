@@ -47,9 +47,13 @@ public:
 public:
     bool postInstallation() override;
 
+public:
+    std::vector<std::string> getDependencies() const override;
+
 private:
     const std::string mName;
     const std::string mRootfsPath;
+    std::shared_ptr<rt_dobby_schema> mContainerConfig;
 };
 
 #endif // !defined(LOCALTIMEPLUGIN_H)

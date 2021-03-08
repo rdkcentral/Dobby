@@ -206,6 +206,28 @@ bool Storage::postStop()
 
 // End hook methods
 
+// -----------------------------------------------------------------------------
+/**
+ * @brief Should return the names of the plugins this plugin depends on.
+ *
+ * This can be used to determine the order in which the plugins should be
+ * processed when running hooks.
+ *
+ * @return Names of the plugins this plugin depends on.
+ */
+std::vector<std::string> Storage::getDependencies() const
+{
+    std::vector<std::string> dependencies;
+    const rt_defs_plugins_storage* pluginConfig = mContainerConfig->rdk_plugins->storage;
+
+    for (size_t i = 0; i < pluginConfig->depends_on_len; i++)
+    {
+        dependencies.push_back(pluginConfig->depends_on[i]);
+    }
+
+    return dependencies;
+}
+
 // Begin private methods
 
 // -----------------------------------------------------------------------------

@@ -60,6 +60,8 @@ public:
     bool preCreation() override;
     bool postHalt() override;
 
+public:
+    std::vector<std::string> getDependencies() const override;
 
 private:
     bool setupHttpProxy();

@@ -286,6 +286,7 @@ option(PLUGIN_GPU "Include GPU plugin" OFF)
 option(PLUGIN_LOCALTIME "Include LocalTime plugin" OFF)
 option(PLUGIN_RTSCHEDULING "Include RtScheduling plugin" OFF)
 option(PLUGIN_HTTPPROXY "Include HttpProxy plugin" OFF)
+option(PLUGIN_APPSERVICES "Include AppServices plugin" OFF)
 option(PLUGIN_IONMEMORY "Include ION Memory plugin" ON)
 
 if(PLUGIN_TESTPLUGIN)
@@ -322,6 +323,10 @@ endif()
 
 if(PLUGIN_HTTPPROXY)
     add_subdirectory(rdkPlugins/HttpProxy)
+endif()
+
+if(PLUGIN_APPSERVICES)
+    add_subdirectory(rdkPlugins/AppServices)
 endif()
 
 if(PLUGIN_IONMEMORY)

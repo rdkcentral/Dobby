@@ -93,6 +93,27 @@ bool LoggingPlugin::postInstallation()
 }
 
 /**
+ * @brief Should return the names of the plugins this plugin depends on.
+ *
+ * This can be used to determine the order in which the plugins should be
+ * processed when running hooks.
+ *
+ * @return Names of the plugins this plugin depends on.
+ */
+std::vector<std::string> LoggingPlugin::getDependencies() const
+{
+    std::vector<std::string> dependencies;
+    const rt_defs_plugins_logging* pluginConfig = mContainerConfig->rdk_plugins->logging;
+
+    for (size_t i = 0; i < pluginConfig->depends_on_len; i++)
+    {
+        dependencies.push_back(pluginConfig->depends_on[i]);
+    }
+
+    return dependencies;
+}
+
+/**
  * @brief Public method called by DobbyLogger to start running the logging
  * loop. Destination of the logs depends on the settings in the config file.
  *
@@ -134,6 +155,15 @@ void LoggingPlugin::LoggingLoop(ContainerInfo containerInfo,
     if (containerInfo.connectionFd > 0 && close(containerInfo.connectionFd) != 0)
     {
         AI_LOG_SYS_ERROR(errno, "Failed to close connection");
+    }
+
+    // If dumping a buffer, DobbyBufferStream will clean up after itself
+    if (!isBuffer && containerInfo.pttyFd > 0 && fcntl(containerInfo.pttyFd, F_GETFD) != -1)
+    {
+        if (close(containerInfo.pttyFd) != 0)
+        {
+            AI_LOG_SYS_ERROR(errno, "Failed to close container ptty fd");
+        }
     }
 
     AI_LOG_FN_EXIT();

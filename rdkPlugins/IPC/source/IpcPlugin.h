@@ -57,6 +57,9 @@ public:
 public:
     bool postInstallation() override;
 
+public:
+    std::vector<std::string> getDependencies() const override;
+
 private:
     bool addSocketAndEnv(const std::shared_ptr<DobbyRdkPluginUtils> utils,
                         const std::string& rootfsPath,

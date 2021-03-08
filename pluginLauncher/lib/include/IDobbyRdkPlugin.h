@@ -31,8 +31,9 @@
 #include <json/json.h>
 #include <sys/types.h>
 
-#include <string>
 #include <memory>
+#include <string>
+#include <vector>
 
 // -----------------------------------------------------------------------------
 /**
@@ -118,6 +119,17 @@ public:
 
     // OCI Hook (called after delete)
     virtual bool postStop() = 0;
+
+public:
+    /**
+     * @brief Should return the names of the plugins this plugin depends on.
+     *
+     * This can be used to determine the order in which the plugins should be
+     * processed when running hooks.
+     *
+     * @return Names of the plugins this plugin depends on.
+     */
+    virtual std::vector<std::string> getDependencies() const = 0;
 };
 
 // -----------------------------------------------------------------------------
