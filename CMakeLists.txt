@@ -279,6 +279,7 @@ option(PLUGIN_LOGGING "Include Logging plugin" ON)
 option(PLUGIN_NETWORKING "Include Networking plugin" ON)
 option(PLUGIN_IPC "Include IPC plugin" ON)
 option(PLUGIN_STORAGE "Include Storage plugin" ON)
+option(PLUGIN_THUNDER "Include AppServices plugin" ON)
 
 # Optional RDK plugins
 option(PLUGIN_TESTPLUGIN "Include TestPlugin plugin" OFF)
@@ -326,6 +327,10 @@ endif()
 
 if(PLUGIN_APPSERVICES)
     add_subdirectory(rdkPlugins/AppServices)
+endif()
+
+if(PLUGIN_THUNDER)
+    add_subdirectory(rdkPlugins/Thunder)
 endif()
 
 # Export targets in Dobby package

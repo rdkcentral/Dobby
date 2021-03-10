@@ -409,6 +409,32 @@
                 }
             }
         },
+        "Thunder": {
+            "type": "object",
+            "required": [
+                "required",
+                "data"
+            ],
+            "properties": {
+                "required": {
+                    "type": "boolean"
+                },
+                "dependsOn": {
+                    "$ref": "defs.json#/definitions/ArrayOfStrings"
+                },
+                "data": {
+                    "type": "object",
+                    "properties": {
+                        "bearerUrl": {
+                            "type": "string"
+                        },
+                        "connLimit": {
+                            "type": "integer"
+                        }
+                    }
+                }
+            }
+        },
         "TestRdkPlugin": {
             "type": "object",
             "required": [
@@ -472,6 +498,9 @@
                 },
                 "httpproxy": {
                     "$ref": "#/definitions/HttpProxy"
+                },
+                "thunder": {
+                    "$ref": "#/definitions/Thunder"
                 },
                 "testrdkplugin": {
                     "$ref": "#/definitions/TestRdkPlugin"

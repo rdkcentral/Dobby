@@ -323,15 +323,6 @@ bool DobbyManager::createAndStart(const ContainerId &id,
 {
     AI_LOG_FN_ENTRY();
 
-    // Run any pre-creation hooks
-    if (container->config->rdkPlugins().size() > 0)
-    {
-        if (!onPreCreationHook(container))
-        {
-            return false;
-        }
-    }
-
     // Create the container, but don't start it yet
     auto loggingPlugin = GetContainerLogger(container);
     std::shared_ptr<DobbyBufferStream> createBuffer = std::make_shared<DobbyBufferStream>();
@@ -683,6 +674,16 @@ int32_t DobbyManager::startContainerFromSpec(const ContainerId &id,
         {
             pluginFailure = true;
         }
+
+        // Run any pre-creation hooks
+        // Note: running the hooks here allows these hooks to also modify the
+        // config. This is necessary to add envvars etc, but can cause issues
+        // when launching multiple containers from the same bundle where the plugin
+        // could add duplicate data to the config
+        if (!onPreCreationHook(container))
+        {
+            pluginFailure = true;
+        }
     }
 
     // Don't start if necessary plugins have failed
@@ -848,6 +849,16 @@ int32_t DobbyManager::startContainerFromBundle(const ContainerId &id,
     if (!pluginFailure && rdkPlugins.size() > 0)
     {
         if (!onPostInstallationHook(container))
+        {
+            pluginFailure = true;
+        }
+
+        // Run any pre-creation hooks
+        // Note: running the hooks here allows these hooks to also modify the
+        // config. This is necessary to add envvars etc, but can cause issues
+        // when launching multiple containers from the same bundle where the plugin
+        // could add duplicate data to the config
+        if (!onPreCreationHook(container))
         {
             pluginFailure = true;
         }
