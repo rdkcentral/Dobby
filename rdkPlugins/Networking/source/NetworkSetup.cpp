@@ -1010,37 +1010,6 @@ bool NetworkSetup::removeBridgeDevice(const std::shared_ptr<Netfilter> &netfilte
 
 // -----------------------------------------------------------------------------
 /**
- *  @brief Adds a mount to sysfs in the OCI config
- *
- *  @param[in]  utils           Instance of DobbyRdkPluginUtils.
- *  @param[in]  cfg             Pointer to bundle config struct
- */
-void NetworkSetup::addSysfsMount(const std::shared_ptr<DobbyRdkPluginUtils> &utils,
-                                 const std::shared_ptr<rt_dobby_schema> &cfg)
-{
-    const std::string source = "sysfs";
-    const std::string destination = "/sys";
-
-    // iterate through the mounts to check that the mount doesn't already exist
-    for (int i=0; i < cfg->mounts_len; i++)
-    {
-        if (!strcmp(cfg->mounts[i]->source, source.c_str()) &&
-            !strcmp(cfg->mounts[i]->destination, destination.c_str()))
-        {
-            AI_LOG_DEBUG("sysfs mount already exists in the config");
-            return;
-        }
-    }
-
-    // add the mount
-    utils->addMount(source, destination, "sysfs",
-                    { "nosuid", "noexec", "nodev", "ro" }
-    );
-}
-
-
-// -----------------------------------------------------------------------------
-/**
  *  @brief Adds a mount to /etc/resolv.conf
  *
  *  @param[in]  utils           Instance of DobbyRdkPluginUtils.

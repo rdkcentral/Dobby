@@ -158,7 +158,7 @@ static const char* ociJsonTemplate = R"JSON(
                 "mode=1777",
                 "nr_inodes=8k"
             ]
-        },{{#NETNS_ENABLED}}
+        },
         {
             "destination": "/sys",
             "type": "sysfs",
@@ -169,7 +169,7 @@ static const char* ociJsonTemplate = R"JSON(
                 "nodev",
                 "ro"
             ]
-        },{{/NETNS_ENABLED}}
+        },
         {
             "destination": "/sys/fs/cgroup",
             "type": "cgroup",
