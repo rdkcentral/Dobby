@@ -31,20 +31,8 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
-/**
- * Need to do this at the start of every plugin to make sure the correct
- * C methods are visible to allow PluginLauncher to find the plugin
- */
 REGISTER_RDK_PLUGIN(IonMemoryPlugin);
 
-/**
- * @brief Constructor - called when plugin is loaded by PluginLauncher
- *
- * Do not change the parameters for this constructor - must match C methods
- * created by REGISTER_RDK_PLUGIN macro
- *
- * Note plugin name is not case sensitive
- */
 IonMemoryPlugin::IonMemoryPlugin(std::shared_ptr<rt_dobby_schema> &containerConfig,
                                  const std::shared_ptr<DobbyRdkPluginUtils> &utils,
                                  const std::string &rootfsPath)
@@ -81,6 +69,113 @@ unsigned IonMemoryPlugin::hookHints() const
         IDobbyRdkPlugin::HintFlags::CreateRuntimeFlag |
         IDobbyRdkPlugin::HintFlags::PostStopFlag);
 }
+
+// Begin Hook Methods
+
+/**
+ * @brief OCI Hook - Run in host namespace. We use this point to create a cgroup and put the
+ *  containered process into it.
+ *
+ *  We also set any limits from the plugin JSON data provided.
+ *
+ *  The cgroup is given the same name as the container.
+ *
+ * @return True on success, false on failure.
+ */
+bool IonMemoryPlugin::createRuntime()
+{
+    AI_LOG_FN_ENTRY();
+
+    if (!mValid)
+    {
+        AI_LOG_ERROR_EXIT("Invalid container config");
+        return false;
+    }
+
+    const std::string cgroupDirPath = findIonCGroupMountPoint();
+
+    // sanity check we have an ION cgroup dir
+    if (cgroupDirPath.empty())
+    {
+        AI_LOG_ERROR_EXIT("missing cgroup directory");
+        return false;
+    }
+
+    // get the container pid
+    pid_t containerPid = mUtils->getContainerPid();
+    if (!containerPid)
+    {
+        AI_LOG_ERROR_EXIT("couldn't find container pid");
+        return false;
+    }
+
+    // get the default limit and heap limits
+    const uint64_t defaultLimitValue = mPluginData->default_limit_present ? mPluginData->default_limit : UINT64_MAX;
+    std::map<std::string, uint64_t> heapLimits;
+    for (size_t i = 0; i < mPluginData->heaps_len; i++)
+    {
+        const rt_defs_plugins_ion_memory_data_heaps_element* heap = mPluginData->heaps[i];
+        const char* heapName = heap->name;
+        const uint64_t heapLimit = heap->limit;
+
+        heapLimits[heapName] = heapLimit;
+    }
+
+    // finally apply the limits
+    return setupContainerIonLimits(cgroupDirPath, containerPid, heapLimits, defaultLimitValue);
+
+    AI_LOG_FN_EXIT();
+    return true;
+
+}
+
+// -----------------------------------------------------------------------------
+/**
+ *  @brief Poststop hook, we use this point to remove the cgroup directory
+ *  created in the pre start phase.
+ *
+ *  The directory will have the same name as the container id.
+ *
+ *  @param[in]  id              The id of the container.
+ *  @param[in]  config          The container config.
+ *  @param[in]  rootfs          The path to the container rootfs.
+ *
+ *  @return true if successful otherwise false.
+ */
+bool IonMemoryPlugin::postStop()
+{
+    AI_LOG_FN_ENTRY();
+
+    const std::string cgroupDirPath = findIonCGroupMountPoint();
+
+    // sanity check we have a cgroup dir
+    if (cgroupDirPath.empty())
+    {
+        AI_LOG_ERROR_EXIT("missing cgroup directory");
+        return false;
+    }
+
+    // remove the container's cgroup directory
+    const std::string cgroupPath = cgroupDirPath + "/" + mUtils->getContainerId();
+    if (rmdir(cgroupPath.c_str()) < 0)
+    {
+        // we could be called at stop time even though the createRuntime hook
+        // wasn't called due to an earlier plugin failing ... so don't report
+        // an error if the directory didn't exist
+        if (errno != ENOENT)
+        {
+            AI_LOG_SYS_ERROR(errno, "failed to delete cgroup dir '%s'",
+                             mUtils->getContainerId().c_str());
+        }
+    }
+
+    AI_LOG_FN_EXIT();
+    return true;
+}
+
+// End hook methods
+
+// Begin private methods
 
 //
 /**
@@ -330,106 +425,3 @@ bool IonMemoryPlugin::bindMountCGroup(const std::string &source,
     AI_LOG_FN_EXIT();
     return true;
 }
-
-// Begin Hook Methods
-
-/**
- * @brief OCI Hook - Run in host namespace
- */
-bool IonMemoryPlugin::createRuntime()
-{
-    AI_LOG_FN_ENTRY();
-
-    if (!mValid)
-    {
-        AI_LOG_ERROR_EXIT("Invalid container config");
-        return false;
-    }
-
-    const std::string cgroupDirPath = findIonCGroupMountPoint();
-
-    // sanity check we have an ION cgroup dir
-    if (cgroupDirPath.empty())
-    {
-        AI_LOG_ERROR_EXIT("missing cgroup directory");
-        return false;
-    }
-
-    // get the container pid
-    pid_t containerPid = mUtils->getContainerPid();
-    if (!containerPid)
-    {
-        AI_LOG_ERROR_EXIT("couldn't find container pid");
-        return false;
-    }
-
-    // get the default limit and heap limits
-    const uint64_t defaultLimitValue = mPluginData->default_limit_present ? mPluginData->default_limit : UINT64_MAX;
-    std::map<std::string, uint64_t> heapLimits;
-    for (size_t i = 0; i < mPluginData->heaps_len; i++)
-    {
-        const rt_defs_plugins_ion_memory_data_heaps_element* heap = mPluginData->heaps[i];
-        const char* heapName = heap->name;
-        const uint64_t heapLimit = heap->limit;
-
-        heapLimits[heapName] = heapLimit;
-    }
-
-    // setup the gpu memory limit
-    // setupContainerGpuLimit(cgroupDirPath, containerPid, memLimit);
-
-    // finally apply the limits
-    return setupContainerIonLimits(cgroupDirPath, containerPid, heapLimits, defaultLimitValue);
-
-    AI_LOG_FN_EXIT();
-    return true;
-
-}
-
-// -----------------------------------------------------------------------------
-/**
- *  @brief Poststop hook, we use this point to remove the cgroup directory
- *  created in the pre start phase.
- *
- *  The directory will have the same name as the container id.
- *
- *  @param[in]  id              The id of the container.
- *  @param[in]  config          The container config.
- *  @param[in]  rootfs          The path to the container rootfs.
- *
- *  @return true if successful otherwise false.
- */
-bool IonMemoryPlugin::postStop()
-{
-    AI_LOG_FN_ENTRY();
-
-    const std::string cgroupDirPath = findIonCGroupMountPoint();
-
-    // sanity check we have a cgroup dir
-    if (cgroupDirPath.empty())
-    {
-        AI_LOG_ERROR_EXIT("missing cgroup directory");
-        return false;
-    }
-
-    // remove the container's cgroup directory
-    const std::string cgroupPath = cgroupDirPath + "/" + mUtils->getContainerId();
-    if (rmdir(cgroupPath.c_str()) < 0)
-    {
-        // we could be called at stop time even though the createRuntime hook
-        // wasn't called due to an earlier plugin failing ... so don't report
-        // an error if the directory didn't exist
-        if (errno != ENOENT)
-        {
-            AI_LOG_SYS_ERROR(errno, "failed to delete cgroup dir '%s'",
-                             mUtils->getContainerId().c_str());
-        }
-    }
-
-    AI_LOG_FN_EXIT();
-    return true;
-}
-
-// End hook methods
-
-// Begin private methods

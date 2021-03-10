@@ -52,7 +52,6 @@ public:
 
 public:
     bool createRuntime() override;
-
     bool postStop() override;
 
 private:
