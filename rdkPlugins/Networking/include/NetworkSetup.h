@@ -67,8 +67,6 @@ namespace NetworkSetup
     bool removeBridgeDevice(const std::shared_ptr<Netfilter> &netfilter,
                             const std::vector<std::string> &extIfaces);
 
-    void addSysfsMount(const std::shared_ptr<DobbyRdkPluginUtils> &utils,
-                       const std::shared_ptr<rt_dobby_schema> &cfg);
     void addResolvMount(const std::shared_ptr<DobbyRdkPluginUtils> &utils,
                         const std::shared_ptr<rt_dobby_schema> &cfg);
 
