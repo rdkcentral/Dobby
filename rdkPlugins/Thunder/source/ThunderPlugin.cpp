@@ -44,7 +44,8 @@ ThunderPlugin::ThunderPlugin(std::shared_ptr<rt_dobby_schema> &containerConfig,
       mContainerConfig(containerConfig),
       mRootfsPath(rootfsPath),
       mUtils(utils),
-      mNetfilter(std::make_shared<Netfilter>())
+      mNetfilter(std::make_shared<Netfilter>()),
+      mEnableConnLimit(false)
 {
     AI_LOG_FN_ENTRY();
 
@@ -105,7 +106,7 @@ bool ThunderPlugin::postInstallation()
     std::string servicesFilePath = mRootfsPath + "/etc/services";
     if (!mUtils->writeTextFile(servicesFilePath, buf, O_CREAT | O_APPEND | O_WRONLY, 0644))
     {
-        AI_LOG_ERROR("Failed to update servuces file with Thunder details");
+        AI_LOG_ERROR("Failed to update services file with Thunder details");
     }
 
     // Set the THUNDER_ACCESS envvar to the Dobby bridge IP address
@@ -275,7 +276,10 @@ Netfilter::RuleSet ThunderPlugin::constructRules() const
     }
 
     // Add connection limit rules
-    acceptRules.emplace_back(constructCONNLIMITRule(ipAddress, vethName, mThunderPort, connLimit));
+    if (mEnableConnLimit)
+    {
+        acceptRules.emplace_back(constructCONNLIMITRule(ipAddress, vethName, mThunderPort, connLimit));
+    }
 
     // Add input accept rules
     acceptRules.emplace_back(constructACCEPTRule(ipAddress, vethName, mThunderPort));

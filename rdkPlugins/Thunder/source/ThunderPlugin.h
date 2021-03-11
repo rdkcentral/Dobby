@@ -96,18 +96,11 @@ private:
     const std::shared_ptr<DobbyRdkPluginUtils> mUtils;
     const std::string mRootfsPath;
 
-
     in_port_t mThunderPort;
     std::shared_ptr<Netfilter> mNetfilter;
 
 private:
     std::mutex mLock;
-    struct ThunderConfig
-    {
-        int connLimit = 32;
-        Netfilter::RuleSet nfRuleSet;
-    };
-
-    std::map<std::string, ThunderConfig> mContainerConfigs;
+    const bool mEnableConnLimit;
 };
 #endif // !defined(THUNDERPLUGIN_H)
