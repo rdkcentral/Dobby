@@ -126,9 +126,6 @@ bool NetworkingPlugin::postInstallation()
     // if the network type is not 'open', enable network namespacing in OCI config
     if (mNetworkType != NetworkType::Open)
     {
-        // add mount to sysfs
-        NetworkSetup::addSysfsMount(mUtils, mContainerConfig);
-
         // add /etc/resolv.conf mount if not using dnsmasq. If dnsmasq is enabled,
         // a new /etc/resolv.conf is created rather than mounting the host's
         if (!mPluginData->dnsmasq)
