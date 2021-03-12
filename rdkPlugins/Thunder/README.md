@@ -8,6 +8,7 @@ Add the following section to your OCI runtime configuration `config.json` file t
     "rdkPlugins": {
         "thunder": {
             "required": true,
+            "dependsOn": ["networking"],
             "data": {}
         }
     }
@@ -20,6 +21,9 @@ Automatically does the following:
 * Edits `/etc/hosts` and `/etc/services` file to add Thunder info
 
 If you already have other RDK plugins in the bundle, then just add the Thunder plugin. Do not create multiple `rdkPlugin` sections.
+
+## Dependencies
+This plugin depends on the Networking plugin. Ensure the `dependsOn` property is set so that the Networking plugin is run before the Thunder plugin.
 
 ## Options
 ### BearerUrl
