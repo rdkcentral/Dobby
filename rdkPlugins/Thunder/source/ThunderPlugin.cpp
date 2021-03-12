@@ -45,25 +45,10 @@ ThunderPlugin::ThunderPlugin(std::shared_ptr<rt_dobby_schema> &containerConfig,
       mRootfsPath(rootfsPath),
       mUtils(utils),
       mNetfilter(std::make_shared<Netfilter>()),
-      mEnableConnLimit(false)
+      mEnableConnLimit(false),
+      mThunderPort(9998) // Change this if Thunder runs on non-standard port
 {
     AI_LOG_FN_ENTRY();
-
-    // TODO:: Should also check /etc/WPEFramework/config.json
-    if (getenv("THUNDER_ACCESS"))
-    {
-        std::string thunderAccess = std::string(getenv("THUNDER_ACCESS"));
-        std::size_t token = thunderAccess.rfind(":");
-        if (token != std::string::npos)
-        {
-            mThunderPort = std::stoi(thunderAccess.substr(token + 1));
-        }
-        AI_LOG_DEBUG("Thunder running on non-standard port %d set by THUNDER_ACCESS", mThunderPort);
-    }
-    else
-    {
-        mThunderPort = 9998;
-    }
 
     AI_LOG_FN_EXIT();
 }
@@ -112,6 +97,7 @@ bool ThunderPlugin::postInstallation()
     // Set the THUNDER_ACCESS envvar to the Dobby bridge IP address
     bzero(buf, sizeof(buf));
     snprintf(buf, sizeof(buf), "THUNDER_ACCESS=100.64.11.1:%hu", mThunderPort);
+    AI_LOG_INFO(">> %s", buf);
     mUtils->addEnvironmentVar(buf);
 
     return true;
