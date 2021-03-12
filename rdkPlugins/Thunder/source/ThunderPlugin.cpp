@@ -124,7 +124,11 @@ bool ThunderPlugin::preCreation()
     // Add an environment variable to the config containing the token
     if (mContainerConfig->rdk_plugins->thunder->data->bearer_url)
     {
+#if defined(DEV_VM)
         std::string agentPath = "/tmp/SecurityAgent/token";
+#else
+        std::string agentPath = "/tmp/securityagent";
+#endif
         const char *envAgentPath = getenv("SECURITYAGENT_PATH");
         if (envAgentPath)
         {
@@ -163,6 +167,8 @@ bool ThunderPlugin::preCreation()
 
 bool ThunderPlugin::createRuntime()
 {
+    AI_LOG_FN_ENTRY();
+
     // construct the ruleset
     Netfilter::RuleSet ruleSet = constructRules();
     if (ruleSet.empty())
