@@ -220,7 +220,6 @@ std::string IonMemoryPlugin::findIonCGroupMountPoint() const
             continue;
 
         AI_LOG_INFO("found ION cgroup mounted @ '%s'", mnt->mnt_dir);
-        AI_LOG_WARN("found ION cgroup mounted @ '%s'", mnt->mnt_dir);
 
         path = mnt->mnt_dir;
         break;
@@ -243,7 +242,7 @@ std::string IonMemoryPlugin::findIonCGroupMountPoint() const
  *
  *  @param[in]  id              The id of the container.
  *  @param[in]  containerPid    The pid of the process in the container.
- *  @param[in]  heapLimits      Map of the heap name to it's limits.
+ *  @param[in]  heapLimits      Map of the heap name to its limits.
  *  @param[in]  defaultLimit    The default limit to set on a heap if not in the
  *                              heapLimits map.
  *
@@ -297,7 +296,7 @@ bool IonMemoryPlugin::setupContainerIonLimits(const std::string &cGroupDirPath,
 
     // loop through all the heaps and set either the default limit or the
     // individual heap limit
-    const std::regex limitRegex(R"regex(^ion\.\w+\.limit_in_bytes$)regex");
+    const std::regex limitRegex(R"regex(^ion\.\(w+)\.limit_in_bytes$)regex");
 
     struct dirent *entry;
     while ((entry = readdir(dir)) != nullptr)
@@ -323,27 +322,14 @@ bool IonMemoryPlugin::setupContainerIonLimits(const std::string &cGroupDirPath,
             {
                 AI_LOG_INFO("setting no limit on ION heap '%s' for container '%s'",
                             heapName.c_str(), containerId.c_str());
-                AI_LOG_WARN("setting no limit on ION heap '%s' for container '%s'",
-                            heapName.c_str(), containerId.c_str());
             }
             else
             {
                 AI_LOG_INFO("setting ion heap '%s' limit to %llukb for container '%s'",
                             heapName.c_str(), limit / 1024, containerId.c_str());
-                AI_LOG_WARN("setting ion heap '%s' limit to %llukb for container '%s'",
-                            heapName.c_str(), limit / 1024, containerId.c_str());
             }
 
             // set the ION heap memory limit on the container
-#if 0
-            if (!writeCgroupFile(dirfd(dir), entry->d_name, limit))
-            {
-                AI_LOG_ERROR("failed to set the ion heap '%s' memory limit for container "
-                             "'%s'", heapName.c_str(), containerId.c_str());
-
-                // FIXME: if a failure should we abort container start?
-            }
-#else
             const std::string filePath = sourcePath + "/" + entry->d_name;
             if (!mUtils->writeTextFile(filePath, std::to_string(limit),
                                O_CREAT | O_TRUNC, 0700))
@@ -352,7 +338,6 @@ bool IonMemoryPlugin::setupContainerIonLimits(const std::string &cGroupDirPath,
                              "'%s'", heapName.c_str(), containerId.c_str());
                 return false;
             }
-#endif
         }
 
     }
@@ -396,8 +381,8 @@ bool IonMemoryPlugin::setupContainerIonLimits(const std::string &cGroupDirPath,
  *  for this container.
  *
  *  Nb this is not a security thing, but if we don't do this the app inside
- *  the container would have to know it's container id so it could monitor
- *  it's own usage, this is a problem for existing sky apps (like the EPG)
+ *  the container would have to know its container id so it could monitor
+ *  its own usage, this is a problem for existing sky apps (like the EPG)
  *  which expects the cgroup to be mounted for the container only.
  *
  *  @param[in]  source      The source path of the cgroup.
