@@ -379,8 +379,7 @@
                 },
                 "data": {
                     "type": "object",
-                    "properties": {
-                    }
+                    "properties": {}
                 }
             }
         },
@@ -516,7 +515,7 @@
         "RdkPlugins": {
             "type": "object",
             "properties": {
-                "appservicesrdk" : {
+                "appservicesrdk": {
                     "$ref": "#/definitions/AppServicesRdk"
                 },
                 "ipc": {

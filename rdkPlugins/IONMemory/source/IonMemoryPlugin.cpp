@@ -19,7 +19,6 @@
 
 #include "IonMemoryPlugin.h"
 
-#include <map>
 #include <regex>
 #include <cinttypes>
 

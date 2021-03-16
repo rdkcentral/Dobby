@@ -27,6 +27,7 @@
 #endif
 #include <sstream>
 #include <string.h>
+#include <map>
 
 /**
  * Register the logging plugin with the special logging registration method

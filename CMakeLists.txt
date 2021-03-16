@@ -166,7 +166,9 @@ endif()
 find_package( breakpad QUIET )
 
 # Run libocispec to generate OCI config parsers and necessary C headers
-include(cmake/libocispec.cmake)
+include(${CMAKE_MODULE_PATH}/Findlibocispec.cmake)
+
+GenerateLibocispec(EXTRA_SCHEMA_PATH "${EXTERNAL_PLUGIN_SCHEMA}")
 
 
 # Main source code
@@ -350,7 +352,7 @@ endif()
 export( PACKAGE Dobby )
 
 # Add targets to build-tree export set DobbyTargets.cmake
-export( TARGETS AppInfraCommon AppInfraLogging IpcService DobbyClientLib
+export( TARGETS AppInfraCommon AppInfraLogging IpcService DobbyClientLib DobbyRdkPluginCommonLib DobbyPluginLauncherLib libocispec
         FILE "${PROJECT_BINARY_DIR}/DobbyTargets.cmake"
 )
 
@@ -364,6 +366,7 @@ set( CONF_INCLUDE_DIRS
       "${PROJECT_SOURCE_DIR}/AppInfrastructure/Public"
       "${PROJECT_SOURCE_DIR}/AppInfrastructure/IpcService/include"
       "${PROJECT_SOURCE_DIR}/AppInfrastructure/Common/include"
+      "${PROJECT_SOURCE_DIR}/rdkPlugins/Common/include"
 )
 
 # Generate config files from .in files

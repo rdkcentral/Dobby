@@ -38,3 +38,8 @@ install(TARGETS AppInfraLogging
         ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
 
         )
+
+# Install public headers for external use
+install( DIRECTORY include/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/Dobby/
+        FILES_MATCHING PATTERN "Logging.h"
+)

@@ -102,7 +102,7 @@ def process_c_file(c_file):
 
 
 def process_h_file(h_file, found_plugins_count, longest_plugin_name):
-    pattern = re.compile(".*defs_plugins_rdk_plugins;")
+    pattern = re.compile(".*rt_dobby_schema_rdk_plugins;")
 
     with open(h_file, 'r') as file:
         file_content = file.readlines()
@@ -124,7 +124,7 @@ def process_h_file(h_file, found_plugins_count, longest_plugin_name):
 def find_files():
     files = listdir()
     proper_files = []
-    common_file_part = "defs_plugins"
+    common_file_part = "rt_dobby_schema"
 
     for file in files:
         if "%s.c" % common_file_part in file \
