@@ -38,7 +38,7 @@
 class IonMemoryPlugin final : public RdkPluginBase
 {
 public:
-    IonMemoryPlugin(std::shared_ptr<rt_dobby_schema>& containerConfig,
+    IonMemoryPlugin(std::shared_ptr<rt_dobby_schema> &containerConfig,
                     const std::shared_ptr<DobbyRdkPluginUtils> &utils,
                     const std::string &rootfsPath);
 
@@ -56,8 +56,6 @@ public:
 
 private:
     std::string findIonCGroupMountPoint() const;
-    bool bindMountCGroup(const std::string& source,
-                         const std::string& target) const;
     bool setupContainerIonLimits(const std::string &cGroupDirPath,
                                  pid_t containerPid,
                                  const std::map<std::string, uint64_t> &heapLimits,
@@ -70,7 +68,7 @@ private:
     const std::string mRootfsPath;
 
     bool mValid;
-    const rt_defs_plugins_ion_memory_data* mPluginData;
+    const rt_defs_plugins_ion_memory_data *mPluginData;
 };
 
 #endif // !defined(IONMEMORYPLUGIN_H)

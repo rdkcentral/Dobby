@@ -21,6 +21,7 @@
 
 #include <map>
 #include <regex>
+#include <cinttypes>
 
 #include <dirent.h>
 #include <fcntl.h>
@@ -114,8 +115,8 @@ bool IonMemoryPlugin::createRuntime()
     std::map<std::string, uint64_t> heapLimits;
     for (size_t i = 0; i < mPluginData->heaps_len; i++)
     {
-        const rt_defs_plugins_ion_memory_data_heaps_element* heap = mPluginData->heaps[i];
-        const char* heapName = heap->name;
+        const rt_defs_plugins_ion_memory_data_heaps_element *heap = mPluginData->heaps[i];
+        const char *heapName = heap->name;
         const uint64_t heapLimit = heap->limit;
 
         heapLimits[heapName] = heapLimit;
@@ -126,7 +127,6 @@ bool IonMemoryPlugin::createRuntime()
 
     AI_LOG_FN_EXIT();
     return true;
-
 }
 
 // -----------------------------------------------------------------------------
@@ -191,7 +191,7 @@ std::string IonMemoryPlugin::findIonCGroupMountPoint() const
     AI_LOG_FN_ENTRY();
 
     // try and open /proc/mounts for scanning the current mount table
-    FILE* procMounts = setmntent("/proc/mounts", "r");
+    FILE *procMounts = setmntent("/proc/mounts", "r");
     if (procMounts == nullptr)
     {
         AI_LOG_SYS_ERROR_EXIT(errno, "failed to open '/proc/mounts' file");
@@ -200,7 +200,7 @@ std::string IonMemoryPlugin::findIonCGroupMountPoint() const
 
     // loop over all the mounts
     struct mntent mntBuf;
-    struct mntent* mnt;
+    struct mntent *mnt;
     char buf[PATH_MAX + 256];
     std::string path;
 
@@ -215,7 +215,7 @@ std::string IonMemoryPlugin::findIonCGroupMountPoint() const
             continue;
 
         // check if the ion cgroup
-        char* mntopt = hasmntopt(mnt, "ion");
+        char *mntopt = hasmntopt(mnt, "ion");
         if (!mntopt || (strcmp(mntopt, "ion") != 0))
             continue;
 
@@ -240,6 +240,11 @@ std::string IonMemoryPlugin::findIonCGroupMountPoint() const
  *
  *  The cgroup is given the same name as the container.
  *
+ *  @warning This requires a version of crun with the following PR:
+ *  https://github.com/containers/crun/pull/609 to ensure cgroup controllers are
+ *  correctly mounted. Without the PR applied, the ION cgroup is mounted incorrectly,
+ *  see https://github.com/containers/crun/issues/625 for more info
+ *
  *  @param[in]  id              The id of the container.
  *  @param[in]  containerPid    The pid of the process in the container.
  *  @param[in]  heapLimits      Map of the heap name to its limits.
@@ -254,14 +259,11 @@ bool IonMemoryPlugin::setupContainerIonLimits(const std::string &cGroupDirPath,
                                               uint64_t defaultLimit)
 {
     const std::string containerId = mUtils->getContainerId();
-    // setup the paths for the bind mount, i.e.
-    //   source:   "/sys/fs/cgroup/ion/<id>"
-    //   target:   "/sys/fs/cgroup/ion"
-    const std::string sourcePath(cGroupDirPath + "/" + containerId);
-    const std::string targetPath(cGroupDirPath);
+    // setup the paths for the cgroup, i.e. "/sys/fs/cgroup/ion/<id>"
+    const std::string cgroupPath(cGroupDirPath + "/" + containerId);
 
     // create a new cgroup (we're 'sort of' ok with it already existing)
-    if ((mkdir(sourcePath.c_str(), 0755) != 0) && (errno != EEXIST))
+    if ((mkdir(cgroupPath.c_str(), 0755) != 0) && (errno != EEXIST))
     {
         AI_LOG_SYS_ERROR_EXIT(errno, "failed to create gpu cgroup dir '%s'",
                               containerId.c_str());
@@ -269,7 +271,7 @@ bool IonMemoryPlugin::setupContainerIonLimits(const std::string &cGroupDirPath,
     }
 
     // move the containered pid into the new cgroup
-    const std::string procsPath = sourcePath + "/cgroup.procs";
+    const std::string procsPath = cgroupPath + "/cgroup.procs";
     if (!mUtils->writeTextFile(procsPath, std::to_string(containerPid),
                                O_CREAT | O_TRUNC, 0700))
     {
@@ -279,7 +281,7 @@ bool IonMemoryPlugin::setupContainerIonLimits(const std::string &cGroupDirPath,
     }
 
     // open the directory to iterate through all the heaps
-    int dirFd = open(sourcePath.c_str(),O_CLOEXEC | O_DIRECTORY);
+    int dirFd = open(cgroupPath.c_str(), O_CLOEXEC | O_DIRECTORY);
     if (dirFd < 0)
     {
         AI_LOG_SYS_ERROR_EXIT(errno, "failed to re-open the ion cgroup dir?");
@@ -325,87 +327,25 @@ bool IonMemoryPlugin::setupContainerIonLimits(const std::string &cGroupDirPath,
             }
             else
             {
-                AI_LOG_INFO("setting ion heap '%s' limit to %llukb for container '%s'",
+                AI_LOG_INFO("setting ion heap '%s' limit to %" PRIu64 " for container '%s'",
                             heapName.c_str(), limit / 1024, containerId.c_str());
             }
 
             // set the ION heap memory limit on the container
-            const std::string filePath = sourcePath + "/" + entry->d_name;
+            const std::string filePath = cgroupPath + "/" + entry->d_name;
             if (!mUtils->writeTextFile(filePath, std::to_string(limit),
-                               O_CREAT | O_TRUNC, 0700))
+                                       O_CREAT | O_TRUNC, 0700))
             {
                 AI_LOG_ERROR("failed to set the ion heap '%s' memory limit for container "
-                             "'%s'", heapName.c_str(), containerId.c_str());
+                             "'%s'",
+                             heapName.c_str(), containerId.c_str());
                 return false;
             }
         }
-
     }
 
     // clean the dir iterator
     closedir(dir);
-
-    // bind mount the container specific cgroup into the container
-    if (!mUtils->callInNamespace(containerPid, CLONE_NEWNS,
-                                 &IonMemoryPlugin::bindMountCGroup,
-                                 this, sourcePath, targetPath))
-    {
-        AI_LOG_ERROR_EXIT("hook failed to enter mount namespace");
-        return false;
-    }
-
-    AI_LOG_FN_EXIT();
-    return true;
-}
-
-// -----------------------------------------------------------------------------
-/**
- *  @brief Called in the mount namespace of the container
- *
- *  The runc tool does mount the ion cgroup in the container, but it's the
- *  root of the cgroup tree rather than the cgroup created for the container.
- *
- *  For example this is the mount layout setup by runc:
- *
- *      /sys/fs/cgroup/cpu/<ID>    -> <ROOTFS>/sys/fs/cgroup/cpu
- *      /sys/fs/cgroup/memory/<ID> -> <ROOTFS>/sys/fs/cgroup/memory
- *      /sys/fs/cgroup/ion         -> <ROOTFS>/sys/fs/cgroup/ion
- *      ...
- *
- *  We want it to be:
- *
- *      /sys/fs/cgroup/ion/<ID>    -> <ROOTFS>/sys/fs/cgroup/ion
- *      ...
- *
- *  So we need to umount the existing ion mount and replace it with the cgroup
- *  for this container.
- *
- *  Nb this is not a security thing, but if we don't do this the app inside
- *  the container would have to know its container id so it could monitor
- *  its own usage, this is a problem for existing sky apps (like the EPG)
- *  which expects the cgroup to be mounted for the container only.
- *
- *  @param[in]  source      The source path of the cgroup.
- *  @param[in]  target      The target mount point.
- *
- */
-bool IonMemoryPlugin::bindMountCGroup(const std::string &source,
-                                      const std::string &target) const
-{
-    AI_LOG_FN_ENTRY();
-
-    // now try and do the bind mount
-    if (mount(source.c_str(), target.c_str(), nullptr, MS_BIND, nullptr) != 0)
-    {
-        AI_LOG_SYS_ERROR(errno, "failed to bind mount '%s' to '%s'",
-                         source.c_str(), target.c_str());
-    }
-    else
-    {
-        AI_LOG_INFO("bind mounted '%s' to '%s'", source.c_str(),
-                    target.c_str());
-        return false;
-    }
 
     AI_LOG_FN_EXIT();
     return true;

@@ -287,7 +287,7 @@ option(PLUGIN_LOCALTIME "Include LocalTime plugin" OFF)
 option(PLUGIN_RTSCHEDULING "Include RtScheduling plugin" OFF)
 option(PLUGIN_HTTPPROXY "Include HttpProxy plugin" OFF)
 option(PLUGIN_APPSERVICES "Include AppServices plugin" OFF)
-option(PLUGIN_IONMEMORY "Include ION Memory plugin" ON)
+option(PLUGIN_IONMEMORY "Include ION Memory plugin" OFF)
 
 if(PLUGIN_TESTPLUGIN)
     add_subdirectory(rdkPlugins/TestPlugin)
