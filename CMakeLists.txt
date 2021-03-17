@@ -242,7 +242,6 @@ add_subdirectory( daemon/process )
 # Add legacy plugins
 if( LEGACY_COMPONENTS )
     add_subdirectory( plugins/Common )
-    add_subdirectory( plugins/AppServices )
     add_subdirectory( plugins/EthanLog )
     add_subdirectory( plugins/OpenCDM )
     add_subdirectory( plugins/Perfetto )
