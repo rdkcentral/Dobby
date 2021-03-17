@@ -48,7 +48,6 @@ IonMemoryPlugin::IonMemoryPlugin(std::shared_ptr<rt_dobby_schema> &containerConf
         mContainerConfig->rdk_plugins->ionmemory == nullptr ||
         mContainerConfig->rdk_plugins->ionmemory->data == nullptr)
     {
-        AI_LOG_ERROR_EXIT("Invalid container config");
         mValid = false;
     }
     else
