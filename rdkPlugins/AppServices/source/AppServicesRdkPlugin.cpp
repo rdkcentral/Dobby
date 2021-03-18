@@ -41,7 +41,6 @@ AppServicesRdkPlugin::AppServicesRdkPlugin(std::shared_ptr<rt_dobby_schema> &con
         mContainerConfig->rdk_plugins->appservicesrdk == nullptr ||
         mContainerConfig->rdk_plugins->appservicesrdk->data == nullptr)
     {
-        AI_LOG_ERROR_EXIT("Invalid container config");
         mValid = false;
     }
     else
