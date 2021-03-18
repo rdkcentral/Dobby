@@ -96,6 +96,44 @@
                 }
             }
         },
+        "IONMemory": {
+            "type": "object",
+            "required": [
+                "required",
+                "data"
+            ],
+            "properties": {
+                "required": {
+                    "type": "boolean"
+                },
+                "data": {
+                    "type": "object",
+                    "properties": {
+                        "defaultLimit": {
+                            "$ref": "defs.json#/definitions/uint64"
+                        },
+                        "heaps": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "required": [
+                                    "name",
+                                    "limit"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "type": "string"
+                                    },
+                                    "limit": {
+                                        "$ref": "defs.json#/definitions/uint64"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "IPC": {
             "type": "object",
             "required": [
@@ -454,6 +492,9 @@
                 },
                 "gpu": {
                     "$ref": "#/definitions/GPU"
+                },
+                "ionmemory": {
+                    "$ref": "#/definitions/IONMemory"
                 },
                 "logging": {
                     "$ref": "#/definitions/Logging"
