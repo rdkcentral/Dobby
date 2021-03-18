@@ -242,7 +242,6 @@ add_subdirectory( daemon/process )
 # Add legacy plugins
 if( LEGACY_COMPONENTS )
     add_subdirectory( plugins/Common )
-    add_subdirectory( plugins/AppServices )
     add_subdirectory( plugins/EthanLog )
     add_subdirectory( plugins/OpenCDM )
     add_subdirectory( plugins/Perfetto )
@@ -288,6 +287,7 @@ option(PLUGIN_LOCALTIME "Include LocalTime plugin" OFF)
 option(PLUGIN_RTSCHEDULING "Include RtScheduling plugin" OFF)
 option(PLUGIN_HTTPPROXY "Include HttpProxy plugin" OFF)
 option(PLUGIN_APPSERVICES "Include AppServices plugin" OFF)
+option(PLUGIN_IONMEMORY "Include ION Memory plugin" OFF)
 
 if(PLUGIN_TESTPLUGIN)
     add_subdirectory(rdkPlugins/TestPlugin)
@@ -331,6 +331,10 @@ endif()
 
 if(PLUGIN_THUNDER)
     add_subdirectory(rdkPlugins/Thunder)
+
+if(PLUGIN_IONMEMORY)
+    add_subdirectory(rdkPlugins/IONMemory)
+
 endif()
 
 # Export targets in Dobby package
