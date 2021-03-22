@@ -331,10 +331,10 @@ endif()
 
 if(PLUGIN_THUNDER)
     add_subdirectory(rdkPlugins/Thunder)
+endif()
 
 if(PLUGIN_IONMEMORY)
     add_subdirectory(rdkPlugins/IONMemory)
-
 endif()
 
 # Export targets in Dobby package
