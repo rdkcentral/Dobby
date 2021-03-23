@@ -74,6 +74,8 @@ bool TestRdkPlugin::postInstallation()
 {
     AI_LOG_INFO("Hello world, this is the %s hook", __func__);
 
+    AI_LOG_INFO("THIS IS A TEST");
+
     if (!mContainerConfig)
     {
         AI_LOG_WARN("Container config is null");
