@@ -76,13 +76,24 @@ bool LoopMountDetails::onPreCreate()
     AI_LOG_FN_ENTRY();
     bool success = false;
 
-    // step 1 - Create image file if not yet there
-    if (!StorageHelper::createFileIfNeeded(mMount.fsImagePath,
-                                            mMount.imgSize,
-                                            mUserId,
-                                            mMount.fsImageType))
+    // step 1 - Create image file if not yet there, this also runs checks on
+    // the integrity of the image, those should be enabled if imgManagement
+    // is also enabled (the default is true)
+    if (mMount.imgManagement)
     {
-        // logging already provided by createFileIfNeeded
+        if (!StorageHelper::createFileIfNeeded(mMount.fsImagePath,
+                                               mMount.imgSize,
+                                               mUserId,
+                                               mMount.fsImageType))
+        {
+            // logging already provided by createFileIfNeeded
+            return false;
+        }
+    }
+    else if (access(mMount.fsImagePath.c_str(), F_OK) != 0)
+    {
+        AI_LOG_ERROR("failed to find source image '%s' for storage plugin",
+                     mMount.fsImagePath.c_str());
         return false;
     }
 
