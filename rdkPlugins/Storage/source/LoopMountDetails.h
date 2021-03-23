@@ -60,6 +60,7 @@ public:
         unsigned long mountFlags;
         bool persistent;
         int imgSize;
+        bool imgManagement;
 
     } LoopMount;
 

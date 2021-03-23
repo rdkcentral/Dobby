@@ -39,7 +39,7 @@ For every mount point Storage plugin should create the should be one item in the
 | `options`           | Mount options, this corresponds to mount "data" field. []                                                                               |
 | `persistent`        | If true image will be persistent between boots, if not image will be deleted after container destruction [true]                         |
 | `imgsize`           | Size of the image file (in bytes), only valid if image wasn't there before [12582912] (12 MB)                                           |
-
+| `imgmanagement`     | If `true` the image will be managed by the plugin, meaning it will check for integrity and try and correct any errors found before mounting. On failure, the image will be deleted and re-created [true] |
 
 #### Example
 ```json

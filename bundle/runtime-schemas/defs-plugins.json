@@ -350,6 +350,9 @@
                                     },
                                     "persistent": {
                                         "type": "boolean"
+                                    },
+                                    "imgmanagement": {
+                                        "type": "boolean"
                                     }
                                 }
                             }

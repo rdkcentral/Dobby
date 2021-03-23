@@ -2112,6 +2112,9 @@ bool DobbySpecConfig::processLoopMount(const Json::Value& value,
     loopMntData["flags"] = flags;
     loopMntData["options"] = rdkMountOpts;
 
+    // disable management of the image to maintain backwards compatibly
+    loopMntData["imgmanagement"] = false;
+
     AI_LOG_FN_EXIT();
     return true;
 }

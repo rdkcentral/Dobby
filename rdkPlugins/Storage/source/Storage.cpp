@@ -360,6 +360,16 @@ std::vector<LoopMountDetails::LoopMount> Storage::getLoopMounts()
                 mount.mountOptions.push_back(std::string(loopback->options[j]));
             }
 
+            if (loopback->imgmanagement_present)
+            {
+                mount.imgManagement = loopback->imgmanagement;
+            }
+            else
+            {
+                // default imgManagement = true
+                mount.imgManagement = true;
+            }
+
             mounts.push_back(mount);
         }
     }
