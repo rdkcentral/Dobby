@@ -26,6 +26,8 @@
 
 #include "ContainerId.h"
 
+#include <map>
+#include <set>
 #include <chrono>
 #include <string>
 #include <cstdint>
@@ -41,7 +43,8 @@ class EthanLogClient
 {
 public:
     EthanLogClient(sd_event *loop, ContainerId &&id, std::string &&name, int fd,
-                   unsigned allowedLevels, unsigned rate, unsigned burstSize);
+                   unsigned allowedLevels, unsigned rate, unsigned burstSize,
+                   const std::string& memCgroupMountPoint);
     ~EthanLogClient();
 
     EthanLogClient(const EthanLogClient &other) = delete;
@@ -49,6 +52,8 @@ public:
 
     EthanLogClient &operator=(const EthanLogClient &other) = delete;
     EthanLogClient &operator=(EthanLogClient &&other) = delete;
+
+    void setContainerPid(pid_t pid);
 
 public:
     inline bool closed() const
@@ -59,11 +64,6 @@ public:
     inline ContainerId id() const
     {
         return mContainerId;
-    }
-
-    inline void setBasePid(pid_t pid)
-    {
-        mPidOffset = (pid - 1);
     }
 
 public:
@@ -82,7 +82,9 @@ private:
 
     void processLogData();
     int processLogLevel(const char *field, ssize_t len, struct iovec *iov) const;
+#if (AI_BUILD_TYPE == AI_DEBUG)
     int processPid(const char *field, ssize_t len, struct iovec *iov) const;
+#endif
     int processTimestamp(const char *field, ssize_t len, struct iovec *iov) const;
     int processThreadName(const char *field, ssize_t len, struct iovec *iov) const;
     int processCodeFile(const char *field, ssize_t len, struct iovec *iov) const;
@@ -92,19 +94,22 @@ private:
 
     bool shouldDrop();
 
+#if (AI_BUILD_TYPE == AI_DEBUG)
+    pid_t findRealPid(pid_t nsPid) const;
+    std::set<pid_t> getAllContainerPids() const;
+    pid_t readNsPidFromProc(pid_t pid) const;
+#endif // (AI_BUILD_TYPE == AI_DEBUG)
+
     static constexpr ssize_t MAX_LOG_MSG_LENGTH = 512;
 
     static constexpr char RECORD_DELIM = '\x1e';
     static constexpr char FIELD_DELIM = '\x1f';
-
 
 private:
     const ContainerId mContainerId;
     const std::string mName;
     const int mPipeFd;
     const unsigned mAllowedLevels;
-
-    pid_t mPidOffset;
 
     sd_event_source *mSource;
 
@@ -135,6 +140,13 @@ private:
     unsigned int mDropped;
     std::chrono::steady_clock::time_point mFirstDropped;
     std::chrono::steady_clock::time_point mLastDropped;
+
+    std::string mDefaultObjectPid;
+    std::string mDefaultSyslogPid;
+
+    std::string mCgroupPidsPath;
+    mutable std::map<pid_t, pid_t> mNsToRealPidMapping;
+
 };
 
 

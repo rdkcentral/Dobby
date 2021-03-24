@@ -1,21 +1,3 @@
-/*
-* If not stated otherwise in this file or this component's LICENSE file the
-* following copyright and licenses apply:
-*
-* Copyright 2020 Sky UK
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-* http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-*/
 #include "ethanlog.h"
 
 #include <stdlib.h>
@@ -78,6 +60,7 @@ void vethanlog(int level, const char *filename, const char *function,
     char buf[ELOG_MAX_LOG_MSG_LENGTH];
     char *p, *end;
     char *basename;
+    int len;
     
     /* run the sanity checks first */
     if ((level < ETHAN_LOG_FATAL) || (level > ETHAN_LOG_MILESTONE))
@@ -129,7 +112,7 @@ void vethanlog(int level, const char *filename, const char *function,
     *p++ = ELOG_FIELD_DELIM;
     *p++ = 'M';
     if (format) {
-        int len = vsnprintf(p, (end - p) - 1, format, ap);
+        len = vsnprintf(p, (end - p) - 1, format, ap);
         p += ELOG_MIN(len, ((end - p) - 1));
     }
     

@@ -37,8 +37,10 @@
 #include <string.h>
 
 #include <climits>
+#include <sstream>
+#include <ext/stdio_filebuf.h>
 
-#define APPLOG_MAX_LOG_MSG_LENGTH       512UL
+#define ETHANLOG_MAX_LOG_MSG_LENGTH       512UL
 
 // #define ETHANLOG_DEBUG_DUMP
 
@@ -55,17 +57,19 @@
  *  @param[in]  allowedLevels    Bitmask of the allowed log levels.
  *  @param[in]  rate    The number of log messages allowed per second.
  *  @param[in]  burst   The maximum number of messages allowed in a burst.
+ *  @param[in]  memCgrpMountPoint   Used to lookup the pids within a container
+ *                                  for mapping namespaced pids to real pids.
  *
  */
 EthanLogClient::EthanLogClient(sd_event *loop, ContainerId &&id,
                                std::string &&name, int fd,
                                unsigned allowedLevels,
-                               unsigned rate, unsigned burstSize)
+                               unsigned rate, unsigned burstSize,
+                               const std::string& memCgrpMountPoint)
     : mContainerId(std::move(id))
     , mName(std::move(name))
     , mPipeFd(fd)
     , mAllowedLevels(allowedLevels)
-    , mPidOffset(-1)
     , mSource(nullptr)
     , mMsgLen(0)
     , mRateLimitingEnabled(false)
@@ -76,6 +80,10 @@ EthanLogClient::EthanLogClient(sd_event *loop, ContainerId &&id,
 {
     AI_LOG_DEBUG("created logging pipe for '%s' with read fd %d",
                  mName.c_str(), mPipeFd);
+
+    // create the path to the cgroup.procs file, used to get a list of all pids
+    // inside the client container
+    mCgroupPidsPath = memCgrpMountPoint + "/" + mContainerId.str() + "/cgroup.procs";
 
     // set the identifier tag for journald
     mIdentifier = "SYSLOG_IDENTIFIER=" + mName;
@@ -104,6 +112,32 @@ EthanLogClient::~EthanLogClient()
     {
         AI_LOG_SYS_ERROR(errno, "failed to close pipe fd");
     }
+}
+
+// -----------------------------------------------------------------------------
+/**
+ *  @brief Sets the base pid for the client's container.
+ *
+ *  This is used as the default pid to put in the log message if the client
+ *  hasn't supplied a pid, or we couldn't resolve their pid in the global
+ *  pid namespace.
+ *
+ *  @param pid    The base pid of the container.
+ *
+ */
+void EthanLogClient::setContainerPid(pid_t pid)
+{
+    if (pid <= 0)
+        return;
+
+    // set the defaults for journald
+    mDefaultSyslogPid = "SYSLOG_PID=" + std::to_string(pid);
+    mDefaultObjectPid = "OBJECT_PID=" + std::to_string(pid);
+
+    // also we know that within the container that pid will be given the value
+    // 1 in the container's pid_namespace, so can add that to the mapping
+    mNsToRealPidMapping[1] = pid;
+    AI_LOG_INFO("added mapping for container pid %d to real pid %d", 1, pid);
 }
 
 // -----------------------------------------------------------------------------
@@ -180,7 +214,7 @@ int EthanLogClient::pipeFdHandler(uint32_t revents)
                 processLogData();
 
                 // sanity check the message length, shouldn't be needed
-                if (mMsgLen > APPLOG_MAX_LOG_MSG_LENGTH) {
+                if (mMsgLen > ETHANLOG_MAX_LOG_MSG_LENGTH) {
                     AI_LOG_ERROR("serious internal error parsing log msg");
                     mMsgLen = 0;
                 }
@@ -377,8 +411,8 @@ void EthanLogClient::processLogData()
 
     // fields to pass to journald for logging, the first one is always the
     // container / app identifier
-    const size_t maxFields = 16;
-    struct iovec fields[maxFields];
+    const int maxFields = 16;
+    struct iovec fields[maxFields + 2];
     fields[0].iov_base = const_cast<char*>(mIdentifier.c_str());
     fields[0].iov_len = mIdentifier.size();
 
@@ -478,11 +512,15 @@ void EthanLogClient::processLogData()
                             }
                             break;
                         case 'P':
+#if (AI_BUILD_TYPE == AI_DEBUG)
+                            // processing container pids can be expensive and prone
+                            // to abuse by a client, so disable this on release builds
                             if (!(msgFlags & FLAG_HAVE_PID))
                             {
                                 ret = processPid(thisField, fieldLen, &fields[numFields]);
                                 msgFlags |= FLAG_HAVE_PID;
                             }
+#endif
                             break;
                         case 'R':
                             if (!(msgFlags & FLAG_HAVE_THREAD))
@@ -545,6 +583,25 @@ void EthanLogClient::processLogData()
 
             }
 
+            // if no pid was set then ensure we set a default one to stop
+            // journald from mistakenly grouping with the dobby service logs
+            if (!(msgFlags & FLAG_HAVE_PID))
+            {
+                if (!mDefaultSyslogPid.empty() && (numFields < maxFields))
+                {
+                    fields[numFields].iov_base = const_cast<char*>(mDefaultSyslogPid.data());
+                    fields[numFields].iov_len = mDefaultSyslogPid.length();
+                    numFields++;
+                }
+
+                if (!mDefaultObjectPid.empty() && (numFields < maxFields))
+                {
+                    fields[numFields].iov_base = const_cast<char*>(mDefaultObjectPid.data());
+                    fields[numFields].iov_len = mDefaultObjectPid.length();
+                    numFields++;
+                }
+            }
+
             // if not aborted and have all the mandatory fields, then send the
             // message to journald
             if ((ret >= 0) && (numFields > 1))
@@ -567,7 +624,7 @@ void EthanLogClient::processLogData()
 
     // sanity check the message length, this may exceed the maximum length if
     //no terminator was found
-    if (mMsgLen >= APPLOG_MAX_LOG_MSG_LENGTH)
+    if (mMsgLen >= ETHANLOG_MAX_LOG_MSG_LENGTH)
         mMsgLen = 0;
 
 }
@@ -654,10 +711,10 @@ int EthanLogClient::processTimestamp(const char *field, ssize_t, struct iovec *i
  */
 int EthanLogClient::processMessage(const char *field, ssize_t len, struct iovec *iov) const
 {
-    static char buf[8 + APPLOG_MAX_LOG_MSG_LENGTH];
+    static char buf[8 + ETHANLOG_MAX_LOG_MSG_LENGTH];
     memcpy(buf, "MESSAGE=", 8);
 
-    len = std::min<size_t>(APPLOG_MAX_LOG_MSG_LENGTH, len);
+    len = std::min<size_t>(ETHANLOG_MAX_LOG_MSG_LENGTH, len);
     memcpy(buf + 8, field, len);
 
     iov->iov_base = buf;
@@ -665,6 +722,7 @@ int EthanLogClient::processMessage(const char *field, ssize_t len, struct iovec 
     return 1;
 }
 
+#if (AI_BUILD_TYPE == AI_DEBUG)
 // -----------------------------------------------------------------------------
 /**
  * @brief Process the pid field
@@ -679,32 +737,52 @@ int EthanLogClient::processPid(const char *field, ssize_t len, struct iovec *iov
     long pid = strtol(field, &end, 16);
     if ((pid < 1) || (pid == LONG_MAX) || (end != (field + len)))
     {
-        return -1;
+        pid = -1;
     }
-
-    // the returned number will be in the pid namespace of the container, so
-    // need to adjust for journald
-    if (mPidOffset > 0)
+    else
     {
-        pid += mPidOffset;
+        pid = findRealPid(pid);
     }
 
-
+    // if didn't find a pid or field was badly formatted then use the defaults
+    int n = 0;
+    if (pid <= 0)
     {
-        static char syslogBuf[48];
-        iov->iov_base = syslogBuf;
-        iov->iov_len = sprintf(syslogBuf, "SYSLOG_PID=%ld", pid);
-        iov++;
+        if (!mDefaultObjectPid.empty())
+        {
+            iov->iov_base = const_cast<char*>(mDefaultObjectPid.data());
+            iov->iov_len = mDefaultObjectPid.size();
+            iov++;
+            n++;
+        }
+        if (!mDefaultSyslogPid.empty())
+        {
+            iov->iov_base = const_cast<char*>(mDefaultSyslogPid.data());
+            iov->iov_len = mDefaultSyslogPid.size();
+            n++;
+        }
     }
-
+    else
     {
-        static char objBuf[48];
-        iov->iov_base = objBuf;
-        iov->iov_len = sprintf(objBuf, "OBJECT_PID=%ld", pid);
+        {
+            static char syslogBuf[48];
+            iov->iov_base = syslogBuf;
+            iov->iov_len = sprintf(syslogBuf, "SYSLOG_PID=%ld", pid);
+            iov++;
+            n++;
+        }
+
+        {
+            static char objBuf[48];
+            iov->iov_base = objBuf;
+            iov->iov_len = sprintf(objBuf, "OBJECT_PID=%ld", pid);
+            n++;
+        }
     }
 
-    return 2;
+    return n;
 }
+#endif // (AI_BUILD_TYPE == AI_DEBUG)
 
 // -----------------------------------------------------------------------------
 /**
@@ -795,3 +873,185 @@ int EthanLogClient::processCodeFile(const char *field, ssize_t len, struct iovec
     iov->iov_len = 10 + len;
     return 1;
 }
+
+#if (AI_BUILD_TYPE == AI_DEBUG)
+// -----------------------------------------------------------------------------
+/**
+ * @brief Attempts to find the pid number in the root pid namespace from a pid
+ * in the containers namespace.
+ *
+ * It's tricky getting the real pid of a process in a namespace, see the below
+ * link for more information:
+ * https://blogs.oracle.com/linux/translating-process-id-between-namespaces
+ *
+ * However we can make some assumptions about our containers which make it
+ * slightly easier; the first is that we always have a memory cgroup setup for
+ * them, and secondly there aren't typically going to be lots of processes in
+ * our containers.
+ * So what we do is read the /sys/fs/cgroup/memory/<id>/cgroup.procs file to
+ * get all the processes within the container, then we read each of their
+ * /proc/<pid>/status files to extract the NSpid fields and then match them up.
+ *
+ * To speed up the process, everytime this method is called and we don't have
+ * an existing mapping, then we re-create the full mapping.  This helps flush
+ * out dead processes from the cache and also speed up subsequent lookups.
+ * However this could result in a bit of load in Dobby, if the client constantly
+ * sent invalid pid numbers to us ... or more likely there are lots of transient
+ * processes that log just a single line, like a shell script or something ...
+ * not sure what the solution for that is.
+ *
+ * @param[in]  nsPid   The pid in the namespace of the container.
+ * @returns            The 'real' pid in the global namespace.
+ */
+pid_t EthanLogClient::findRealPid(pid_t nsPid) const
+{
+    // check the mapping table
+    auto it = mNsToRealPidMapping.find(nsPid);
+    if (it != mNsToRealPidMapping.end())
+        return it->second;
+
+
+    // get the list of all pids within the container
+    std::set<pid_t> realPids = getAllContainerPids();
+
+    // harmonise the real pids list, ie. remove any pids that are no longer in
+    // the container
+    it = mNsToRealPidMapping.begin();
+    while (it != mNsToRealPidMapping.end())
+    {
+        const int realPid = it->second;
+        if (realPids.count(realPid) == 0)
+        {
+            it = mNsToRealPidMapping.erase(it);
+        }
+        else
+        {
+            realPids.erase(realPid);
+            ++it;
+        }
+    }
+
+    // so now mNsToRealPidMapping should only have pids that are still in the
+    // container, and realPids should only have pids that are not already in
+    // the mNsToRealPidMapping map
+    for (const pid_t &realPid : realPids)
+    {
+        pid_t namespacedPid = readNsPidFromProc(realPid);
+        if (namespacedPid > 0)
+        {
+            mNsToRealPidMapping.emplace(namespacedPid, realPid);
+            AI_LOG_INFO("added mapping for container pid %d to real pid %d",
+                        namespacedPid, realPid);
+        }
+    }
+
+    // now look again for the requested pid
+    it = mNsToRealPidMapping.find(nsPid);
+    if (it == mNsToRealPidMapping.end())
+        return -1;
+    else
+        return it->second;
+}
+
+// -----------------------------------------------------------------------------
+/**
+ * @brief Reads the set of all pids within the client's container.
+ *
+ * This reads the cgroup.pids file from the memory cgroup for the container.
+ *
+ * @returns            Set of all the real pids within the container.
+ */
+std::set<pid_t> EthanLogClient::getAllContainerPids() const
+{
+    std::set<pid_t> realPids;
+
+    // get the list of all pids within the container
+    int fd = open(mCgroupPidsPath.c_str(), O_CLOEXEC | O_RDONLY);
+    if (fd < 0)
+    {
+        AI_LOG_SYS_ERROR(errno, "failed to open container cgroup file @ '%s'",
+                         mCgroupPidsPath.c_str());
+        return realPids;
+    }
+
+    // nb: stdio_filebuf closes the fd on destruction
+    __gnu_cxx::stdio_filebuf<char> cgrpPidsBuf(fd, std::ios::in);
+    std::istream cgrpPidsStream(&cgrpPidsBuf);
+
+    std::string pidLine;
+    while (std::getline(cgrpPidsStream, pidLine))
+    {
+        try
+        {
+            const pid_t pid = std::stol(pidLine);
+            realPids.emplace(pid);
+        }
+        catch (std::exception &e)
+        {
+            AI_LOG_ERROR("failed to convert pid '%s' to long (%s)",
+                         pidLine.c_str(), e.what());
+        }
+    }
+
+    return realPids;
+}
+
+// -----------------------------------------------------------------------------
+/**
+ * @brief Given a pid (in global namespace) tries to find what it's namespace
+ * pid is.
+ *
+ * This reads the /proc/<pid>/status file, line NStgid.
+ *
+ * @param[in] pid      The real pid of the process to lookup.
+ * @returns            Set of all the real pids within the container.
+ */
+pid_t EthanLogClient::readNsPidFromProc(pid_t pid) const
+{
+    char filePathBuf[32];
+    sprintf(filePathBuf, "/proc/%d/status", pid);
+
+    // get the list of all pids within the container
+    int fd = open(filePathBuf, O_CLOEXEC | O_RDONLY);
+    if (fd < 0)
+    {
+        AI_LOG_SYS_ERROR(errno, "failed to open procfs file @ '%s'", filePathBuf);
+        return -1;
+    }
+
+    // nb: stdio_filebuf closes the fd on destruction
+    __gnu_cxx::stdio_filebuf<char> statusFileBuf(fd, std::ios::in);
+    std::istream statusFileStream(&statusFileBuf);
+
+    std::string line;
+    while (std::getline(statusFileStream, line))
+    {
+        if (line.compare(0, 7, "NStgid:") == 0)
+        {
+            int realPid = -1, nsPid = -1;
+
+            // skip the row header and read the next two integer (pid) values
+            if (sscanf(line.c_str(), "NStgid:\t%d\t%d", &realPid, &nsPid) != 2)
+            {
+                AI_LOG_WARN("failed to parse NStgid field, '%s' -> %d %d",
+                            line.c_str(), realPid, nsPid);
+                nsPid = -1;
+            }
+
+            // the first pid should be the one in the global namespace
+            else if ((realPid != pid) || (nsPid < 1))
+            {
+                AI_LOG_WARN("failed to parse NStgid field, '%s' -> %d %d",
+                            line.c_str(), realPid, nsPid);
+                nsPid = -1;
+            }
+
+            return nsPid;
+        }
+    }
+
+    AI_LOG_WARN("failed to find the NStgid field in the '%s' file", filePathBuf);
+    return -1;
+}
+
+#endif // (AI_BUILD_TYPE == AI_DEBUG)

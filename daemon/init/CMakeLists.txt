@@ -40,26 +40,19 @@ target_compile_definitions(
         -DUSE_ETHANLOG=1
         )
 
-target_sources(
-        DobbyInit
-        PRIVATE
-        ${CMAKE_CURRENT_LIST_DIR}/../../plugins/EthanLog/client/ethanlog.c
-        )
-
 target_include_directories(
         DobbyInit
         PRIVATE
-        ${CMAKE_CURRENT_LIST_DIR}/../../plugins/EthanLog/client
+        $<TARGET_PROPERTY:ethanlog,INTERFACE_INCLUDE_DIRECTORIES>
         )
 
 
 
-# Specifies libraries CMake should link to your target binary. You
-# can link multiple libraries, such as libraries you define in this
-# build script, prebuilt third-party libraries, or system libraries.
-
 target_link_libraries( # Specifies the target exec
         DobbyInit
+
+        # Link against libethanlog built as part of the EthanLog plugin
+        ethanlog
 
         # Adds pthread support (if it's a separate library on target)
         Threads::Threads
