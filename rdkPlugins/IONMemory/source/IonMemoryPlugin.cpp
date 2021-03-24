@@ -297,7 +297,7 @@ bool IonMemoryPlugin::setupContainerIonLimits(const std::string &cGroupDirPath,
 
     // loop through all the heaps and set either the default limit or the
     // individual heap limit
-    const std::regex limitRegex(R"regex((ion\.)(\w+)(\.limit_in_bytes))regex");
+    const std::regex limitRegex(R"regex((^ion\.)(\w+)(\.limit_in_bytes$))regex");
 
     struct dirent *entry;
     while ((entry = readdir(dir)) != nullptr)
