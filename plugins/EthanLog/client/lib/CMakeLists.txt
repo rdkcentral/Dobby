@@ -17,22 +17,26 @@
 
 add_library( ethanlog
         SHARED
-        ethanlog.c
+        source/ethanlog.c
+
         )
 
-get_filename_component(
-        ETHANLOG_HEADER_PATH
-        ethanlog.h
-        REALPATH
-)
+target_include_directories( ethanlog
+        PUBLIC
+
+        # Adds the include dir to INTERFACE_INCLUDE_DIRECTORIES for exporting
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+        )
+
 
 set_target_properties( ethanlog
         PROPERTIES
-        PUBLIC_HEADER ${ETHANLOG_HEADER_PATH}
+        PUBLIC_HEADER include/ethanlog.h
         VERSION       ${DOBBY_MAJOR_VERSION}.1.0
         SOVERSION     ${DOBBY_MAJOR_VERSION}
 
         )
+
 
 # Install the library and headers in the usual places
 include( GNUInstallDirs )
