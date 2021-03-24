@@ -315,7 +315,7 @@ std::vector<LoopMountDetails::LoopMount> Storage::getLoopMounts()
     {
         // loop though all the mounts for the given container and create individual
         // LoopMountDetails::LoopMount objects for each
-        for (int i = 0; i < mContainerConfig->rdk_plugins->storage->data->loopback_len; i++)
+        for (size_t i = 0; i < mContainerConfig->rdk_plugins->storage->data->loopback_len; i++)
         {
             auto loopback = mContainerConfig->rdk_plugins->storage->data->loopback[i];
             LoopMountDetails::LoopMount mount;
@@ -355,7 +355,7 @@ std::vector<LoopMountDetails::LoopMount> Storage::getLoopMounts()
                 mount.imgSize = 12 * 1024 * 1024;
             }
 
-            for (int j = 0; j < loopback->options_len; j++)
+            for (size_t j = 0; j < loopback->options_len; j++)
             {
                 mount.mountOptions.push_back(std::string(loopback->options[j]));
             }
@@ -399,7 +399,7 @@ uint32_t Storage::getMappedId(uint32_t id, rt_defs_id_mapping **mapping, size_t 
     uint32_t tmp_id = id;
 
     // get id of the container inside host
-    for (int i = 0; i < mapping_len; i++)
+    for (size_t i = 0; i < mapping_len; i++)
     {
         // No need to check if container_id, size or host_id is present as all those fields
         // are required ones, this means that if mapping point exists it has all 3 of those

@@ -89,10 +89,11 @@ private:
 
     std::string mMountPointOutsideContainer;
     std::string mTempMountPointOutsideContainer;
-    const std::shared_ptr<DobbyRdkPluginUtils> mUtils;
     LoopMount mMount;
     uid_t mUserId;
     gid_t mGroupId;
+
+    const std::shared_ptr<DobbyRdkPluginUtils> mUtils;
 };
 
 #endif // !defined(LOOPMOUNTDETAILS_H)

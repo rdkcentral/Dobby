@@ -217,14 +217,14 @@ private:
     std::unique_ptr<DobbyRunC> mRunc;
     std::shared_ptr<DobbyState> mState;
 
+private:
+    std::thread mRuncMonitorThread;
+    std::atomic<bool> mRuncMonitorTerminate;
+
 #if defined(LEGACY_COMPONENTS)
 private:
     std::unique_ptr<DobbyLegacyPluginManager> mLegacyPlugins;
 #endif // defined(LEGACY_COMPONENTS)
-
-private:
-    std::thread mRuncMonitorThread;
-    std::atomic<bool> mRuncMonitorTerminate;
 
 };
 

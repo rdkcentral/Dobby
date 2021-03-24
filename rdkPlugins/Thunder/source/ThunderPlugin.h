@@ -93,11 +93,11 @@ private:
 private:
     const std::string mName;
     std::shared_ptr<rt_dobby_schema> mContainerConfig;
-    const std::shared_ptr<DobbyRdkPluginUtils> mUtils;
     const std::string mRootfsPath;
+    const std::shared_ptr<DobbyRdkPluginUtils> mUtils;
 
-    in_port_t mThunderPort;
     std::shared_ptr<Netfilter> mNetfilter;
+    in_port_t mThunderPort;
 
 private:
     std::mutex mLock;

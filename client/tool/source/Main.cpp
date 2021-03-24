@@ -205,7 +205,7 @@ static void startCommand(const std::shared_ptr<IDobbyProxy> &dobbyProxy,
         return;
     }
 
-    int i = 0;
+    size_t i = 0;
     std::list<int> files;
     std::string displaySocketPath;
     std::vector<std::string> envVars;
@@ -483,7 +483,7 @@ static void execCommand(const std::shared_ptr<IDobbyProxy>& dobbyProxy,
         return;
     }
 
-    int i = 0;
+    size_t i = 0;
     std::string options;
 
     // Find options from arguments (start with a '-')

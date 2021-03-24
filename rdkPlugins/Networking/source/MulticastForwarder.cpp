@@ -83,7 +83,7 @@ bool MulticastForwarder::set(const std::shared_ptr<Netfilter> &netfilter,
     std::mutex lock;
     std::lock_guard<std::mutex> locker(lock);
 
-    for (int i = 0; i < pluginData->multicast_forwarding_len; i++)
+    for (size_t i = 0; i < pluginData->multicast_forwarding_len; i++)
     {
         const std::string address = pluginData->multicast_forwarding[i]->ip;
         const uint16_t port = pluginData->multicast_forwarding[i]->port;
@@ -174,7 +174,7 @@ bool MulticastForwarder::removeRules(const std::shared_ptr<Netfilter> &netfilter
     std::mutex lock;
     std::lock_guard<std::mutex> locker(lock);
 
-    for (int i = 0; i < pluginData->multicast_forwarding_len; i++)
+    for (size_t i = 0; i < pluginData->multicast_forwarding_len; i++)
     {
         const std::string address = pluginData->multicast_forwarding[i]->ip;
         const uint16_t port = pluginData->multicast_forwarding[i]->port;
@@ -286,7 +286,7 @@ int checkAddressFamily(const std::string &address)
     hint.ai_flags = AI_NUMERICHOST;
 
     int ret = getaddrinfo(address.c_str(), nullptr, &hint, &res);
-    if (ret < 0 || res->ai_family != AF_INET && res->ai_family != AF_INET6)
+    if (ret < 0 || (res->ai_family != AF_INET && res->ai_family != AF_INET6))
     {
         return -1;
     }
