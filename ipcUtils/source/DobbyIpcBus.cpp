@@ -234,7 +234,7 @@ bool DobbyIpcBus::connect(const std::string& dbusAddress)
     for (const std::pair<const int, ServiceHandler>& handler : mServiceHandlers)
     {
         const std::string& service = handler.second.name;
-        const ServiceHandlerFn& callback = handler.second.handler;
+        //const ServiceHandlerFn& callback = handler.second.handler;
 
         if (mService->isServiceAvailable(service))
         {

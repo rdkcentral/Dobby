@@ -762,7 +762,7 @@ static void traceStartCommand(const std::shared_ptr<IDobbyProxy>& dobbyProxy,
     int fd = open(path.c_str(), O_CLOEXEC | O_CREAT | O_TRUNC | O_RDWR, 0644);
     if (fd < 0)
     {
-        readLine->printLnError("Failed to open / create trace file 's' (%d - %s)",
+        readLine->printLnError("Failed to open / create trace file '%s' (%d - %s)",
                                path.c_str(), errno, strerror(errno));
         return;
     }

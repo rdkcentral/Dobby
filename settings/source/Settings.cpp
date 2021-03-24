@@ -589,7 +589,7 @@ std::list<std::string> Settings::getPathsFromJson(const Json::Value& value) cons
 
     // copy all expanded paths back
     std::list<std::string> paths;
-    for (int i = 0; i < exp.we_wordc; i++)
+    for (size_t i = 0; i < exp.we_wordc; i++)
     {
         paths.emplace_back(exp.we_wordv[i]);
     }

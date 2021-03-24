@@ -103,7 +103,7 @@ bool AppServicesRdkPlugin::postInstallation()
     if (!mUtils->writeTextFile(mRootfsPath + hostsPath,
                                "127.0.0.1\tlocalhost\n"
                                "100.64.11.1\tas\tlocalservices\n",
-                               O_CREAT | O_TRUNC | O_WRONLY, 0644))
+                               O_CREAT | O_APPEND | O_WRONLY, 0644))
     {
         AI_LOG_ERROR_EXIT("Failed to write AS IP address to %s", hostsPath.c_str());
         return false;
