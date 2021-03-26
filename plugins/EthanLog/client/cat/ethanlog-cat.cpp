@@ -24,6 +24,7 @@
 #include <string>
 #include <vector>
 #include <algorithm>
+#include <climits>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -78,7 +79,7 @@ public:
         if (mBufferOffset > 0)
         {
             bool isEmpty = true;
-            for (size_t i = 0; i < mBufferOffset; i++)
+            for (int i = 0; i < mBufferOffset; i++)
             {
                 if (!::isspace(mBuffer[i]))
                 {
@@ -174,7 +175,7 @@ private:
         }
     }
 
-    void logMessage(const char *message, size_t messageLen) const
+    void logMessage(const char *message, int messageLen) const
     {
         int level = mLogLevel;
 
@@ -204,7 +205,7 @@ private:
     bool mValid;
 
     char mBuffer[1024];
-    size_t mBufferOffset;
+    int mBufferOffset;
 };
 
 
