@@ -50,6 +50,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <signal.h>
+#include <dirent.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
@@ -1663,13 +1664,60 @@ bool DobbyManager::freeIpAddress(uint32_t address)
 
 // -----------------------------------------------------------------------------
 /**
- *  @brief Gets the external interfaces
+ *  @brief Gets the external interfaces that are actually available. Looks in the
+ *  settings for the interfaces Dobby should use, then checks if the device
+ *  actually has those interfaces available. Will return empty vector if none of
+ *  the ifaces in the settings file are available
  *
- *  @return external interfaces defined in dobby settings
+ *  @return Available external interfaces from the ones defined in dobby
+ *  settings
  */
 std::vector<std::string> DobbyManager::getExtIfaces()
 {
-    return mSettings->externalInterfaces();
+    std::vector<std::string> externalIfaces = mSettings->externalInterfaces();
+
+    // Look in the /sys/class/net for available interfaces
+    struct dirent *dir;
+    DIR *d = opendir("/sys/class/net");
+    if (!d)
+    {
+        AI_LOG_SYS_ERROR(errno, "Could not check for available interfaces");
+        return std::vector<std::string>();
+    }
+
+    std::vector<std::string> availableIfaces = {};
+    while ((dir = readdir(d)) != nullptr)
+    {
+        if (dir->d_name[0] != '.')
+        {
+            availableIfaces.emplace_back(dir->d_name);
+        }
+    }
+    closedir(d);
+
+    // We know what interfaces we want, and what we've got. See if we're missing
+    // any
+    auto it = externalIfaces.cbegin();
+    while (it != externalIfaces.cend())
+    {
+        if (std::find(availableIfaces.begin(), availableIfaces.end(), it->c_str()) == availableIfaces.end())
+        {
+            AI_LOG_WARN("Interface '%s' from settings file not available", it->c_str());
+            externalIfaces.erase(it);
+        }
+        else
+        {
+            ++it;
+        }
+    }
+
+    // If no interfaces are available, something is very wrong
+    if (externalIfaces.size() == 0)
+    {
+        AI_LOG_ERROR("None of the external interfaces defined in the settings file are available");
+    }
+
+    return externalIfaces;
 }
 
 // -----------------------------------------------------------------------------
