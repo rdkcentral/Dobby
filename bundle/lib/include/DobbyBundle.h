@@ -65,7 +65,7 @@ public:
     int dirFd() const;
 
     void setPersistence(bool persist);
-    const bool getPersistence() const;
+    bool getPersistence() const;
 
 private:
     const std::shared_ptr<const IDobbyUtils> mUtilities;

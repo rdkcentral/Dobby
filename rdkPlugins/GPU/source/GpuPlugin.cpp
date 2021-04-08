@@ -90,6 +90,8 @@ bool GpuPlugin::createRuntime()
 
     // setup the gpu memory limit
     setupContainerGpuLimit(cgroupDirPath, containerPid, memLimit);
+
+    return true;
 }
 
 /**

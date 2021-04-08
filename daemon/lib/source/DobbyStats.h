@@ -76,6 +76,12 @@ private:
     static Json::Value getStats(const ContainerId& id,
                                 const std::shared_ptr<IDobbyEnv>& env);
 
+#if defined(RDK)
+    static Json::Value readIonCgroupHeaps(const ContainerId& id,
+                                          const std::string &ionCgroupPath);
+#endif
+
+
 private:
     const Json::Value mStats;
 };

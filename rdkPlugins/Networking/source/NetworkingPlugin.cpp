@@ -36,12 +36,12 @@ NetworkingPlugin::NetworkingPlugin(std::shared_ptr<rt_dobby_schema> &cfg,
                                    const std::shared_ptr<DobbyRdkPluginUtils> &utils,
                                    const std::string &rootfsPath)
     : mName("Networking"),
+      mNetworkType(NetworkType::None),
       mContainerConfig(cfg),
       mUtils(utils),
       mRootfsPath(rootfsPath),
       mIpcService(nullptr),
       mDobbyProxy(nullptr),
-      mNetworkType(NetworkType::None),
       mNetfilter(std::make_shared<Netfilter>())
 {
     AI_LOG_FN_ENTRY();
@@ -173,7 +173,7 @@ bool NetworkingPlugin::createRuntime()
     const std::vector<std::string> extIfaces = mDobbyProxy->getExternalInterfaces();
     if (extIfaces.empty())
     {
-        AI_LOG_ERROR_EXIT("no external network interfaces defined in settings");
+        AI_LOG_ERROR_EXIT("No network interfaces available");
         return false;
     }
 

@@ -46,8 +46,8 @@
     #define PLUGIN_PATH "/usr/lib/plugins/dobby"
 #endif
 
-static std::string configPath;
-static std::string hookName;
+static std::string gConfigPath;
+static std::string gHookName;
 
 // -----------------------------------------------------------------------------
 /**
@@ -96,10 +96,10 @@ static void parseArgs(const int argc, char **argv)
             __ai_debug_log_level++;
             break;
         case 'h':
-            hookName = reinterpret_cast<const char *>(optarg);
+            gHookName = reinterpret_cast<const char *>(optarg);
             break;
         case 'c':
-            configPath = reinterpret_cast<const char *>(optarg);
+            gConfigPath = reinterpret_cast<const char *>(optarg);
             break;
         case '?':
             if (optopt == 'c')
@@ -278,41 +278,41 @@ int main(int argc, char *argv[])
 {
     parseArgs(argc, argv);
 
-    if (hookName.empty())
+    if (gHookName.empty())
     {
         AI_LOG_ERROR_EXIT("Must give a hook name to execute");
         return EXIT_FAILURE;
     }
-    if (configPath.empty())
+    if (gConfigPath.empty())
     {
         AI_LOG_ERROR_EXIT("Path to container's OCI config is required");
         return EXIT_FAILURE;
     }
 
-    AI_LOG_MILESTONE("Running hook %s", hookName.c_str());
+    AI_LOG_MILESTONE("Running hook %s", gHookName.c_str());
 
     // Work out which hook we need to run
-    IDobbyRdkPlugin::HintFlags hookPoint = determineHookPoint(hookName);
+    IDobbyRdkPlugin::HintFlags hookPoint = determineHookPoint(gHookName);
 
     if (hookPoint == IDobbyRdkPlugin::Unknown)
     {
-        AI_LOG_ERROR("Unknown hook point %s", hookName.c_str());
+        AI_LOG_ERROR("Unknown hook point %s", gHookName.c_str());
         return EXIT_FAILURE;
     }
 
     // Create a libocispec object for the container's config
-    char *absPath = realpath(configPath.c_str(), NULL);
+    char *absPath = realpath(gConfigPath.c_str(), NULL);
     if (absPath == nullptr)
     {
-        AI_LOG_ERROR("Couldn't find config at %s", configPath.c_str());
+        AI_LOG_ERROR("Couldn't find config at %s", gConfigPath.c_str());
         return EXIT_FAILURE;
     }
-    configPath = std::string(absPath);
-    AI_LOG_DEBUG("Loading container config from file: '%s'", configPath.c_str());
+    const std::string fullConfigPath = std::string(absPath);
+    AI_LOG_DEBUG("Loading container config from file: '%s'", fullConfigPath.c_str());
 
     parser_error err;
     std::shared_ptr<rt_dobby_schema> containerConfig(
-        rt_dobby_schema_parse_file(configPath.c_str(), NULL, &err),
+        rt_dobby_schema_parse_file(fullConfigPath.c_str(), NULL, &err),
         free_rt_dobby_schema);
 
     if (containerConfig == nullptr)
@@ -322,7 +322,7 @@ int main(int argc, char *argv[])
     }
 
     // Get the path of the container rootfs to give to plugins
-    const std::string rootfsPath = getRootfsPath(configPath, containerConfig);
+    const std::string rootfsPath = getRootfsPath(fullConfigPath, containerConfig);
 
     const int rdkPluginCount = containerConfig->rdk_plugins->plugins_count;
 
@@ -347,10 +347,10 @@ int main(int argc, char *argv[])
 
     if (success)
     {
-        AI_LOG_INFO("Hook %s completed", hookName.c_str());
+        AI_LOG_INFO("Hook %s completed", gHookName.c_str());
         return EXIT_SUCCESS;
     }
 
-    AI_LOG_WARN("Hook %s failed - plugin(s) ran with errors", hookName.c_str());
+    AI_LOG_WARN("Hook %s failed - plugin(s) ran with errors", gHookName.c_str());
     return EXIT_FAILURE;
 }

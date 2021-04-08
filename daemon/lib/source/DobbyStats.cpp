@@ -30,6 +30,10 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <errno.h>
+#include <dirent.h>
+
+#include <set>
+#include <regex>
 
 #include <sstream>
 
@@ -154,9 +158,92 @@ Json::Value DobbyStats::getStats(const ContainerId& id,
             readSingleCgroupValue(id, gpuCgroupPath, "gpu.failcnt");
     }
 
+#if defined(RDK)
+    const std::string ionCgroupPath(env->cgroupMountPath(IDobbyEnv::Cgroup::Ion));
+    if (!ionCgroupPath.empty())
+    {
+        stats["ion"]["heaps"] = readIonCgroupHeaps(id, ionCgroupPath);
+    }
+#endif
+
+
     AI_LOG_FN_EXIT();
     return stats;
 }
+
+#if defined(RDK)
+// -----------------------------------------------------------------------------
+/**
+ *  @brief Reads the cgroup values for all the ION heaps and returns as a JSON
+ *  object.
+ *
+ *  The path to read is made up like: <cgroupMntPath>/<id>/<cgroupfileName>
+ *
+ *  @param[in]  id              The string id of the container.
+ *  @param[in]  ionCgroupPath   The path to the ion cgroup mount point.
+ *
+ *  @return A JSON object value contain the ion heaps values.
+ */
+Json::Value DobbyStats::readIonCgroupHeaps(const ContainerId& id,
+                                           const std::string &ionCgroupPath)
+{
+    AI_LOG_FN_ENTRY();
+
+    Json::Value heaps(Json::objectValue);
+
+    // first get all the possible heaps in the cgroup
+    std::ostringstream dirPath;
+    dirPath << ionCgroupPath << "/" << id.str() << "/";
+    DIR *dir = opendir(dirPath.str().c_str());
+    if (!dir)
+    {
+        return heaps;
+    }
+
+    std::set<std::string> heapNames;
+    const std::regex limitRegex(R"regex((^ion\.)(\w+)(\.limit_in_bytes$))regex");
+
+    struct dirent *entry;
+    while ((entry = readdir(dir)) != nullptr)
+    {
+        // only care about sysfs files
+        if (entry->d_type != DT_REG)
+            continue;
+
+        // check if it is a heap's limit file, if so extract the heap name
+        // and add to the set
+        std::cmatch matches;
+        if (std::regex_match(entry->d_name, matches, limitRegex) &&
+            (matches.size() == 4))
+        {
+            heapNames.insert(matches.str(1));
+        }
+    }
+
+    // clean the dir iterator
+    closedir(dir);
+
+    // read all every heaps cgroup values
+    for (const std::string &heapName : heapNames)
+    {
+        Json::Value heap(Json::objectValue);
+
+        heap["limit"] =
+            readSingleCgroupValue(id, ionCgroupPath, "ion." + heapName + ".limit_in_bytes");
+        heap["usage"] =
+            readSingleCgroupValue(id, ionCgroupPath, "ion." + heapName + ".usage_in_bytes");
+        heap["max"] =
+            readSingleCgroupValue(id, ionCgroupPath, "ion." + heapName + ".max_usage_in_bytes");
+        heap["failcnt"] =
+            readSingleCgroupValue(id, ionCgroupPath, "ion." + heapName + ".failcnt");
+
+        heaps[heapName] = std::move(heap);
+    }
+
+    AI_LOG_FN_EXIT();
+    return heaps;
+}
+#endif
 
 // -----------------------------------------------------------------------------
 /**

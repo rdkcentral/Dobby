@@ -45,8 +45,8 @@ ThunderPlugin::ThunderPlugin(std::shared_ptr<rt_dobby_schema> &containerConfig,
       mRootfsPath(rootfsPath),
       mUtils(utils),
       mNetfilter(std::make_shared<Netfilter>()),
-      mEnableConnLimit(false),
-      mThunderPort(9998) // Change this if Thunder runs on non-standard port
+      mThunderPort(9998), // Change this if Thunder runs on non-standard port
+      mEnableConnLimit(false)
 {
     AI_LOG_FN_ENTRY();
 

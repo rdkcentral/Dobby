@@ -78,10 +78,10 @@ private:
     std::map<std::string, std::pair<void *, std::shared_ptr<IDobbyRdkLoggingPlugin>>> mLoggers;
     std::map<std::string, std::pair<void *, std::shared_ptr<IDobbyRdkPlugin>>> mPlugins;
     std::set<std::string> mRequiredPlugins;
-    const std::string mPluginPath;
-    const std::string mRootfsPath;
-    const std::shared_ptr<DobbyRdkPluginUtils> mUtils;
     std::shared_ptr<rt_dobby_schema> mContainerConfig;
+    const std::string mRootfsPath;
+    const std::string mPluginPath;
+    const std::shared_ptr<DobbyRdkPluginUtils> mUtils;
     DobbyRdkPluginDependencySolver mDependencySolver;
 };
 

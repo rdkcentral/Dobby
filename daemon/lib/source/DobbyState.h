@@ -47,7 +47,7 @@ public:
 
 public:
     uint32_t getBridgeConnections();
-    const in_addr_t getIpAddress(const std::string &vethName);
+    in_addr_t getIpAddress(const std::string &vethName);
     bool freeIpAddress(in_addr_t address);
 
 private:

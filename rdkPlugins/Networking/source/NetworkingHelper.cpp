@@ -26,9 +26,9 @@
 
 NetworkingHelper::NetworkingHelper(bool ipv4Enabled, bool ipv6Enabled)
     : mIpv4Enabled(ipv4Enabled),
-    mIpv6Enabled(ipv6Enabled),
     mIpv4Addr(INADDR_CREATE(0,0,0,0)),
     mIpv4AddrStr(std::string()),
+    mIpv6Enabled(ipv6Enabled),
     mIpv6Addr(IN6ADDR_BASE),
     mIpv6AddrStr(std::string())
 {
