@@ -147,6 +147,7 @@ std::map<IDobbyEnv::Cgroup, std::string> DobbyEnv::getCgroupMountPoints()
         {   "gpu",      IDobbyEnv::Cgroup::Gpu      },
         {   "net_cls",  IDobbyEnv::Cgroup::NetCls   },
         {   "blkio",    IDobbyEnv::Cgroup::Blkio,   },
+        {   "ion",      IDobbyEnv::Cgroup::Ion      },
     };
 
     // try and open /proc/mounts for scanning the current mount table

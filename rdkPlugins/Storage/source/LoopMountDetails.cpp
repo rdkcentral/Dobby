@@ -117,9 +117,8 @@ bool LoopMountDetails::onPreCreate()
         return false;
     }
 
-    return success;
-
     AI_LOG_FN_EXIT();
+    return success;
 }
 
 

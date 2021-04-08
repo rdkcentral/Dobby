@@ -160,12 +160,12 @@ bool PortForwarding::removePortForwards(const std::shared_ptr<Netfilter> &netfil
         }
 
         // delete constructed rulesets
-        for (int i = 0; i < ipv4Rules.size(); i++)
+        for (size_t i = 0; i < ipv4Rules.size(); i++)
         {
             if (!netfilter->addRules(ipv4Rules[i], AF_INET, Netfilter::Operation::Delete))
             {
                 AI_LOG_ERROR_EXIT("failed to delete port forwarding ip6tables rule"
-                                  "at index %d", i);
+                                  "at index %zu", i);
                 return false;
             }
         }
@@ -186,12 +186,12 @@ bool PortForwarding::removePortForwards(const std::shared_ptr<Netfilter> &netfil
         }
 
         // delete constructed rulesets
-        for (int i = 0; i < ipv6Rules.size(); i++)
+        for (size_t i = 0; i < ipv6Rules.size(); i++)
         {
             if (!netfilter->addRules(ipv6Rules[i], AF_INET6, Netfilter::Operation::Delete))
             {
                 AI_LOG_ERROR_EXIT("failed to delete port forwarding ip6tables rule"
-                                  "at index %d", i);
+                                  "at index %zu", i);
                 return false;
             }
         }
@@ -253,7 +253,7 @@ PortForwards parsePortsConfig(rt_defs_plugins_networking_data_port_forwarding *p
     PortForwards portForwards;
     portForwards.isValid = false;
 
-    for (int i = 0; i < portsConfig->host_to_container_len; i++)
+    for (size_t i = 0; i < portsConfig->host_to_container_len; i++)
     {
         PortForward pf;
         pf.port = std::to_string(portsConfig->host_to_container[i]->port);
@@ -262,7 +262,7 @@ PortForwards parsePortsConfig(rt_defs_plugins_networking_data_port_forwarding *p
         pf.protocol = parseProtocol(portsConfig->host_to_container[i]->protocol);
         if (pf.protocol.empty())
         {
-            AI_LOG_ERROR("invalid protocol value '%s' for port at index %d",
+            AI_LOG_ERROR("invalid protocol value '%s' for port at index %zu",
                         portsConfig->host_to_container[i]->protocol, i);
             return portForwards;
         }
@@ -270,7 +270,7 @@ PortForwards parsePortsConfig(rt_defs_plugins_networking_data_port_forwarding *p
         portForwards.hostToContainer.emplace_back(pf);
     }
 
-    for (int i = 0; i < portsConfig->container_to_host_len; i++)
+    for (size_t i = 0; i < portsConfig->container_to_host_len; i++)
     {
         PortForward pf;
         pf.port = std::to_string(portsConfig->container_to_host[i]->port);
@@ -279,7 +279,7 @@ PortForwards parsePortsConfig(rt_defs_plugins_networking_data_port_forwarding *p
         pf.protocol = parseProtocol(portsConfig->container_to_host[i]->protocol);
         if (pf.protocol.empty())
         {
-            AI_LOG_ERROR("invalid protocol value '%s' for port at index %d",
+            AI_LOG_ERROR("invalid protocol value '%s' for port at index %zu",
                         portsConfig->container_to_host[i]->protocol, i);
             return portForwards;
         }
@@ -384,7 +384,7 @@ bool constructHostToContainerRules(std::vector<Netfilter::RuleSet> &ruleSets,
     std::list<std::string> insertRules;
 
     // construct rules for each port
-    for (int i = 0; i < ports.size(); i++)
+    for (size_t i = 0; i < ports.size(); i++)
     {
         // construct forwarding rule to insert to iptables
         std::string forwardingRule =
@@ -565,7 +565,7 @@ bool constructContainerToHostRules(std::vector<Netfilter::RuleSet> &ruleSets,
     std::list<std::string> filterRules;
 
     // construct rules for each port to enable forwarding on
-    for (int i = 0; i < ports.size(); i++)
+    for (size_t i = 0; i < ports.size(); i++)
     {
         // construct dnat rule to insert to iptables
         const std::string dnatRule =

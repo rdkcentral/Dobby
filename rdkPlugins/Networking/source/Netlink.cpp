@@ -45,6 +45,8 @@
 #include <netlink/route/link/bridge.h>
 #include <netlink/route/neighbour.h>
 
+#define AI_LOG_NL_WARN(err, fmt, args...) \
+    AI_LOG_WARN(fmt " (%d - %s)", ##args, -err, nl_geterror(err))
 
 #define AI_LOG_NL_ERROR(err, fmt, args...) \
     AI_LOG_ERROR(fmt " (%d - %s)", ##args, -err, nl_geterror(err))
@@ -450,7 +452,7 @@ private:
         int ret = rtnl_link_get_kernel(nl, -1, name.c_str(), &link);
         if (ret != 0)
         {
-            AI_LOG_NL_ERROR(ret, "failed to get interface with name '%s'",
+            AI_LOG_NL_WARN(ret, "failed to get interface with name '%s'",
                             name.c_str());
             return nullptr;
         }

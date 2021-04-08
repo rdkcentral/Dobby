@@ -205,7 +205,7 @@ static void startCommand(const std::shared_ptr<IDobbyProxy> &dobbyProxy,
         return;
     }
 
-    int i = 0;
+    size_t i = 0;
     std::list<int> files;
     std::string displaySocketPath;
     std::vector<std::string> envVars;
@@ -483,7 +483,7 @@ static void execCommand(const std::shared_ptr<IDobbyProxy>& dobbyProxy,
         return;
     }
 
-    int i = 0;
+    size_t i = 0;
     std::string options;
 
     // Find options from arguments (start with a '-')
@@ -762,7 +762,7 @@ static void traceStartCommand(const std::shared_ptr<IDobbyProxy>& dobbyProxy,
     int fd = open(path.c_str(), O_CLOEXEC | O_CREAT | O_TRUNC | O_RDWR, 0644);
     if (fd < 0)
     {
-        readLine->printLnError("Failed to open / create trace file 's' (%d - %s)",
+        readLine->printLnError("Failed to open / create trace file '%s' (%d - %s)",
                                path.c_str(), errno, strerror(errno));
         return;
     }

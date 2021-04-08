@@ -110,7 +110,7 @@ public:
 
 
     enum class Cgroup
-        { Freezer, Memory, Cpu, CpuAcct, CpuSet, Devices, Gpu, NetCls, Blkio };
+        { Freezer, Memory, Cpu, CpuAcct, CpuSet, Devices, Gpu, NetCls, Blkio, Ion };
 
     // -------------------------------------------------------------------------
     /**

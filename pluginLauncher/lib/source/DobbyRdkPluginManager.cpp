@@ -322,7 +322,7 @@ bool DobbyRdkPluginManager::preprocessPlugins()
     }
 
     const auto pluginsInConfig = mContainerConfig->rdk_plugins->names_of_plugins;
-    const int rdkPluginCount = mContainerConfig->rdk_plugins->plugins_count;
+    const size_t rdkPluginCount = mContainerConfig->rdk_plugins->plugins_count;
 
     // Add plugins to the solver, remember which ones are required.
     for (size_t i = 0; i < rdkPluginCount; i++)

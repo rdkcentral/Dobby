@@ -526,7 +526,7 @@ bool DobbyRdkPluginUtils::addEnvironmentVar(const std::string& envVar) const
     std::string existingEnvVarName;
 
     // check if env var already exists in config
-    for (int i = 0; i < mConf->process->env_len; ++i)
+    for (size_t i = 0; i < mConf->process->env_len; ++i)
     {
         existingEnvVar = mConf->process->env[i];
 

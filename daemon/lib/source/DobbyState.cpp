@@ -68,7 +68,7 @@ uint32_t DobbyState::getBridgeConnections()
  *
  *  @return returns free ip address from the pool, 0 if none available
  */
-const in_addr_t DobbyState::getIpAddress(const std::string &vethName)
+in_addr_t DobbyState::getIpAddress(const std::string &vethName)
 {
     AI_LOG_FN_ENTRY();
 

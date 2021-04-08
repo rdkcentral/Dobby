@@ -188,7 +188,6 @@ std::vector<Netfilter::RuleSet> constructBridgeRules(const std::shared_ptr<Netfi
     };
 
     // add addresses to rules depending on ipVersion
-    char buf[128];
     std::string bridgeAddressRange;
     if (ipVersion == AF_INET)
     {
@@ -650,8 +649,8 @@ bool setupContainerNet(const std::shared_ptr<NetworkingHelper> &helper)
     if (helper->ipv6())
     {
         //construct lo address (::1)
-        struct in6_addr loAddr = IN6ADDR_ANY;
-        loAddr.s6_addr[15] = 1;
+        //struct in6_addr loAddr = IN6ADDR_ANY;
+        //loAddr.s6_addr[15] = 1;
 
         const struct ipv6Route {
             const std::string& iface;
@@ -1022,7 +1021,7 @@ void NetworkSetup::addResolvMount(const std::shared_ptr<DobbyRdkPluginUtils> &ut
     const std::string destination = "/etc/resolv.conf";
 
     // iterate through the mounts to check that the mount doesn't already exist
-    for (int i=0; i < cfg->mounts_len; i++)
+    for (size_t i=0; i < cfg->mounts_len; i++)
     {
         if (!strcmp(cfg->mounts[i]->source, source.c_str()) &&
             !strcmp(cfg->mounts[i]->destination, destination.c_str()))
@@ -1047,7 +1046,7 @@ void NetworkSetup::addResolvMount(const std::shared_ptr<DobbyRdkPluginUtils> &ut
 void NetworkSetup::addNetworkNamespace(const std::shared_ptr<rt_dobby_schema> &cfg)
 {
     // check if container already has network namespace enabled
-    for (int i = 0; i < cfg->linux->namespaces_len; i++)
+    for (size_t i = 0; i < cfg->linux->namespaces_len; i++)
     {
         if (strcmp(cfg->linux->namespaces[i]->type, "network") == 0)
         {

@@ -143,7 +143,7 @@ bool DobbyConfig::addMount(const std::string& source,
     }
 
     // iterate through the mounts to check that the mount doesn't already exist
-    for (int i=0; i < cfg->mounts_len; i++)
+    for (size_t i=0; i < cfg->mounts_len; i++)
     {
         if (!strcmp(cfg->mounts[i]->source, source.c_str()) && !strcmp(cfg->mounts[i]->destination, destination.c_str()))
         {
@@ -244,7 +244,7 @@ bool DobbyConfig::addEnvironmentVar(const std::string& envVar)
     }
 
     // check if env var already exists in config
-    for (int i = 0; i < cfg->process->env_len; ++i)
+    for (size_t i = 0; i < cfg->process->env_len; ++i)
     {
         if (0 == strcmp(cfg->process->env[i], envVar.c_str()))
         {
@@ -303,7 +303,7 @@ bool DobbyConfig::changeProcessArgs(const std::string& command)
     cfg->process->args = (char **)realloc(cfg->process->args, sizeof(char *) * cmd.size());
     cfg->process->args_len = cmd.size();
 
-    for (int i = 0; i < cmd.size(); i++)
+    for (size_t i = 0; i < cmd.size(); i++)
     {
         cfg->process->args[i] = strdup(cmd[i].c_str());
     }
@@ -540,7 +540,7 @@ void DobbyConfig::setPluginHookEntry(rt_defs_hook* entry, const std::string& nam
     entry->args_len = args.size();;
     entry->args = (char**)calloc(entry->args_len, sizeof(char*));
 
-    for (int i = 0; i < args.size(); i++)
+    for (size_t i = 0; i < args.size(); i++)
     {
         entry->args[i] = strdup(args[i].c_str());
     }

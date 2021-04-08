@@ -36,12 +36,12 @@ NetworkingPlugin::NetworkingPlugin(std::shared_ptr<rt_dobby_schema> &cfg,
                                    const std::shared_ptr<DobbyRdkPluginUtils> &utils,
                                    const std::string &rootfsPath)
     : mName("Networking"),
+      mNetworkType(NetworkType::None),
       mContainerConfig(cfg),
       mUtils(utils),
       mRootfsPath(rootfsPath),
       mIpcService(nullptr),
       mDobbyProxy(nullptr),
-      mNetworkType(NetworkType::None),
       mNetfilter(std::make_shared<Netfilter>())
 {
     AI_LOG_FN_ENTRY();

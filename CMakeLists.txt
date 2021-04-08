@@ -129,6 +129,10 @@ set( CMAKE_CXX_STANDARD          14  )
 set( CMAKE_CXX_STANDARD_REQUIRED ON  )
 set( CMAKE_CXX_EXTENSIONS        OFF )
 
+# Lets be ambitious and eliminate all warnings
+# (not that ambitious to enable -Werror though)
+add_compile_options( -Wall )
+
 
 # Enable GNU extensions on linux builds
 if( UNIX AND NOT APPLE )
