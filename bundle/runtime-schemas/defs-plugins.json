@@ -41,7 +41,62 @@
                 }
             }
         },
+        "AppServicesRdk": {
+            "type": "object",
+            "required": [
+                "required",
+                "data"
+            ],
+            "properties": {
+                "required": {
+                    "type": "boolean"
+                },
+                "dependsOn": {
+                    "$ref": "defs.json#/definitions/ArrayOfStrings"
+                },
+                "data": {
+                    "type": "object",
+                    "properties": {
+                        "setMenu": {
+                            "type": "string"
+                        },
+                        "additionalPorts": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "defs.json#/definitions/uint16"
+                            }
+                        },
+                        "connLimit": {
+                            "$ref": "defs.json#/definitions/uint32"
+                        }
+                    }
+                }
+            }
+        },
         "GPU": {
+            "type": "object",
+            "required": [
+                "required",
+                "data"
+            ],
+            "properties": {
+                "required": {
+                    "type": "boolean"
+                },
+                "dependsOn": {
+                    "$ref": "defs.json#/definitions/ArrayOfStrings"
+                },
+                "data": {
+                    "type": "object",
+                    "properties": {
+                        "memory": {
+                            "$ref": "defs.json#/definitions/int32"
+                        }
+                    }
+                }
+            }
+        },
+        "IONMemory": {
             "type": "object",
             "required": [
                 "required",
@@ -54,8 +109,26 @@
                 "data": {
                     "type": "object",
                     "properties": {
-                        "memory": {
-                            "$ref": "defs.json#/definitions/int32"
+                        "defaultLimit": {
+                            "$ref": "defs.json#/definitions/uint64"
+                        },
+                        "heaps": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "required": [
+                                    "name",
+                                    "limit"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "type": "string"
+                                    },
+                                    "limit": {
+                                        "$ref": "defs.json#/definitions/uint64"
+                                    }
+                                }
+                            }
                         }
                     }
                 }
@@ -70,6 +143,9 @@
             "properties": {
                 "required": {
                     "type": "boolean"
+                },
+                "dependsOn": {
+                    "$ref": "defs.json#/definitions/ArrayOfStrings"
                 },
                 "data": {
                     "type": "object",
@@ -96,6 +172,9 @@
             "properties": {
                 "required": {
                     "type": "boolean"
+                },
+                "dependsOn": {
+                    "$ref": "defs.json#/definitions/ArrayOfStrings"
                 },
                 "data": {
                     "type": "object",
@@ -145,6 +224,9 @@
             "properties": {
                 "required": {
                     "type": "boolean"
+                },
+                "dependsOn": {
+                    "$ref": "defs.json#/definitions/ArrayOfStrings"
                 },
                 "data": {
                     "type": "object",
@@ -232,6 +314,9 @@
                 "required": {
                     "type": "boolean"
                 },
+                "dependsOn": {
+                    "$ref": "defs.json#/definitions/ArrayOfStrings"
+                },
                 "data": {
                     "type": "object",
                     "properties": {
@@ -265,6 +350,9 @@
                                     },
                                     "persistent": {
                                         "type": "boolean"
+                                    },
+                                    "imgmanagement": {
+                                        "type": "boolean"
                                     }
                                 }
                             }
@@ -283,6 +371,9 @@
                 "required": {
                     "type": "boolean"
                 },
+                "dependsOn": {
+                    "$ref": "defs.json#/definitions/ArrayOfStrings"
+                },
                 "data": {
                     "type": "object",
                     "properties": {
@@ -299,6 +390,9 @@
             "properties": {
                 "required": {
                     "type": "boolean"
+                },
+                "dependsOn": {
+                    "$ref": "defs.json#/definitions/ArrayOfStrings"
                 },
                 "data": {
                     "type": "object",
@@ -321,6 +415,9 @@
             "properties": {
                 "required": {
                     "type": "boolean"
+                },
+                "dependsOn": {
+                    "$ref": "defs.json#/definitions/ArrayOfStrings"
                 },
                 "data": {
                     "type": "object",
@@ -353,6 +450,32 @@
                 }
             }
         },
+        "Thunder": {
+            "type": "object",
+            "required": [
+                "required",
+                "data"
+            ],
+            "properties": {
+                "required": {
+                    "type": "boolean"
+                },
+                "dependsOn": {
+                    "$ref": "defs.json#/definitions/ArrayOfStrings"
+                },
+                "data": {
+                    "type": "object",
+                    "properties": {
+                        "bearerUrl": {
+                            "type": "string"
+                        },
+                        "connLimit": {
+                            "type": "integer"
+                        }
+                    }
+                }
+            }
+        },
         "TestRdkPlugin": {
             "type": "object",
             "required": [
@@ -362,6 +485,9 @@
             "properties": {
                 "required": {
                     "type": "boolean"
+                },
+                "dependsOn": {
+                    "$ref": "defs.json#/definitions/ArrayOfStrings"
                 },
                 "data": {
                     "type": "object",
@@ -387,11 +513,17 @@
         "RdkPlugins": {
             "type": "object",
             "properties": {
+                "appservicesrdk" : {
+                    "$ref": "#/definitions/AppServicesRdk"
+                },
                 "ipc": {
                     "$ref": "#/definitions/IPC"
                 },
                 "gpu": {
                     "$ref": "#/definitions/GPU"
+                },
+                "ionmemory": {
+                    "$ref": "#/definitions/IONMemory"
                 },
                 "logging": {
                     "$ref": "#/definitions/Logging"
@@ -410,6 +542,9 @@
                 },
                 "httpproxy": {
                     "$ref": "#/definitions/HttpProxy"
+                },
+                "thunder": {
+                    "$ref": "#/definitions/Thunder"
                 },
                 "testrdkplugin": {
                     "$ref": "#/definitions/TestRdkPlugin"

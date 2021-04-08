@@ -205,9 +205,10 @@ static void startCommand(const std::shared_ptr<IDobbyProxy> &dobbyProxy,
         return;
     }
 
-    int i = 0;
+    size_t i = 0;
     std::list<int> files;
     std::string displaySocketPath;
+    std::vector<std::string> envVars;
 
     // Command will be in the form "start --<option1> --<optionN> <id> <specfile> <commands>"
     while (i < args.size() && args[i].c_str()[0] == '-')
@@ -225,6 +226,15 @@ static void startCommand(const std::shared_ptr<IDobbyProxy> &dobbyProxy,
                 return;
             }
             displaySocketPath = westerosPath;
+        }
+        else if (args[i] == "--envvar")
+        {
+            // TODO:: This won't work if the arg is in the form --envvar=foo:bar
+            // The next arg should be the envvar
+            i++;
+
+            std::string var = args[i];
+            envVars.emplace_back(var);
         }
         else
         {
@@ -314,7 +324,7 @@ static void startCommand(const std::shared_ptr<IDobbyProxy> &dobbyProxy,
             return;
         }
 
-        cd = dobbyProxy->startContainerFromBundle(id, path, files, command, displaySocketPath);
+        cd = dobbyProxy->startContainerFromBundle(id, path, files, command, displaySocketPath, envVars);
     }
     else
     {
@@ -473,7 +483,7 @@ static void execCommand(const std::shared_ptr<IDobbyProxy>& dobbyProxy,
         return;
     }
 
-    int i = 0;
+    size_t i = 0;
     std::string options;
 
     // Find options from arguments (start with a '-')
@@ -752,7 +762,7 @@ static void traceStartCommand(const std::shared_ptr<IDobbyProxy>& dobbyProxy,
     int fd = open(path.c_str(), O_CLOEXEC | O_CREAT | O_TRUNC | O_RDWR, 0644);
     if (fd < 0)
     {
-        readLine->printLnError("Failed to open / create trace file 's' (%d - %s)",
+        readLine->printLnError("Failed to open / create trace file '%s' (%d - %s)",
                                path.c_str(), errno, strerror(errno));
         return;
     }
@@ -870,7 +880,8 @@ static void initCommands(const std::shared_ptr<IReadLine>& readLine,
                          "Starts a container using the given path. Can optionally specify the command "
                          "to run inside the container. Any arguments after command are treated as "
                          "arguments to the command.\n",
-                         "  --westeros-socket    Mount the specified westeros socket into the container\n");
+                         "  --westeros-socket    Mount the specified westeros socket into the container\n"
+                         "  --envvar             Add an environment variable for this container\n");
 
     readLine->addCommand("stop",
                          std::bind(stopCommand, dobbyProxy, std::placeholders::_1, std::placeholders::_2),
@@ -961,7 +972,7 @@ static void initCommands(const std::shared_ptr<IReadLine>& readLine,
  */
 static void displayVersion()
 {
-    printf("Version: \n");
+    printf("Version: " DOBBY_VERSION  "\n");
 }
 
 // -----------------------------------------------------------------------------

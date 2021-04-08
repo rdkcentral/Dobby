@@ -31,8 +31,7 @@ REGISTER_RDK_PLUGIN(HttpProxyPlugin);
 
 HttpProxyPlugin::HttpProxyPlugin(std::shared_ptr<rt_dobby_schema> &cfg,
                                  const std::shared_ptr<DobbyRdkPluginUtils> &utils,
-                                 const std::string &rootfsPath,
-                                 const std::string &hookStdin)
+                                 const std::string &rootfsPath)
     : mName("HttpProxy"),
       mContainerConfig(cfg),
       mUtils(utils),
@@ -152,6 +151,28 @@ bool HttpProxyPlugin::postHalt()
 
 // -----------------------------------------------------------------------------
 /**
+ * @brief Should return the names of the plugins this plugin depends on.
+ *
+ * This can be used to determine the order in which the plugins should be
+ * processed when running hooks.
+ *
+ * @return Names of the plugins this plugin depends on.
+ */
+std::vector<std::string> HttpProxyPlugin::getDependencies() const
+{
+    std::vector<std::string> dependencies;
+    const rt_defs_plugins_http_proxy* pluginConfig = mContainerConfig->rdk_plugins->httpproxy;
+
+    for (size_t i = 0; i < pluginConfig->depends_on_len; i++)
+    {
+        dependencies.push_back(pluginConfig->depends_on[i]);
+    }
+
+    return dependencies;
+}
+
+// -----------------------------------------------------------------------------
+/**
  *  @brief Adds the httpproxy and no_proxy environment variables to the
  *  container.
  *
@@ -198,7 +219,7 @@ bool HttpProxyPlugin::setupHttpProxy()
     if (!noProxyList.empty())
     {
         std::string noProxyEnvVar = std::string("no_proxy=") + noProxyList;
-        if (!mUtils->addEnvironmentVar(mContainerConfig, noProxyEnvVar))
+        if (!mUtils->addEnvironmentVar(noProxyEnvVar))
         {
             AI_LOG_ERROR_EXIT("failed to add no_proxy environment variable");
             return false;
@@ -209,7 +230,7 @@ bool HttpProxyPlugin::setupHttpProxy()
     char httpProxyEnvVar[256];
     snprintf(httpProxyEnvVar, sizeof(httpProxyEnvVar), "http_proxy=http://%s:%d",
              proxyHost.c_str(), proxyPort);
-    if (!mUtils->addEnvironmentVar(mContainerConfig, httpProxyEnvVar))
+    if (!mUtils->addEnvironmentVar(httpProxyEnvVar))
     {
         AI_LOG_ERROR_EXIT("failed to add httpproxy environment variable");
         return false;
@@ -236,7 +257,7 @@ bool HttpProxyPlugin::addCACertificateMount()
 
     // add a bind mount to the ca-certificates.crt file in the container's
     // bundle. This file is created in the preCreation hook.
-    if (!mUtils->addMount(mContainerConfig, mMountedCACertsPath, hostCACertsPath, "bind",
+    if (!mUtils->addMount(mMountedCACertsPath, hostCACertsPath, "bind",
                          { "bind", "ro" }))
     {
         AI_LOG_ERROR_EXIT("failed to add bind mount from '%s' to '%s'",

@@ -41,8 +41,7 @@ REGISTER_RDK_LOGGER(LoggingPlugin);
  */
 LoggingPlugin::LoggingPlugin(std::shared_ptr<rt_dobby_schema> &containerConfig,
                              const std::shared_ptr<DobbyRdkPluginUtils> &utils,
-                             const std::string &rootfsPath,
-                             const std::string &hookStdin)
+                             const std::string &rootfsPath)
     : mName("Logging"),
       mContainerConfig(containerConfig),
       mUtils(utils)
@@ -94,6 +93,27 @@ bool LoggingPlugin::postInstallation()
 }
 
 /**
+ * @brief Should return the names of the plugins this plugin depends on.
+ *
+ * This can be used to determine the order in which the plugins should be
+ * processed when running hooks.
+ *
+ * @return Names of the plugins this plugin depends on.
+ */
+std::vector<std::string> LoggingPlugin::getDependencies() const
+{
+    std::vector<std::string> dependencies;
+    const rt_defs_plugins_logging* pluginConfig = mContainerConfig->rdk_plugins->logging;
+
+    for (size_t i = 0; i < pluginConfig->depends_on_len; i++)
+    {
+        dependencies.push_back(pluginConfig->depends_on[i]);
+    }
+
+    return dependencies;
+}
+
+/**
  * @brief Public method called by DobbyLogger to start running the logging
  * loop. Destination of the logs depends on the settings in the config file.
  *
@@ -135,6 +155,15 @@ void LoggingPlugin::LoggingLoop(ContainerInfo containerInfo,
     if (containerInfo.connectionFd > 0 && close(containerInfo.connectionFd) != 0)
     {
         AI_LOG_SYS_ERROR(errno, "Failed to close connection");
+    }
+
+    // If dumping a buffer, DobbyBufferStream will clean up after itself
+    if (!isBuffer && containerInfo.pttyFd > 0 && fcntl(containerInfo.pttyFd, F_GETFD) != -1)
+    {
+        if (close(containerInfo.pttyFd) != 0)
+        {
+            AI_LOG_SYS_ERROR(errno, "Failed to close container ptty fd");
+        }
     }
 
     AI_LOG_FN_EXIT();
@@ -190,7 +219,7 @@ LoggingPlugin::LoggingSink LoggingPlugin::GetContainerSink()
 void LoggingPlugin::JournaldSink(const ContainerInfo &containerInfo, bool exitEof)
 {
     AI_LOG_INFO("starting logger for container '%s' to journald (PID: %d)",
-                mContainerConfig->hostname, containerInfo.containerPid);
+                mUtils->getContainerId().c_str(), containerInfo.containerPid);
 
     char buf[8192];
     memset(buf, 0, sizeof(buf));
@@ -220,7 +249,7 @@ void LoggingPlugin::JournaldSink(const ContainerInfo &containerInfo, bool exitEo
             auto it = options.find(priority);
             if (it != options.end())
             {
-                priority = it->second;
+                logPriority = it->second;
             }
             else
             {
@@ -241,7 +270,7 @@ void LoggingPlugin::JournaldSink(const ContainerInfo &containerInfo, bool exitEo
         if (bytesRead < 0)
         {
             AI_LOG_INFO("Container %s terminated, terminating logging thread",
-                        mContainerConfig->hostname);
+                        mUtils->getContainerId().c_str());
             break;
         }
         if (bytesRead == 0 && exitEof)
@@ -272,8 +301,8 @@ void LoggingPlugin::JournaldSink(const ContainerInfo &containerInfo, bool exitEo
             // viewing journald in full JSON format, the container PID is
             // visible
             sd_journal_send("MESSAGE=%s", msg.c_str(),
-                            "PRIORITY=%i", LOG_INFO,
-                            "SYSLOG_IDENTIFIER=%s", mContainerConfig->hostname,
+                            "PRIORITY=%i", logPriority,
+                            "SYSLOG_IDENTIFIER=%s", mUtils->getContainerId().c_str(),
                             "OBJECT_PID=%ld", containerInfo.containerPid,
                             "SYSLOG_PID=%ld", containerInfo.containerPid,
                             NULL);
@@ -308,7 +337,7 @@ void LoggingPlugin::DevNullSink(const ContainerInfo &containerInfo, bool exitEof
     }
 
     AI_LOG_INFO("starting logger for container '%s' to /dev/null",
-                mContainerConfig->hostname);
+                mUtils->getContainerId().c_str());
 
     char buf[8192];
     memset(buf, 0, sizeof(buf));
@@ -324,7 +353,7 @@ void LoggingPlugin::DevNullSink(const ContainerInfo &containerInfo, bool exitEof
         if (ret < 0)
         {
             AI_LOG_INFO("Container %s terminated, terminating logging thread",
-                        mContainerConfig->hostname);
+                        mUtils->getContainerId().c_str());
             break;
         }
         if (ret == 0 && exitEof)
@@ -335,7 +364,7 @@ void LoggingPlugin::DevNullSink(const ContainerInfo &containerInfo, bool exitEof
     }
 
     // Close /dev/null
-    if (devNullFd >= 0 && close(devNullFd) != 0)
+    if (close(devNullFd) != 0)
     {
         AI_LOG_SYS_ERROR(errno, "Failed to close /dev/null");
     }
@@ -408,7 +437,7 @@ void LoggingPlugin::FileSink(const ContainerInfo &containerInfo, bool exitEof, b
     }
 
     AI_LOG_DEBUG("starting logger for container '%s' to write to '%s' (limit %zd bytes)",
-                mContainerConfig->hostname, pathName.c_str(), limit);
+                mUtils->getContainerId().c_str(), pathName.c_str(), limit);
 
     // TODO:: Replace with splice/sendfile to avoid copying data in and out of
     // userspace. This should perform OK for our needs for now though
@@ -417,6 +446,8 @@ void LoggingPlugin::FileSink(const ContainerInfo &containerInfo, bool exitEof, b
 
     ssize_t ret;
     ssize_t offset = 0;
+
+    bool limitHit = false;
 
     // Read from the fd until the file is closed
     while (true)
@@ -427,7 +458,7 @@ void LoggingPlugin::FileSink(const ContainerInfo &containerInfo, bool exitEof, b
         if (ret < 0)
         {
             AI_LOG_INFO("Container %s terminated, terminating logging thread",
-                        mContainerConfig->hostname);
+                        mUtils->getContainerId().c_str());
             break;
         }
         if (ret == 0 && exitEof)
@@ -446,6 +477,12 @@ void LoggingPlugin::FileSink(const ContainerInfo &containerInfo, bool exitEof, b
         else
         {
             // Hit the limit, send the data into the void
+            if (!limitHit)
+            {
+                AI_LOG_WARN("Logger for container %s has hit maximum size of %zu",
+                            mUtils->getContainerId().c_str(), limit);
+            }
+            limitHit = true;
             write(devNullFd, buf, ret);
         }
     }

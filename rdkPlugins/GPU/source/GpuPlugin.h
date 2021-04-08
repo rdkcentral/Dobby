@@ -46,8 +46,7 @@ class GpuPlugin : public RdkPluginBase
 public:
     GpuPlugin(std::shared_ptr<rt_dobby_schema> &containerConfig,
               const std::shared_ptr<DobbyRdkPluginUtils> &utils,
-              const std::string &rootfsPath,
-              const std::string &hookStdin);
+              const std::string &rootfsPath);
 
 public:
     inline std::string name() const override
@@ -60,6 +59,9 @@ public:
 public:
     bool createRuntime() override;
     bool postStop() override;
+
+public:
+    std::vector<std::string> getDependencies() const override;
 
 private:
     std::string getGpuCgroupMountPoint();
@@ -76,8 +78,6 @@ private:
     std::shared_ptr<rt_dobby_schema> mContainerConfig;
     const std::string mRootfsPath;
     const std::shared_ptr<DobbyRdkPluginUtils> mUtils;
-    const std::string mContainerId;
-    const std::string mHookStdin;
 };
 
 #endif // !defined(GPUPLUGIN_H)

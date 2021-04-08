@@ -20,6 +20,7 @@
 #include "NetworkSetup.h"
 #include "Netlink.h"
 #include "BridgeInterface.h"
+#include "TapInterface.h"
 
 #include "Netfilter.h"
 
@@ -187,7 +188,6 @@ std::vector<Netfilter::RuleSet> constructBridgeRules(const std::shared_ptr<Netfi
     };
 
     // add addresses to rules depending on ipVersion
-    char buf[128];
     std::string bridgeAddressRange;
     if (ipVersion == AF_INET)
     {
@@ -366,6 +366,23 @@ bool NetworkSetup::setupBridgeDevice(const std::shared_ptr<DobbyRdkPluginUtils> 
         return false;
     }
 
+    // create an (unused) tap device and attach to the bridge, this is purely
+    // to stop the bridge MAC address from changing as we add / remove veths
+    // @see https://backreference.org/2010/07/28/linux-bridge-mac-addresses-and-dynamic-ports/
+    if (!TapInterface::createTapInterface(netlink) || !TapInterface::isValid())
+    {
+        AI_LOG_ERROR("failed to create tap device");
+    }
+    else if (!BridgeInterface::attachLink(netlink, TapInterface::name()))
+    {
+        AI_LOG_ERROR("failed to attach '%s' to the bridge",
+                     TapInterface::name().c_str());
+    }
+    else if (!BridgeInterface::setMACAddress(netlink, TapInterface::macAddress(netlink)))
+    {
+        AI_LOG_ERROR("failed to set bridge MAC address");
+    }
+
     // step 4 - construct the IPv4 rules to be added to iptables and then add them
     // start with creating a chain to filter input into the bridge device
     netfilter->createNewChain(Netfilter::TableType::Filter, "DobbyInputChain", AF_INET);
@@ -519,12 +536,14 @@ bool saveContainerAddress(const std::shared_ptr<DobbyRdkPluginUtils> &utils,
         return false;
     }
 
+    // Create a temp file we can mount into the container
+    std::string tmpFilename = ADDRESS_FILE_PREFIX + utils->getContainerId();
+
     // combine ip address and veth name strings
     const std::string fileContent(std::string() + helper->ipv4AddrStr() + "/" + vethName);
 
-    // write address and veth name to a file in the container rootfs
-    const std::string filePath(rootfsPath + ADDRESS_FILE_PATH);
-    if (!utils->writeTextFile(filePath, fileContent, O_CREAT | O_TRUNC, 0644))
+    // write address and veth name to a file
+    if (!utils->writeTextFile(tmpFilename, fileContent, O_CREAT | O_TRUNC, 0644))
     {
         AI_LOG_ERROR_EXIT("failed to write ip address file");
         return false;
@@ -630,8 +649,8 @@ bool setupContainerNet(const std::shared_ptr<NetworkingHelper> &helper)
     if (helper->ipv6())
     {
         //construct lo address (::1)
-        struct in6_addr loAddr = IN6ADDR_ANY;
-        loAddr.s6_addr[15] = 1;
+        //struct in6_addr loAddr = IN6ADDR_ANY;
+        //loAddr.s6_addr[15] = 1;
 
         const struct ipv6Route {
             const std::string& iface;
@@ -685,8 +704,7 @@ bool NetworkSetup::setupVeth(const std::shared_ptr<DobbyRdkPluginUtils> &utils,
                              const std::shared_ptr<NetworkingHelper> &helper,
                              const std::string &rootfsPath,
                              const std::string &containerId,
-                             const NetworkType networkType,
-                             const std::string &hookStdin)
+                             const NetworkType networkType)
 {
     AI_LOG_FN_ENTRY();
 
@@ -699,7 +717,7 @@ bool NetworkSetup::setupVeth(const std::shared_ptr<DobbyRdkPluginUtils> &utils,
     }
 
     // step 2 - get container process pid
-    pid_t containerPid = utils->getContainerPid(hookStdin);
+    pid_t containerPid = utils->getContainerPid();
     if (!containerPid)
     {
         AI_LOG_ERROR_EXIT("couldn't find container pid");
@@ -973,43 +991,19 @@ bool NetworkSetup::removeBridgeDevice(const std::shared_ptr<Netfilter> &netfilte
         return false;
     }
 
+    // Close tap interface
+    // If issue around container losing network connectivity when veths are added
+    // and removed from the bridge will reocur it will mean that we should hold
+    // Tap device even when we destroy bridge, but then it leave the question
+    // where should we delete it. For now we destory it here.
+    TapInterface::destroyTapInterface(netlink);
+
     // bring the bridge device down and destroy it
     BridgeInterface::down(netlink);
     BridgeInterface::destroyBridge(netlink);
 
     AI_LOG_FN_EXIT();
     return success;
-}
-
-
-// -----------------------------------------------------------------------------
-/**
- *  @brief Adds a mount to sysfs in the OCI config
- *
- *  @param[in]  utils           Instance of DobbyRdkPluginUtils.
- *  @param[in]  cfg             Pointer to bundle config struct
- */
-void NetworkSetup::addSysfsMount(const std::shared_ptr<DobbyRdkPluginUtils> &utils,
-                                 const std::shared_ptr<rt_dobby_schema> &cfg)
-{
-    const std::string source = "sysfs";
-    const std::string destination = "/sys";
-
-    // iterate through the mounts to check that the mount doesn't already exist
-    for (int i=0; i < cfg->mounts_len; i++)
-    {
-        if (!strcmp(cfg->mounts[i]->source, source.c_str()) &&
-            !strcmp(cfg->mounts[i]->destination, destination.c_str()))
-        {
-            AI_LOG_DEBUG("sysfs mount already exists in the config");
-            return;
-        }
-    }
-
-    // add the mount
-    utils->addMount(cfg, source, destination, "sysfs",
-                    { "nosuid", "noexec", "nodev", "ro" }
-    );
 }
 
 
@@ -1027,7 +1021,7 @@ void NetworkSetup::addResolvMount(const std::shared_ptr<DobbyRdkPluginUtils> &ut
     const std::string destination = "/etc/resolv.conf";
 
     // iterate through the mounts to check that the mount doesn't already exist
-    for (int i=0; i < cfg->mounts_len; i++)
+    for (size_t i=0; i < cfg->mounts_len; i++)
     {
         if (!strcmp(cfg->mounts[i]->source, source.c_str()) &&
             !strcmp(cfg->mounts[i]->destination, destination.c_str()))
@@ -1038,7 +1032,7 @@ void NetworkSetup::addResolvMount(const std::shared_ptr<DobbyRdkPluginUtils> &ut
     }
 
     // add the mount
-    utils->addMount(cfg, source, destination, "bind",
+    utils->addMount(source, destination, "bind",
                     { "ro", "rbind", "rprivate", "nosuid", "noexec", "nodev", }
     );
 }
@@ -1052,7 +1046,7 @@ void NetworkSetup::addResolvMount(const std::shared_ptr<DobbyRdkPluginUtils> &ut
 void NetworkSetup::addNetworkNamespace(const std::shared_ptr<rt_dobby_schema> &cfg)
 {
     // check if container already has network namespace enabled
-    for (int i = 0; i < cfg->linux->namespaces_len; i++)
+    for (size_t i = 0; i < cfg->linux->namespaces_len; i++)
     {
         if (strcmp(cfg->linux->namespaces[i]->type, "network") == 0)
         {

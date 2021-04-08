@@ -22,9 +22,6 @@
 
 #include <netinet/in.h>
 
-// path to file in container rootfs where the container's ip address is stored
-#define ADDRESS_FILE_PATH       "/dobbyaddress"
-
 #define BRIDGE_NAME             "dobby0"
 
 #if defined(DEV_VM)

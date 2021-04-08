@@ -135,7 +135,7 @@ int DobbyLogger::receiveFdFromSocket(const int connectionFd)
     ssize_t messageSize = 0;
 
     // Block waiting to receive a message over the open connection
-    TEMP_FAILURE_RETRY(recvmsg(connectionFd, &msg, 0));
+    messageSize = TEMP_FAILURE_RETRY(recvmsg(connectionFd, &msg, 0));
 
     if (messageSize < 0)
     {

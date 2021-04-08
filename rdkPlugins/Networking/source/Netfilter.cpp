@@ -37,7 +37,9 @@
 #include <signal.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
+#include <sys/mman.h>
 #include <netinet/in.h>
+#include <ext/stdio_filebuf.h>
 
 #define IPTABLES_SAVE_PATH "/usr/sbin/iptables-save"
 #define IPTABLES_RESTORE_PATH "/usr/sbin/iptables-restore"
@@ -49,6 +51,27 @@
     #define IP6TABLES_SAVE_PATH "/usr/sbin/ip6tables-save"
     #define IP6TABLES_RESTORE_PATH "/usr/sbin/ip6tables-restore"
 #endif
+
+
+// for some reason the XiOne toolchain is build against old kernel headers
+// which doesn't have the memfd syscall
+#if !defined(SYS_memfd_create) && defined(__arm__)
+#   define SYS_memfd_create    385
+#endif
+
+// glibc prior to version 2.27 didn't have a syscall wrapper for memfd_create(...)
+#if defined(__GLIBC__) && ((__GLIBC__ < 2) || ((__GLIBC__ >= 2) && (__GLIBC_MINOR__ < 27)))
+#include <syscall.h>
+static inline int memfd_create(const char *name, unsigned int flags)
+{
+    return syscall(SYS_memfd_create, name, flags);
+}
+#endif
+
+#  if !defined(MFD_CLOEXEC)
+#    define MFD_CLOEXEC         0x0001U
+#  endif
+
 
 // -----------------------------------------------------------------------------
 /**
@@ -91,26 +114,28 @@ public:
         }
     }
 
-    int writeFd()
+    int writeFd() const
     {
         return mWriteFd;
     }
 
 private:
-    void dumpPipeContents()
+    void dumpPipeContents() const
     {
         char errBuf[256];
 
         ssize_t ret = TEMP_FAILURE_RETRY(read(mReadFd, errBuf, sizeof(errBuf) - 1));
         if (ret < 0)
         {
-            if (ret != EAGAIN)
-                AI_LOG_SYS_ERROR(errno, "failed to read from stderr pipe");
+            AI_LOG_SYS_ERROR(errno, "failed to read from stderr pipe");
         }
         else if (ret > 0)
         {
-            errBuf[ret] = '\0';
-            AI_LOG_ERROR("%s", errBuf);
+            if (ret != EAGAIN)
+            {
+                errBuf[ret] = '\0';
+                AI_LOG_ERROR("%s", errBuf);
+            }
         }
     }
 
@@ -278,11 +303,11 @@ Netfilter::RuleSet Netfilter::getRuleSet(const int ipVersion) const
 {
     AI_LOG_FN_ENTRY();
 
-    // create a pipe for reading the iptables-save output
-    int pipeFds[2];
-    if (pipe2(pipeFds, O_CLOEXEC) < 0)
-    {
-        AI_LOG_SYS_ERROR_EXIT(errno, "failed to create pipe");
+    // create a memfd for storing the iptables-save output
+    int rulesMemFd = memfd_create("iptables-save-buf", MFD_CLOEXEC);
+    if (rulesMemFd < 0)
+     {
+        AI_LOG_SYS_ERROR_EXIT(errno, "failed to create memfd buffer");
         return RuleSet();
     }
 
@@ -293,62 +318,40 @@ Netfilter::RuleSet Netfilter::getRuleSet(const int ipVersion) const
     // exec the iptables-save function, passing in the pipe for stdout
     if (ipVersion == AF_INET)
     {
-        if (!forkExec(IPTABLES_SAVE_PATH, { }, -1, pipeFds[1], stdErrPipe.writeFd()))
+        if (!forkExec(IPTABLES_SAVE_PATH, { }, -1, rulesMemFd, stdErrPipe.writeFd()))
         {
-            close(pipeFds[0]);
-            close(pipeFds[1]);
+            close(rulesMemFd);
             return RuleSet();
         }
     }
     else if (ipVersion == AF_INET6)
     {
-        if (!forkExec(IP6TABLES_SAVE_PATH, { }, -1, pipeFds[1], stdErrPipe.writeFd()))
+        if (!forkExec(IP6TABLES_SAVE_PATH, { }, -1, rulesMemFd, stdErrPipe.writeFd()))
         {
-            close(pipeFds[0]);
-            close(pipeFds[1]);
+            close(rulesMemFd);
             return RuleSet();
         }
     }
     else
     {
-        close(pipeFds[0]);
-        close(pipeFds[1]);
+        close(rulesMemFd);
         AI_LOG_ERROR_EXIT("netfilter only supports AF_INET or AF_INET6");
         return RuleSet();
     }
 
-    // close the write side of the pipe
-    if (close(pipeFds[1]) != 0)
+    AI_LOG_DEBUG("iptables-save wrote %ld bytes into the buffer",
+                 lseek(rulesMemFd, 0, SEEK_CUR));
+
+    // seek back to the start of the file
+    if (lseek(rulesMemFd, 0, SEEK_SET) < 0)
     {
-        AI_LOG_SYS_ERROR(errno, "failed to close write side of pipe");
+        AI_LOG_SYS_ERROR(errno, "failed to seek to the beginning of the memfd file");
     }
 
-    // read everything out of the pipe
-    std::string output;
-    char buf[256];
-    while (true)
-    {
-        ssize_t rd = TEMP_FAILURE_RETRY(read(pipeFds[0], buf, sizeof(buf)));
-        if (rd < 0)
-        {
-            AI_LOG_SYS_ERROR(errno, "failed to read from pipe");
-            break;
-        }
-        else if (rd == 0)
-        {
-            break;
-        }
-        else
-        {
-            output.append(buf, rd);
-        }
-    }
-
-    // can now close the read side of the pipe
-    if (close(pipeFds[0]) != 0)
-    {
-        AI_LOG_SYS_ERROR(errno, "failed to close read side of pipe");
-    }
+    // and wrap in a ifstream object (nb: stdio_filebuf takes ownership of the
+    // fd and will close it when done)
+    __gnu_cxx::stdio_filebuf<char> rulesBuf(rulesMemFd, std::ios::in);
+    std::istream rulesStream(&rulesBuf);
 
 
     // create a ruleset object with empty initial fields
@@ -359,7 +362,6 @@ Netfilter::RuleSet Netfilter::getRuleSet(const int ipVersion) const
     ruleSet.insert(std::make_pair(TableType::Filter, std::list<std::string>()));
 
     // parse the data read from the iptables-save tool
-    std::istringstream rulesStream(output);
     std::string ruleLine;
 
     // the first character on a line indicates what follows, a '*' represents
@@ -529,13 +531,18 @@ bool Netfilter::applyRules(const int ipVersion)
     // we simply need to pipe the fixed iptables rules into iptables-restore
     // without flushing the existing rules
 
-    // create a pipe for feeding the iptables-restore monster
-    int pipeFds[2];
-    if (pipe2(pipeFds, O_CLOEXEC) < 0)
+    // create a memfd for feeding the iptables-restore monster
+    int rulesMemFd = memfd_create("iptables-restore-buf", MFD_CLOEXEC);
+    if (rulesMemFd < 0)
     {
-        AI_LOG_SYS_ERROR(errno, "failed to create pipe");
+        AI_LOG_SYS_ERROR_EXIT(errno, "failed to create memfd buffer");
         return false;
     }
+
+    // and wrap in a ifstream object (nb: stdio_filebuf takes ownership of the
+    // fd and will close it when done)
+    __gnu_cxx::stdio_filebuf<char> rulesBuf(rulesMemFd, std::ios::out);
+    std::ostream rulesStream(&rulesBuf);
 
     // positive attitude
     bool success = true;
@@ -554,19 +561,18 @@ bool Netfilter::applyRules(const int ipVersion)
     }
 
     // fill the pipe with the iptables rules
-    const TableType tables[] = { TableType::Raw,     TableType::Nat,
-                                 TableType::Mangle,  TableType::Filter,
-                                 TableType::Security };
-    const size_t nTables = sizeof(tables) / sizeof(tables[0]);
+    const TableType tableTypes[] = { TableType::Raw,     TableType::Nat,
+                                     TableType::Mangle,  TableType::Filter,
+                                     TableType::Security };
 
     // iterate through all tables
-    for (size_t i = 0; success && (i < nTables); i++)
+    for (TableType tableType : tableTypes)
     {
         // check if there are any rules to be applied for this table
-        RuleSet::iterator tableUnchanged = ruleCache.unchangedRuleSet.find(tables[i]);
-        RuleSet::iterator tableAppend = ruleCache.appendRuleSet.find(tables[i]);
-        RuleSet::iterator tableInsert = ruleCache.insertRuleSet.find(tables[i]);
-        RuleSet::iterator tableDelete = ruleCache.deleteRuleSet.find(tables[i]);
+        RuleSet::iterator tableUnchanged = ruleCache.unchangedRuleSet.find(tableType);
+        RuleSet::iterator tableAppend = ruleCache.appendRuleSet.find(tableType);
+        RuleSet::iterator tableInsert = ruleCache.insertRuleSet.find(tableType);
+        RuleSet::iterator tableDelete = ruleCache.deleteRuleSet.find(tableType);
 
         // add all rules with their matching operation to the table rules
         std::list<std::pair<Operation, std::list<std::string>>> tableRules;
@@ -595,23 +601,15 @@ bool Netfilter::applyRules(const int ipVersion)
         }
 
         // write the table name first
-        std::string line;
-        switch (tables[i])
+        switch (tableType)
         {
-            case TableType::Raw:        line = "*raw\n";        break;
-            case TableType::Nat:        line = "*nat\n";        break;
-            case TableType::Mangle:     line = "*mangle\n";     break;
-            case TableType::Filter:     line = "*filter\n";     break;
-            case TableType::Security:   line = "*security\n";   break;
+            case TableType::Raw:        rulesStream << "*raw\n";        break;
+            case TableType::Nat:        rulesStream << "*nat\n";        break;
+            case TableType::Mangle:     rulesStream << "*mangle\n";     break;
+            case TableType::Filter:     rulesStream << "*filter\n";     break;
+            case TableType::Security:   rulesStream << "*security\n";   break;
             default:
                 continue;
-        }
-
-        if (!writeString(pipeFds[1], line))
-        {
-            AI_LOG_SYS_ERROR(errno, "failed to write into pipe");
-            success = false;
-            break;
         }
 
         // iterate through rule operations
@@ -637,36 +635,21 @@ bool Netfilter::applyRules(const int ipVersion)
             // and then the actual rules
             for (const std::string &rule : ruleGroup.second)
             {
-                line = operationStr;
-                line += rule;
-                line += '\n';
-
-                AI_LOG_DEBUG("applying rule '%s'", line.c_str());
-
-                if (!writeString(pipeFds[1], line))
-                {
-                    AI_LOG_SYS_ERROR(errno, "failed to write into pipe");
-                    success = false;
-                    break;
-                }
+                rulesStream << operationStr;
+                rulesStream << rule;
+                rulesStream << '\n';
             }
         }
 
         // finish each table with a 'COMMIT'
-        line = "COMMIT\n";
-        if (!writeString(pipeFds[1], line))
+        rulesStream << "COMMIT\n";
+        if (rulesStream.bad() || rulesStream.fail())
         {
-            AI_LOG_SYS_ERROR(errno, "failed to write into pipe");
+            AI_LOG_ERROR("failed to write into memfd");
             success = false;
             break;
         }
 
-    }
-
-    // close the write side of the pipe before calling iptables-restore
-    if (close(pipeFds[1]) != 0)
-    {
-        AI_LOG_SYS_ERROR(errno, "failed to close write side of pipe");
     }
 
     // exec the iptables-restore function, passing in the pipe for stdin
@@ -680,15 +663,25 @@ bool Netfilter::applyRules(const int ipVersion)
         // content of the pipe if not empty)
         StdErrPipe stdErrPipe;
 
+        // ensure all rules flushed to the memfd
+        rulesStream.flush();
+
+        // seek back to the beginning of the memfd
+        int rulesFd = rulesBuf.fd();
+        if (lseek(rulesFd, 0, SEEK_SET) < 0)
+        {
+            AI_LOG_SYS_ERROR(errno, "failed to seek to the beginning of the memfd");
+        }
+
         if (ipVersion == AF_INET)
         {
             success = forkExec(IPTABLES_RESTORE_PATH, args,
-                               pipeFds[0], -1, stdErrPipe.writeFd());
+                               rulesFd, -1, stdErrPipe.writeFd());
         }
         else if (ipVersion == AF_INET6)
         {
             success = forkExec(IP6TABLES_RESTORE_PATH, args,
-                               pipeFds[0], -1, stdErrPipe.writeFd());
+                               rulesFd, -1, stdErrPipe.writeFd());
         }
         else
         {
@@ -696,12 +689,6 @@ bool Netfilter::applyRules(const int ipVersion)
             return false;
         }
 
-    }
-
-    // can now close the read side of the pipe
-    if (close(pipeFds[0]) != 0)
-    {
-        AI_LOG_SYS_ERROR(errno, "failed to close read side of pipe");
     }
 
     AI_LOG_FN_EXIT();

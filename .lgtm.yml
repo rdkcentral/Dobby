@@ -1,0 +1,20 @@
+path_classifiers:
+  library:
+    - libocispec
+
+extraction:
+  cpp:
+    prepare:
+        packages:
+             - libctemplate-dev
+             - libjsoncpp-dev
+             - libjsoncpp1
+             - libdbus-1-dev
+             - libnl-3-dev
+             - libnl-route-3-dev
+             - libsystemd-dev
+             - libyajl-dev
+             - libcap-dev
+    configure:
+      command:
+        - cmake -DCMAKE_BUILD_TYPE=Debug -DRDK_PLATFORM=DEV_VM -DCMAKE_INSTALL_PREFIX:PATH=/usr -DLEGACY_COMPONENTS=ON

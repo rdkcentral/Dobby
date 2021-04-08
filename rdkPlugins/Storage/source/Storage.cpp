@@ -41,8 +41,7 @@ REGISTER_RDK_PLUGIN(Storage);
  */
 Storage::Storage(std::shared_ptr<rt_dobby_schema> &containerSpec,
                 const std::shared_ptr<DobbyRdkPluginUtils> &utils,
-                const std::string &rootfsPath,
-                const std::string &hookStdin)
+                const std::string &rootfsPath)
     : mName("Storage"),
       mContainerConfig(containerSpec),
       mRootfsPath(rootfsPath),
@@ -207,6 +206,28 @@ bool Storage::postStop()
 
 // End hook methods
 
+// -----------------------------------------------------------------------------
+/**
+ * @brief Should return the names of the plugins this plugin depends on.
+ *
+ * This can be used to determine the order in which the plugins should be
+ * processed when running hooks.
+ *
+ * @return Names of the plugins this plugin depends on.
+ */
+std::vector<std::string> Storage::getDependencies() const
+{
+    std::vector<std::string> dependencies;
+    const rt_defs_plugins_storage* pluginConfig = mContainerConfig->rdk_plugins->storage;
+
+    for (size_t i = 0; i < pluginConfig->depends_on_len; i++)
+    {
+        dependencies.push_back(pluginConfig->depends_on[i]);
+    }
+
+    return dependencies;
+}
+
 // Begin private methods
 
 // -----------------------------------------------------------------------------
@@ -294,7 +315,7 @@ std::vector<LoopMountDetails::LoopMount> Storage::getLoopMounts()
     {
         // loop though all the mounts for the given container and create individual
         // LoopMountDetails::LoopMount objects for each
-        for (int i = 0; i < mContainerConfig->rdk_plugins->storage->data->loopback_len; i++)
+        for (size_t i = 0; i < mContainerConfig->rdk_plugins->storage->data->loopback_len; i++)
         {
             auto loopback = mContainerConfig->rdk_plugins->storage->data->loopback[i];
             LoopMountDetails::LoopMount mount;
@@ -334,9 +355,19 @@ std::vector<LoopMountDetails::LoopMount> Storage::getLoopMounts()
                 mount.imgSize = 12 * 1024 * 1024;
             }
 
-            for (int j = 0; j < loopback->options_len; j++)
+            for (size_t j = 0; j < loopback->options_len; j++)
             {
                 mount.mountOptions.push_back(std::string(loopback->options[j]));
+            }
+
+            if (loopback->imgmanagement_present)
+            {
+                mount.imgManagement = loopback->imgmanagement;
+            }
+            else
+            {
+                // default imgManagement = true
+                mount.imgManagement = true;
             }
 
             mounts.push_back(mount);
@@ -368,7 +399,7 @@ uint32_t Storage::getMappedId(uint32_t id, rt_defs_id_mapping **mapping, size_t 
     uint32_t tmp_id = id;
 
     // get id of the container inside host
-    for (int i = 0; i < mapping_len; i++)
+    for (size_t i = 0; i < mapping_len; i++)
     {
         // No need to check if container_id, size or host_id is present as all those fields
         // are required ones, this means that if mapping point exists it has all 3 of those

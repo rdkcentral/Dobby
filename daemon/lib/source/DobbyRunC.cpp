@@ -2,7 +2,7 @@
 * If not stated otherwise in this file or this component's LICENSE file the
 * following copyright and licenses apply:
 *
-* Copyright 2020 RDK Management
+* Copyright 2020 Sky UK
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -43,8 +43,7 @@
 
 DobbyRunC::DobbyRunC(const std::shared_ptr<IDobbyUtils>& utils,
                      const std::shared_ptr<const IDobbySettings> &settings)
-    : mUtilities(utils),
-    mConsoleSocket(settings->consoleSocketPath())
+    : mUtilities(utils)
 #if defined(RDK)
     , mRuncPath("/usr/bin/crun")
 #else
@@ -53,6 +52,7 @@ DobbyRunC::DobbyRunC(const std::shared_ptr<IDobbyUtils>& utils,
     , mWorkingDir("/var/run/rdk/crun")
     , mLogDir("/var/log")
     , mLogFilePath(mLogDir + "/crun.log")
+    , mConsoleSocket(settings->consoleSocketPath())
 {
     // sanity check
     if (access(mRuncPath.c_str(), X_OK) != 0)
@@ -526,7 +526,7 @@ std::pair<pid_t, pid_t> DobbyRunC::exec(const ContainerId& id, const std::string
     }
 
     // Insert strings from options vector into args for crun
-    for (int i = 0; i < opts.size(); i++)
+    for (std::size_t i = 0; i < opts.size(); i++)
     {
         args.push_back(opts.at(i).c_str());
     }
@@ -544,7 +544,7 @@ std::pair<pid_t, pid_t> DobbyRunC::exec(const ContainerId& id, const std::string
     }
 
     // Insert strings from command vector into args for crun
-    for (int i = 0; i < cmd.size(); i++)
+    for (size_t i = 0; i < cmd.size(); i++)
     {
         args.push_back(cmd.at(i).c_str());
     }

@@ -141,6 +141,8 @@ static const ctemplate::StaticTemplateString RDK_PLUGIN_DATA =
     STS_INIT(RDK_PLUGIN_DATA, "RDK_PLUGIN_DATA");
 static const ctemplate::StaticTemplateString RDK_PLUGIN_REQUIRED =
     STS_INIT(RDK_PLUGIN_REQUIRED, "RDK_PLUGIN_REQUIRED");
+static const ctemplate::StaticTemplateString RDK_PLUGIN_DEPENDS_ON =
+    STS_INIT(RDK_PLUGIN_DEPENDS_ON, "RDK_PLUGIN_DEPENDS_ON");
 
 static const ctemplate::StaticTemplateString ENABLE_LEGACY_PLUGINS =
     STS_INIT(ENABLE_LEGACY_PLUGINS, "ENABLE_LEGACY_PLUGINS");
@@ -2110,6 +2112,9 @@ bool DobbySpecConfig::processLoopMount(const Json::Value& value,
     loopMntData["flags"] = flags;
     loopMntData["options"] = rdkMountOpts;
 
+    // disable management of the image to maintain backwards compatibly
+    loopMntData["imgmanagement"] = false;
+
     AI_LOG_FN_EXIT();
     return true;
 }
@@ -2541,10 +2546,17 @@ void DobbySpecConfig::insertIntoRdkPluginJson(const std::string& pluginName,
         else
         {
             // plugin member is an array, so instead of overwriting, we should
-            // append the new array members to the existing array
-            for (const auto& arrayElement : dataMember)
+            // append the new array members to the existing array if there is one
+            if (!existingData[dataMember].isNull())
             {
-                existingData[dataMember].append(arrayElement);
+                for (const auto& arrayElement : pluginData[dataMember])
+                {
+                    existingData[dataMember].append(arrayElement);
+                }
+            }
+            else
+            {
+                existingData[dataMember] = pluginData[dataMember];
             }
         }
     }
@@ -2588,6 +2600,11 @@ bool DobbySpecConfig::processRdkPlugins(const Json::Value& value,
             {
                 mRdkPluginsJson[pluginName]["required"] = value[pluginName]["required"];
             }
+            // write the "dependsOn" field
+            if (!value[pluginName]["dependsOn"].isNull())
+            {
+                mRdkPluginsJson[pluginName]["dependsOn"] = value[pluginName]["dependsOn"];
+            }
         }
     }
 
@@ -2597,6 +2614,7 @@ bool DobbySpecConfig::processRdkPlugins(const Json::Value& value,
         const Json::Value pluginJson = mRdkPluginsJson[pluginName];
         const std::string pluginData = jsonToString(pluginJson["data"]);
         bool pluginRequired = pluginJson["required"].asBool();
+        const std::string pluginDependsOn = (pluginJson["dependsOn"].isNull() ? "[]" : jsonToString(pluginJson["dependsOn"]));
 
         // add parsed rdkPlugin into mRdkPlugins for Dobby hooks
         mRdkPlugins.emplace(pluginName, pluginJson);
@@ -2606,6 +2624,7 @@ bool DobbySpecConfig::processRdkPlugins(const Json::Value& value,
         subDict->SetValue(RDK_PLUGIN_NAME, pluginName.c_str());
         subDict->SetValue(RDK_PLUGIN_DATA, pluginData.c_str());
         subDict->SetValue(RDK_PLUGIN_REQUIRED, pluginRequired ? "true": "false");
+        subDict->SetValue(RDK_PLUGIN_DEPENDS_ON, pluginDependsOn.c_str());
     }
 
     // we no longer need mRdkPluginsJson, so we can safely clear it

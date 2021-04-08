@@ -28,6 +28,8 @@
 #include <string>
 #include <mutex>
 #include <memory>
+#include <array>
+#include <list>
 
 #include <arpa/inet.h>
 
@@ -62,6 +64,7 @@ public:
     bool ifaceDown(const std::string& ifaceName);
 
     bool ifaceIsUp(const std::string& ifaceName) const;
+    bool ifaceExists(const std::string& ifaceName) const;
 
     bool setIfaceAddress(const std::string& ifaceName,
                          const in_addr_t address, const in_addr_t netmask);
@@ -76,6 +79,19 @@ public:
 
     bool setIfaceAcceptRa(const std::shared_ptr<DobbyRdkPluginUtils> &utils,
                           const std::string& ifaceName, int value);
+
+    bool setIfaceMAC(const std::string& ifaceName,
+                     const std::array<uint8_t, 6>& address);
+    std::array<uint8_t, 6> getIfaceMAC(const std::string& ifaceName);
+
+    struct BridgePortDetails
+    {
+        int index;
+        char name[16];
+        uint8_t mac[6];
+    };
+
+    std::list<BridgePortDetails> getAttachedIfaces(const std::string& bridgeName);
 
 public:
     bool createBridge(const std::string& bridgeName);

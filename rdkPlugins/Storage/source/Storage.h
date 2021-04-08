@@ -43,8 +43,7 @@ class Storage : public RdkPluginBase
 public:
     Storage(std::shared_ptr<rt_dobby_schema>& containerConfig,
             const std::shared_ptr<DobbyRdkPluginUtils> &utils,
-            const std::string &rootfsPath,
-            const std::string &hookStdin);
+            const std::string &rootfsPath);
 
 public:
     inline std::string name() const override
@@ -78,6 +77,9 @@ public:
     // In this hook there should be deletion of img file when non-
     // persistent option is selected
     bool postStop() override;
+
+public:
+    std::vector<std::string> getDependencies() const override;
 
     std::vector<LoopMountDetails::LoopMount> getLoopMounts();
     std::vector<std::unique_ptr<LoopMountDetails>> getLoopDetails();

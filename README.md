@@ -1,4 +1,7 @@
 # Dobby
+
+[![Total alerts](https://img.shields.io/lgtm/alerts/g/rdkcentral/Dobby.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/rdkcentral/Dobby/alerts/) [![Language grade: C/C++](https://img.shields.io/lgtm/grade/cpp/g/rdkcentral/Dobby.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/rdkcentral/Dobby/context:cpp)
+
 Dobby “Docker based Thingy” is a tool for managing and running OCI containers using [crun](https://github.com/containers/crun)
 
 # Getting Started

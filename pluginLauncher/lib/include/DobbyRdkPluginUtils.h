@@ -24,6 +24,7 @@
 #define DOBBYRDKPLUGINUTILS_H
 
 #include "rt_dobby_schema.h"
+#include "rt_state_schema.h"
 
 #include <sys/types.h>
 #include <string>
@@ -32,6 +33,16 @@
 #include <memory>
 #include <list>
 #include <mutex>
+
+// TODO:: This would be better stored in the dobby workspace dir rather than /tmp,
+// but we don't programatically know the workspace dir in this code.
+#define ADDRESS_FILE_PREFIX       "/tmp/dobbyAddress_"
+
+typedef struct ContainerNetworkInfo
+{
+    std::string vethName;
+    std::string ipAddress;
+} ContainerNetworkInfo;
 
 // -----------------------------------------------------------------------------
 /**
@@ -43,7 +54,9 @@
 class DobbyRdkPluginUtils
 {
 public:
-    DobbyRdkPluginUtils();
+    DobbyRdkPluginUtils(const std::shared_ptr<rt_dobby_schema> &cfg);
+    DobbyRdkPluginUtils(const std::shared_ptr<rt_dobby_schema> &cfg,
+                        const std::shared_ptr<const rt_state_schema> &state);
     ~DobbyRdkPluginUtils();
 
     // -------------------------------------------------------------------------
@@ -84,7 +97,10 @@ public:
     void nsThread(int newNsFd, int nsType, bool* success,
                   std::function<bool()>& func) const;
 
-    pid_t getContainerPid(const std::string &stdin) const;
+
+    pid_t getContainerPid() const;
+    std::string getContainerId() const;
+    bool getContainerNetworkInfo(ContainerNetworkInfo &networkInfo);
 
     bool writeTextFile(const std::string &path,
                        const std::string &str,
@@ -93,18 +109,20 @@ public:
 
     std::string readTextFile(const std::string &path) const;
 
-    bool addMount(const std::shared_ptr<rt_dobby_schema> &cfg,
-                  const std::string &source,
+    bool addMount(const std::string &source,
                   const std::string &target,
                   const std::string &fsType,
                   const std::list<std::string> &mountOptions) const;
 
     static bool mkdirRecursive(const std::string& path, mode_t mode);
 
-    bool addEnvironmentVar(const std::shared_ptr<rt_dobby_schema> &cfg,
-                           const std::string& envVar) const;
+    bool addEnvironmentVar(const std::string& envVar) const;
 
+private:
     mutable std::mutex mLock;
+
+    std::shared_ptr<rt_dobby_schema> mConf;
+    std::shared_ptr<const rt_state_schema> mState;
 };
 
 #endif // !defined(DOBBYRDKPLUGINUTILS_H)

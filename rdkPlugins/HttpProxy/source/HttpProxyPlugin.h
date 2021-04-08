@@ -45,8 +45,7 @@ class HttpProxyPlugin : public RdkPluginBase
 public:
     HttpProxyPlugin(std::shared_ptr<rt_dobby_schema>& containerConfig,
                     const std::shared_ptr<DobbyRdkPluginUtils> &utils,
-                    const std::string &rootfsPath,
-                    const std::string &hookStdin);
+                    const std::string &rootfsPath);
 
 public:
     inline std::string name() const override
@@ -61,6 +60,8 @@ public:
     bool preCreation() override;
     bool postHalt() override;
 
+public:
+    std::vector<std::string> getDependencies() const override;
 
 private:
     bool setupHttpProxy();

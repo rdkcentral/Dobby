@@ -1,7 +1,7 @@
 # If not stated otherwise in this file or this component's LICENSE file the
 # following copyright and licenses apply:
 #
-# Copyright 2020 Sky UK
+# Copyright 2021 Sky UK
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,27 +15,27 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-add_library( AppServicesPlugin
-        MODULE
-        source/AppServicesPlugin.cpp
-        $<TARGET_OBJECTS:DobbyPluginCommonLib>
-        ../../rdkPlugins/Networking/source/Netfilter.cpp
+project(AppServicesRdkPlugin)
+
+add_library( ${PROJECT_NAME}
+        SHARED
+        source/AppServicesRdkPlugin.cpp
+        ../Networking/source/Netfilter.cpp
         )
 
-target_include_directories( AppServicesPlugin
+target_include_directories( AppServicesRdkPlugin
         PRIVATE
-        $<TARGET_PROPERTY:DobbyPluginCommonLib,INTERFACE_INCLUDE_DIRECTORIES>
-        $<TARGET_PROPERTY:DobbyDaemonLib,INTERFACE_INCLUDE_DIRECTORIES>
-        $<TARGET_PROPERTY:AppInfraLogging,INTERFACE_INCLUDE_DIRECTORIES>
-        ../../rdkPlugins/Networking/include
-        )
-
-set_target_properties( AppServicesPlugin PROPERTIES
-        VERSION   ${DOBBY_MAJOR_VERSION}.1.0
-        SOVERSION ${DOBBY_MAJOR_VERSION}
+        ../Networking/include
         )
 
 install(
-        TARGETS AppServicesPlugin
+        TARGETS ${PROJECT_NAME}
         LIBRARY DESTINATION lib/plugins/dobby
+        NAMELINK_SKIP
         )
+
+target_link_libraries(${PROJECT_NAME}
+        DobbyRdkPluginCommonLib
+)
+
+set_target_properties( ${PROJECT_NAME} PROPERTIES SOVERSION 1 )

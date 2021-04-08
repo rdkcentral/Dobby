@@ -41,8 +41,7 @@ class NetworkingPlugin : public RdkPluginBase
 public:
     NetworkingPlugin(std::shared_ptr<rt_dobby_schema> &cfg,
                      const std::shared_ptr<DobbyRdkPluginUtils> &utils,
-                     const std::string &rootfsPath,
-                     const std::string &hookStdin);
+                     const std::string &rootfsPath);
     ~NetworkingPlugin();
 
 public:
@@ -58,25 +57,27 @@ public:
     bool createRuntime() override;
     bool postHalt() override;
 
+public:
+    std::vector<std::string> getDependencies() const override;
+
 private:
     bool createRemoteService();
 
 private:
     bool mValid;
-    std::shared_ptr<rt_dobby_schema> mContainerConfig;
-    const rt_defs_plugins_networking_data *mPluginData;
-    const std::shared_ptr<DobbyRdkPluginUtils> mUtils;
     const std::string mName;
-    const std::string mRootfsPath;
-    const std::string mContainerId;
     NetworkType mNetworkType;
-    std::shared_ptr<Netfilter> mNetfilter;
-    const std::string mHookStdin;
 
+    std::shared_ptr<rt_dobby_schema> mContainerConfig;
+    const std::shared_ptr<DobbyRdkPluginUtils> mUtils;
 
-    std::shared_ptr<DobbyRdkPluginProxy> mDobbyProxy;
+    const std::string mRootfsPath;
+    const rt_defs_plugins_networking_data *mPluginData;
+
     std::shared_ptr<AI_IPC::IIpcService> mIpcService;
+    std::shared_ptr<DobbyRdkPluginProxy> mDobbyProxy;
     std::shared_ptr<NetworkingHelper> mHelper;
+    std::shared_ptr<Netfilter> mNetfilter;
 };
 
 #endif // !defined(NETWORKINGPLUGIN_H)

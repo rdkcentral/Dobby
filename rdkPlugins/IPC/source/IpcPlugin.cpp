@@ -41,8 +41,7 @@ REGISTER_RDK_PLUGIN(IpcPlugin);
  */
 IpcPlugin::IpcPlugin(std::shared_ptr<rt_dobby_schema> &containerConfig,
                              const std::shared_ptr<DobbyRdkPluginUtils> &utils,
-                             const std::string &rootfsPath,
-                             const std::string &hookStdin)
+                             const std::string &rootfsPath)
     : mName("ipc"),
       mContainerConfig(containerConfig),
       mRootfsPath(rootfsPath),
@@ -120,11 +119,9 @@ bool IpcPlugin::postInstallation()
     // set the environment vars for dbus to fix issues with userns and
     // the dbus AUTH EXTERNAL protocol
 #if defined(RDK)
-    mUtils->addEnvironmentVar(mContainerConfig,
-                              "SKY_DBUS_DISABLE_UID_IN_EXTERNAL_AUTH=1");
+    mUtils->addEnvironmentVar("SKY_DBUS_DISABLE_UID_IN_EXTERNAL_AUTH=1");
 #else
-    mUtils->addEnvironmentVar(mContainerConfig,
-                              "DBUS_ID_MAPPING=1");
+    mUtils->addEnvironmentVar("DBUS_ID_MAPPING=1");
 #endif
 
     // create the directory in the rootfs for the mount
@@ -167,6 +164,27 @@ bool IpcPlugin::postInstallation()
 }
 
 // End hook methods
+
+/**
+ * @brief Should return the names of the plugins this plugin depends on.
+ *
+ * This can be used to determine the order in which the plugins should be
+ * processed when running hooks.
+ *
+ * @return Names of the plugins this plugin depends on.
+ */
+std::vector<std::string> IpcPlugin::getDependencies() const
+{
+    std::vector<std::string> dependencies;
+    const rt_defs_plugins_ipc* pluginConfig = mContainerConfig->rdk_plugins->ipc;
+
+    for (size_t i = 0; i < pluginConfig->depends_on_len; i++)
+    {
+        dependencies.push_back(pluginConfig->depends_on[i]);
+    }
+
+    return dependencies;
+}
 
 // Begin private methods
 
@@ -254,8 +272,7 @@ bool IpcPlugin::addSocketAndEnv(const std::shared_ptr<DobbyRdkPluginUtils> utils
     }
 
     // create a mount point for the socket
-    if (!utils->addMount(containerConfig,
-                        busStr,
+    if (!utils->addMount(busStr,
                         "/" + socketPath,
                         "bind",
                         {"bind", "nodev","nosuid", "noexec" }))
@@ -265,7 +282,7 @@ bool IpcPlugin::addSocketAndEnv(const std::shared_ptr<DobbyRdkPluginUtils> utils
         return false;
     }
 
-    utils->addEnvironmentVar(containerConfig, envVar);
+    utils->addEnvironmentVar(envVar);
     return true;
 }
 

@@ -31,9 +31,6 @@
       "/dev/tee[0-9]",
       "/dev/vpu"
     ],
-    "extraEnvVariables": [
-      "ENABLE_MEDIAINFO=0"
-    ],
     "extraMounts": [
       {
         "source": "/etc/xdg/gstomx.conf",

@@ -143,7 +143,7 @@ bool DobbyConfig::addMount(const std::string& source,
     }
 
     // iterate through the mounts to check that the mount doesn't already exist
-    for (int i=0; i < cfg->mounts_len; i++)
+    for (size_t i=0; i < cfg->mounts_len; i++)
     {
         if (!strcmp(cfg->mounts[i]->source, source.c_str()) && !strcmp(cfg->mounts[i]->destination, destination.c_str()))
         {
@@ -244,7 +244,7 @@ bool DobbyConfig::addEnvironmentVar(const std::string& envVar)
     }
 
     // check if env var already exists in config
-    for (int i = 0; i < cfg->process->env_len; ++i)
+    for (size_t i = 0; i < cfg->process->env_len; ++i)
     {
         if (0 == strcmp(cfg->process->env[i], envVar.c_str()))
         {
@@ -258,6 +258,103 @@ bool DobbyConfig::addEnvironmentVar(const std::string& envVar)
     // Update env var in OCI bundle config
     cfg->process->env = (char**)realloc(cfg->process->env, sizeof(char*) * cfg->process->env_len);
     cfg->process->env[cfg->process->env_len-1] = strdup(envVar.c_str());
+
+    AI_LOG_FN_EXIT();
+    return true;
+}
+
+// -----------------------------------------------------------------------------
+/**
+ *  Changes the startup command for the container to a custom command.
+ *
+ *  Will automatically add DobbyInit to run the process to ensure sub-reaping
+ *  is handled properly
+ *
+ *  @param[in]  command     The command to run (including arguments/params)
+ */
+bool DobbyConfig::changeProcessArgs(const std::string& command)
+{
+    AI_LOG_FN_ENTRY();
+
+    std::lock_guard<std::mutex> locker(mLock);
+
+    std::shared_ptr<rt_dobby_schema> cfg = config();
+    if (cfg == nullptr)
+    {
+        AI_LOG_ERROR("Invalid bundle config");
+        return false;
+    }
+
+    AI_LOG_DEBUG("Adding custom command %s to config", command.c_str());
+    std::vector<std::string> cmd;
+
+    // Always use DobbyInit
+    cmd.push_back("/usr/libexec/DobbyInit");
+
+    // Insert space delimited command string into a vector
+    std::stringstream ss_cmd(command);
+    std::string tmp;
+    while (getline(ss_cmd, tmp, ' '))
+    {
+        cmd.push_back(tmp);
+    }
+
+    // Add the args to the config
+    cfg->process->args = (char **)realloc(cfg->process->args, sizeof(char *) * cmd.size());
+    cfg->process->args_len = cmd.size();
+
+    for (size_t i = 0; i < cmd.size(); i++)
+    {
+        cfg->process->args[i] = strdup(cmd[i].c_str());
+    }
+
+    AI_LOG_FN_EXIT();
+    return true;
+}
+
+// -----------------------------------------------------------------------------
+/**
+ *  Adds a mount into the container for a westeros socket with the correct
+ *  permissions at /tmp/westeros
+ *
+ *  Sets WAYLAND_DISPLAY and XDG_RUNTIME_DIR environment variables
+ *  to ensure container actually uses the display
+ *
+ *  @param[in]  socketPath     Path to westeros socket on host
+ */
+bool DobbyConfig::addWesterosMount(const std::string& socketPath)
+{
+    AI_LOG_FN_ENTRY();
+
+    std::shared_ptr<rt_dobby_schema> cfg = config();
+    if (cfg == nullptr)
+    {
+        AI_LOG_ERROR("Invalid bundle config");
+        return false;
+    }
+
+    AI_LOG_DEBUG("Adding westeros socket bind mount %s -> /tmp/westeros to config", socketPath.c_str());
+
+    // Mount options
+    std::list<std::string> mountOptions = {
+        "bind",
+        "rw",
+        "nosuid",
+        "nodev",
+        "noexec"
+    };
+
+    if (!addMount(socketPath, "/tmp/westeros", "bind", 0, mountOptions))
+    {
+        AI_LOG_ERROR("Failed to add Westeros mount");
+        return false;
+    }
+
+    if (!addEnvironmentVar("WAYLAND_DISPLAY=westeros") || !addEnvironmentVar("XDG_RUNTIME_DIR=/tmp"))
+    {
+        AI_LOG_ERROR("Failed to set westeros environment variables");
+        return false;
+    }
 
     AI_LOG_FN_EXIT();
     return true;
@@ -443,7 +540,7 @@ void DobbyConfig::setPluginHookEntry(rt_defs_hook* entry, const std::string& nam
     entry->args_len = args.size();;
     entry->args = (char**)calloc(entry->args_len, sizeof(char*));
 
-    for (int i = 0; i < args.size(); i++)
+    for (size_t i = 0; i < args.size(); i++)
     {
         entry->args[i] = strdup(args[i].c_str());
     }

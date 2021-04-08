@@ -56,8 +56,7 @@ namespace NetworkSetup
                    const std::shared_ptr<NetworkingHelper> &helper,
                    const std::string &rootfsPath,
                    const std::string &containerId,
-                   const NetworkType networkType,
-                   const std::string &hookStdin);
+                   const NetworkType networkType);
 
     bool removeVethPair(const std::shared_ptr<Netfilter> &netfilter,
                         const std::shared_ptr<NetworkingHelper> &helper,
@@ -68,8 +67,6 @@ namespace NetworkSetup
     bool removeBridgeDevice(const std::shared_ptr<Netfilter> &netfilter,
                             const std::vector<std::string> &extIfaces);
 
-    void addSysfsMount(const std::shared_ptr<DobbyRdkPluginUtils> &utils,
-                       const std::shared_ptr<rt_dobby_schema> &cfg);
     void addResolvMount(const std::shared_ptr<DobbyRdkPluginUtils> &utils,
                         const std::shared_ptr<rt_dobby_schema> &cfg);
 

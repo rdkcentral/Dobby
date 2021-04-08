@@ -546,7 +546,8 @@ int32_t DobbyProxy::startContainerFromSpec(const std::string& id,
                                            const std::string& jsonSpec,
                                            const std::list<int>& files /*= std::list<int>()*/,
                                            const std::string& command /*= ""*/,
-                                           const std::string& displaySocket /*= ""*/) const
+                                           const std::string& displaySocket /*= ""*/,
+                                           const std::vector<std::string>& envVars /*= std::vector<std::string>()*/) const
 {
     AI_LOG_FN_ENTRY();
 
@@ -558,7 +559,7 @@ int32_t DobbyProxy::startContainerFromSpec(const std::string& id,
     }
 
     // send off the request
-    const AI_IPC::VariantList params = { id, jsonSpec, fds, command, displaySocket };
+    const AI_IPC::VariantList params = { id, jsonSpec, fds, command, displaySocket, envVars };
     AI_IPC::VariantList returns;
 
     int32_t result = -1;
@@ -601,7 +602,8 @@ int32_t DobbyProxy::startContainerFromBundle(const std::string& id,
                                              const std::string& bundlePath,
                                              const std::list<int>& files,
                                              const std::string& command /*= ""*/,
-                                             const std::string& displaySocket /*= ""*/) const
+                                             const std::string& displaySocket /*= ""*/,
+                                             const std::vector<std::string>& envVars /*= std::vector<std::string>()*/) const
 {
     AI_LOG_FN_ENTRY();
 
@@ -613,7 +615,7 @@ int32_t DobbyProxy::startContainerFromBundle(const std::string& id,
     }
 
     // send off the request
-    const AI_IPC::VariantList params = { id, bundlePath, fds, command, displaySocket };
+    const AI_IPC::VariantList params = { id, bundlePath, fds, command, displaySocket, envVars };
     AI_IPC::VariantList returns;
 
     int32_t result = -1;

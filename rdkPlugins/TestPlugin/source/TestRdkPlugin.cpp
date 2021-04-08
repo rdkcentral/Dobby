@@ -35,8 +35,7 @@ REGISTER_RDK_PLUGIN(TestRdkPlugin);
  */
 TestRdkPlugin::TestRdkPlugin(std::shared_ptr<rt_dobby_schema> &containerConfig,
                              const std::shared_ptr<DobbyRdkPluginUtils> &utils,
-                             const std::string &rootfsPath,
-                             const std::string &hookStdin)
+                             const std::string &rootfsPath)
     : mName("TestRdkPlugin"),
       mContainerConfig(containerConfig),
       mRootfsPath(rootfsPath),
@@ -81,7 +80,7 @@ bool TestRdkPlugin::postInstallation()
         return false;
     }
 
-    AI_LOG_INFO("This hook is running for container with hostname %s", mContainerConfig->hostname);
+    AI_LOG_INFO("This hook is running for container with hostname %s", mUtils->getContainerId().c_str());
     return true;
 }
 
@@ -98,7 +97,7 @@ bool TestRdkPlugin::preCreation()
         return false;
     }
 
-    AI_LOG_INFO("This hook is running for container with hostname %s", mContainerConfig->hostname);
+    AI_LOG_INFO("This hook is running for container with hostname %s", mUtils->getContainerId().c_str());
     return true;
 }
 
@@ -115,7 +114,7 @@ bool TestRdkPlugin::createRuntime()
         return false;
     }
 
-    AI_LOG_INFO("This hook is running for container with hostname %s", mContainerConfig->hostname);
+    AI_LOG_INFO("This hook is running for container with hostname %s", mUtils->getContainerId().c_str());
     return true;
 }
 
@@ -132,10 +131,11 @@ bool TestRdkPlugin::createContainer()
         return false;
     }
 
-    AI_LOG_INFO("This hook is running for container with hostname %s", mContainerConfig->hostname);
+    AI_LOG_INFO("This hook is running for container with hostname %s", mUtils->getContainerId().c_str());
     return true;
 }
 
+#ifdef USE_STARTCONTAINER_HOOK
 /**
  * @brief OCI Hook - Run in container namespace
  */
@@ -149,9 +149,10 @@ bool TestRdkPlugin::startContainer()
         return false;
     }
 
-    AI_LOG_INFO("This hook is running for container with hostname %s", mContainerConfig->hostname);
+    AI_LOG_INFO("This hook is running for container with hostname %s", mUtils->getContainerId().c_str());
     return true;
 }
+#endif
 
 /**
  * @brief OCI Hook - Run in host namespace once container has started
@@ -166,7 +167,7 @@ bool TestRdkPlugin::postStart()
         return false;
     }
 
-    AI_LOG_INFO("This hook is running for container with hostname %s", mContainerConfig->hostname);
+    AI_LOG_INFO("This hook is running for container with hostname %s", mUtils->getContainerId().c_str());
     return true;
 }
 
@@ -183,7 +184,7 @@ bool TestRdkPlugin::postHalt()
         return false;
     }
 
-    AI_LOG_INFO("This hook is running for container with hostname %s", mContainerConfig->hostname);
+    AI_LOG_INFO("This hook is running for container with hostname %s", mUtils->getContainerId().c_str());
     return true;
 }
 
@@ -200,10 +201,31 @@ bool TestRdkPlugin::postStop()
         return false;
     }
 
-    AI_LOG_INFO("This hook is running for container with hostname %s", mContainerConfig->hostname);
+    AI_LOG_INFO("This hook is running for container with hostname %s", mUtils->getContainerId().c_str());
     return true;
 }
 
 // End hook methods
+
+/**
+ * @brief Should return the names of the plugins this plugin depends on.
+ *
+ * This can be used to determine the order in which the plugins should be
+ * processed when running hooks.
+ *
+ * @return Names of the plugins this plugin depends on.
+ */
+std::vector<std::string> TestRdkPlugin::getDependencies() const
+{
+    std::vector<std::string> dependencies;
+    const rt_defs_plugins_test_rdk_plugin* pluginConfig = mContainerConfig->rdk_plugins->testrdkplugin;
+
+    for (size_t i = 0; i < pluginConfig->depends_on_len; i++)
+    {
+        dependencies.push_back(pluginConfig->depends_on[i]);
+    }
+
+    return dependencies;
+}
 
 // Begin private methods

@@ -34,8 +34,7 @@ class LocalTimePlugin : public RdkPluginBase
 public:
     LocalTimePlugin(std::shared_ptr<rt_dobby_schema> &containerConfig,
                     const std::shared_ptr<DobbyRdkPluginUtils> &utils,
-                    const std::string &rootfsPath,
-                    const std::string &hookStdin);
+                    const std::string &rootfsPath);
 
 public:
     inline std::string name() const override
@@ -48,9 +47,13 @@ public:
 public:
     bool postInstallation() override;
 
+public:
+    std::vector<std::string> getDependencies() const override;
+
 private:
     const std::string mName;
     const std::string mRootfsPath;
+    std::shared_ptr<rt_dobby_schema> mContainerConfig;
 };
 
 #endif // !defined(LOCALTIMEPLUGIN_H)

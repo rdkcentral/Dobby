@@ -25,6 +25,7 @@
 
 #include "IDobbyRdkPlugin.h"
 #include "IDobbyRdkLoggingPlugin.h"
+#include "DobbyRdkPluginDependencySolver.h"
 
 #include <sys/types.h>
 #include <map>
@@ -47,13 +48,11 @@ class DobbyRdkPluginManager
 public:
     DobbyRdkPluginManager(std::shared_ptr<rt_dobby_schema> containerConfig,
                           const std::string &rootfsPath,
-                          const std::string &hookStdin,
                           const std::string &pluginPath,
                           const std::shared_ptr<DobbyRdkPluginUtils> &utils);
     ~DobbyRdkPluginManager();
 
 public:
-    void loadPlugins();
     const std::vector<std::string> listLoadedPlugins() const;
     const std::vector<std::string> listLoadedLoggers() const;
     bool runPlugins(const IDobbyRdkPlugin::HintFlags &hookPoint) const;
@@ -62,23 +61,28 @@ public:
     std::shared_ptr<IDobbyRdkLoggingPlugin> getContainerLogger() const;
 
 private:
+    bool loadPlugins();
+    bool preprocessPlugins();
     bool executeHook(const std::string &pluginName,
                      const IDobbyRdkPlugin::HintFlags hook) const;
 
     bool implementsHook(const std::string &pluginName,
                         const IDobbyRdkPlugin::HintFlags hook) const;
     bool isLoaded(const std::string &pluginName) const;
+    bool isRequired(const std::string &pluginName) const;
     inline std::shared_ptr<IDobbyRdkPlugin> getPlugin(const std::string &name) const;
     inline std::shared_ptr<IDobbyRdkLoggingPlugin> getLogger(const std::string &name) const;
 
 private:
+    bool mValid;
     std::map<std::string, std::pair<void *, std::shared_ptr<IDobbyRdkLoggingPlugin>>> mLoggers;
     std::map<std::string, std::pair<void *, std::shared_ptr<IDobbyRdkPlugin>>> mPlugins;
-    const std::string mPluginPath;
-    const std::string mRootfsPath;
-    const std::string mHookStdin;
-    const std::shared_ptr<DobbyRdkPluginUtils> mUtils;
+    std::set<std::string> mRequiredPlugins;
     std::shared_ptr<rt_dobby_schema> mContainerConfig;
+    const std::string mRootfsPath;
+    const std::string mPluginPath;
+    const std::shared_ptr<DobbyRdkPluginUtils> mUtils;
+    DobbyRdkPluginDependencySolver mDependencySolver;
 };
 
 #endif // !defined(DOBBYRDKPLUGINMANAGER_H)

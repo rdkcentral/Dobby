@@ -50,6 +50,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <signal.h>
+#include <dirent.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
@@ -82,10 +83,10 @@ DobbyManager::DobbyManager(const std::shared_ptr<IDobbyEnv> &env,
     : mContainerStartedCb(containerStartedCb)
     , mContainerStoppedCb(containerStoppedCb)
     , mEnvironment(env)
-    , mLogger(logger)
     , mUtilities(utils)
     , mIPCUtilities(ipcUtils)
     , mSettings(settings)
+    , mLogger(logger)
     , mRunc(new DobbyRunC(utils, settings))
     , mState(std::make_shared<DobbyState>(settings))
     , mRuncMonitorTerminate(false)
@@ -323,15 +324,6 @@ bool DobbyManager::createAndStart(const ContainerId &id,
 {
     AI_LOG_FN_ENTRY();
 
-    // Run any pre-creation hooks
-    if (container->config->rdkPlugins().size() > 0)
-    {
-        if (!onPreCreationHook(container))
-        {
-            return false;
-        }
-    }
-
     // Create the container, but don't start it yet
     auto loggingPlugin = GetContainerLogger(container);
     std::shared_ptr<DobbyBufferStream> createBuffer = std::make_shared<DobbyBufferStream>();
@@ -412,83 +404,40 @@ bool DobbyManager::createAndStart(const ContainerId &id,
  *                        config file
  */
 std::string DobbyManager::createCustomConfig(const std::unique_ptr<DobbyContainer> &container,
+                                             const std::shared_ptr<DobbyConfig> &config,
                                              const std::string &command,
-                                             const std::string &displaySocket)
+                                             const std::string &displaySocket,
+                                             const std::vector<std::string>& envVars)
 {
     AI_LOG_FN_ENTRY();
-    auto cfg = container->config->config();
 
     // If we've been given a custom command, replace args[] with the custom command
     if (!command.empty())
     {
-        AI_LOG_DEBUG("Adding custom command %s to config", command.c_str());
-        std::vector<std::string> cmd;
-
-        // Always use DobbyInit
-        cmd.push_back("/usr/libexec/DobbyInit");
-
-        // Insert space delimited command string into a vector
-        std::stringstream ss_cmd(command);
-        std::string tmp;
-        while (getline(ss_cmd, tmp, ' '))
-        {
-            cmd.push_back(tmp);
-        }
-
-        // Add the args to the config
-        cfg->process->args = (char **)realloc(cfg->process->args, sizeof(char *) * cmd.size());
-        cfg->process->args_len = cmd.size();
-
-        for (int i = 0; i < cmd.size(); i++)
-        {
-            cfg->process->args[i] = strdup(cmd[i].c_str());
-        }
+       config->changeProcessArgs(command);
     }
 
     // If we've been given a displaySocket, then add the mount it into the container
     // Will always be mounted to /tmp/westeros in container
     if (!displaySocket.empty())
     {
-            AI_LOG_DEBUG("Adding westeors socket bind mount %s -> /tmp/westeros to config", displaySocket.c_str());
+        config->addWesterosMount(displaySocket);
+    }
 
-            // Mount options
-            std::vector<std::string> mountOptions = {
-                "bind",
-                "rw",
-                "nosuid",
-                "nodev",
-                "noexec"
-            };
-
-            // allocate memory for mount
-            rt_defs_mount *newMount = (rt_defs_mount*)calloc(1, sizeof(rt_defs_mount));
-            newMount->options_len = mountOptions.size();
-            newMount->options = (char**)calloc(newMount->options_len, sizeof(char*));
-
-            // add mount options to bundle config
-            int i = 0;
-            for (const std::string &mountOption : mountOptions)
-            {
-                newMount->options[i] = strdup(mountOption.c_str());
-                i++;
-            }
-
-            // Display is always mounted as /tmp/westeros into the container
-            newMount->destination = strdup("/tmp/westeros");
-            newMount->type = strdup("bind");
-            newMount->source = strdup(displaySocket.c_str());
-
-            // allocate memory for new mount and place it in the config struct
-            cfg->mounts_len++;
-            cfg->mounts = (rt_defs_mount**)realloc(cfg->mounts, sizeof(rt_defs_mount*) * cfg->mounts_len);
-            cfg->mounts[cfg->mounts_len-1] = newMount;
+    // Add any extra environment variables
+    if (envVars.size() > 0)
+    {
+        for (const auto &var : envVars)
+        {
+            config->addEnvironmentVar(var);
+        }
     }
 
     // Write the config to a temp file that is only used for this container launch
     std::string tmpConfigPath = container->bundle->path() + "/config-" +
                                 std::to_string(container->descriptor) + ".json";
 
-    if (!container->config->writeConfigJson(tmpConfigPath))
+    if (!config->writeConfigJson(tmpConfigPath))
     {
         AI_LOG_ERROR_EXIT("Failed to write custom config file to '%s'",
                      tmpConfigPath.c_str());
@@ -516,23 +465,10 @@ bool DobbyManager::createAndStartContainer(const ContainerId &id,
                                            const std::unique_ptr<DobbyContainer> &container,
                                            const std::list<int> &files,
                                            const std::string &command,
-                                           const std::string& displaySocket)
+                                           const std::string& displaySocket,
+                                           const std::vector<std::string>& envVars)
 {
     AI_LOG_FN_ENTRY();
-
-    // Create a custom config file for this container with custom options
-    // Will be deleted when the container is destroyed
-    if (!command.empty() || !displaySocket.empty())
-    {
-        container->customConfigFilePath = createCustomConfig(container, command, displaySocket);
-        AI_LOG_DEBUG("Created custom config for container '%s' at %s", id.c_str(), container->customConfigFilePath.c_str());
-
-        if (container->customConfigFilePath.empty())
-        {
-            AI_LOG_ERROR_EXIT("Could not create temporary custom config for container '%s'", id.c_str());
-            return false;
-        }
-    }
 
     if (createAndStart(id, container, files))
     {
@@ -642,7 +578,8 @@ int32_t DobbyManager::startContainerFromSpec(const ContainerId &id,
                                              const std::string &jsonSpec,
                                              const std::list<int> &files,
                                              const std::string &command,
-                                             const std::string &displaySocket)
+                                             const std::string &displaySocket,
+                                             const std::vector<std::string>& envVars = std::vector<std::string>())
 {
     AI_LOG_FN_ENTRY();
 
@@ -703,9 +640,9 @@ int32_t DobbyManager::startContainerFromSpec(const ContainerId &id,
         const std::string rootfsPath = rootfs->path();
 
         std::shared_ptr<rt_dobby_schema> containerConfig(config->config());
-        std::shared_ptr<DobbyRdkPluginUtils> rdkPluginUtils = std::make_shared<DobbyRdkPluginUtils>();
+        std::shared_ptr<DobbyRdkPluginUtils> rdkPluginUtils = std::make_shared<DobbyRdkPluginUtils>(config->config());
         std::shared_ptr<DobbyRdkPluginManager> rdkPluginManager =
-            std::make_shared<DobbyRdkPluginManager>(containerConfig, rootfsPath, "", PLUGIN_PATH, rdkPluginUtils);
+            std::make_shared<DobbyRdkPluginManager>(containerConfig, rootfsPath, PLUGIN_PATH, rdkPluginUtils);
 
         std::vector<std::string> loadedPlugins = rdkPluginManager->listLoadedPlugins();
         AI_LOG_DEBUG("Loaded %zd RDK plugins\n", loadedPlugins.size());
@@ -735,6 +672,16 @@ int32_t DobbyManager::startContainerFromSpec(const ContainerId &id,
     if (!pluginFailure && rdkPlugins.size() > 0)
     {
         if (!onPostInstallationHook(container))
+        {
+            pluginFailure = true;
+        }
+
+        // Run any pre-creation hooks
+        // Note: running the hooks here allows these hooks to also modify the
+        // config. This is necessary to add envvars etc, but can cause issues
+        // when launching multiple containers from the same bundle where the plugin
+        // could add duplicate data to the config
+        if (!onPreCreationHook(container))
         {
             pluginFailure = true;
         }
@@ -806,7 +753,8 @@ int32_t DobbyManager::startContainerFromBundle(const ContainerId &id,
                                                const std::string &bundlePath,
                                                const std::list<int> &files,
                                                const std::string &command,
-                                               const std::string &displaySocket)
+                                               const std::string &displaySocket,
+                                               const std::vector<std::string>& envVars)
 {
     AI_LOG_FN_ENTRY();
 
@@ -867,9 +815,9 @@ int32_t DobbyManager::startContainerFromBundle(const ContainerId &id,
         const std::string rootfsPath = rootfs->path();
 
         std::shared_ptr<rt_dobby_schema> containerConfig(config->config());
-        std::shared_ptr<DobbyRdkPluginUtils> rdkPluginUtils = std::make_shared<DobbyRdkPluginUtils>();
+        std::shared_ptr<DobbyRdkPluginUtils> rdkPluginUtils = std::make_shared<DobbyRdkPluginUtils>(config->config());
         std::shared_ptr<DobbyRdkPluginManager> rdkPluginManager =
-            std::make_shared<DobbyRdkPluginManager>(containerConfig, rootfsPath, "", PLUGIN_PATH, rdkPluginUtils);
+            std::make_shared<DobbyRdkPluginManager>(containerConfig, rootfsPath, PLUGIN_PATH, rdkPluginUtils);
 
         std::vector<std::string> loadedPlugins = rdkPluginManager->listLoadedPlugins();
         AI_LOG_DEBUG("Loaded %zd RDK plugins\n", loadedPlugins.size());
@@ -905,6 +853,16 @@ int32_t DobbyManager::startContainerFromBundle(const ContainerId &id,
         {
             pluginFailure = true;
         }
+
+        // Run any pre-creation hooks
+        // Note: running the hooks here allows these hooks to also modify the
+        // config. This is necessary to add envvars etc, but can cause issues
+        // when launching multiple containers from the same bundle where the plugin
+        // could add duplicate data to the config
+        if (!onPreCreationHook(container))
+        {
+            pluginFailure = true;
+        }
     }
 
     // Don't start if necessary plugins have failed
@@ -930,6 +888,20 @@ int32_t DobbyManager::startContainerFromBundle(const ContainerId &id,
             if (config->restartOnCrash())
             {
                 container->setRestartOnCrash(startState->files());
+            }
+
+            // Create a custom config file for this container with custom options
+            // Will be deleted when the container is destroyed
+            if (!command.empty() || !displaySocket.empty() || envVars.size() > 0)
+            {
+                container->customConfigFilePath = createCustomConfig(container, config, command, displaySocket, envVars);
+                AI_LOG_DEBUG("Created custom config for container '%s' at %s", id.c_str(), container->customConfigFilePath.c_str());
+
+                if (container->customConfigFilePath.empty())
+                {
+                    AI_LOG_ERROR_EXIT("Could not create temporary custom config for container '%s'", id.c_str());
+                    return false;
+                }
             }
 
             // try and create and start the container
@@ -1692,13 +1664,60 @@ bool DobbyManager::freeIpAddress(uint32_t address)
 
 // -----------------------------------------------------------------------------
 /**
- *  @brief Gets the external interfaces
+ *  @brief Gets the external interfaces that are actually available. Looks in the
+ *  settings for the interfaces Dobby should use, then checks if the device
+ *  actually has those interfaces available. Will return empty vector if none of
+ *  the ifaces in the settings file are available
  *
- *  @return external interfaces defined in dobby settings
+ *  @return Available external interfaces from the ones defined in dobby
+ *  settings
  */
 std::vector<std::string> DobbyManager::getExtIfaces()
 {
-    return mSettings->externalInterfaces();
+    std::vector<std::string> externalIfaces = mSettings->externalInterfaces();
+
+    // Look in the /sys/class/net for available interfaces
+    struct dirent *dir;
+    DIR *d = opendir("/sys/class/net");
+    if (!d)
+    {
+        AI_LOG_SYS_ERROR(errno, "Could not check for available interfaces");
+        return std::vector<std::string>();
+    }
+
+    std::vector<std::string> availableIfaces = {};
+    while ((dir = readdir(d)) != nullptr)
+    {
+        if (dir->d_name[0] != '.')
+        {
+            availableIfaces.emplace_back(dir->d_name);
+        }
+    }
+    closedir(d);
+
+    // We know what interfaces we want, and what we've got. See if we're missing
+    // any
+    auto it = externalIfaces.cbegin();
+    while (it != externalIfaces.cend())
+    {
+        if (std::find(availableIfaces.begin(), availableIfaces.end(), it->c_str()) == availableIfaces.end())
+        {
+            AI_LOG_WARN("Interface '%s' from settings file not available", it->c_str());
+            externalIfaces.erase(it);
+        }
+        else
+        {
+            ++it;
+        }
+    }
+
+    // If no interfaces are available, something is very wrong
+    if (externalIfaces.size() == 0)
+    {
+        AI_LOG_ERROR("None of the external interfaces defined in the settings file are available");
+    }
+
+    return externalIfaces;
 }
 
 // -----------------------------------------------------------------------------

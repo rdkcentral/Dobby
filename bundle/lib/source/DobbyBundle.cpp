@@ -277,7 +277,7 @@ void DobbyBundle::setPersistence(bool persist)
     mPersist = persist;
 }
 
-const bool DobbyBundle::getPersistence() const
+bool DobbyBundle::getPersistence() const
 {
     return mPersist;
 }

@@ -43,8 +43,7 @@ class IpcPlugin : public RdkPluginBase
 public:
     IpcPlugin(std::shared_ptr<rt_dobby_schema>& containerConfig,
                   const std::shared_ptr<DobbyRdkPluginUtils> &utils,
-                  const std::string &rootfsPath,
-                  const std::string &hookStdin);
+                  const std::string &rootfsPath);
 
 public:
     inline std::string name() const override
@@ -57,6 +56,9 @@ public:
 
 public:
     bool postInstallation() override;
+
+public:
+    std::vector<std::string> getDependencies() const override;
 
 private:
     bool addSocketAndEnv(const std::shared_ptr<DobbyRdkPluginUtils> utils,
