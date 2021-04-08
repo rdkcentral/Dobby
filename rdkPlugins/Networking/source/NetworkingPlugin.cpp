@@ -173,7 +173,7 @@ bool NetworkingPlugin::createRuntime()
     const std::vector<std::string> extIfaces = mDobbyProxy->getExternalInterfaces();
     if (extIfaces.empty())
     {
-        AI_LOG_ERROR_EXIT("no external network interfaces defined in settings");
+        AI_LOG_ERROR_EXIT("No network interfaces available");
         return false;
     }
 
