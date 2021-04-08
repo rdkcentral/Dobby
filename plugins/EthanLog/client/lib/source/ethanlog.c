@@ -16,6 +16,7 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
+
 #include "ethanlog.h"
 
 #include <stdlib.h>
@@ -78,6 +79,7 @@ void vethanlog(int level, const char *filename, const char *function,
     char buf[ELOG_MAX_LOG_MSG_LENGTH];
     char *p, *end;
     char *basename;
+    int len;
     
     /* run the sanity checks first */
     if ((level < ETHAN_LOG_FATAL) || (level > ETHAN_LOG_MILESTONE))
@@ -129,7 +131,7 @@ void vethanlog(int level, const char *filename, const char *function,
     *p++ = ELOG_FIELD_DELIM;
     *p++ = 'M';
     if (format) {
-        int len = vsnprintf(p, (end - p) - 1, format, ap);
+        len = vsnprintf(p, (end - p) - 1, format, ap);
         p += ELOG_MIN(len, ((end - p) - 1));
     }
     
