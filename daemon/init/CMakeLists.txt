@@ -32,39 +32,37 @@ add_executable( # Sets the name of the exec.
 
 
 # Add support for logging via the ethanlog API
+# EthanLog is only built if LEGACY_COMPONENTS=ON
 # (FIXME this is a bit hacky - pulling the source from the one of the plugins
 #  directories, but it works for now)
-target_compile_definitions(
-        DobbyInit
-        PRIVATE
-        -DUSE_ETHANLOG=1
-        )
-
-target_sources(
-        DobbyInit
-        PRIVATE
-        ${CMAKE_CURRENT_LIST_DIR}/../../plugins/EthanLog/client/ethanlog.c
-        )
+if (LEGACY_COMPONENTS)
+        target_compile_definitions(
+                DobbyInit
+                PRIVATE
+                -DUSE_ETHANLOG=1
+                )
+endif()
 
 target_include_directories(
         DobbyInit
         PRIVATE
-        ${CMAKE_CURRENT_LIST_DIR}/../../plugins/EthanLog/client
+        $<TARGET_PROPERTY:ethanlog,INTERFACE_INCLUDE_DIRECTORIES>
         )
 
 
 
-# Specifies libraries CMake should link to your target binary. You
-# can link multiple libraries, such as libraries you define in this
-# build script, prebuilt third-party libraries, or system libraries.
-
-target_link_libraries( # Specifies the target exec
-        DobbyInit
+target_link_libraries(DobbyInit
 
         # Adds pthread support (if it's a separate library on target)
         Threads::Threads
 
         )
+
+if (LEGACY_COMPONENTS)
+        target_link_libraries(DobbyInit
+                ethanlog
+                )
+endif()
 
 install( # Specifies the target to install
         TARGETS DobbyInit

@@ -15,7 +15,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-add_subdirectory( client )
+add_subdirectory( client/lib )
+add_subdirectory( client/cat )
 
 add_library( EthanLogPlugin
 

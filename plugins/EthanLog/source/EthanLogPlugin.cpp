@@ -76,7 +76,7 @@ EthanLogPlugin::EthanLogPlugin(const std::shared_ptr<IDobbyEnv>& env,
                                const std::shared_ptr<IDobbyUtils>& utils)
     : mName("EthanLog")
     , mUtilities(utils)
-    , mLogLoop(std::make_shared<EthanLogLoop>())
+    , mLogLoop(std::make_shared<EthanLogLoop>(env->cgroupMountPath(IDobbyEnv::Cgroup::Memory)))
     , mDefaultLogLevelsMask(DEFAULT_LOG_LEVELS)
     , mDevNullFd(-1)
 {
