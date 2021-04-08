@@ -45,7 +45,7 @@ class EthanLogLoop;
  *
  *
  */
-class EthanLogPlugin : public PluginBase
+class EthanLogPlugin final : public PluginBase
 {
 public:
     EthanLogPlugin(const std::shared_ptr<IDobbyEnv>& env,

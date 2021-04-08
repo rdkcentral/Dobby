@@ -36,8 +36,9 @@
 
 
 
-EthanLogLoop::EthanLogLoop()
-    : mEventFd(-1)
+EthanLogLoop::EthanLogLoop(const std::string& memCgroupMountPoint)
+    : mMemCgroupMountPoint(memCgroupMountPoint)
+    , mEventFd(-1)
 {
     // create the eventfd to wake the event loop
     mEventFd = eventfd(0, EFD_CLOEXEC | EFD_NONBLOCK);
@@ -205,6 +206,8 @@ void EthanLogLoop::wakeLoop()
 int EthanLogLoop::eventFdHandler(sd_event_source *source, int fd,
                                  uint32_t revents, void *userData)
 {
+    (void) revents;
+
     EthanLogLoop *self = reinterpret_cast<EthanLogLoop*>(userData);
 
     //
@@ -255,7 +258,8 @@ int EthanLogLoop::eventFdHandler(sd_event_source *source, int fd,
                                                  std::move(event.tag),
                                                  event.pipeFd,
                                                  event.allowedLevels,
-                                                 event.rate, event.burstSize);
+                                                 event.rate, event.burstSize,
+                                                 self->mMemCgroupMountPoint);
 
             // if there was an error then the client is immediately closed,
             // check for that case and don't both adding
@@ -268,7 +272,7 @@ int EthanLogLoop::eventFdHandler(sd_event_source *source, int fd,
             for (const std::unique_ptr<EthanLogClient> &client : self->mClients)
             {
                 if (client && (client->id() == event.id))
-                    client->setBasePid(event.basePid);
+                    client->setContainerPid(event.basePid);
             }
         }
         else

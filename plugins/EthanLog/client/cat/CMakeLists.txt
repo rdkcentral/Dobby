@@ -1,7 +1,7 @@
 # If not stated otherwise in this file or this component's LICENSE file the
 # following copyright and licenses apply:
 #
-# Copyright 2020 Sky UK
+# Copyright 2021 Sky UK
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,33 +15,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-add_library( ethanlog
-        SHARED
-        ethanlog.c
 
-        )
+add_executable( ethanlog-cat
+        ethanlog-cat.cpp )
 
-# Because the ethanlog.h file is a symlink, cmake will just copy the symlink
-# on install, which is not want we want, so we get the real path from the symlink
-get_filename_component(
-        ETHANLOG_HEADER_PATH
-        ethanlog.h
-        REALPATH
+add_dependencies( ethanlog-cat
+        ethanlog )
 
-        )
+target_link_libraries( ethanlog-cat
+        PRIVATE
+        ethanlog )
 
-set_target_properties( ethanlog
-        PROPERTIES
-        PUBLIC_HEADER ${ETHANLOG_HEADER_PATH}
-        VERSION       ${DOBBY_MAJOR_VERSION}.1.0
-        SOVERSION     ${DOBBY_MAJOR_VERSION}
+target_include_directories( ethanlog-cat
+        PRIVATE
+        $<TARGET_PROPERTY:ethanlog,INTERFACE_INCLUDE_DIRECTORIES> )
 
-        )
 
-install(
-        TARGETS ethanlog
-        LIBRARY DESTINATION lib
-        PUBLIC_HEADER DESTINATION include
-
-        )
-
+install( TARGETS ethanlog-cat
+         RUNTIME DESTINATION bin )

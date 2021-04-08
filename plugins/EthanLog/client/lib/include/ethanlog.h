@@ -16,6 +16,7 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
+
 #ifndef ETHANLOG_H
 #define ETHANLOG_H
 
@@ -47,7 +48,7 @@ extern "C" {
  *
  * These functions will only work when called from inside a container, as they
  * require a pre-created pipe with which to send the messages across.  The
- * file descriptor number of the pipe is automatically set in an environment
+ * file descriptor number of the pipe is automatically set in an enviroment
  * variable called ETHAN_LOGGING_PIPE.
  *
  */

@@ -25,6 +25,7 @@
 #define ETHANLOGLOOP_H
 
 #include "ContainerId.h"
+#include "IDobbyUtils.h"
 
 #include <systemd/sd-event.h>
 
@@ -44,7 +45,7 @@ class EthanLogClient;
 class EthanLogLoop
 {
 public:
-    EthanLogLoop();
+    explicit EthanLogLoop(const std::string& memCgroupMountPoint);
     ~EthanLogLoop();
 
     int addClient(const ContainerId& id, const std::string &tag,
@@ -62,6 +63,8 @@ private:
 
 
 private:
+    const std::string mMemCgroupMountPoint;
+
     std::thread mThread;
     std::mutex mLock;
     int mEventFd;
@@ -80,18 +83,18 @@ private:
 
     protected:
         explicit Event(Type type_)
-            : type(type_), id(), basePid(-1)
-            , pipeFd(-1), allowedLevels(0), rate(0), burstSize(0)
+            : type(type_), id(), pipeFd(-1), basePid(-1)
+            , allowedLevels(0), rate(0), burstSize(0)
         { }
 
         Event(Type type_, const ContainerId &id_, const std::string &name, int fd,
               unsigned levels, uint64_t rate, uint64_t burst)
-            : type(type_), id(id_), basePid(-1), pipeFd(fd), tag(name)
+            : type(type_), id(id_), pipeFd(fd), basePid(-1), tag(name)
             , allowedLevels(levels) , rate(rate), burstSize(burst)
         { }
 
         Event(Type type_, const ContainerId &id_, pid_t basePid_)
-            : type(type_), id(id_), basePid(basePid_), pipeFd(-1), tag()
+            : type(type_), id(id_), pipeFd(-1), basePid(basePid_), tag()
             , allowedLevels(0) , rate(0), burstSize(0)
         { }
     };

@@ -1,0 +1,10 @@
+get_filename_component( ETHANLOG_CMAKE_DIR "${CMAKE_CURRENT_LIST_FILE}" PATH )
+include( CMakeFindDependencyMacro )
+
+list( APPEND CMAKE_MODULE_PATH ${ETHANLOG_CMAKE_DIR} )
+
+if( NOT TARGET ethanlog::ethanlog )
+    include( "${ETHANLOG_CMAKE_DIR}/ethanlog-targets.cmake" )
+endif()
+
+set( ETHANLOG_LIBRARIES ethanlog::ethanlog )
