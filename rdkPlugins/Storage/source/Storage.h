@@ -78,6 +78,9 @@ public:
     // persistent option is selected
     bool postStop() override;
 
+public:
+    std::vector<std::string> getDependencies() const override;
+
     std::vector<LoopMountDetails::LoopMount> getLoopMounts();
     std::vector<std::unique_ptr<LoopMountDetails>> getLoopDetails();
 

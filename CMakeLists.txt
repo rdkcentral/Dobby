@@ -129,6 +129,10 @@ set( CMAKE_CXX_STANDARD          14  )
 set( CMAKE_CXX_STANDARD_REQUIRED ON  )
 set( CMAKE_CXX_EXTENSIONS        OFF )
 
+# Lets be ambitious and eliminate all warnings
+# (not that ambitious to enable -Werror though)
+add_compile_options( -Wall )
+
 
 # Enable GNU extensions on linux builds
 if( UNIX AND NOT APPLE )
@@ -242,7 +246,6 @@ add_subdirectory( daemon/process )
 # Add legacy plugins
 if( LEGACY_COMPONENTS )
     add_subdirectory( plugins/Common )
-    add_subdirectory( plugins/AppServices )
     add_subdirectory( plugins/EthanLog )
     add_subdirectory( plugins/OpenCDM )
     add_subdirectory( plugins/Perfetto )
@@ -279,6 +282,7 @@ option(PLUGIN_LOGGING "Include Logging plugin" ON)
 option(PLUGIN_NETWORKING "Include Networking plugin" ON)
 option(PLUGIN_IPC "Include IPC plugin" ON)
 option(PLUGIN_STORAGE "Include Storage plugin" ON)
+option(PLUGIN_THUNDER "Include Thunder plugin" ON)
 
 # Optional RDK plugins
 option(PLUGIN_TESTPLUGIN "Include TestPlugin plugin" OFF)
@@ -286,6 +290,8 @@ option(PLUGIN_GPU "Include GPU plugin" OFF)
 option(PLUGIN_LOCALTIME "Include LocalTime plugin" OFF)
 option(PLUGIN_RTSCHEDULING "Include RtScheduling plugin" OFF)
 option(PLUGIN_HTTPPROXY "Include HttpProxy plugin" OFF)
+option(PLUGIN_APPSERVICES "Include AppServices plugin" OFF)
+option(PLUGIN_IONMEMORY "Include ION Memory plugin" OFF)
 
 if(PLUGIN_TESTPLUGIN)
     add_subdirectory(rdkPlugins/TestPlugin)
@@ -321,6 +327,18 @@ endif()
 
 if(PLUGIN_HTTPPROXY)
     add_subdirectory(rdkPlugins/HttpProxy)
+endif()
+
+if(PLUGIN_APPSERVICES)
+    add_subdirectory(rdkPlugins/AppServices)
+endif()
+
+if(PLUGIN_THUNDER)
+    add_subdirectory(rdkPlugins/Thunder)
+endif()
+
+if(PLUGIN_IONMEMORY)
+    add_subdirectory(rdkPlugins/IONMemory)
 endif()
 
 # Export targets in Dobby package

@@ -60,6 +60,9 @@ public:
     bool createRuntime() override;
     bool postStop() override;
 
+public:
+    std::vector<std::string> getDependencies() const override;
+
 private:
     std::string getGpuCgroupMountPoint();
 

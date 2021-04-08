@@ -93,6 +93,27 @@ bool LoggingPlugin::postInstallation()
 }
 
 /**
+ * @brief Should return the names of the plugins this plugin depends on.
+ *
+ * This can be used to determine the order in which the plugins should be
+ * processed when running hooks.
+ *
+ * @return Names of the plugins this plugin depends on.
+ */
+std::vector<std::string> LoggingPlugin::getDependencies() const
+{
+    std::vector<std::string> dependencies;
+    const rt_defs_plugins_logging* pluginConfig = mContainerConfig->rdk_plugins->logging;
+
+    for (size_t i = 0; i < pluginConfig->depends_on_len; i++)
+    {
+        dependencies.push_back(pluginConfig->depends_on[i]);
+    }
+
+    return dependencies;
+}
+
+/**
  * @brief Public method called by DobbyLogger to start running the logging
  * loop. Destination of the logs depends on the settings in the config file.
  *
@@ -134,6 +155,15 @@ void LoggingPlugin::LoggingLoop(ContainerInfo containerInfo,
     if (containerInfo.connectionFd > 0 && close(containerInfo.connectionFd) != 0)
     {
         AI_LOG_SYS_ERROR(errno, "Failed to close connection");
+    }
+
+    // If dumping a buffer, DobbyBufferStream will clean up after itself
+    if (!isBuffer && containerInfo.pttyFd > 0 && fcntl(containerInfo.pttyFd, F_GETFD) != -1)
+    {
+        if (close(containerInfo.pttyFd) != 0)
+        {
+            AI_LOG_SYS_ERROR(errno, "Failed to close container ptty fd");
+        }
     }
 
     AI_LOG_FN_EXIT();
@@ -219,7 +249,7 @@ void LoggingPlugin::JournaldSink(const ContainerInfo &containerInfo, bool exitEo
             auto it = options.find(priority);
             if (it != options.end())
             {
-                priority = it->second;
+                logPriority = it->second;
             }
             else
             {
@@ -271,7 +301,7 @@ void LoggingPlugin::JournaldSink(const ContainerInfo &containerInfo, bool exitEo
             // viewing journald in full JSON format, the container PID is
             // visible
             sd_journal_send("MESSAGE=%s", msg.c_str(),
-                            "PRIORITY=%i", LOG_INFO,
+                            "PRIORITY=%i", logPriority,
                             "SYSLOG_IDENTIFIER=%s", mUtils->getContainerId().c_str(),
                             "OBJECT_PID=%ld", containerInfo.containerPid,
                             "SYSLOG_PID=%ld", containerInfo.containerPid,
@@ -334,7 +364,7 @@ void LoggingPlugin::DevNullSink(const ContainerInfo &containerInfo, bool exitEof
     }
 
     // Close /dev/null
-    if (devNullFd >= 0 && close(devNullFd) != 0)
+    if (close(devNullFd) != 0)
     {
         AI_LOG_SYS_ERROR(errno, "Failed to close /dev/null");
     }
@@ -417,6 +447,8 @@ void LoggingPlugin::FileSink(const ContainerInfo &containerInfo, bool exitEof, b
     ssize_t ret;
     ssize_t offset = 0;
 
+    bool limitHit = false;
+
     // Read from the fd until the file is closed
     while (true)
     {
@@ -445,6 +477,12 @@ void LoggingPlugin::FileSink(const ContainerInfo &containerInfo, bool exitEof, b
         else
         {
             // Hit the limit, send the data into the void
+            if (!limitHit)
+            {
+                AI_LOG_WARN("Logger for container %s has hit maximum size of %zu",
+                            mUtils->getContainerId().c_str(), limit);
+            }
+            limitHit = true;
             write(devNullFd, buf, ret);
         }
     }

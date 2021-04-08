@@ -164,7 +164,7 @@ bool TapInterface::up(const std::shared_ptr<Netlink> &netlink)
 {
     AI_LOG_FN_ENTRY();
 
-    if (valid)
+    if (!isValid())
     {
         AI_LOG_FN_EXIT();
         return false;
@@ -186,7 +186,7 @@ bool TapInterface::down(const std::shared_ptr<Netlink> &netlink)
 {
     AI_LOG_FN_ENTRY();
 
-    if (valid)
+    if (!isValid())
     {
         AI_LOG_FN_EXIT();
         return false;

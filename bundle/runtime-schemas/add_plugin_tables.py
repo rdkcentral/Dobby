@@ -50,7 +50,7 @@ def add_h_content(found_plugins_count, longest_plugin_name, file_content, line_n
     file_content.insert(line_number + 1, '\n')
     file_content.insert(line_number + 2, '    char names_of_plugins[%d][%d];\n' % (found_plugins_count, longest_plugin_name + 1))
     file_content.insert(line_number + 3, '\n')
-    file_content.insert(line_number + 4, '    int plugins_count;\n')
+    file_content.insert(line_number + 4, '    size_t plugins_count;\n')
     file_content.insert(line_number + 5, '\n')
 
 

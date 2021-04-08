@@ -519,11 +519,31 @@ bool DobbyRdkPluginUtils::addEnvironmentVar(const std::string& envVar) const
 
     std::lock_guard<std::mutex> locker(mLock);
 
+    const std::string newEnvVarName = envVar.substr(0, envVar.find("="));
+
+    // From the config
+    std::string existingEnvVar;
+    std::string existingEnvVarName;
+
     // check if env var already exists in config
-    for (int i = 0; i < mConf->process->env_len; ++i)
+    for (size_t i = 0; i < mConf->process->env_len; ++i)
     {
-        if (0 == strcmp(mConf->process->env[i], envVar.c_str()))
+        existingEnvVar = mConf->process->env[i];
+
+        // Exact match, don't do any work
+        if (existingEnvVar == envVar)
         {
+            AI_LOG_DEBUG("%s exactly matches existing env var %s, not adding", envVar.c_str(), existingEnvVar.c_str());
+            return true;
+        }
+
+        existingEnvVarName = existingEnvVar.substr(0, existingEnvVar.find("="));
+
+        // We're adding an envvar which will replace an existing one
+        if (existingEnvVarName == newEnvVarName)
+        {
+            AI_LOG_DEBUG("Replacing var %s with %s", existingEnvVar.c_str(), envVar.c_str());
+            mConf->process->env[i] = strdup(envVar.c_str());
             return true;
         }
     }

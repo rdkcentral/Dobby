@@ -34,7 +34,7 @@
 #include <fstream>
 #include <dirent.h>
 #include <string.h>
-
+#include <sys/sysmacros.h>
 
 #if defined(__linux__)
 #include <linux/loop.h>

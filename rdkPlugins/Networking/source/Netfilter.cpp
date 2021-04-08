@@ -37,6 +37,7 @@
 #include <signal.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
+#include <sys/mman.h>
 #include <netinet/in.h>
 #include <ext/stdio_filebuf.h>
 
@@ -126,13 +127,15 @@ private:
         ssize_t ret = TEMP_FAILURE_RETRY(read(mReadFd, errBuf, sizeof(errBuf) - 1));
         if (ret < 0)
         {
-            if (ret != EAGAIN)
-                AI_LOG_SYS_ERROR(errno, "failed to read from stderr pipe");
+            AI_LOG_SYS_ERROR(errno, "failed to read from stderr pipe");
         }
         else if (ret > 0)
         {
-            errBuf[ret] = '\0';
-            AI_LOG_ERROR("%s", errBuf);
+            if (ret != EAGAIN)
+            {
+                errBuf[ret] = '\0';
+                AI_LOG_ERROR("%s", errBuf);
+            }
         }
     }
 

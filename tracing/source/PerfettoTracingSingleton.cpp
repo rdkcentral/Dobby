@@ -156,6 +156,8 @@ bool PerfettoTracingSingleton::initialise(unsigned int backends)
     // save the backends and initialised flag
     mBackends = backends;
     mInitialised = true;
+
+    return true;
 }
 
 // -----------------------------------------------------------------------------

@@ -90,6 +90,8 @@ bool GpuPlugin::createRuntime()
 
     // setup the gpu memory limit
     setupContainerGpuLimit(cgroupDirPath, containerPid, memLimit);
+
+    return true;
 }
 
 /**
@@ -132,6 +134,27 @@ bool GpuPlugin::postStop()
 }
 
 // End hook methods
+
+/**
+ * @brief Should return the names of the plugins this plugin depends on.
+ *
+ * This can be used to determine the order in which the plugins should be
+ * processed when running hooks.
+ *
+ * @return Names of the plugins this plugin depends on.
+ */
+std::vector<std::string> GpuPlugin::getDependencies() const
+{
+    std::vector<std::string> dependencies;
+    const rt_defs_plugins_gpu* pluginConfig = mContainerConfig->rdk_plugins->gpu;
+
+    for (size_t i = 0; i < pluginConfig->depends_on_len; i++)
+    {
+        dependencies.push_back(pluginConfig->depends_on[i]);
+    }
+
+    return dependencies;
+}
 
 // Begin private methods
 
@@ -197,61 +220,16 @@ std::string GpuPlugin::getGpuCgroupMountPoint()
 
 // -----------------------------------------------------------------------------
 /**
- *  @brief Called in the mount namespace of the container
- *
- *  crun mounts the gpu cgroup in the container, but it's the root of the
- *  cgroup tree rather than the cgroup created for the container.
- *
- *  For example this is the mount layout setup by crun:
- *
- *      /sys/fs/cgroup/cpu/<ID>    -> <ROOTFS>/sys/fs/cgroup/freezer
- *      /sys/fs/cgroup/memory/<ID> -> <ROOTFS>/sys/fs/cgroup/memory
- *      /sys/fs/cgroup/gpu         -> <ROOTFS>/sys/fs/cgroup/gpu
- *      ...
- *
- *  We want it to be:
- *
- *      /sys/fs/cgroup/gpu/<ID>    -> <ROOTFS>/sys/fs/cgroup/gpu
- *      ...
- *
- *  So we need to replace the existing gpu mount with the cgroup for this
- *  container.
- *
- *  NB: this is not a security thing, but if we don't do this, the app inside
- *  the container would have to know it's container id to monitor its own usage
- *  usage. This is a problem for apps which expect the cgroup to be mounted for
- *  the container only.
- *
- *  @param[in]  source      The source path of the cgroup.
- *  @param[in]  target      The target mount point.
- *
- *  @return true if successful, otherwise false.
- */
-bool GpuPlugin::bindMountGpuCgroup(const std::string &source,
-                                   const std::string &target)
-{
-    AI_LOG_FN_ENTRY();
-
-    // try and do the bind mount
-    if (mount(source.c_str(), target.c_str(), nullptr, MS_BIND, nullptr) < 0)
-    {
-        AI_LOG_SYS_ERROR(errno, "failed to bind mount '%s' to '%s'",
-                         source.c_str(), target.c_str());
-        return false;
-    }
-
-    AI_LOG_DEBUG("bind mounted '%s' to '%s'", source.c_str(), target.c_str());
-
-    AI_LOG_FN_EXIT();
-    return true;
-}
-
-// -----------------------------------------------------------------------------
-/**
  *  @brief Creates a gpu cgroup for the container and moves the container into
  *  it.
  *
  *  The cgroup is given the same name as the container.
+ *
+ *  @warning This requires a version of crun with the following PR:
+ *  https://github.com/containers/crun/pull/609 to ensure cgroup controllers are
+ *  correctly mounted. Without the PR applied, the GPU cgroup is mounted incorrectly,
+ *  see https://github.com/containers/crun/issues/625 for more info
+ *
  *
  *  @param[in]  cgroupDirPath   Path to the gpu cgroup directory.
  *  @param[in]  containerPid    The pid of the process in the container.
@@ -265,14 +243,11 @@ bool GpuPlugin::setupContainerGpuLimit(const std::string cgroupDirPath,
 {
     AI_LOG_FN_ENTRY();
 
-    // setup the paths for the bind mount, i.e.
-    //   source:   "/sys/fs/cgroup/gpu/<id>"
-    //   target:   "/sys/fs/cgroup/gpu"
-    const std::string sourcePath(cgroupDirPath + "/" + mUtils->getContainerId());
-    const std::string targetPath(cgroupDirPath);
+    // setup the paths for the cgroup, i.e. "/sys/fs/cgroup/gpu/<id>"
+    const std::string cgroupPath(cgroupDirPath + "/" + mUtils->getContainerId());
 
     // create a new cgroup (we're ok with it already existing)
-    if ((mkdir(sourcePath.c_str(), 0755) != 0) && (errno != EEXIST))
+    if ((mkdir(cgroupPath.c_str(), 0755) != 0) && (errno != EEXIST))
     {
         AI_LOG_SYS_ERROR_EXIT(errno, "failed to create gpu cgroup dir '%s'",
                               mUtils->getContainerId().c_str());
@@ -280,7 +255,7 @@ bool GpuPlugin::setupContainerGpuLimit(const std::string cgroupDirPath,
     }
 
     // move the containered pid into the new cgroup
-    const std::string procsPath = sourcePath + "/cgroup.procs";
+    const std::string procsPath = cgroupPath + "/cgroup.procs";
     if (!mUtils->writeTextFile(procsPath, std::to_string(containerPid),
                                O_CREAT | O_TRUNC, 0700))
     {
@@ -290,21 +265,12 @@ bool GpuPlugin::setupContainerGpuLimit(const std::string cgroupDirPath,
     }
 
     // set the gpu memory limit on the container
-    const std::string gpulimitPath = sourcePath + "/gpu.limit_in_bytes";
+    const std::string gpulimitPath = cgroupPath + "/gpu.limit_in_bytes";
     if (!mUtils->writeTextFile(gpulimitPath, std::to_string(memoryLimit),
                                O_CREAT | O_TRUNC, 0700))
     {
         AI_LOG_ERROR_EXIT("failed to set the gpu memory limit for container "
                           "'%s'", mUtils->getContainerId().c_str());
-        return false;
-    }
-
-    // bind mount the container specific cgroup into the container
-    if (!mUtils->callInNamespace(containerPid, CLONE_NEWNS,
-                                 &GpuPlugin::bindMountGpuCgroup,
-                                 this, sourcePath, targetPath))
-    {
-        AI_LOG_ERROR_EXIT("hook failed to enter mount namespace");
         return false;
     }
 

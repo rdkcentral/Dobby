@@ -81,7 +81,7 @@ uid_t SDBusAsyncReplySender::getSenderUid() const
 {
     // if we don't have a valid uid (likely) then go a fetch one from the
     // the IpcService - this involves another call to the dbus daemon
-    if (mSenderUid == -1)
+    if (mSenderUid == uid_t(-1))
     {
         std::shared_ptr<SDBusIpcService> ipcService = mIpcService.lock();
         if (!ipcService)

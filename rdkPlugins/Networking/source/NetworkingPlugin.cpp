@@ -36,12 +36,12 @@ NetworkingPlugin::NetworkingPlugin(std::shared_ptr<rt_dobby_schema> &cfg,
                                    const std::shared_ptr<DobbyRdkPluginUtils> &utils,
                                    const std::string &rootfsPath)
     : mName("Networking"),
+      mNetworkType(NetworkType::None),
       mContainerConfig(cfg),
       mUtils(utils),
       mRootfsPath(rootfsPath),
       mIpcService(nullptr),
       mDobbyProxy(nullptr),
-      mNetworkType(NetworkType::None),
       mNetfilter(std::make_shared<Netfilter>())
 {
     AI_LOG_FN_ENTRY();
@@ -126,9 +126,6 @@ bool NetworkingPlugin::postInstallation()
     // if the network type is not 'open', enable network namespacing in OCI config
     if (mNetworkType != NetworkType::Open)
     {
-        // add mount to sysfs
-        NetworkSetup::addSysfsMount(mUtils, mContainerConfig);
-
         // add /etc/resolv.conf mount if not using dnsmasq. If dnsmasq is enabled,
         // a new /etc/resolv.conf is created rather than mounting the host's
         if (!mPluginData->dnsmasq)
@@ -176,7 +173,7 @@ bool NetworkingPlugin::createRuntime()
     const std::vector<std::string> extIfaces = mDobbyProxy->getExternalInterfaces();
     if (extIfaces.empty())
     {
-        AI_LOG_ERROR_EXIT("no external network interfaces defined in settings");
+        AI_LOG_ERROR_EXIT("No network interfaces available");
         return false;
     }
 
@@ -376,6 +373,27 @@ bool NetworkingPlugin::postHalt()
 }
 
 // End hook methods
+
+/**
+ * @brief Should return the names of the plugins this plugin depends on.
+ *
+ * This can be used to determine the order in which the plugins should be
+ * processed when running hooks.
+ *
+ * @return Names of the plugins this plugin depends on.
+ */
+std::vector<std::string> NetworkingPlugin::getDependencies() const
+{
+    std::vector<std::string> dependencies;
+    const rt_defs_plugins_networking* pluginConfig = mContainerConfig->rdk_plugins->networking;
+
+    for (size_t i = 0; i < pluginConfig->depends_on_len; i++)
+    {
+        dependencies.push_back(pluginConfig->depends_on[i]);
+    }
+
+    return dependencies;
+}
 
 // Begin private methods
 
