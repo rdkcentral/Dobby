@@ -1,0 +1,35 @@
+name: Dobby Build
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-18.04
+    env:
+      # For CI, build all optional plugins. Newly developed plugins should be added to this list
+      optional_plugins: "-DPLUGIN_TESTPLUGIN=ON -DPLUGIN_GPU=ON -DPLUGIN_LOCALTIME=ON -DPLUGIN_RTSCHEDULING=ON -DPLUGIN_HTTPPROXY=ON -DPLUGIN_APPSERVICES=ON -DPLUGIN_IONMEMORY=ON"
+    strategy:
+      fail-fast: false
+      matrix:
+        # Do builds with different variations of cmake options/flags
+        flags: [
+          "-DCMAKE_BUILD_TYPE=Debug -DRDK_PLATFORM=DEV_VM -DCMAKE_INSTALL_PREFIX:PATH=/usr ${{ env.optional_plugins }}",
+          "-DCMAKE_BUILD_TYPE=Debug -DRDK_PLATFORM=DEV_VM -DCMAKE_INSTALL_PREFIX:PATH=/usr -DLEGACY_COMPONENTS=ON ${{ env.optional_plugins }}",
+          "-DCMAKE_BUILD_TYPE=Release -DRDK_PLATFORM=DEV_VM -DCMAKE_INSTALL_PREFIX:PATH=/usr ${{ env.optional_plugins }}",
+          "-DCMAKE_BUILD_TYPE=Release -DRDK_PLATFORM=DEV_VM -DCMAKE_INSTALL_PREFIX:PATH=/usr -DLEGACY_COMPONENTS=ON ${{ env.optional_plugins }}"
+          ]
+    steps:
+      - name: checkout
+        uses: actions/checkout@v2.1.0
+
+      - name: install-dependencies
+        run: |
+          sudo apt-get update -y -q
+          sudo apt-get install -q -y automake libtool autotools-dev software-properties-common build-essential cmake libsystemd-dev libctemplate-dev libjsoncpp-dev libjsoncpp1 libdbus-1-dev libnl-3-dev libnl-route-3-dev libsystemd-dev libyajl-dev libcap-dev libboost-dev
+
+      - name: build dobby
+        run: |
+         cd $GITHUB_WORKSPACE
+         mkdir build
+         cd build
+         cmake ${{ matrix.flags }} ..
+         make -j $(nproc)
