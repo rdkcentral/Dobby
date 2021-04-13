@@ -10,13 +10,12 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # Do builds with different variations of cmake options/flags
-        flags: [
-          "-DCMAKE_BUILD_TYPE=Debug -DRDK_PLATFORM=DEV_VM -DCMAKE_INSTALL_PREFIX:PATH=/usr ${{ env.optional_plugins }}",
-          "-DCMAKE_BUILD_TYPE=Debug -DRDK_PLATFORM=DEV_VM -DCMAKE_INSTALL_PREFIX:PATH=/usr -DLEGACY_COMPONENTS=ON ${{ env.optional_plugins }}",
-          "-DCMAKE_BUILD_TYPE=Release -DRDK_PLATFORM=DEV_VM -DCMAKE_INSTALL_PREFIX:PATH=/usr ${{ env.optional_plugins }}",
-          "-DCMAKE_BUILD_TYPE=Release -DRDK_PLATFORM=DEV_VM -DCMAKE_INSTALL_PREFIX:PATH=/usr -DLEGACY_COMPONENTS=ON ${{ env.optional_plugins }}"
-          ]
+        # The matrix will try all possible combinations of the below arrays
+        # If adding a new cmake option, include both the ON and OFF version to ensure the
+        # matrix runs both versions
+        build_type: ["Release", "Debug"]
+        extra_flags: ["-DLEGACY_COMPONENTS=ON", "-DLEGACY_COMPONENTS=OFF"]
+    name: Build in ${{ matrix.build_type }} Mode (${{ matrix.extra_flags }})
     steps:
       - name: checkout
         uses: actions/checkout@v2.1.0
@@ -31,5 +30,5 @@ jobs:
          cd $GITHUB_WORKSPACE
          mkdir build
          cd build
-         cmake ${{ matrix.flags }} ..
+         cmake -DRDK_PLATFORM=DEV_VM -DCMAKE_INSTALL_PREFIX:PATH=/usr -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} ${{ matrix.extra_flags }} ${{ env.optional_plugins }} ..
          make -j $(nproc)
