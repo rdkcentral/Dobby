@@ -43,11 +43,13 @@ if (LEGACY_COMPONENTS)
                 )
 endif()
 
-target_include_directories(
-        DobbyInit
-        PRIVATE
-        $<TARGET_PROPERTY:ethanlog,INTERFACE_INCLUDE_DIRECTORIES>
-        )
+if (LEGACY_COMPONENTS)
+        target_include_directories(
+                DobbyInit
+                PRIVATE
+                $<TARGET_PROPERTY:ethanlog,INTERFACE_INCLUDE_DIRECTORIES>
+                )
+endif()
 
 
 
