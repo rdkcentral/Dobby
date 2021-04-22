@@ -17,4 +17,5 @@ extraction:
              - libcap-dev
     configure:
       command:
-        - cmake -DCMAKE_BUILD_TYPE=Debug -DRDK_PLATFORM=DEV_VM -DCMAKE_INSTALL_PREFIX:PATH=/usr -DLEGACY_COMPONENTS=ON
+        # make sure we build all optional plugins for max coverage. Newly developed plugins should be added to this list
+        - cmake -DCMAKE_BUILD_TYPE=Debug -DRDK_PLATFORM=DEV_VM -DCMAKE_INSTALL_PREFIX:PATH=/usr -DLEGACY_COMPONENTS=ON -DPLUGIN_TESTPLUGIN=ON -DPLUGIN_GPU=ON -DPLUGIN_LOCALTIME=ON -DPLUGIN_RTSCHEDULING=ON -DPLUGIN_HTTPPROXY=ON -DPLUGIN_APPSERVICES=ON -DPLUGIN_IONMEMORY=ON
