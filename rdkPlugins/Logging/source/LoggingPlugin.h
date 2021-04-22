@@ -71,7 +71,9 @@ private:
     LoggingSink GetContainerSink();
     void FileSink(const ContainerInfo &containerInfo, bool exitEof, bool createNew);
     void DevNullSink(const ContainerInfo &containerInfo, bool exitEof);
+#if defined(USE_SYSTEMD)
     void JournaldSink(const ContainerInfo &containerInfo, bool exitEof);
+#endif
 
 private:
     const std::string mName;

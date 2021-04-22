@@ -93,6 +93,7 @@ public:
 
     bool removeMatch(const std::string& rule);
 
+    std::string getAddress();
 
     bool flushConnection();
     

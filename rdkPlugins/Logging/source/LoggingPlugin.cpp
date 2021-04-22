@@ -22,7 +22,9 @@
 #include <fcntl.h>
 #include <limits.h>
 #include <algorithm>
+#if defined(USE_SYSTEMD)
 #include <systemd/sd-journal.h>
+#endif
 #include <sstream>
 #include <string.h>
 
@@ -142,7 +144,12 @@ void LoggingPlugin::LoggingLoop(ContainerInfo containerInfo,
         FileSink(containerInfo, isBuffer, createNew);
         break;
     case LoggingSink::Journald:
+#if defined(USE_SYSTEMD)
         JournaldSink(containerInfo, isBuffer);
+#else
+        AI_LOG_ERROR("Logging plugin built without systemd support - cannot use journald");
+        DevNullSink(containerInfo, isBuffer);
+#endif
         break;
     case LoggingSink::DevNull:
         DevNullSink(containerInfo, isBuffer);
@@ -206,6 +213,7 @@ LoggingPlugin::LoggingSink LoggingPlugin::GetContainerSink()
     return LoggingSink::DevNull;
 }
 
+#if defined(USE_SYSTEMD)
 /**
  * @brief Send container logs to journald
  *
@@ -315,6 +323,7 @@ void LoggingPlugin::JournaldSink(const ContainerInfo &containerInfo, bool exitEo
         memmove(buf, lineStart, bufferUsed);
     }
 }
+#endif //#if defined(USE_SYSTEMD)
 
 /**
  * @brief Send container logs to /dev/null.

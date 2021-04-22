@@ -118,7 +118,7 @@ static void displayUsage()
     printf("  -n, --nofork                  Do not fork and daemonise the process\n");
     printf("  -k, --noconsole               Disable console output\n");
     printf("  -g, --syslog                  Send all initial logging to syslog rather than the console\n");
-#if defined(RDK)
+#if defined(RDK) && defined(USE_SYSTEMD)
     printf("  -j, --journald                Enables logging to journald\n");
 #endif
     printf("\n");
@@ -206,7 +206,7 @@ static void parseArgs(int argc, char **argv)
                 gUseSyslog = true;
                 break;
 
-#if defined(RDK)
+#if defined(RDK) && defined(USE_SYSTEMD)
             case 'j':
                 gUseJournald = true;
                 break;
@@ -473,6 +473,11 @@ int main(int argc, char * argv[])
 #endif
 
     AI_LOG_INFO("starting dbus service");
+#if defined(USE_SYSTEMD)
+    AI_LOG_INFO("Dobby built with systemd support - using sd-bus");
+#else
+    AI_LOG_INFO("Dobby built without systemd support - using libdbus");
+#endif
     AI_LOG_INFO("  dbus address '%s'", gDbusAddress.c_str());
     AI_LOG_INFO("  service name '%s'", DOBBY_SERVICE);
     AI_LOG_INFO("  object name '%s'", DOBBY_OBJECT);

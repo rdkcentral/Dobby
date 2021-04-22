@@ -218,6 +218,15 @@ if(USE_STARTCONTAINER_HOOK)
     add_definitions( -DUSE_STARTCONTAINER_HOOK )
 endif()
 
+# Some RDK builds will use S6 instead of systemd. Systemd is the default. If disabled
+# Dobby will remove all references to systemd to allow building on platforms without
+# libsystemd
+option(USE_SYSTEMD "Use systemd integration" ON)
+if(USE_SYSTEMD)
+    add_definitions( -DUSE_SYSTEMD )
+endif()
+
+
 # Import AppInfrastructure code
 add_subdirectory( AppInfrastructure/Logging )
 add_subdirectory( AppInfrastructure/Tracing )

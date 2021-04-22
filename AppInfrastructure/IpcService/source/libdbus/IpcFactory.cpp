@@ -28,49 +28,21 @@
 #include "IpcService.h"
 
 #include <Logging.h>
-#include <IPackageManager.h>
 
 #include <set>
 #include <string>
 
-namespace AI_IPC
+std::shared_ptr<AI_IPC::IIpcService> AI_IPC::createSystemBusIpcService(const std::string& serviceName, int defaultTimeoutMs /*= -1*/)
 {
-
-std::shared_ptr<IIpcService> createIpcService(const std::shared_ptr<const AI_DBUS::IDbusServer>& dbusServer, const std::string& serviceName, int defaultTimeoutMs /*= -1*/)
-{
-    AI_LOG_FN_ENTRY();
-
-    AI_LOG_FN_EXIT();
-
-    return std::make_shared<IpcService>(dbusServer, serviceName, defaultTimeoutMs);
+    return std::make_shared<IpcService>(IpcService::SystemBus, serviceName, defaultTimeoutMs);
 }
 
-std::shared_ptr<IIpcService> createIpcService( const std::shared_ptr<const AI_DBUS::IDbusServer>& dbusServer,
-                                               const std::string& serviceName,
-                                               const std::shared_ptr<packagemanager::IPackageManager> &packageManager,
-                                               bool dbusEntitlementCheckNeeded /* = false*/,
-                                               int defaultTimeoutMs /*= -1*/)
+std::shared_ptr<AI_IPC::IIpcService> AI_IPC::createSessionBusIpcService(const std::string& serviceName, int defaultTimeoutMs /*= -1*/)
 {
-    AI_LOG_FN_ENTRY();
-
-    AI_LOG_FN_EXIT();
-
-    return std::make_shared<IpcService>(dbusServer, serviceName, packageManager, dbusEntitlementCheckNeeded, defaultTimeoutMs);
+    return std::make_shared<IpcService>(IpcService::SessionBus, serviceName, defaultTimeoutMs);
 }
 
-std::shared_ptr<IIpcService> createSystemBusIpcService(const std::string& serviceName, int defaultTimeoutMs /*= -1*/)
-{
-    return std::make_shared<IpcService>(IpcService::BusType::SystemBus, serviceName, defaultTimeoutMs);
-}
-
-std::shared_ptr<IIpcService> createSessionBusIpcService(const std::string& serviceName, int defaultTimeoutMs /*= -1*/)
-{
-    return std::make_shared<IpcService>(IpcService::BusType::SessionBus, serviceName, defaultTimeoutMs);
-}
-
-std::shared_ptr<IIpcService> createIpcService(const std::string& address, const std::string& serviceName, int defaultTimeoutMs)
+std::shared_ptr<AI_IPC::IIpcService> AI_IPC::createIpcService(const std::string& address, const std::string& serviceName, int defaultTimeoutMs)
 {
     return std::make_shared<IpcService>(address, serviceName, defaultTimeoutMs);
-}
-
 }

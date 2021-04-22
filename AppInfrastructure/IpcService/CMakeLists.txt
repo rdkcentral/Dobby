@@ -15,20 +15,41 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+set(IPCSERVICE_SRC
+        source/common/IpcVariantList.cpp
+        source/common/IpcFileDescriptor.cpp
+)
+
+if (USE_SYSTEMD)
+        list(APPEND IPCSERVICE_SRC
+                source/sdbus/SDBusIpcFactory.cpp
+                source/sdbus/SDBusIpcService.cpp
+                source/sdbus/SDBusArguments.cpp
+                source/sdbus/SDBusAsyncReplyGetter.cpp
+                source/sdbus/SDBusAsyncReplySender.cpp
+        )
+else()
+        list(APPEND IPCSERVICE_SRC
+                source/libdbus/DbusMessageParser.cpp
+                source/libdbus/AsyncReplyGetter.cpp
+                source/libdbus/BaseService.cpp
+                source/libdbus/IpcService.cpp
+                source/libdbus/IpcFactory.cpp
+                source/libdbus/DbusConnection.cpp
+                source/libdbus/DbusTimeouts.cpp
+                source/libdbus/DbusEventDispatcher.cpp
+                source/libdbus/IpcUtilities.cpp
+                source/libdbus/DbusWatches.cpp
+                source/libdbus/AsyncReplySender.cpp
+                source/libdbus/DbusUserIdSenderIdCache.cpp
+        )
+endif()
+
 add_library( IpcService
 
         STATIC
-        source/common/IpcVariantList.cpp
-        source/common/IpcFileDescriptor.cpp
-
-        source/sdbus/SDBusIpcFactory.cpp
-        source/sdbus/SDBusIpcService.cpp
-        source/sdbus/SDBusArguments.cpp
-        source/sdbus/SDBusAsyncReplyGetter.cpp
-        source/sdbus/SDBusAsyncReplySender.cpp
-
-
-        )
+        ${IPCSERVICE_SRC}
+)
 
 set_target_properties(IpcService PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
@@ -42,6 +63,9 @@ target_include_directories( IpcService
         PRIVATE
         ${Boost_INCLUDE_DIRS}
         $<TARGET_PROPERTY:AppInfraLogging,INTERFACE_INCLUDE_DIRECTORIES>
+        $<TARGET_PROPERTY:AppInfraCommon,INTERFACE_INCLUDE_DIRECTORIES>
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../Public>
+        ${DBUS_INCLUDE_DIRS}
 
         )
 
