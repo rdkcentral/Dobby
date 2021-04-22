@@ -1,0 +1,34 @@
+name: Dobby Build
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-18.04
+    env:
+      # For CI, build all optional plugins. Newly developed plugins should be added to this list
+      optional_plugins: "-DPLUGIN_TESTPLUGIN=ON -DPLUGIN_GPU=ON -DPLUGIN_LOCALTIME=ON -DPLUGIN_RTSCHEDULING=ON -DPLUGIN_HTTPPROXY=ON -DPLUGIN_APPSERVICES=ON -DPLUGIN_IONMEMORY=ON"
+    strategy:
+      fail-fast: false
+      matrix:
+        # The matrix will try all possible combinations of the below arrays
+        # If adding a new cmake option, include both the ON and OFF version to ensure the
+        # matrix runs both versions
+        build_type: ["Release", "Debug"]
+        extra_flags: ["-DLEGACY_COMPONENTS=ON", "-DLEGACY_COMPONENTS=OFF"]
+    name: Build in ${{ matrix.build_type }} Mode (${{ matrix.extra_flags }})
+    steps:
+      - name: checkout
+        uses: actions/checkout@v2.1.0
+
+      - name: install-dependencies
+        run: |
+          sudo apt-get update -y -q
+          sudo apt-get install -q -y automake libtool autotools-dev software-properties-common build-essential cmake libsystemd-dev libctemplate-dev libjsoncpp-dev libjsoncpp1 libdbus-1-dev libnl-3-dev libnl-route-3-dev libsystemd-dev libyajl-dev libcap-dev libboost-dev
+
+      - name: build dobby
+        run: |
+         cd $GITHUB_WORKSPACE
+         mkdir build
+         cd build
+         cmake -DRDK_PLATFORM=DEV_VM -DCMAKE_INSTALL_PREFIX:PATH=/usr -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} ${{ matrix.extra_flags }} ${{ env.optional_plugins }} ..
+         make -j $(nproc)
