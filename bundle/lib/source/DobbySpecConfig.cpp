@@ -605,13 +605,7 @@ bool DobbySpecConfig::parseSpec(ctemplate::TemplateDictionary* dictionary,
     if (!(flags & JSON_FLAG_RTPRIORITY))
     {
         dictionary->ShowSection(RTLIMIT_ENABLED);
-        dictionary->SetIntValue(RLIMIT_RTPRIO, 6);
-
-        Json::Value rdkPluginData = Json::objectValue;
-        mRdkPluginsJson[RDK_RTSCHEDULING_PLUGIN_NAME]["data"] = rdkPluginData;
-        // The rtScheduling plugin might not be available on all platforms
-        // so don't fail if it doesn't exist
-        mRdkPluginsJson[RDK_RTSCHEDULING_PLUGIN_NAME]["required"] = false;
+        dictionary->SetIntValue(RLIMIT_RTPRIO, 0);
     }
 
     if (!(flags & JSON_FLAG_CAPABILITIES))
