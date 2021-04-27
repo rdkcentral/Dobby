@@ -605,7 +605,7 @@ bool DobbySpecConfig::parseSpec(ctemplate::TemplateDictionary* dictionary,
     if (!(flags & JSON_FLAG_RTPRIORITY))
     {
         dictionary->ShowSection(RTLIMIT_ENABLED);
-        dictionary->SetIntValue(RLIMIT_RTPRIO, 6);
+        dictionary->SetIntValue(RLIMIT_RTPRIO, 0);
     }
 
     if (!(flags & JSON_FLAG_CAPABILITIES))
