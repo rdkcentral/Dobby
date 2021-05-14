@@ -258,6 +258,7 @@ if( LEGACY_COMPONENTS )
     add_subdirectory( plugins/EthanLog )
     add_subdirectory( plugins/OpenCDM )
     add_subdirectory( plugins/Perfetto )
+    add_subdirectory( plugins/MulticastSockets )
 endif()
 
 # Add the plugin launcher
