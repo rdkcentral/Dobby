@@ -57,6 +57,7 @@ cmake -DCMAKE_BUILD_TYPE=Debug -DRDK_PLATFORM=DEV_VM -DCMAKE_INSTALL_PREFIX:PATH
 | `-DDDOBBY_OBJECT`           | Valid UNIX path                                      | Specify the Dobby dbus object path. Defaults to `/org/rdk/dobby` if none specified.                                                                                                                                                                                 |
 | `-DUSE_STARTCONTAINER_HOOK` | ON/OFF                                               | Whether to use the startcontainer OCI hook or not. Defaults to OFF.                                                                                                                                                                                                 |
 | `-DUSE_SYSTEMD`             | ON/OFF                                               | Build with systemd support (recommended). When disabled, uses libdbus API instead of sd-bus. Defaults to ON.                                                                                                                                                        |
+| `-DEXTERNAL_PLUGIN_SCHEMA`  | Valid file path(s)                                   | Path(s) to external json schema definitions for extra rdk plugins. Paths should be seperated by `;`.                                                                                                                                                                |
 
 
 #### Enable/Disable Plugins
