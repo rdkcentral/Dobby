@@ -166,8 +166,7 @@ endif()
 find_package( breakpad QUIET )
 
 # Run libocispec to generate OCI config parsers and necessary C headers
-include(${CMAKE_MODULE_PATH}/Findlibocispec.cmake)
-
+include(Findlibocispec)
 GenerateLibocispec(EXTRA_SCHEMA_PATH "${EXTERNAL_PLUGIN_SCHEMA}")
 
 
