@@ -649,7 +649,7 @@ bool DobbyConfig::updateBundleConfig(const ContainerId& id, std::shared_ptr<rt_d
     cfg->hostname = strdup(id.c_str());
 
     // if there are any rdk plugins, set up DobbyPluginLauncher in config
-    if (cfg->rdk_plugins->plugins_count)
+    if (cfg->rdk_plugins && cfg->rdk_plugins->plugins_count)
     {
 #ifdef USE_STARTCONTAINER_HOOK
         // bindmount DobbyPluginLauncher to container

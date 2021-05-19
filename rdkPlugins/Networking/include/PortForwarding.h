@@ -63,6 +63,11 @@ bool removePortForwards(const std::shared_ptr<Netfilter> &netfilter,
                         const std::shared_ptr<NetworkingHelper> &helper,
                         const std::string &containerId,
                         rt_defs_plugins_networking_data_port_forwarding *portsConfig);
+
+bool addLocalhostMasquerading(const std::shared_ptr<Netfilter> &netfilter,
+                              const std::shared_ptr<NetworkingHelper> &helper,
+                              const std::string &containerId,
+                              rt_defs_plugins_networking_data_port_forwarding *portsConfig);
 };
 
 typedef struct PortForward
@@ -81,10 +86,15 @@ typedef struct PortForwards
 std::string parseProtocol(const std::string &protocol);
 PortForwards parsePortsConfig(rt_defs_plugins_networking_data_port_forwarding *portsConfig);
 
-std::vector<Netfilter::RuleSet> constructRules(const std::shared_ptr<NetworkingHelper> &helper,
+std::vector<Netfilter::RuleSet> constructPortForwardingRules(const std::shared_ptr<NetworkingHelper> &helper,
                                                const std::string &containerId,
                                                const PortForwards &portForwards,
                                                const int ipVersion);
+
+std::vector<Netfilter::RuleSet> constructMasqueradeRules(const std::shared_ptr<NetworkingHelper> &helper,
+                                                         const std::string &containerId,
+                                                         const PortForwards &portForwards,
+                                                         const int ipVersion);
 
 bool constructHostToContainerRules(std::vector<Netfilter::RuleSet> &ruleSets,
                                    const std::string &containerId,
@@ -119,5 +129,15 @@ std::string createAcceptRule(const PortForward &portForward,
                              const std::string &ipAddress,
                              const std::string &vethName,
                              const int ipVersion);
+
+std::string createMasqueradeDnatRule(const PortForward &portForward,
+                                     const std::string &id,
+                                     const std::string &ipAddress,
+                                     const int ipVersion);
+
+std::string createMasqueradeSnatRule(const PortForward &portForward,
+                                    const std::string &id,
+                                    const std::string &ipAddress,
+                                    const int ipVersion);
 
 #endif // !defined(PORTFORWARDING_H)

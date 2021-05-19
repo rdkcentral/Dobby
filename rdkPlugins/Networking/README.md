@@ -34,7 +34,8 @@ Add the following section to your OCI runtime configuration `config.json` file t
                             "port": 5678,
                             "protocol": "udp"
                         }
-                    ]
+                    ],
+                    "localhostMasquerade": true
                 },
                 "multicastForwarding": [
                     {
@@ -176,6 +177,14 @@ Container to host port forwarding can be used to allow containers access to the 
     }
 }
 ```
+
+##### Localhost Masquerade
+
+If enabled, redirect packets sent to localhost in the container to the host's localhost (via the dobby bridge device) for the forwarded ports.
+
+This allows containers to access services on the host without needing to change existing code to point to the bridge IP address.
+
+This can obviously only work for ports specified in the `containerToHost` section.
 
 ### Multicast Forwarding
 
