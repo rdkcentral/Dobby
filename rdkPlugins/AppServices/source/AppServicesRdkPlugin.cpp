@@ -61,6 +61,7 @@ unsigned AppServicesRdkPlugin::hookHints() const
     return (
         IDobbyRdkPlugin::HintFlags::PostInstallationFlag |
         IDobbyRdkPlugin::HintFlags::CreateRuntimeFlag |
+        IDobbyRdkPlugin::HintFlags::CreateContainerFlag |
         IDobbyRdkPlugin::HintFlags::PostHaltFlag);
 }
 
@@ -177,6 +178,51 @@ bool AppServicesRdkPlugin::createRuntime()
 }
 
 /**
+ * @brief OCI Hook - Run in container namespace. Paths resolve to host namespace
+ *
+ * Used to configure localhost masquerading for the AS ports
+ */
+bool AppServicesRdkPlugin::createContainer()
+{
+    AI_LOG_FN_ENTRY();
+
+    if (!mValid)
+    {
+        AI_LOG_ERROR_EXIT("Invalid container config");
+        return false;
+    }
+
+    // Enable localhost masquerading for all the AS ports
+    Netfilter::RuleSet ruleSet = constructMasqueradeRules();
+    if (ruleSet.empty())
+    {
+        AI_LOG_ERROR_EXIT("failed to construct AS iptables rules for '%s''", mUtils->getContainerId().c_str());
+        return false;
+    }
+
+    // add all rules to cache
+    if (!mNetfilter->addRules(ruleSet, AF_INET, Netfilter::Operation::Insert))
+    {
+        AI_LOG_ERROR_EXIT("failed to setup AS iptables rules for '%s''", mUtils->getContainerId().c_str());
+        return false;
+    }
+
+    // actually apply the rules
+    if (!mNetfilter->applyRules(AF_INET))
+    {
+        AI_LOG_ERROR_EXIT("Failed to apply AS iptables rules for '%s'", mUtils->getContainerId().c_str());
+        return false;
+    }
+
+    // Enable route_localnet inside the container
+    const std::string routingFilename = "/proc/sys/net/ipv4/conf/eth0/route_localnet";
+    mUtils->writeTextFile(routingFilename, "1", O_TRUNC | O_WRONLY, 0);
+
+    AI_LOG_FN_EXIT();
+    return true;
+}
+
+/**
  * @brief Dobby Hook - Run in host namespace when container terminates.
  * We hook this point so we can delete the iptables firewalls rules added at container start-up.
  *
@@ -193,6 +239,8 @@ bool AppServicesRdkPlugin::postHalt()
     }
 
     // construct the same ruleset as in createRuntime() to delete the rules
+    // No need to clean up localhost masqeurade rules as they are removed when
+    // container network namespace destroyed
     Netfilter::RuleSet ruleSet = constructRules();
     if (ruleSet.empty())
     {
@@ -272,14 +320,19 @@ AppServicesRdkPlugin::LocalServicesPort AppServicesRdkPlugin::getAsPort() const
         switch (match.str(1).front())
         {
             case '1':
+                AI_LOG_FN_EXIT();
                 return LocalServices1Port;
             case '2':
+                AI_LOG_FN_EXIT();
                 return LocalServices2Port;
             case '3':
+                AI_LOG_FN_EXIT();
                 return LocalServices3Port;
             case '4':
+                AI_LOG_FN_EXIT();
                 return LocalServices4Port;
             case '5':
+                AI_LOG_FN_EXIT();
                 return LocalServices5Port;
 
             default:
@@ -292,8 +345,49 @@ AppServicesRdkPlugin::LocalServicesPort AppServicesRdkPlugin::getAsPort() const
         AI_LOG_FN_EXIT();
         return LocalServicesNone;
     }
+}
+
+/**
+ * @brief Get all the ports we need to forward
+ *
+ * @return Set of ports on the host that the container should have access to
+ */
+std::set<in_port_t> AppServicesRdkPlugin::getAllPorts() const
+{
+    AI_LOG_FN_ENTRY();
+
+    std::set<in_port_t> allPorts = {};
+
+    LocalServicesPort asPort = getAsPort();
+    if (asPort != LocalServicesNone && asPort != LocalServicesInvalid)
+    {
+        allPorts.insert(asPort);
+    }
+
+    // LocalServices1 also grants access to port 8008
+    if (asPort == LocalServices1Port)
+    {
+        allPorts.insert(8008);
+    }
+
+    // Add any additional ports
+    const uint16_t *additionalPorts = mPluginConfig->additional_ports;
+    const size_t additionalPortsLen = mPluginConfig->additional_ports_len;
+    for (size_t i = 0; i < additionalPortsLen; ++i)
+    {
+        const in_port_t additionalPort = additionalPorts[i];
+        if (additionalPort < 128)
+        {
+            AI_LOG_WARN("invalid port value (%hu) in additionalPorts array", additionalPort);
+        }
+        else
+        {
+            allPorts.insert(additionalPort);
+        }
+    }
 
     AI_LOG_FN_EXIT();
+    return allPorts;
 }
 
 /**
@@ -305,9 +399,11 @@ AppServicesRdkPlugin::LocalServicesPort AppServicesRdkPlugin::getAsPort() const
  *  @param[in,out]  acceptRules The ACCEPT rule set.
  *  @param[in,out]  natRules    The DNAT rule set.
  */
-void AppServicesRdkPlugin::addRulesForPort(const std::string &containerIp, const std::string &vethName,
+void AppServicesRdkPlugin::addRulesForPort(const std::string &containerIp,
+                                           const std::string &vethName,
                                            in_port_t port,
-                                           std::list<std::string>& acceptRules, std::list<std::string>& natRules) const
+                                           std::list<std::string> &acceptRules,
+                                           std::list<std::string> &natRules) const
 {
     if (mEnableConnLimit)
     {
@@ -344,31 +440,12 @@ Netfilter::RuleSet AppServicesRdkPlugin::constructRules() const
     // add the AS iptables rules
     std::list<std::string> acceptRules;
     std::list<std::string> natRules;
-    LocalServicesPort asPort = getAsPort();
 
-    if (asPort != LocalServicesNone)
-    {
-        addRulesForPort(ipAddress, vethName, asPort, acceptRules, natRules);
-    }
-    if (asPort == LocalServices1Port)
-    {
-       const in_port_t additionalPort = 8008;
-       addRulesForPort(ipAddress, vethName, additionalPort, acceptRules, natRules);
-    }
+    const std::set<in_port_t> allPorts = getAllPorts();
 
-    const uint16_t* additionalPorts = mPluginConfig->additional_ports;
-    const size_t additionalPortsLen = mPluginConfig->additional_ports_len;
-    for (size_t i = 0; i < additionalPortsLen; ++i)
+    for (const auto &port : allPorts)
     {
-        const in_port_t additionalPort = additionalPorts[i];
-        if (additionalPort < 128)
-        {
-            AI_LOG_WARN("invalid port value (%hu) in additionalPorts array", additionalPort);
-        }
-        else
-        {
-            addRulesForPort(ipAddress, vethName, additionalPort, acceptRules, natRules);
-        }
+        addRulesForPort(ipAddress, vethName, port, acceptRules, natRules);
     }
 
     ruleSet[Netfilter::TableType::Filter] = std::move(acceptRules);
@@ -492,5 +569,125 @@ std::string AppServicesRdkPlugin::constructACCEPTRule(const std::string &contain
 
     AI_LOG_DEBUG("Constructed rule: %s", buf);
     AI_LOG_FN_EXIT();
+    return std::string(buf);
+}
+
+// -----------------------------------------------------------------------------
+/**
+ * @brief Constructs rules to forward requests to AS ports on the container localhost
+ * interface to the host.
+ *
+ * Simplified version of portForwarding code in Networking plugin
+ *
+ * @return RuleSet to configure iptables
+ */
+Netfilter::RuleSet AppServicesRdkPlugin::constructMasqueradeRules() const
+{
+    AI_LOG_FN_ENTRY();
+
+    Netfilter::RuleSet ruleSet;
+    const std::string containerId = mUtils->getContainerId();
+
+    // get the ip address and veth name assigned to the container
+    ContainerNetworkInfo networkInfo;
+    if (!mUtils->getContainerNetworkInfo(networkInfo))
+    {
+        AI_LOG_ERROR("failed to get IP address and veth name assigned to container");
+        return ruleSet;
+    }
+
+    std::list<std::string> natRules;
+    const std::set<in_port_t> allPorts = getAllPorts();
+
+    for (const auto &port : allPorts)
+    {
+        const std::string dnatRule = createMasqueradeDnatRule(port);
+        const std::string snatRule = createMasqueradeSnatRule(port, networkInfo.ipAddress);
+
+        natRules.emplace_back(dnatRule);
+        natRules.emplace_back(snatRule);
+    }
+
+    ruleSet[Netfilter::TableType::Nat] = std::move(natRules);
+
+    AI_LOG_FN_EXIT();
+    return ruleSet;
+}
+
+// -----------------------------------------------------------------------------
+/**
+ *  @brief Constructs an OUTPUT DNAT rule to forward packets from 127.0.0.1 inside
+ *  the container to the bridge device (100.64.11.1) on the given port
+ *
+ *  @param[in]  portForward The port to forward.
+ *
+ *  @return returns the created rule.
+ */
+std::string AppServicesRdkPlugin::createMasqueradeDnatRule(const in_port_t &port) const
+{
+    char buf[256];
+    const std::string containerId(mUtils->getContainerId().c_str());
+
+#if defined(DEV_VM)
+    const std::string comment("asplugin:" + containerId);
+#else
+    const std::string comment("\"asplugin:" + containerId + "\"");
+#endif
+
+    std::string baseRule("OUTPUT "
+                         "-o lo "
+                         "-p tcp "      // protocol
+                         "-m tcp "      // protocol
+                         "--dport %hu " // port number
+                         "-j DNAT "
+                         "-m comment --comment %s "         // Container id
+                         "--to-destination 100.64.11.1:%hu" // Bridge address:port
+    );
+
+    // populate fields in base rule
+    snprintf(buf, sizeof(buf), baseRule.c_str(),
+             port,
+             comment.c_str(),
+             port);
+
+    return std::string(buf);
+}
+
+// -----------------------------------------------------------------------------
+/**
+ *  @brief Constructs an POSTROUTING SNAT rule so that the source address is changed
+ *  to the veth0 inside the container so we get the replies.
+ *
+ *  @param[in]  port        The port to forward.
+ *  @param[in]  ipAddress   The ip address of the container.
+ *
+ *  @return returns the created rule.
+ *
+ */
+std::string AppServicesRdkPlugin::createMasqueradeSnatRule(const in_port_t &port,
+                                                           const std::string &ipAddress) const
+{
+    char buf[256];
+    const std::string containerId(mUtils->getContainerId().c_str());
+
+#if defined(DEV_VM)
+    const std::string comment("asplugin:" + containerId);
+#else
+    const std::string comment("\"asplugin:" + containerId + "\"");
+#endif
+
+    std::string baseRule("POSTROUTING "
+                         "-p tcp "         // protocol
+                         "-s 127.0.0.1 "   // container localhost
+                         "-d 100.64.11.1 " // bridge address
+                         "-j SNAT "
+                         "-m comment --comment %s " // container id
+                         "--to %s");                // container address
+
+    // populate fields in base rule
+    snprintf(buf, sizeof(buf), baseRule.c_str(),
+             comment.c_str(),
+             ipAddress.c_str());
+
     return std::string(buf);
 }

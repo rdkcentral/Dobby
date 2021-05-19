@@ -32,6 +32,7 @@
 #include <unistd.h>
 #include <string>
 #include <memory>
+#include <set>
 
 /**
  *  @class AppServicesRdkPlugin
@@ -60,6 +61,7 @@ public:
 public:
     bool postInstallation() override;
     bool createRuntime() override;
+    bool createContainer() override;
     bool postHalt() override;
 
 public:
@@ -79,11 +81,15 @@ private:
     };
 
     LocalServicesPort getAsPort() const;
+    std::set<in_port_t> getAllPorts() const;
 
     Netfilter::RuleSet constructRules() const;
+    Netfilter::RuleSet constructMasqueradeRules() const;
+
     void addRulesForPort(const std::string &containerIp, const std::string &vethName,
                          in_port_t port,
                          std::list<std::string>& acceptRules, std::list<std::string>& natRules) const;
+
     std::string constructDNATRule(const std::string &containerIp,
                                   in_port_t port) const;
     std::string constructCONNLIMITRule(const std::string &containerIp,
@@ -93,6 +99,10 @@ private:
     std::string constructACCEPTRule(const std::string &containerIp,
                                     const std::string &vethName,
                                     in_port_t port) const;
+
+    std::string createMasqueradeDnatRule(const in_port_t &port) const;
+    std::string createMasqueradeSnatRule(const in_port_t &port,
+                                         const std::string &ipAddress) const;
 
 private:
     const std::string mName;
