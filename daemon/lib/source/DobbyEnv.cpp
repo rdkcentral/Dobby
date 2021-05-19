@@ -98,7 +98,10 @@ uint16_t DobbyEnv::getPlatformIdent()
     const char* platformIdent = getenv("AI_PLATFORM_IDENT");
     if ((platformIdent == nullptr) || (platformIdent[0] == '\0'))
     {
-        AI_LOG_ERROR_EXIT("missing AI_PLATFORM_IDENT environment var");
+#if !defined(RDK)
+        AI_LOG_ERROR("missing AI_PLATFORM_IDENT environment var");
+#endif
+        AI_LOG_FN_EXIT();
         return 0x0000;
     }
 

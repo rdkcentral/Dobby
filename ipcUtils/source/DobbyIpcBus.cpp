@@ -617,14 +617,14 @@ void DobbyIpcBus::serviceNameChanged(const AI_IPC::VariantList& args)
     if (newOwner.empty())
     {
         // if new owner is empty it means the service has left the bus
-        AI_LOG_INFO("'%s' service has left the bus", name.c_str());
+        AI_LOG_DEBUG("'%s' service has left the bus", name.c_str());
         mServiceChangeQueue.emplace_back(ServiceChangeEvent::ServiceRemoved, name);
     }
     else
     {
         // if the new owner is not empty it means the service has
         // joined the bus
-        AI_LOG_INFO("'%s' service has arrived on the bus", name.c_str());
+        AI_LOG_DEBUG("'%s' service has arrived on the bus", name.c_str());
         mServiceChangeQueue.emplace_back(ServiceChangeEvent::ServiceAdded, name);
     }
 }
