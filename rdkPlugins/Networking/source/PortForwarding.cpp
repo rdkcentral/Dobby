@@ -55,7 +55,7 @@ bool PortForwarding::addPortForwards(const std::shared_ptr<Netfilter> &netfilter
     // add IPv4 rules to iptables if needed
     if (helper->ipv4())
     {
-        std::vector<Netfilter::RuleSet> ipv4Rules = constructRules(helper,
+        std::vector<Netfilter::RuleSet> ipv4Rules = constructPortForwardingRules(helper,
                                                                    containerId,
                                                                    portForwards,
                                                                    AF_INET);
@@ -86,7 +86,7 @@ bool PortForwarding::addPortForwards(const std::shared_ptr<Netfilter> &netfilter
     // add IPv6 rules to iptables if needed
     if (helper->ipv6())
     {
-        std::vector<Netfilter::RuleSet> ipv6Rules = constructRules(helper,
+        std::vector<Netfilter::RuleSet> ipv6Rules = constructPortForwardingRules(helper,
                                                                    containerId,
                                                                    portForwards,
                                                                    AF_INET6);
@@ -149,7 +149,7 @@ bool PortForwarding::removePortForwards(const std::shared_ptr<Netfilter> &netfil
     // delete IPv4 rules from ip6tables if needed
     if (helper->ipv4())
     {
-        std::vector<Netfilter::RuleSet> ipv4Rules = constructRules(helper,
+        std::vector<Netfilter::RuleSet> ipv4Rules = constructPortForwardingRules(helper,
                                                                    containerId,
                                                                    portForwards,
                                                                    AF_INET);
@@ -175,7 +175,7 @@ bool PortForwarding::removePortForwards(const std::shared_ptr<Netfilter> &netfil
     // delete IPv6 rules from ip6tables if needed
     if (helper->ipv6())
     {
-        std::vector<Netfilter::RuleSet> ipv6Rules = constructRules(helper,
+        std::vector<Netfilter::RuleSet> ipv6Rules = constructPortForwardingRules(helper,
                                                                    containerId,
                                                                    portForwards,
                                                                    AF_INET6);
@@ -196,6 +196,83 @@ bool PortForwarding::removePortForwards(const std::shared_ptr<Netfilter> &netfil
             }
         }
 
+    }
+
+    AI_LOG_FN_EXIT();
+    return true;
+}
+
+// -----------------------------------------------------------------------------
+/**
+ * @brief Adds iptables rules to forward packets from the container localhost to
+ * the host's localhost on specific ports. This removes the need to edit code to
+ * point to the bridge IP directly.
+ *
+ * This must be run inside the container's network namespace
+ *
+ *  @param[in]  netfilter           Instance of Netfilter class.
+ *  @param[in]  helper              Instance of NetworkingHelper.
+ *  @param[in]  containerId         Container identifier.
+ *  @param[in]  portsConfig         libocispec structs containing ports to
+ *                                  forward.
+ *
+ *  @return true on success, otherwise false.
+ */
+bool PortForwarding::addLocalhostMasquerading(const std::shared_ptr<Netfilter> &netfilter,
+                                              const std::shared_ptr<NetworkingHelper> &helper,
+                                              const std::string &containerId,
+                                              rt_defs_plugins_networking_data_port_forwarding *portsConfig)
+{
+    AI_LOG_FN_ENTRY();
+
+    // parse the libocispec struct data
+    PortForwards portForwards = parsePortsConfig(portsConfig);
+    if (!portForwards.isValid)
+    {
+        AI_LOG_ERROR_EXIT("failed to parse port configurations");
+        return false;
+    }
+
+    // add IPv4 rules to iptables if needed
+    if (helper->ipv4())
+    {
+        std::vector<Netfilter::RuleSet> ipv4Rules = constructMasqueradeRules(helper,
+                                                                             containerId,
+                                                                             portForwards,
+                                                                             AF_INET);
+        if (ipv4Rules.empty())
+        {
+            AI_LOG_ERROR_EXIT("failed to construct localhost masquerade iptables rules");
+            return false;
+        }
+
+        // insert vector index 0 of constructed rules
+        if (!netfilter->addRules(ipv4Rules[0], AF_INET, Netfilter::Operation::Insert))
+        {
+            AI_LOG_ERROR_EXIT("failed to insert localhost masquerade rules to iptables");
+            return false;
+        }
+    }
+
+    // add IPv6 rules to iptables if needed
+    if (helper->ipv6())
+    {
+        std::vector<Netfilter::RuleSet> ipv6Rules = constructMasqueradeRules(helper,
+                                                                             containerId,
+                                                                             portForwards,
+                                                                             AF_INET6);
+        if (ipv6Rules.empty())
+        {
+            AI_LOG_ERROR_EXIT("failed to construct localhost masquerade iptables rules");
+            return false;
+        }
+
+        // insert vector index 0 of constructed rules
+        if (!netfilter->addRules(ipv6Rules[0], AF_INET6, Netfilter::Operation::Insert))
+        {
+            AI_LOG_ERROR_EXIT("failed to insert localhost masquerade rules to iptables");
+            return false;
+        }
     }
 
     AI_LOG_FN_EXIT();
@@ -304,10 +381,10 @@ PortForwards parsePortsConfig(rt_defs_plugins_networking_data_port_forwarding *p
  *
  *  @return always returns true.
  */
-std::vector<Netfilter::RuleSet> constructRules(const std::shared_ptr<NetworkingHelper> &helper,
-                                               const std::string &containerId,
-                                               const PortForwards &portForwards,
-                                               const int ipVersion)
+std::vector<Netfilter::RuleSet> constructPortForwardingRules(const std::shared_ptr<NetworkingHelper> &helper,
+                                                             const std::string &containerId,
+                                                             const PortForwards &portForwards,
+                                                             const int ipVersion)
 {
     std::vector<Netfilter::RuleSet> ruleSets;
 
@@ -356,6 +433,65 @@ std::vector<Netfilter::RuleSet> constructRules(const std::shared_ptr<NetworkingH
     return ruleSets;
 }
 
+// -----------------------------------------------------------------------------
+/**
+ * @brief Constructs rules to allow requests to the container localhost on certain
+ * ports to be automatically forwarded to the host's localhost.
+ *
+ *  @param[in]  helper              Instance of NetworkingHelper.
+ *  @param[in]  containerId         Container identifier.
+ *  @param[in]  portForwards        structs containing ports to forward.
+ *  @param[in]  ipVersion           IPv family version (AF_INET/AF_INET6).
+ *
+ * @return RuleSet to configure iptables
+ */
+std::vector<Netfilter::RuleSet> constructMasqueradeRules(const std::shared_ptr<NetworkingHelper> &helper,
+                                                         const std::string &containerId,
+                                                         const PortForwards &portForwards,
+                                                         const int ipVersion)
+{
+    std::string containerAddress;
+    if (ipVersion == AF_INET)
+    {
+        containerAddress = helper->ipv4AddrStr();
+    }
+    else if (ipVersion == AF_INET6)
+    {
+        containerAddress = helper->ipv6AddrStr();
+    }
+    else
+    {
+        AI_LOG_ERROR("supported ip address families are AF_INET or AF_INET6");
+        return std::vector<Netfilter::RuleSet>();
+    }
+
+    std::vector<Netfilter::RuleSet> ruleSets;
+
+    // We can only setup masquerading in one direction (container to access host ports)
+    if (!portForwards.containerToHost.empty())
+    {
+        std::list<std::string> natRules;
+        std::vector<struct PortForward> ports = portForwards.containerToHost;
+
+        for (size_t i = 0; i < ports.size(); i++)
+        {
+            const std::string dnatRule = createMasqueradeDnatRule(ports[i], containerId, containerAddress, ipVersion);
+            const std::string snatRule = createMasqueradeSnatRule(ports[i], containerId, containerAddress, ipVersion);
+
+            natRules.emplace_back(dnatRule);
+            natRules.emplace_back(snatRule);
+        }
+
+        // No need to bother with merge logic here as this is the only set of
+        // rules added, just add them to the set
+        Netfilter::RuleSet rules = {
+            { Netfilter::TableType::Nat, natRules }
+        };
+        ruleSets.emplace(ruleSets.begin(), rules);
+    }
+
+    return ruleSets;
+}
 
 // -----------------------------------------------------------------------------
 /**
@@ -752,6 +888,116 @@ std::string createAcceptRule(const PortForward &portForward,
              portForward.port.c_str(),
              vethName.c_str(),
              id.c_str());
+
+    return std::string(buf);
+}
+
+// -----------------------------------------------------------------------------
+/**
+ *  @brief Constructs an OUTPUT DNAT rule to forward packets from 127.0.0.1 inside
+ *  the container to the bridge device (100.64.11.1) on the given port
+ *
+ *  @param[in]  portForward The protocol and port to forward.
+ *  @param[in]  id          The id of the container making the request.
+ *  @param[in]  ipAddress   The ip address of the container.
+ *  @param[in]  ipVersion   IPv family version (AF_INET/AF_INET6).
+ *
+ *  @return returns the created rule.
+ */
+std::string createMasqueradeDnatRule(const PortForward &portForward,
+                                    const std::string &id,
+                                    const std::string &ipAddress,
+                                    const int ipVersion)
+{
+    char buf[256];
+
+    std::string destination;
+
+    std::string baseRule("OUTPUT "
+                         "-o lo "
+                         "-p %s "                   // protocol
+                         "-m %s "                   // protocol
+                         "--dport %s "              // port number
+                         "-j DNAT "
+                         "-m comment --comment %s " // Container id
+                         "--to-destination %s"      // Bridge address:port
+    );
+
+    // create addresses based on IP version
+    if (ipVersion == AF_INET)
+    {
+        destination = std::string() + BRIDGE_ADDRESS + ":" + portForward.port;
+    }
+    else
+    {
+        destination = std::string() + "[" + BRIDGE_ADDRESS_IPV6 + "]:" + portForward.port;
+    }
+
+    // populate '%s' fields in base rule
+    snprintf(buf, sizeof(buf), baseRule.c_str(),
+             portForward.protocol.c_str(),
+             portForward.protocol.c_str(),
+             portForward.port.c_str(),
+             id.c_str(),
+             destination.c_str(),
+             portForward.port.c_str());
+
+    return std::string(buf);
+}
+
+// -----------------------------------------------------------------------------
+/**
+ *  @brief Constructs an POSTROUTING SNAT rule so that the source address is changed
+ *  to the veth0 inside the container so we get the replies.
+ *
+ *  @param[in]  portForward The protocol and port to forward.
+ *  @param[in]  id          The id of the container making the request.
+ *  @param[in]  ipAddress   The ip address of the container.
+ *  @param[in]  ipVersion   IPv family version (AF_INET/AF_INET6).
+ *
+ *  @return returns the created rule.
+ *
+ */
+std::string createMasqueradeSnatRule(const PortForward &portForward,
+                                    const std::string &id,
+                                    const std::string &ipAddress,
+                                    const int ipVersion)
+{
+    char buf[256];
+
+    std::string bridgeAddr;
+    std::string sourceAddr;
+    std::string destination;
+
+    std::string baseRule("POSTROUTING "
+                        "-p %s "                    // protocol
+                        "-s %s "                    // container localhost
+                        "-d %s "                    // bridge address
+                        "-j SNAT "
+                        "-m comment --comment %s "  // container id
+                        "--to %s");                 // container address
+
+    // create addresses based on IP version
+    if (ipVersion == AF_INET)
+    {
+        sourceAddr = "127.0.0.1";
+        destination = std::string() + ipAddress;
+        bridgeAddr = std::string() + BRIDGE_ADDRESS;
+    }
+    else
+    {
+        sourceAddr = "[::1]";
+        destination = std::string() + ipAddress;
+        bridgeAddr = std::string() + BRIDGE_ADDRESS_IPV6;
+    }
+
+    // populate '%s' fields in base rule
+    snprintf(buf, sizeof(buf), baseRule.c_str(),
+             portForward.protocol.c_str(),
+             sourceAddr.c_str(),
+             bridgeAddr.c_str(),
+             id.c_str(),
+             destination.c_str());
 
     return std::string(buf);
 }
