@@ -104,7 +104,6 @@ unsigned NetworkingPlugin::hookHints() const
     return (
         IDobbyRdkPlugin::HintFlags::PostInstallationFlag |
         IDobbyRdkPlugin::HintFlags::CreateRuntimeFlag |
-        IDobbyRdkPlugin::HintFlags::CreateContainerFlag |
         IDobbyRdkPlugin::HintFlags::PostHaltFlag
     );
 }
@@ -224,9 +223,22 @@ bool NetworkingPlugin::createRuntime()
             AI_LOG_ERROR_EXIT("failed to add port forwards");
             return false;
         }
+
+        // Add localhost masquerade (in container network namespace)
+        // Ideally this would be done in the createContainer hook, but that fails
+        // on some platforms with permissions issues (works fine on VM...)
+        if (!mUtils->callInNamespace(mUtils->getContainerPid(), CLONE_NEWNET,
+                                     &PortForwarding::addLocalhostMasquerading,
+                                     mHelper,
+                                     mUtils,
+                                     mPluginData->port_forwarding))
+        {
+            AI_LOG_ERROR_EXIT("Failed to add AS localhost masquerade iptables rules inside container");
+            return false;
+        }
     }
 
-    // add port forwards if any have been configured
+    // enable multicast forwarding
     if (mPluginData->multicast_forwarding != nullptr)
     {
         if (!MulticastForwarder::set(mNetfilter, mPluginData, mHelper->vethName(), mUtils->getContainerId(), extIfaces))
@@ -241,61 +253,6 @@ bool NetworkingPlugin::createRuntime()
     {
         AI_LOG_ERROR_EXIT("failed to apply iptables rules");
         return false;
-    }
-
-    AI_LOG_FN_EXIT();
-    return true;
-}
-
-/**
- * @brief OCI Hook - Run in container namespace. Paths resolve to host namespace
- */
-bool NetworkingPlugin::createContainer()
-{
-    // nothing to do for containers configured for an open/private network
-    if (mNetworkType == NetworkType::Open || mNetworkType == NetworkType::None)
-    {
-        AI_LOG_FN_EXIT();
-        return true;
-    }
-
-    // Optionally we can enable localhost masquerading inside the container to
-    // forward requests to the container's localhost to the host's
-    if (mPluginData->port_forwarding != nullptr &&
-        mPluginData->port_forwarding->localhost_masquerade_present &&
-        mPluginData->port_forwarding->localhost_masquerade)
-    {
-        // Get IP address of container
-        ContainerNetworkInfo networkInfo;
-        if (!mUtils->getContainerNetworkInfo(networkInfo))
-        {
-            AI_LOG_ERROR("Failed to get container network info");
-            return false;
-        }
-
-        in_addr_t ipAddress;
-        inet_pton(AF_INET, networkInfo.ipAddress.c_str(), &ipAddress);
-        mHelper->storeContainerInterface(htonl(ipAddress), networkInfo.vethName);
-
-        // Generate iptables rules
-        if (!PortForwarding::addLocalhostMasquerading(mNetfilter, mHelper, mUtils->getContainerId(), mPluginData->port_forwarding))
-        {
-            AI_LOG_ERROR_EXIT("failed to configure localhost masquerading");
-            return false;
-        }
-
-        // apply iptables changes
-        if (!mNetfilter->applyRules(AF_INET) || !mNetfilter->applyRules(AF_INET6))
-        {
-            AI_LOG_ERROR_EXIT("failed to apply iptables rules");
-            return false;
-        }
-
-        // we also have to enable localhost routing so that the packets are
-        // accepted by the veth inside the container. eth0 is always the main
-        // interface in the container
-        mUtils->writeTextFile("/proc/sys/net/ipv4/conf/eth0/route_localnet",
-                              "1", O_TRUNC | O_WRONLY, 0);
     }
 
     AI_LOG_FN_EXIT();
