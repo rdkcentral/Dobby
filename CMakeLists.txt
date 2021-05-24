@@ -80,6 +80,22 @@ else()
     message( FATAL_ERROR "Unknown RDK_PLATFORM '${RDK_PLATFORM}'" )
 endif()
 
+# If no REGION is defined then default to NONE
+set( REGION "NONE" CACHE STRING "Specifies the region the build is targeting, options are \"NONE\", \"UK\", \"DE\" or \"IT\"" )
+string( TOUPPER "${REGION}" REGION )
+# Set the defines / macros for the region
+if( REGION STREQUAL "NONE" )
+    add_definitions( -DREGION_NONE )
+elseif( REGION STREQUAL "UK" )
+    add_definitions( -DREGION_UK )
+elseif( REGION STREQUAL "IT" )
+    add_definitions( -DREGION_IT )
+elseif( REGION STREQUAL "DE" )
+    add_definitions( -DREGION_DE)
+else()
+    message( FATAL_ERROR "REGION '${REGION}' not supported, must be either \"NONE\", \"UK\", \"DE\" or \"IT\"" )
+endif()
+
 set( BUILD_REFERENCE "" CACHE STRING "Commit hash used to build Dobby" )
 
 # Option to enable / disable the Perfetto tracing support

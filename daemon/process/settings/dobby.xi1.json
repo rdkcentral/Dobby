@@ -61,6 +61,13 @@
         "destination": "/opt/property.ini",
         "type": "bind",
         "options": [ "bind", "nosuid", "nodev", "noexec" ]
+      },
+      {
+        "source": "/dev/fwsocket",
+        "destination": "/dev/fwsocket",
+        "type": "bind",
+        "options": [ "bind", "ro", "nosuid", "nodev", "noexec" ],
+        "excludeRegions": [ "UK" ]
       }
     ]
   },
