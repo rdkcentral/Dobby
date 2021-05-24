@@ -246,6 +246,9 @@
                         "portForwarding": {
                             "type": "object",
                             "properties": {
+                                "localhostMasquerade": {
+                                    "type": "boolean"
+                                },
                                 "hostToContainer": {
                                     "type": "array",
                                     "items": {
