@@ -61,7 +61,6 @@ unsigned AppServicesRdkPlugin::hookHints() const
     return (
         IDobbyRdkPlugin::HintFlags::PostInstallationFlag |
         IDobbyRdkPlugin::HintFlags::CreateRuntimeFlag |
-        IDobbyRdkPlugin::HintFlags::CreateContainerFlag |
         IDobbyRdkPlugin::HintFlags::PostHaltFlag);
 }
 
@@ -173,42 +172,41 @@ bool AppServicesRdkPlugin::createRuntime()
         return false;
     }
 
+    // Add the localhost masquerade rules inside the container namespace
+    // Ideally this would be done in the createContainer hook, but that fails
+    // on Llama with permissions issues (works fine on VM...)
+    Netfilter::RuleSet masqueradeRuleSet = constructMasqueradeRules();
+    if (masqueradeRuleSet.empty())
+    {
+        AI_LOG_ERROR_EXIT("failed to construct AS iptables masquerade rules for '%s''", mUtils->getContainerId().c_str());
+        return false;
+    }
+
+    const pid_t containerPid = mUtils->getContainerPid();
+    if (!mUtils->callInNamespace(containerPid, CLONE_NEWNET,
+                                &AppServicesRdkPlugin::setupLocalhostMasquerade, this, masqueradeRuleSet))
+    {
+        AI_LOG_ERROR_EXIT("Failed to add AS localhost masquerade iptables rules inside container");
+        return false;
+    }
+
     AI_LOG_FN_EXIT();
     return true;
 }
 
-/**
- * @brief OCI Hook - Run in container namespace. Paths resolve to host namespace
- *
- * Used to configure localhost masquerading for the AS ports
- */
-bool AppServicesRdkPlugin::createContainer()
+bool AppServicesRdkPlugin::setupLocalhostMasquerade(Netfilter::RuleSet& ruleSet)
 {
-    AI_LOG_FN_ENTRY();
+    std::shared_ptr<Netfilter> nsNetfilter = std::make_shared<Netfilter>();
 
-    if (!mValid)
+    // Add rules to cache
+    if (!nsNetfilter->addRules(ruleSet, AF_INET, Netfilter::Operation::Insert))
     {
-        AI_LOG_ERROR_EXIT("Invalid container config");
-        return false;
-    }
-
-    // Enable localhost masquerading for all the AS ports
-    Netfilter::RuleSet ruleSet = constructMasqueradeRules();
-    if (ruleSet.empty())
-    {
-        AI_LOG_ERROR_EXIT("failed to construct AS iptables rules for '%s''", mUtils->getContainerId().c_str());
-        return false;
-    }
-
-    // add all rules to cache
-    if (!mNetfilter->addRules(ruleSet, AF_INET, Netfilter::Operation::Insert))
-    {
-        AI_LOG_ERROR_EXIT("failed to setup AS iptables rules for '%s''", mUtils->getContainerId().c_str());
+        AI_LOG_ERROR_EXIT("failed to setup AS localhost masquerade iptables rules inside container for '%s''", mUtils->getContainerId().c_str());
         return false;
     }
 
     // actually apply the rules
-    if (!mNetfilter->applyRules(AF_INET))
+    if (!nsNetfilter->applyRules(AF_INET))
     {
         AI_LOG_ERROR_EXIT("Failed to apply AS iptables rules for '%s'", mUtils->getContainerId().c_str());
         return false;
@@ -221,6 +219,7 @@ bool AppServicesRdkPlugin::createContainer()
     AI_LOG_FN_EXIT();
     return true;
 }
+
 
 /**
  * @brief Dobby Hook - Run in host namespace when container terminates.
@@ -602,11 +601,13 @@ Netfilter::RuleSet AppServicesRdkPlugin::constructMasqueradeRules() const
     for (const auto &port : allPorts)
     {
         const std::string dnatRule = createMasqueradeDnatRule(port);
-        const std::string snatRule = createMasqueradeSnatRule(port, networkInfo.ipAddress);
-
+        AI_LOG_ERROR(">> DNAT %s", dnatRule.c_str());
         natRules.emplace_back(dnatRule);
-        natRules.emplace_back(snatRule);
     }
+
+    std::string snatRule = createMasqueradeSnatRule(networkInfo.ipAddress);
+    AI_LOG_ERROR(">> SNAT %s", snatRule.c_str());
+    natRules.emplace_back(snatRule);
 
     ruleSet[Netfilter::TableType::Nat] = std::move(natRules);
 
@@ -658,14 +659,12 @@ std::string AppServicesRdkPlugin::createMasqueradeDnatRule(const in_port_t &port
  *  @brief Constructs an POSTROUTING SNAT rule so that the source address is changed
  *  to the veth0 inside the container so we get the replies.
  *
- *  @param[in]  port        The port to forward.
  *  @param[in]  ipAddress   The ip address of the container.
  *
  *  @return returns the created rule.
  *
  */
-std::string AppServicesRdkPlugin::createMasqueradeSnatRule(const in_port_t &port,
-                                                           const std::string &ipAddress) const
+std::string AppServicesRdkPlugin::createMasqueradeSnatRule(const std::string &ipAddress) const
 {
     char buf[256];
     const std::string containerId(mUtils->getContainerId().c_str());

@@ -61,7 +61,6 @@ public:
 public:
     bool postInstallation() override;
     bool createRuntime() override;
-    bool createContainer() override;
     bool postHalt() override;
 
 public:
@@ -86,6 +85,8 @@ private:
     Netfilter::RuleSet constructRules() const;
     Netfilter::RuleSet constructMasqueradeRules() const;
 
+    bool setupLocalhostMasquerade(Netfilter::RuleSet& ruleSet);
+
     void addRulesForPort(const std::string &containerIp, const std::string &vethName,
                          in_port_t port,
                          std::list<std::string>& acceptRules, std::list<std::string>& natRules) const;
@@ -101,8 +102,7 @@ private:
                                     in_port_t port) const;
 
     std::string createMasqueradeDnatRule(const in_port_t &port) const;
-    std::string createMasqueradeSnatRule(const in_port_t &port,
-                                         const std::string &ipAddress) const;
+    std::string createMasqueradeSnatRule(const std::string &ipAddress) const;
 
 private:
     const std::string mName;
