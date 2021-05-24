@@ -55,7 +55,6 @@ public:
 public:
     bool postInstallation() override;
     bool createRuntime() override;
-    bool createContainer() override;
     bool postHalt() override;
 
 public:

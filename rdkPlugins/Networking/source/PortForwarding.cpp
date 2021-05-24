@@ -21,6 +21,7 @@
 
 #include <algorithm>
 #include <Logging.h>
+#include <fcntl.h>
 
 
 // -----------------------------------------------------------------------------
@@ -218,12 +219,16 @@ bool PortForwarding::removePortForwards(const std::shared_ptr<Netfilter> &netfil
  *
  *  @return true on success, otherwise false.
  */
-bool PortForwarding::addLocalhostMasquerading(const std::shared_ptr<Netfilter> &netfilter,
-                                              const std::shared_ptr<NetworkingHelper> &helper,
-                                              const std::string &containerId,
+bool PortForwarding::addLocalhostMasquerading(const std::shared_ptr<NetworkingHelper> &helper,
+                                              const std::shared_ptr<DobbyRdkPluginUtils> &utils,
                                               rt_defs_plugins_networking_data_port_forwarding *portsConfig)
 {
     AI_LOG_FN_ENTRY();
+
+    const std::string containerId = utils->getContainerId();
+
+    // Version of netfilter for inside the container namespace
+    std::shared_ptr<Netfilter> nsNetfilter = std::make_shared<Netfilter>();
 
     // parse the libocispec struct data
     PortForwards portForwards = parsePortsConfig(portsConfig);
@@ -247,7 +252,7 @@ bool PortForwarding::addLocalhostMasquerading(const std::shared_ptr<Netfilter> &
         }
 
         // insert vector index 0 of constructed rules
-        if (!netfilter->addRules(ipv4Rules[0], AF_INET, Netfilter::Operation::Insert))
+        if (!nsNetfilter->addRules(ipv4Rules[0], AF_INET, Netfilter::Operation::Insert))
         {
             AI_LOG_ERROR_EXIT("failed to insert localhost masquerade rules to iptables");
             return false;
@@ -268,12 +273,23 @@ bool PortForwarding::addLocalhostMasquerading(const std::shared_ptr<Netfilter> &
         }
 
         // insert vector index 0 of constructed rules
-        if (!netfilter->addRules(ipv6Rules[0], AF_INET6, Netfilter::Operation::Insert))
+        if (!nsNetfilter->addRules(ipv6Rules[0], AF_INET6, Netfilter::Operation::Insert))
         {
             AI_LOG_ERROR_EXIT("failed to insert localhost masquerade rules to iptables");
             return false;
         }
     }
+
+    // Apply the iptables rules
+    if (!nsNetfilter->applyRules(AF_INET) || !nsNetfilter->applyRules(AF_INET6))
+    {
+        AI_LOG_ERROR_EXIT("failed to apply iptables rules");
+        return false;
+    }
+
+    // Enable route_localnet inside the container
+    const std::string routingFilename = "/proc/sys/net/ipv4/conf/eth0/route_localnet";
+    utils->writeTextFile(routingFilename, "1", O_TRUNC | O_WRONLY, 0);
 
     AI_LOG_FN_EXIT();
     return true;
