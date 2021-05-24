@@ -105,6 +105,8 @@ private:
     void dumpHardwareAccess(int aiLogLevel, const std::string& name,
                             const std::shared_ptr<const HardwareAccessSettings>& hwAccess) const;
 
+    std::string getBuildRegion() const;
+
 private:
     std::string mWorkspaceDir;
     std::string mPersistentDir;
