@@ -24,6 +24,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/ioctl.h>
+#include <sys/stat.h>
 #include <net/if.h>
 #include <linux/if_tun.h>
 
@@ -39,6 +40,19 @@ ifreq createInterfaceStruct()
     ifr.ifr_flags = IFF_TAP | IFF_NO_PI | IFF_ONE_QUEUE;
     strncpy(ifr.ifr_name, TAP_NAME, IFNAMSIZ);
     return ifr;
+}
+
+// -----------------------------------------------------------------------------
+/**
+ *  @brief Returns true if the platform has the TUN/TAP device driver and therefore
+ *  can create tap devices
+ *
+ *  @return true if supported.
+ */
+bool TapInterface::platformSupportsTapInterface()
+{
+    struct stat buf;
+    return stat(TUNDEV, &buf) == 0;
 }
 
 // -----------------------------------------------------------------------------

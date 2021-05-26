@@ -369,18 +369,25 @@ bool NetworkSetup::setupBridgeDevice(const std::shared_ptr<DobbyRdkPluginUtils> 
     // create an (unused) tap device and attach to the bridge, this is purely
     // to stop the bridge MAC address from changing as we add / remove veths
     // @see https://backreference.org/2010/07/28/linux-bridge-mac-addresses-and-dynamic-ports/
-    if (!TapInterface::createTapInterface(netlink) || !TapInterface::isValid())
+    if (TapInterface::platformSupportsTapInterface())
     {
-        AI_LOG_ERROR("failed to create tap device");
+        if (!TapInterface::createTapInterface(netlink) || !TapInterface::isValid())
+        {
+            AI_LOG_ERROR("failed to create tap device");
+        }
+        else if (!BridgeInterface::attachLink(netlink, TapInterface::name()))
+        {
+            AI_LOG_ERROR("failed to attach '%s' to the bridge",
+                        TapInterface::name().c_str());
+        }
+        else if (!BridgeInterface::setMACAddress(netlink, TapInterface::macAddress(netlink)))
+        {
+            AI_LOG_ERROR("failed to set bridge MAC address");
+        }
     }
-    else if (!BridgeInterface::attachLink(netlink, TapInterface::name()))
+    else
     {
-        AI_LOG_ERROR("failed to attach '%s' to the bridge",
-                     TapInterface::name().c_str());
-    }
-    else if (!BridgeInterface::setMACAddress(netlink, TapInterface::macAddress(netlink)))
-    {
-        AI_LOG_ERROR("failed to set bridge MAC address");
+        AI_LOG_WARN("Platform does not support tap devices, skipping creating %s", TapInterface::name().c_str());
     }
 
     // step 4 - construct the IPv4 rules to be added to iptables and then add them
@@ -996,7 +1003,10 @@ bool NetworkSetup::removeBridgeDevice(const std::shared_ptr<Netfilter> &netfilte
     // and removed from the bridge will reocur it will mean that we should hold
     // Tap device even when we destroy bridge, but then it leave the question
     // where should we delete it. For now we destory it here.
-    TapInterface::destroyTapInterface(netlink);
+    if (TapInterface::platformSupportsTapInterface())
+    {
+        TapInterface::destroyTapInterface(netlink);
+    }
 
     // bring the bridge device down and destroy it
     BridgeInterface::down(netlink);

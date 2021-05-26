@@ -36,6 +36,7 @@ class Netlink;
  */
 namespace TapInterface
 {
+    bool platformSupportsTapInterface();
     bool createTapInterface(const std::shared_ptr<Netlink> &netlink);
     bool destroyTapInterface(const std::shared_ptr<Netlink> &netlink);
     bool isValid();
