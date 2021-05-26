@@ -224,17 +224,20 @@ bool NetworkingPlugin::createRuntime()
             return false;
         }
 
-        // Add localhost masquerade (in container network namespace)
-        // Ideally this would be done in the createContainer hook, but that fails
-        // on some platforms with permissions issues (works fine on VM...)
-        if (!mUtils->callInNamespace(mUtils->getContainerPid(), CLONE_NEWNET,
-                                     &PortForwarding::addLocalhostMasquerading,
-                                     mHelper,
-                                     mUtils,
-                                     mPluginData->port_forwarding))
+        // Add localhost masquerade if enabled (run in container network namespace)
+        if (mPluginData->port_forwarding->localhost_masquerade_present && mPluginData->port_forwarding->localhost_masquerade)
         {
-            AI_LOG_ERROR_EXIT("Failed to add AS localhost masquerade iptables rules inside container");
-            return false;
+            // Ideally this would be done in the createContainer hook, but that fails
+            // on some platforms with permissions issues (works fine on VM...)
+            if (!mUtils->callInNamespace(mUtils->getContainerPid(), CLONE_NEWNET,
+                                         &PortForwarding::addLocalhostMasquerading,
+                                         mHelper,
+                                         mUtils,
+                                         mPluginData->port_forwarding))
+            {
+                AI_LOG_ERROR_EXIT("Failed to add localhost masquerade iptables rules inside container");
+                return false;
+            }
         }
     }
 

@@ -97,7 +97,6 @@ bool ThunderPlugin::postInstallation()
     // Set the THUNDER_ACCESS envvar to the Dobby bridge IP address
     bzero(buf, sizeof(buf));
     snprintf(buf, sizeof(buf), "THUNDER_ACCESS=100.64.11.1:%hu", mThunderPort);
-    AI_LOG_INFO(">> %s", buf);
     mUtils->addEnvironmentVar(buf);
 
     return true;

@@ -1002,7 +1002,7 @@ std::string createMasqueradeSnatRule(const PortForward &portForward,
     }
     else
     {
-        sourceAddr = "[::1]";
+        sourceAddr = "::1/128";
         destination = std::string() + ipAddress;
         bridgeAddr = std::string() + BRIDGE_ADDRESS_IPV6;
     }
