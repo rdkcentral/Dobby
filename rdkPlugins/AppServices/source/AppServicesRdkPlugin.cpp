@@ -601,12 +601,10 @@ Netfilter::RuleSet AppServicesRdkPlugin::constructMasqueradeRules() const
     for (const auto &port : allPorts)
     {
         const std::string dnatRule = createMasqueradeDnatRule(port);
-        AI_LOG_ERROR(">> DNAT %s", dnatRule.c_str());
         natRules.emplace_back(dnatRule);
     }
 
     std::string snatRule = createMasqueradeSnatRule(networkInfo.ipAddress);
-    AI_LOG_ERROR(">> SNAT %s", snatRule.c_str());
     natRules.emplace_back(snatRule);
 
     ruleSet[Netfilter::TableType::Nat] = std::move(natRules);
