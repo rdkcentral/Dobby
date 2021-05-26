@@ -235,7 +235,7 @@ bool NetworkingPlugin::createRuntime()
                                          mUtils,
                                          mPluginData->port_forwarding))
             {
-                AI_LOG_ERROR_EXIT("Failed to add AS localhost masquerade iptables rules inside container");
+                AI_LOG_ERROR_EXIT("Failed to add localhost masquerade iptables rules inside container");
                 return false;
             }
         }
