@@ -40,14 +40,17 @@
 #include <sys/mman.h>
 #include <netinet/in.h>
 #include <ext/stdio_filebuf.h>
+#include <regex>
 
 #define IPTABLES_SAVE_PATH "/usr/sbin/iptables-save"
 #define IPTABLES_RESTORE_PATH "/usr/sbin/iptables-restore"
 
 #if defined(DEV_VM)
+    #define IPTABLES_PATH "/sbin/iptables"
     #define IP6TABLES_SAVE_PATH "/sbin/ip6tables-save"
     #define IP6TABLES_RESTORE_PATH "/sbin/ip6tables-restore"
 #else
+    #define IPTABLES_PATH "/usr/sbin/iptables"
     #define IP6TABLES_SAVE_PATH "/usr/sbin/ip6tables-save"
     #define IP6TABLES_RESTORE_PATH "/usr/sbin/ip6tables-restore"
 #endif
@@ -145,6 +148,7 @@ private:
 };
 
 Netfilter::Netfilter()
+    : mIptablesVersion(getIptablesVersion())
 {
 }
 
@@ -649,7 +653,6 @@ bool Netfilter::applyRules(const int ipVersion)
             success = false;
             break;
         }
-
     }
 
     // exec the iptables-restore function, passing in the pipe for stdin
@@ -658,6 +661,23 @@ bool Netfilter::applyRules(const int ipVersion)
         // set the args
         std::list<std::string> args;
         args.emplace_back("--noflush");
+
+        // Prevent race condition with iptables locking during bootup
+        // Need version 1.6.2 or higher. Latest RDK should ship with 1.8.x series
+        if ((mIptablesVersion.major >= 1 && mIptablesVersion.minor > 6) ||
+            (mIptablesVersion.major >= 1 && mIptablesVersion.minor == 6 && mIptablesVersion.patch >= 2))
+        {
+            // wait up to 2 seconds to aquire lock
+            args.emplace_back("-w");
+            args.emplace_back("2");
+            // poll lock status every 0.1 secs
+            args.emplace_back("-W");
+            args.emplace_back("100000");
+        }
+        else
+        {
+            AI_LOG_DEBUG("iptables-restore too old to support waiting");
+        }
 
         // create a pipe to store the stderr output (it's destructor prints the
         // content of the pipe if not empty)
@@ -911,3 +931,81 @@ void Netfilter::dump(const RuleSet &ruleSet, const char *title) const
     AI_LOG_INFO("======== %s ==========", title ? title : "");
 }
 
+// -----------------------------------------------------------------------------
+/**
+ * Gets the version of iptables that's installed
+ *
+ * @returns iptables version
+ */
+Netfilter::IptablesVersion Netfilter::getIptablesVersion() const
+{
+    Netfilter::IptablesVersion version{
+        0, // Major
+        0, // Minor
+        0  // Patch
+    };
+
+    // create a pipe for reading the stdout
+    int pipeFds[2];
+    if (pipe2(pipeFds, O_CLOEXEC) < 0)
+    {
+        AI_LOG_SYS_ERROR_EXIT(errno, "failed to create pipe");
+        return version;
+    }
+
+    // create a pipe for reading the stderr
+    StdErrPipe stdErrPipe;
+
+    std::list<std::string> args;
+    args.emplace_back("--version");
+
+    if (!forkExec(IPTABLES_PATH, args, -1, pipeFds[1], stdErrPipe.writeFd()))
+    {
+        AI_LOG_INFO("Failed to get iptables version");
+        close(pipeFds[0]);
+        close(pipeFds[1]);
+        return version;
+    }
+
+    // Close write side of pipe
+    if (close(pipeFds[1]) != 0)
+    {
+        AI_LOG_SYS_ERROR(errno, "Failed to close pipe");
+    }
+
+    // Read and parse the version
+    std::string output;
+    char buf[256];
+    ssize_t readBytes = TEMP_FAILURE_RETRY(read(pipeFds[0], buf, sizeof(buf)));
+    if (readBytes < 0)
+    {
+        AI_LOG_SYS_ERROR(errno, "Failed to read from pipe");
+        return version;
+    }
+    output.append(buf, readBytes);
+
+    // Close the read side of the pipe
+    if (close(pipeFds[0] != 0))
+    {
+        AI_LOG_SYS_ERROR(errno, "Failed to close pipe");
+    }
+
+    // Got version string, parse
+    static const std::regex versionMatch(R"(v([0-9]+)\.([0-9]+)\.([0-9]+))", std::regex::ECMAScript | std::regex::icase);
+
+    std::cmatch matches;
+    if (!std::regex_search(output.c_str(), matches, versionMatch) && matches.size() != 3)
+    {
+        AI_LOG_ERROR("Failed to parse iptables version");
+        return version;
+    }
+
+    version.major = std::stoi(matches.str(1));
+    version.minor = std::stoi(matches.str(2));
+    version.patch = std::stoi(matches.str(3));
+
+    AI_LOG_INFO("Running iptables version %d.%d.%d",
+                version.major, version.minor, version.patch);
+
+    return version;
+}
