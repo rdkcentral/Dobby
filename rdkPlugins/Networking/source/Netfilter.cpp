@@ -21,6 +21,7 @@
  *
  */
 #include "Netfilter.h"
+#include "StdStreamPipe.h"
 
 #include <Logging.h>
 
@@ -74,78 +75,6 @@ static inline int memfd_create(const char *name, unsigned int flags)
 #  if !defined(MFD_CLOEXEC)
 #    define MFD_CLOEXEC         0x0001U
 #  endif
-
-
-// -----------------------------------------------------------------------------
-/**
- *  @class StdErrPipe
- *  @brief Utility object that creates a pipe to set as stderr.  Upon object
- *  destruction the contents of the pipe (if any) is written to the error log.
- *
- *
- */
-class StdErrPipe
-{
-public:
-    StdErrPipe()
-        : mReadFd(-1)
-        , mWriteFd(-1)
-    {
-        int fds[2];
-        if (pipe2(fds, O_CLOEXEC | O_NONBLOCK) != 0)
-        {
-            AI_LOG_SYS_ERROR(errno, "failed to create stderr pipe");
-        }
-        else
-        {
-            mReadFd = fds[0];
-            mWriteFd = fds[1];
-        }
-    }
-
-    ~StdErrPipe()
-    {
-        if ((mWriteFd >= 0) && (close(mWriteFd) != 0))
-            AI_LOG_SYS_ERROR(errno, "failed to close write pipe");
-
-        if (mReadFd >= 0)
-        {
-            dumpPipeContents();
-
-            if (close(mReadFd) != 0)
-                AI_LOG_SYS_ERROR(errno, "failed to close read pipe");
-        }
-    }
-
-    int writeFd() const
-    {
-        return mWriteFd;
-    }
-
-private:
-    void dumpPipeContents() const
-    {
-        char errBuf[256];
-
-        ssize_t ret = TEMP_FAILURE_RETRY(read(mReadFd, errBuf, sizeof(errBuf) - 1));
-        if (ret < 0)
-        {
-            AI_LOG_SYS_ERROR(errno, "failed to read from stderr pipe");
-        }
-        else if (ret > 0)
-        {
-            if (ret != EAGAIN)
-            {
-                errBuf[ret] = '\0';
-                AI_LOG_ERROR("%s", errBuf);
-            }
-        }
-    }
-
-private:
-    int mReadFd;
-    int mWriteFd;
-};
 
 Netfilter::Netfilter()
     : mIptablesVersion(getIptablesVersion())
@@ -317,7 +246,7 @@ Netfilter::RuleSet Netfilter::getRuleSet(const int ipVersion) const
 
     // create a pipe to store the stderr output (it's destructor prints the
     // content of the pipe if not empty)
-    StdErrPipe stdErrPipe;
+    StdStreamPipe stdErrPipe(true);
 
     // exec the iptables-save function, passing in the pipe for stdout
     if (ipVersion == AF_INET)
@@ -681,7 +610,7 @@ bool Netfilter::applyRules(const int ipVersion)
 
         // create a pipe to store the stderr output (it's destructor prints the
         // content of the pipe if not empty)
-        StdErrPipe stdErrPipe;
+        StdStreamPipe stdErrPipe(true);
 
         // ensure all rules flushed to the memfd
         rulesStream.flush();
@@ -939,56 +868,28 @@ void Netfilter::dump(const RuleSet &ruleSet, const char *title) const
  */
 Netfilter::IptablesVersion Netfilter::getIptablesVersion() const
 {
+    AI_LOG_FN_ENTRY();
+
     Netfilter::IptablesVersion version{
         0, // Major
         0, // Minor
         0  // Patch
     };
 
-    // create a pipe for reading the stdout
-    int pipeFds[2];
-    if (pipe2(pipeFds, O_CLOEXEC) < 0)
-    {
-        AI_LOG_SYS_ERROR_EXIT(errno, "failed to create pipe");
-        return version;
-    }
-
     // create a pipe for reading the stderr
-    StdErrPipe stdErrPipe;
+    StdStreamPipe stdOutPipe(false);
+    StdStreamPipe stdErrPipe(true);
 
     std::list<std::string> args;
     args.emplace_back("--version");
 
-    if (!forkExec(IPTABLES_PATH, args, -1, pipeFds[1], stdErrPipe.writeFd()))
+    if (!forkExec(IPTABLES_PATH, args, -1, stdOutPipe.writeFd(), stdErrPipe.writeFd()))
     {
-        AI_LOG_INFO("Failed to get iptables version");
-        close(pipeFds[0]);
-        close(pipeFds[1]);
+        AI_LOG_ERROR_EXIT("Failed to get iptables version");
         return version;
     }
 
-    // Close write side of pipe
-    if (close(pipeFds[1]) != 0)
-    {
-        AI_LOG_SYS_ERROR(errno, "Failed to close pipe");
-    }
-
-    // Read and parse the version
-    std::string output;
-    char buf[256];
-    ssize_t readBytes = TEMP_FAILURE_RETRY(read(pipeFds[0], buf, sizeof(buf)));
-    if (readBytes < 0)
-    {
-        AI_LOG_SYS_ERROR(errno, "Failed to read from pipe");
-        return version;
-    }
-    output.append(buf, readBytes);
-
-    // Close the read side of the pipe
-    if (close(pipeFds[0] != 0))
-    {
-        AI_LOG_SYS_ERROR(errno, "Failed to close pipe");
-    }
+    std::string output = stdOutPipe.getPipeContents();
 
     // Got version string, parse
     static const std::regex versionMatch(R"(v([0-9]+)\.([0-9]+)\.([0-9]+))", std::regex::ECMAScript | std::regex::icase);
@@ -996,7 +897,7 @@ Netfilter::IptablesVersion Netfilter::getIptablesVersion() const
     std::cmatch matches;
     if (!std::regex_search(output.c_str(), matches, versionMatch) && matches.size() != 3)
     {
-        AI_LOG_ERROR("Failed to parse iptables version");
+        AI_LOG_ERROR_EXIT("Failed to parse iptables version");
         return version;
     }
 
@@ -1004,8 +905,10 @@ Netfilter::IptablesVersion Netfilter::getIptablesVersion() const
     version.minor = std::stoi(matches.str(2));
     version.patch = std::stoi(matches.str(3));
 
-    AI_LOG_INFO("Running iptables version %d.%d.%d",
+    AI_LOG_DEBUG("Running iptables version %d.%d.%d",
                 version.major, version.minor, version.patch);
+
+    AI_LOG_FN_EXIT();
 
     return version;
 }
