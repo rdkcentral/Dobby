@@ -29,7 +29,8 @@
       "/dev/snd/*",
       "/dev/uio253",
       "/dev/tee[0-9]",
-      "/dev/vpu"
+      "/dev/vpu",
+      "/dev/buflock"
     ],
     "extraMounts": [
       {
