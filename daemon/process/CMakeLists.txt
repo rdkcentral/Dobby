@@ -95,6 +95,16 @@ if(USE_SYSTEMD)
         )
 endif(USE_SYSTEMD)
 
+# Configure breakpad if we find it
+if(BREAKPAD_FOUND)
+        message("Enabling breakpad support")
+        add_definitions( -DUSE_BREAKPAD )
+
+        target_link_libraries(DobbyDaemon
+                Breakpad::BreakpadWrapper
+        )
+endif()
+
 
 install( # Specifies the target to install
         TARGETS DobbyDaemon

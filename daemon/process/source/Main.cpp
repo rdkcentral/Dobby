@@ -34,6 +34,10 @@
     #include <PerfettoTracing.h>
 #endif
 
+#ifdef USE_BREAKPAD
+    #include "breakpad_wrapper.h"
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>

@@ -205,6 +205,11 @@ void Dobby::configSignals()
 {
     AI_LOG_FN_ENTRY();
 
+#ifdef USE_BREAKPAD
+    // Breakpad will handle SIGILL, SIGABRT, SIGFPE and SIGSEGV
+    breakpad_ExceptionHandler();
+#endif
+
     // Ignore SIGPIPE signal - the most annoying signal in the world
     signal(SIGPIPE, SIG_IGN);
 
