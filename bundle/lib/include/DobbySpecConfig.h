@@ -178,6 +178,7 @@ private:
     const std::shared_ptr<IDobbyUtils> mUtilities;
     const std::shared_ptr<const IDobbySettings::HardwareAccessSettings> mGpuSettings;
     const std::shared_ptr<const IDobbySettings::HardwareAccessSettings> mVpuSettings;
+    const std::vector<std::string> mDefaultPlugins;
 
 private:
     bool mValid;

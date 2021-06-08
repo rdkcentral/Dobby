@@ -72,6 +72,7 @@ public:
     std::vector<std::string> externalInterfaces() const override;
     std::string addressRangeStr() const override;
     in_addr_t addressRange() const override;
+    std::vector<std::string> defaultPlugins() const override;
 
     void dump(int aiLogLevel = -1) const;
 
@@ -105,8 +106,6 @@ private:
     void dumpHardwareAccess(int aiLogLevel, const std::string& name,
                             const std::shared_ptr<const HardwareAccessSettings>& hwAccess) const;
 
-    std::string getBuildRegion() const;
-
 private:
     std::string mWorkspaceDir;
     std::string mPersistentDir;
@@ -119,6 +118,7 @@ private:
 
     std::vector<std::string> mExternalInterfaces;
     std::pair<std::string, in_addr_t> mAddressRange;
+    std::vector<std::string>  mDefaultPlugins;
 };
 
 #endif // !defined(SETTINGS_H)
