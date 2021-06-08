@@ -21,6 +21,7 @@ add_library( ${PROJECT_NAME}
         SHARED
         source/AppServicesRdkPlugin.cpp
         ../Networking/source/Netfilter.cpp
+        ../Networking/source/StdStreamPipe.cpp
         )
 
 target_include_directories( AppServicesRdkPlugin
