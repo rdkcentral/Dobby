@@ -205,6 +205,7 @@ DobbySpecConfig::DobbySpecConfig(const std::shared_ptr<IDobbyUtils> &utils,
     : mUtilities(utils)
     , mGpuSettings(settings->gpuAccessSettings())
     , mVpuSettings(settings->vpuAccessSettings())
+    , mDefaultPlugins(settings->defaultPlugins())
     , mDictionary(nullptr)
     , mConf(nullptr)
     , mSpecVersion(SpecVersion::Unknown)
@@ -616,14 +617,14 @@ bool DobbySpecConfig::parseSpec(ctemplate::TemplateDictionary* dictionary,
     // step 6 - enable the RDK plugins section
     dictionary->ShowSection(ENABLE_RDK_PLUGINS);
 
-#if RDK_PLATFORM == XI1
-    // step 6.5 - enable localtime rdk plugin by default if on Xi1. The
-    // localtime plugin takes no input params, so we simply enable the
-    // rdkPlugin rather than processing it via a processing function.
+    // step 6.5 - add any default plugins in the settings file
+    // TODO:: Allow defining plugin data in the settings file
     Json::Value rdkPluginData = Json::objectValue;
-    mRdkPluginsJson[RDK_LOCALTIME_PLUGIN_NAME]["data"] = rdkPluginData;
-    mRdkPluginsJson[RDK_LOCALTIME_PLUGIN_NAME]["required"] = false;
-#endif
+    for (const auto& pluginName : mDefaultPlugins)
+    {
+        mRdkPluginsJson[pluginName]["data"] = rdkPluginData;
+        mRdkPluginsJson[pluginName]["required"] = false;
+    }
 
     // step 7 - process RDK plugins json into dictionary
     if (!processRdkPlugins(mSpec["rdkPlugins"], mDictionary))
