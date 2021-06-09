@@ -22,7 +22,6 @@ import argparse
 import pathlib
 import json
 from sys import exit
-from os import path
 
 def main():
     parser = argparse.ArgumentParser()
@@ -32,8 +31,11 @@ def main():
     args = parser.parse_args()
 
     # Check we were given valid files
-    invalid_files = [x for x in args.files if not x.is_file()]
+    if not args.base.is_file():
+        print("ERROR: File not found:", str(args.base))
+        exit(1)
 
+    invalid_files = [x for x in args.files if not x.is_file()]
     if invalid_files:
         print("ERROR: File(s) not found:", [str(x) for x in invalid_files])
         exit(1)
