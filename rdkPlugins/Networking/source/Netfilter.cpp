@@ -21,6 +21,7 @@
  *
  */
 #include "Netfilter.h"
+#include "StdStreamPipe.h"
 
 #include <Logging.h>
 
@@ -40,14 +41,17 @@
 #include <sys/mman.h>
 #include <netinet/in.h>
 #include <ext/stdio_filebuf.h>
+#include <regex>
 
 #define IPTABLES_SAVE_PATH "/usr/sbin/iptables-save"
 #define IPTABLES_RESTORE_PATH "/usr/sbin/iptables-restore"
 
 #if defined(DEV_VM)
+    #define IPTABLES_PATH "/sbin/iptables"
     #define IP6TABLES_SAVE_PATH "/sbin/ip6tables-save"
     #define IP6TABLES_RESTORE_PATH "/sbin/ip6tables-restore"
 #else
+    #define IPTABLES_PATH "/usr/sbin/iptables"
     #define IP6TABLES_SAVE_PATH "/usr/sbin/ip6tables-save"
     #define IP6TABLES_RESTORE_PATH "/usr/sbin/ip6tables-restore"
 #endif
@@ -72,79 +76,8 @@ static inline int memfd_create(const char *name, unsigned int flags)
 #    define MFD_CLOEXEC         0x0001U
 #  endif
 
-
-// -----------------------------------------------------------------------------
-/**
- *  @class StdErrPipe
- *  @brief Utility object that creates a pipe to set as stderr.  Upon object
- *  destruction the contents of the pipe (if any) is written to the error log.
- *
- *
- */
-class StdErrPipe
-{
-public:
-    StdErrPipe()
-        : mReadFd(-1)
-        , mWriteFd(-1)
-    {
-        int fds[2];
-        if (pipe2(fds, O_CLOEXEC | O_NONBLOCK) != 0)
-        {
-            AI_LOG_SYS_ERROR(errno, "failed to create stderr pipe");
-        }
-        else
-        {
-            mReadFd = fds[0];
-            mWriteFd = fds[1];
-        }
-    }
-
-    ~StdErrPipe()
-    {
-        if ((mWriteFd >= 0) && (close(mWriteFd) != 0))
-            AI_LOG_SYS_ERROR(errno, "failed to close write pipe");
-
-        if (mReadFd >= 0)
-        {
-            dumpPipeContents();
-
-            if (close(mReadFd) != 0)
-                AI_LOG_SYS_ERROR(errno, "failed to close read pipe");
-        }
-    }
-
-    int writeFd() const
-    {
-        return mWriteFd;
-    }
-
-private:
-    void dumpPipeContents() const
-    {
-        char errBuf[256];
-
-        ssize_t ret = TEMP_FAILURE_RETRY(read(mReadFd, errBuf, sizeof(errBuf) - 1));
-        if (ret < 0)
-        {
-            AI_LOG_SYS_ERROR(errno, "failed to read from stderr pipe");
-        }
-        else if (ret > 0)
-        {
-            if (ret != EAGAIN)
-            {
-                errBuf[ret] = '\0';
-                AI_LOG_ERROR("%s", errBuf);
-            }
-        }
-    }
-
-private:
-    int mReadFd;
-    int mWriteFd;
-};
-
 Netfilter::Netfilter()
+    : mIptablesVersion(getIptablesVersion())
 {
 }
 
@@ -313,7 +246,7 @@ Netfilter::RuleSet Netfilter::getRuleSet(const int ipVersion) const
 
     // create a pipe to store the stderr output (it's destructor prints the
     // content of the pipe if not empty)
-    StdErrPipe stdErrPipe;
+    StdStreamPipe stdErrPipe(true);
 
     // exec the iptables-save function, passing in the pipe for stdout
     if (ipVersion == AF_INET)
@@ -649,7 +582,6 @@ bool Netfilter::applyRules(const int ipVersion)
             success = false;
             break;
         }
-
     }
 
     // exec the iptables-restore function, passing in the pipe for stdin
@@ -659,9 +591,26 @@ bool Netfilter::applyRules(const int ipVersion)
         std::list<std::string> args;
         args.emplace_back("--noflush");
 
+        // Prevent race condition with iptables locking during bootup
+        // Need version 1.6.2 or higher. Latest RDK should ship with 1.8.x series
+        if ((mIptablesVersion.major >= 1 && mIptablesVersion.minor > 6) ||
+            (mIptablesVersion.major >= 1 && mIptablesVersion.minor == 6 && mIptablesVersion.patch >= 2))
+        {
+            // wait up to 2 seconds to aquire lock
+            args.emplace_back("-w");
+            args.emplace_back("2");
+            // poll lock status every 0.1 secs
+            args.emplace_back("-W");
+            args.emplace_back("100000");
+        }
+        else
+        {
+            AI_LOG_DEBUG("iptables-restore too old to support waiting");
+        }
+
         // create a pipe to store the stderr output (it's destructor prints the
         // content of the pipe if not empty)
-        StdErrPipe stdErrPipe;
+        StdStreamPipe stdErrPipe(true);
 
         // ensure all rules flushed to the memfd
         rulesStream.flush();
@@ -911,3 +860,55 @@ void Netfilter::dump(const RuleSet &ruleSet, const char *title) const
     AI_LOG_INFO("======== %s ==========", title ? title : "");
 }
 
+// -----------------------------------------------------------------------------
+/**
+ * Gets the version of iptables that's installed
+ *
+ * @returns iptables version
+ */
+Netfilter::IptablesVersion Netfilter::getIptablesVersion() const
+{
+    AI_LOG_FN_ENTRY();
+
+    Netfilter::IptablesVersion version{
+        0, // Major
+        0, // Minor
+        0  // Patch
+    };
+
+    // create a pipe for reading the stderr
+    StdStreamPipe stdOutPipe(false);
+    StdStreamPipe stdErrPipe(true);
+
+    std::list<std::string> args;
+    args.emplace_back("--version");
+
+    if (!forkExec(IPTABLES_PATH, args, -1, stdOutPipe.writeFd(), stdErrPipe.writeFd()))
+    {
+        AI_LOG_ERROR_EXIT("Failed to get iptables version");
+        return version;
+    }
+
+    std::string output = stdOutPipe.getPipeContents();
+
+    // Got version string, parse
+    static const std::regex versionMatch(R"(v([0-9]+)\.([0-9]+)\.([0-9]+))", std::regex::ECMAScript | std::regex::icase);
+
+    std::cmatch matches;
+    if (!std::regex_search(output.c_str(), matches, versionMatch) && matches.size() != 3)
+    {
+        AI_LOG_ERROR_EXIT("Failed to parse iptables version");
+        return version;
+    }
+
+    version.major = std::stoi(matches.str(1));
+    version.minor = std::stoi(matches.str(2));
+    version.patch = std::stoi(matches.str(3));
+
+    AI_LOG_DEBUG("Running iptables version %d.%d.%d",
+                version.major, version.minor, version.patch);
+
+    AI_LOG_FN_EXIT();
+
+    return version;
+}
