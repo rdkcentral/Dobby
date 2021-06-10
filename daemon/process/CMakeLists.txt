@@ -95,7 +95,6 @@ if(USE_SYSTEMD)
         )
 endif(USE_SYSTEMD)
 
-
 install( # Specifies the target to install
         TARGETS DobbyDaemon
 

@@ -163,6 +163,8 @@ if( ENABLE_PERFETTO_TRACING )
     set( TRACING_CATEGORIES_HEADER "${CMAKE_CURRENT_LIST_DIR}/tracing/include/DobbyTraceCategories.h" )
 endif()
 
+find_package( breakpad QUIET )
+
 # Run libocispec to generate OCI config parsers and necessary C headers
 include(cmake/libocispec.cmake)
 
