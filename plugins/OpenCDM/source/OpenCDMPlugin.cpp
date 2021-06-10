@@ -183,14 +183,13 @@ bool OpenCDMPlugin::enableTmpOCDMDir(const std::shared_ptr<IDobbyStartState>& st
 
     // on newer builds the OCDM files have moved to a dedicate a /tmp/OCDM
     // directory
-    if ((mkdir(dirPath.c_str(), 0750) != 0) && (errno != EEXIST))
+    if ((mkdir(dirPath.c_str(), 0770) != 0) && (errno != EEXIST))
     {
         AI_LOG_SYS_ERROR(errno, "failed to create dir @ '%s'", dirPath.c_str());
         return false;
     }
 
-    // make sure the directory is accessible by apps but not writable
-    if (chmod(dirPath.c_str(), 0750) != 0)
+    if (chmod(dirPath.c_str(), 0770) != 0)
     {
         AI_LOG_SYS_ERROR(errno, "failed to change access on '%s''", dirPath.c_str());
         return false;
