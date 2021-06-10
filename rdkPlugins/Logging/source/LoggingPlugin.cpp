@@ -305,15 +305,18 @@ void LoggingPlugin::JournaldSink(const ContainerInfo &containerInfo, bool exitEo
                 msg.pop_back();
             }
 
-            // Note PID in "journalctl -f" will show as daemon PID, but when
-            // viewing journald in full JSON format, the container PID is
-            // visible
-            sd_journal_send("MESSAGE=%s", msg.c_str(),
-                            "PRIORITY=%i", logPriority,
-                            "SYSLOG_IDENTIFIER=%s", mUtils->getContainerId().c_str(),
-                            "OBJECT_PID=%ld", containerInfo.containerPid,
-                            "SYSLOG_PID=%ld", containerInfo.containerPid,
-                            NULL);
+            if (!msg.empty())
+            {
+                // Note PID in "journalctl -f" will show as daemon PID, but when
+                // viewing journald in full JSON format, the container PID is
+                // visible
+                sd_journal_send("MESSAGE=%s", msg.c_str(),
+                                "PRIORITY=%i", logPriority,
+                                "SYSLOG_IDENTIFIER=%s", mUtils->getContainerId().c_str(),
+                                "OBJECT_PID=%ld", containerInfo.containerPid,
+                                "SYSLOG_PID=%ld", containerInfo.containerPid,
+                                NULL);
+            }
 
             lineStart = lineEnd + 1;
         }
