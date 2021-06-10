@@ -30,6 +30,7 @@ add_library( ${PROJECT_NAME}
         source/PortForwarding.cpp
         source/MulticastForwarder.cpp
         source/TapInterface.cpp
+        source/StdStreamPipe.cpp
 
         # proxy to talk to DobbyDaemon
         ../Common/source/DobbyRdkPluginProxy.cpp
