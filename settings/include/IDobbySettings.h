@@ -179,6 +179,15 @@ public:
      */
     virtual in_addr_t addressRange() const = 0;
 
+    // -------------------------------------------------------------------------
+    /**
+     *  @brief Returns any default plugins the platform should run
+     *
+     *  It's assumed the plugins will have an empty data section (i.e. {})
+     *  and that the default plugin options will always be suitable
+     *
+     */
+    virtual std::vector<std::string> defaultPlugins() const = 0;
 };
 
 #endif // !defined(IDOBBYSETTINGS_H)

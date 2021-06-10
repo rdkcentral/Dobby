@@ -215,6 +215,28 @@ Settings::Settings(const Json::Value& settings)
         }
     }
 
+    // Process default plugins
+    {
+        Json::Value defaultPluginNames = Json::Path(".defaultPlugins").resolve(settings);
+        if (!defaultPluginNames.isNull())
+        {
+            if (defaultPluginNames.isArray())
+            {
+                for (const Json::Value &pluginName : defaultPluginNames)
+                {
+                    if (pluginName.isString())
+                        mDefaultPlugins.push_back(pluginName.asString());
+                    else
+                        AI_LOG_ERROR("invalid entry in defaultPlugins array in JSON settings file");
+                }
+            }
+            else
+            {
+                AI_LOG_ERROR("Invalid defaultPlugins type in settingsFile, should be array");
+            }
+        }
+    }
+
 }
 
 // -----------------------------------------------------------------------------
@@ -323,6 +345,16 @@ std::string Settings::addressRangeStr() const
 in_addr_t Settings::addressRange() const
 {
     return mAddressRange.second;
+}
+
+ // -----------------------------------------------------------------------------
+ /**
+ *  @brief
+ *
+ */
+std::vector<std::string> Settings::defaultPlugins() const
+{
+    return mDefaultPlugins;
 }
 
 // -----------------------------------------------------------------------------
@@ -716,8 +748,6 @@ std::list<std::string> Settings::getDevNodes(const Json::Value& root,
 std::list<Settings::ExtraMount> Settings::getExtraMounts(const Json::Value& root,
                                                          const Json::Path& path) const
 {
-    const std::string buildRegion = getBuildRegion();
-
     // get the string value from the json
     const Json::Value &extraMounts = Json::Path(path).resolve(root);
     if (extraMounts.isNull())
@@ -766,7 +796,6 @@ bool Settings::processMountObject(const Json::Value& value, ExtraMount* mount) c
     const Json::Value& destination = value["destination"];
     const Json::Value& type = value["type"];
     const Json::Value& options = value["options"];
-    const Json::Value& excludeRegions = value["excludeRegions"];
 
     if (!source.isString() || !destination.isString() || !type.isString())
     {
@@ -780,38 +809,10 @@ bool Settings::processMountObject(const Json::Value& value, ExtraMount* mount) c
         return false;
     }
 
-    if (!excludeRegions.isNull() && !excludeRegions.isArray())
-    {
-        AI_LOG_ERROR("invalid 'excludeRegion' JSON field");
-        return false;
-    }
-
     mount->source = source.asString();
     mount->target = destination.asString();
     mount->type = type.asString();
     mount->flags.clear();
-
-    if (!excludeRegions.isNull())
-    {
-        // Don't add the mount if we're running an excluded region
-        const std::string currentRegion = getBuildRegion();
-
-        for (const Json::Value &region: excludeRegions)
-        {
-            if (!region.isString())
-            {
-                AI_LOG_ERROR("Invalid JSON value in excluded region");
-                return false;
-            }
-
-            if (region.asString() == currentRegion)
-            {
-                AI_LOG_INFO("Ignoring %s mount from settings - excluded for region %s", mount->source.c_str(), region.asString().c_str());
-                return false;
-            }
-        }
-    }
-
 
     // we only support the standard flags; bind, ro, sync, nosuid, noexec, etc
     static const std::set<std::string> mountFlags =
@@ -865,8 +866,7 @@ bool Settings::processMountObject(const Json::Value& value, ExtraMount* mount) c
  *                  "source": "/etc/xdg/gstomx.conf",
  *                  "destination": "/etc/xdg/gstomx.conf",
  *                  "type": "bind",
- *                  "options": [ "bind", "ro", "nosuid", "nodev", "noexec" ],
- *                  "excludeRegion": [ "UK" ]
+ *                  "options": [ "bind", "ro", "nosuid", "nodev", "noexec" ]
  *              },
  *              ...
  *          ]
@@ -919,20 +919,4 @@ std::shared_ptr<IDobbySettings::HardwareAccessSettings> Settings::getHardwareAcc
     accessSettings->extraEnvVariables = getEnvVarsFromJson(hw, Json::Path(".extraEnvVariables"));
 
     return accessSettings;
-}
-
-std::string Settings::getBuildRegion() const
-{
-#ifdef REGION_NONE
-    return "None";
-#elif REGION_UK
-    return "UK";
-#elif REGION_DE
-    return "DE";
-#elif REGION_IT
-    return "IT";
-#else
-    AI_LOG_ERROR("Unknown build region - defaulting to NONE");
-    return "None";
-#endif
 }

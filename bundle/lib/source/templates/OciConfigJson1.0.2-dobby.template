@@ -82,8 +82,8 @@ static const char* ociJsonTemplate = R"JSON(
         "rlimits": [
             {
                 "type": "RLIMIT_NOFILE",
-                "hard": 1024,
-                "soft": 1024
+                "hard": 4096,
+                "soft": 4096
             },
             {
                 "type": "RLIMIT_NPROC",
