@@ -67,6 +67,11 @@
     #define ACCEPTED_START_PATHS "bundlepath"
 #endif // defined(LEGACY_COMPONENTS)
 
+typedef struct waitParms {
+    std::string containerId;
+    IDobbyProxyEvents::ContainerState state;
+} waitParams;
+
 
 //
 static std::string gDBusService(DOBBY_SERVICE ".test");
@@ -85,7 +90,7 @@ std::promise<void> promise;
  * until the container has actually stopped before exiting.
  *
  */
-void containerStopCallback(int32_t listenerId, const std::string &containerId,
+void containerStopCallback(int32_t cd, const std::string &containerId,
                            IDobbyProxyEvents::ContainerState state,
                            const void *params)
 {
@@ -95,6 +100,25 @@ void containerStopCallback(int32_t listenerId, const std::string &containerId,
     if (state == IDobbyProxyEvents::ContainerState::Stopped && containerId == *id)
     {
         AI_LOG_INFO("Container %s has stopped", containerId.c_str());
+        promise.set_value();
+    }
+}
+
+// -----------------------------------------------------------------------------
+/**
+ * @brief Called when a container stop event occurs. Used to ensure we wait
+ * until the container has actually stopped before exiting.
+ *
+ */
+void containerWaitCallback(int32_t cd, const std::string &containerId,
+                           IDobbyProxyEvents::ContainerState state,
+                           const void *params)
+{
+    const waitParams *wp = static_cast<const waitParams*>(params);
+
+    if (state == wp->state && containerId == wp->containerId)
+    {
+        AI_LOG_INFO("Wait complete");
         promise.set_value();
     }
 }
@@ -636,6 +660,76 @@ static void infoCommand(const std::shared_ptr<IDobbyProxy>& dobbyProxy,
     }
 }
 
+
+// -----------------------------------------------------------------------------
+/**
+ * @brief Blocks until the specified container to start/stop then returns 0.
+ *
+ * This is useful for scripting purposes on devices that can't use the
+ * Thunder plugin for container control. Designed to be similar to lxc-wait
+ *
+ */
+static void waitCommand(const std::shared_ptr<IDobbyProxy>& dobbyProxy,
+                        const std::shared_ptr<const IReadLineContext>& readLine,
+                        const std::vector<std::string>& args)
+{
+    if (args.size() != 2)
+    {
+        readLine->printLnError("must provide a 2 args; <id> <state>");
+        return;
+    }
+
+    std::string id = args[0];
+    if (id.empty())
+    {
+        readLine->printLnError("invalid container id '%s'", id.c_str());
+        return;
+    }
+
+    std::string state = args[1];
+    if (state.empty())
+    {
+        readLine->printLnError("Must specify a container state to wait for");
+        return;
+    }
+
+    IDobbyProxyEvents::ContainerState containerState;
+
+    std::transform(state.begin(), state.end(), state.begin(), ::tolower);
+    if (state == "started" || state == "running")
+    {
+        containerState = IDobbyProxyEvents::ContainerState::Running;
+    }
+    else if (state == "stopped")
+    {
+        containerState = IDobbyProxyEvents::ContainerState::Stopped;
+    }
+    else
+    {
+        readLine->printLnError("Invalid container state '%s'", state.c_str());
+        return;
+    }
+
+    // Now wait until the specified container enters the desired state
+    std::lock_guard<std::mutex> locker(gLock);
+    promise = std::promise<void>();
+
+    waitParams params {
+        id,
+        containerState
+    };
+
+    const void *vp = static_cast<void*>(&params);
+    int listenerId = dobbyProxy->registerListener(&containerStopCallback, vp);
+
+    // Block
+    std::future<void> future = promise.get_future();
+    future.wait();
+
+    readLine->printLn("Container %s has changed state to %s", id.c_str(), state.c_str());
+    dobbyProxy->unregisterListener(listenerId);
+}
+
 #if (AI_BUILD_TYPE == AI_DEBUG) && defined(LEGACY_COMPONENTS)
 // -----------------------------------------------------------------------------
 /**
@@ -933,6 +1027,12 @@ static void initCommands(const std::shared_ptr<IReadLine>& readLine,
                          std::bind(infoCommand, dobbyProxy, std::placeholders::_1, std::placeholders::_2),
                          "info <id>",
                          "Gets the json stats for the given container\n",
+                         "\n");
+
+    readLine->addCommand("wait",
+                         std::bind(waitCommand, dobbyProxy, std::placeholders::_1, std::placeholders::_2),
+                         "wait <id> <state>",
+                         "Waits for a container with ID to enter a specified state (started, stopped)\n",
                          "\n");
 
 #if (AI_BUILD_TYPE == AI_DEBUG) && defined(LEGACY_COMPONENTS)
