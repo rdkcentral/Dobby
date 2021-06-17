@@ -2,7 +2,7 @@
 * If not stated otherwise in this file or this component's LICENSE file the
 * following copyright and licenses apply:
 *
-* Copyright 2020 Sky UK
+* Copyright 2021 Sky UK
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -17,34 +17,31 @@
 * limitations under the License.
 */
 /*
- * File: Storage.h
+ * File: Minidump.h
  *
  */
-#ifndef STORAGE_H
-#define STORAGE_H
+#ifndef MINIDUMP_H
+#define MINIDUMP_H
 
 #include <RdkPluginBase.h>
+
+#include <string>
+#include <memory>
+
 #include "LoopMountDetails.h"
 #include "MappedId.h"
 
-#include <sys/types.h>
-#include <netinet/in.h>
-#include <unistd.h>
-#include <string>
-
-//#define ENABLE_TESTS    1
-
 /**
- * @brief Dobby RDK Storage Plugin
+ * @brief Dobby RDK Minidump Plugin
  *
- * Manages loop mount devices for containers
+ * Manages collection of minidump core files located in container namespace
  */
-class Storage : public RdkPluginBase
+class Minidump : public RdkPluginBase
 {
 public:
-    Storage(std::shared_ptr<rt_dobby_schema>& containerConfig,
-            const std::shared_ptr<DobbyRdkPluginUtils> &utils,
-            const std::string &rootfsPath);
+    Minidump(std::shared_ptr<rt_dobby_schema>& containerConfig,
+             const std::shared_ptr<DobbyRdkPluginUtils> &utils,
+             const std::string &rootfsPath);
 
 public:
     inline std::string name() const override
@@ -52,9 +49,7 @@ public:
         return mName;
     };
 
-    // Override to return the appropriate hints for what we implement
     unsigned hookHints() const override;
-
 
 public:
     // This hook attaches img file to loop device and mount it inside
@@ -67,23 +62,41 @@ public:
     // This hook mounts temp directory to the proper one
     bool createContainer() override;
 
-#ifdef ENABLE_TESTS
-    // Used only for testing purpose
-    bool startContainer() override;
-#endif // ENABLE_TESTS
-
     // Cleaning up temp mount
     bool postStart() override;
 
-    // In this hook there should be deletion of img file when non-
-    // persistent option is selected
+    // In this hook there should be deletion of img file
     bool postStop() override;
+
+    // This hook copies minidump file to host namespace
+    bool postHalt() override;
 
 public:
     std::vector<std::string> getDependencies() const override;
 
-    std::vector<LoopMountDetails::LoopMount> getLoopMounts();
-    std::vector<std::unique_ptr<LoopMountDetails>> getLoopDetails();
+private:
+    struct PathData
+    {
+        PathData(const std::string& image,
+                 const std::string& containerSource,
+                 const std::string& hostDestination,
+                 const int imgSize)
+            : image(image)
+            , containerSource(containerSource)
+            , hostDestination(hostDestination)
+            , imgSize(imgSize)
+        {
+        }
+
+        const std::string image;
+        const std::string containerSource;
+        const std::string hostDestination;
+        const int imgSize;
+    };
+
+private:
+    std::vector<PathData> getPathsData();
+    std::unique_ptr<LoopMountDetails> convert(const PathData& pathData);
 
 private:
     const std::string mName;
@@ -93,4 +106,4 @@ private:
     const std::shared_ptr<DobbyRdkPluginUtils> mUtils;
 };
 
-#endif // !defined(STORAGE_H)
+#endif // !defined(MINIDUMP_H)

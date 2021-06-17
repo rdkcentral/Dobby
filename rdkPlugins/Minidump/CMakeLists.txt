@@ -1,7 +1,7 @@
 # If not stated otherwise in this file or this component's LICENSE file the
 # following copyright and licenses apply:
 #
-# Copyright 2020 Sky UK
+# Copyright 2021 Sky UK
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -19,11 +19,11 @@
 
 # Project name should match the name of the plugin
 # CMake will prefix this with "lib"
-project(Storage)
+project(Minidump)
 
 add_library( ${PROJECT_NAME}
         SHARED
-        source/Storage.cpp
+        source/Minidump.cpp
         ../Common/source/ImageManager.cpp
         ../Common/source/StorageHelper.cpp
         ../Common/source/LoopMountDetails.cpp

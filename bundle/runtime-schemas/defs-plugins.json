@@ -364,6 +364,51 @@
                 }
             }
         },
+        "Minidump": {
+            "type": "object",
+            "required": [
+                "required",
+                "data"
+            ],
+            "properties": {
+                "required": {
+                    "type": "boolean"
+                },
+                "dependsOn": {
+                    "$ref": "defs.json#/definitions/ArrayOfStrings"
+                },
+                "data": {
+                    "type": "object",
+                    "properties": {
+                        "paths" : {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "required": [
+                                    "image",
+                                    "containerSource",
+                                    "hostDestination"
+                                ],
+                                "properties": {
+                                    "image": {
+                                        "type": "string"
+                                    },
+                                    "imgsize": {
+                                        "$ref": "defs.json#/definitions/int32"
+                                    },
+                                    "containerSource": {
+                                        "type": "string"
+                                    },
+                                    "hostDestination": {
+                                        "type": "string"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "LocalTime": {
             "type": "object",
             "required": [
@@ -536,6 +581,9 @@
                 },
                 "storage": {
                     "$ref": "#/definitions/Storage"
+                },
+                "minidump": {
+                    "$ref": "#/definitions/Minidump"
                 },
                 "localtime": {
                     "$ref": "#/definitions/LocalTime"

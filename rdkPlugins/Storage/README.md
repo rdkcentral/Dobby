@@ -27,7 +27,7 @@ If you already have other RDK plugins in the bundle, then just add the storage p
 
 ## Options
 ### Creating mount
-For every mount point Storage plugin should create the should be one item in the array of "loopback". The options inside this object goes as follows:
+For every mount point Storage plugin should create one item in the array of "loopback". The options inside this object goes as follows:
 
 | Option              | Value                                                                                                                                   |
 | ------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |

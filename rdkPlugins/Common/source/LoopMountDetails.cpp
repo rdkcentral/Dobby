@@ -32,7 +32,7 @@
 #include <sstream>
 #include <fstream>
 #include <dirent.h>
-
+#include <regex>
 
 #if defined(__linux__)
 #include <linux/loop.h>
@@ -342,4 +342,82 @@ bool LoopMountDetails::removeNonPersistentImage()
 
     AI_LOG_FN_EXIT();
     return success;
+}
+
+// -----------------------------------------------------------------------------
+/**
+ *  @brief Checks if there is file with given extension in container and copies
+ *         it to host to provided destination path.
+ * 
+ *  @param[in]  ext           File extension that should match (i.e. .dmp)
+ *  @param[in]  header        File header that should match (i.e. "MDMP")
+ *  @param[in]  destPath      Path (host namespace) to which file will be copied
+ *
+ *  @return true on success, false on failure.
+ */
+bool LoopMountDetails::copyToHost(const std::string& ext, const std::string& header, const std::string& destPath)
+{
+    AI_LOG_FN_ENTRY();
+
+    std::string loopDevice;
+    int loopDevFd = StorageHelper::attachLoopDevice(mMount.fsImagePath, &loopDevice);
+    if ((loopDevFd < 0) || (loopDevice.empty()))
+    {
+        AI_LOG_ERROR("failed to attach file to loop device");
+        return false;
+    }
+
+    if (not doLoopMount(loopDevice))
+    {
+        // logging inside doLoopMount()
+        return false;
+    }
+
+    if (not remountTempDirectory())
+    {
+        // logging inside remountTempDirectory()
+        return false;
+    }
+
+    DIR* dirEntries = opendir(mMountPointOutsideContainer.c_str());
+    if (dirEntries)
+    {
+        AI_LOG_INFO("Directory %s has been loaded", mMountPointOutsideContainer.c_str());
+
+        struct dirent* entry;
+        while ((entry = readdir(dirEntries)) != NULL)
+        {
+            AI_LOG_DEBUG("Reading file: %s", entry->d_name);
+            const auto filename = std::string(entry->d_name);
+            const auto extRegex = std::regex("\\" + ext + "$");
+            if (std::regex_search(filename, extRegex))
+            {
+                AI_LOG_DEBUG("File extension matches with provided: %s", ext.c_str());
+
+                std::ifstream source(mMountPointOutsideContainer + "/" + filename, std::ios::binary);
+                std::istreambuf_iterator<char> begin_source(source);
+                std::istreambuf_iterator<char> end_source;
+
+                std::string fileHeader;
+                std::copy_n(begin_source, header.size(), std::back_inserter(fileHeader));
+
+                // header provided by the user match the header that was read from a file
+                if (fileHeader == header)
+                {
+                    AI_LOG_INFO("Going to copy file: %s to the host namespace to: %s", entry->d_name, destPath.c_str());
+
+                    // ifstream got invalidated by reading header; need to reset position
+                    source.clear();
+                    source.seekg(0, std::ios::beg);
+                    std::ofstream dest(destPath + "/" + filename, std::ios::binary);
+                    std::ostreambuf_iterator<char> begin_dest(dest);
+                    std::copy(begin_source, end_source, begin_dest);
+                }
+            }
+        }
+    }
+
+    closedir(dirEntries);
+    AI_LOG_FN_EXIT();
+    return true;
 }
