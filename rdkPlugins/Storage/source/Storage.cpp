@@ -351,8 +351,16 @@ std::vector<LoopMountDetails::LoopMount> Storage::getLoopMounts()
             }
             else
             {
-                // default image size = 12 MB
-                mount.imgSize = 12 * 1024 * 1024;
+                if (mount.fsImageType.compare("xfs") == 0)
+                {
+                    // default image size = 16 MB
+                    mount.imgSize = 16 * 1024 * 1024;
+                }
+                else
+                {
+                    // default image size = 12 MB
+                    mount.imgSize = 12 * 1024 * 1024;
+                }
             }
 
             for (size_t j = 0; j < loopback->options_len; j++)

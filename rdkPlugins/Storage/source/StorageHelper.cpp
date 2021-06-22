@@ -282,7 +282,7 @@ bool StorageHelper::createFileIfNeeded(const std::string& filePath,
     {
         // the package requires storage so check we have a valid data image
         // and if not try and create it
-        if (!ImageManager::checkFSImage(filePath, userId, true))
+        if (!ImageManager::checkFSImage(filePath, userId, fileSystem, true))
         {
             // File doesn't exist yet, need to create it
             AI_LOG_DEBUG("File not exists, need to create '%s'", filePath.c_str());
