@@ -50,7 +50,7 @@ DobbyRunC::DobbyRunC(const std::shared_ptr<IDobbyUtils>& utils,
     , mRuncPath("/usr/sbin/runc")
 #endif
     , mWorkingDir("/var/run/rdk/crun")
-    , mLogDir("/var/log")
+    , mLogDir("/opt/logs")
     , mLogFilePath(mLogDir + "/crun.log")
     , mConsoleSocket(settings->consoleSocketPath())
 {
