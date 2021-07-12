@@ -45,9 +45,31 @@ DobbyRdkPluginUtils::DobbyRdkPluginUtils(const std::shared_ptr<rt_dobby_schema> 
 }
 
 DobbyRdkPluginUtils::DobbyRdkPluginUtils(const std::shared_ptr<rt_dobby_schema> &cfg,
+                                         const std::shared_ptr<IDobbyStartState> &startState)
+    : mConf(cfg)
+    , mStartState(startState)
+{
+    AI_LOG_FN_ENTRY();
+
+    AI_LOG_FN_EXIT();
+}
+
+DobbyRdkPluginUtils::DobbyRdkPluginUtils(const std::shared_ptr<rt_dobby_schema> &cfg,
                                          const std::shared_ptr<const rt_state_schema> &state)
     : mConf(cfg)
     , mState(state)
+{
+    AI_LOG_FN_ENTRY();
+
+    AI_LOG_FN_EXIT();
+}
+
+DobbyRdkPluginUtils::DobbyRdkPluginUtils(const std::shared_ptr<rt_dobby_schema> &cfg,
+                                         const std::shared_ptr<const rt_state_schema> &state,
+                                         const std::shared_ptr<IDobbyStartState> &startState)
+    : mConf(cfg)
+    , mState(state)
+    , mStartState(startState)
 {
     AI_LOG_FN_ENTRY();
 
@@ -558,3 +580,95 @@ bool DobbyRdkPluginUtils::addEnvironmentVar(const std::string& envVar) const
     AI_LOG_FN_EXIT();
     return true;
 }
+
+// -------------------------------------------------------------------------
+/**
+ *  @brief Adds another file descriptor to be passed into the container
+ *
+ *  The number of the file descriptor in the container namespace is
+ *  returned, unless there was an error in which case a negative value is
+ *  returned.  File descriptors start at 3.
+ *
+ *  The method dups the supplied file descriptor so it can be closed
+ *  immmediatly after the call.  The file descriptor will be closed
+ *  after the container is started and handed over.
+ *
+ *  File descriptors are recorded per client (plugin name).
+ *
+ *  Lastly to help find issues, this function will log an error and reject
+ *  the file descriptor if it doesn't have the FD_CLOEXEC bit set.
+ *
+ *  @param[in]  pluginName  The plugin name for which fd will be recorded
+ *  @param[in]  fd          The file descriptor to pass to the container
+ *
+ *  @return the number of the file descriptor inside the container on
+ *  success, on failure -1
+ */
+int DobbyRdkPluginUtils::addFileDescriptor(const std::string& pluginName, int fd)
+{
+    AI_LOG_FN_ENTRY();
+
+    std::lock_guard<std::mutex> locker(mLock);
+
+    if (!mStartState)
+    {
+        AI_LOG_ERROR_EXIT("DobbyStartState dependency is not set");
+        return -1;
+    }
+
+    int containerFd = mStartState->addFileDescriptor(pluginName, fd);
+
+    AI_LOG_FN_EXIT();
+    return containerFd;
+}
+
+// -------------------------------------------------------------------------
+/**
+ *  @brief Gets all file descriptor registered by any client
+ *
+ *  @return List of all file descriptors
+ */
+std::list<int> DobbyRdkPluginUtils::files() const
+{
+    AI_LOG_FN_ENTRY();
+
+    std::lock_guard<std::mutex> locker(mLock);
+
+    if (!mStartState)
+    {
+        AI_LOG_ERROR_EXIT("DobbyStartState dependency is not set");
+        return -1;
+    }
+
+    const auto fileList = mStartState->files();
+
+    AI_LOG_FN_EXIT();
+    return fileList;
+}
+
+// -------------------------------------------------------------------------
+/**
+ *  @brief Gets all file descriptor registered by concrete client
+ *
+ *  @param[in]  pluginName  RDK plugin name
+ *
+ *  @return List of file descriptors assiociated with given plugin name
+ */
+std::list<int> DobbyRdkPluginUtils::files(const std::string& pluginName) const
+{
+    AI_LOG_FN_ENTRY();
+
+    std::lock_guard<std::mutex> locker(mLock);
+
+    if (!mStartState)
+    {
+        AI_LOG_ERROR_EXIT("DobbyStartState dependency is not set");
+        return -1;
+    }
+
+    const auto fileList = mStartState->files(pluginName);
+
+    AI_LOG_FN_EXIT();
+    return fileList;
+}
+
