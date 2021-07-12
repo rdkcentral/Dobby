@@ -25,7 +25,6 @@
 
 #include <RdkPluginBase.h>
 #include "LoopMountDetails.h"
-#include "MappedId.h"
 
 #include <sys/types.h>
 #include <netinet/in.h>
@@ -61,7 +60,7 @@ public:
     // temp mount point (within container rootfs)
     bool preCreation() override;
 
-    // This hook changes privileges of the mounted directorires
+    // This hook changes privlidges of the mounted directorires
     bool createRuntime() override;
 
     // This hook mounts temp directory to the proper one
@@ -85,12 +84,13 @@ public:
     std::vector<LoopMountDetails::LoopMount> getLoopMounts();
     std::vector<std::unique_ptr<LoopMountDetails>> getLoopDetails();
 
+
 private:
     const std::string mName;
     std::shared_ptr<rt_dobby_schema> mContainerConfig;
-    const MappedId mMappedId;
     const std::string mRootfsPath;
     const std::shared_ptr<DobbyRdkPluginUtils> mUtils;
+    uint32_t getMappedId(uint32_t id, rt_defs_id_mapping **mapping, size_t mapping_len);
 };
 
 #endif // !defined(STORAGE_H)

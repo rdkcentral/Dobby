@@ -49,7 +49,7 @@ public:
     ~LoopMountDetails();
 
     /**
-     *  @brief Loopmount struct used for plugins with writable disk space
+     *  @brief Loopmount struct used for Storage plugin
      */
     typedef struct _LoopMount
     {
@@ -66,7 +66,6 @@ public:
 
 private:
     friend class Storage;
-    friend class Minidump;
 
 public:
     LoopMountDetails(const std::string& rootfsPath,
@@ -87,8 +86,6 @@ private:
     bool cleanupTempDirectory();
 
     bool removeNonPersistentImage();
-
-    bool copyToHost(const std::string& ext, const std::string& header, const std::string& destPath);
 
     std::string mMountPointOutsideContainer;
     std::string mTempMountPointOutsideContainer;

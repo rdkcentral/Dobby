@@ -42,11 +42,10 @@ REGISTER_RDK_PLUGIN(Storage);
 Storage::Storage(std::shared_ptr<rt_dobby_schema> &containerSpec,
                 const std::shared_ptr<DobbyRdkPluginUtils> &utils,
                 const std::string &rootfsPath)
-    : mName("Storage")
-    , mContainerConfig(containerSpec)
-    , mMappedId(containerSpec)
-    , mRootfsPath(rootfsPath)
-    , mUtils(utils)
+    : mName("Storage"),
+      mContainerConfig(containerSpec),
+      mRootfsPath(rootfsPath),
+      mUtils(utils)
 {
     AI_LOG_FN_ENTRY();
     AI_LOG_FN_EXIT();
@@ -245,17 +244,48 @@ std::vector<std::unique_ptr<LoopMountDetails>> Storage::getLoopDetails()
     const std::vector<LoopMountDetails::LoopMount> mounts = getLoopMounts();
 
     std::vector<std::unique_ptr<LoopMountDetails>> loopDetails;
-    loopDetails.reserve(mounts.size());
-
     // loop though all the mounts for the given container and create individual
     // DobbyLoopMount objects for each
     for (const LoopMountDetails::LoopMount &mount : mounts)
     {
-        uid_t uid = mMappedId.forUser();
-        gid_t gid = mMappedId.forGroup();
+        uid_t tmp_uid = 0;
+        gid_t tmp_gid = 0;
+
+        // Firstly get uid/gid from process
+        if(mContainerConfig->process &&
+           mContainerConfig->process->user)
+        {
+            if (mContainerConfig->process->user->uid_present)
+            {
+                tmp_uid = mContainerConfig->process->user->uid;
+            }
+
+            if (mContainerConfig->process->user->gid_present)
+            {
+                tmp_gid = mContainerConfig->process->user->gid;
+            }
+        }
+
+        // Then map it inside container
+        tmp_uid = getMappedId(tmp_uid,
+                                mContainerConfig->linux->uid_mappings,
+                                mContainerConfig->linux->uid_mappings_len);
+
+        tmp_gid = getMappedId(tmp_gid,
+                                mContainerConfig->linux->gid_mappings,
+                                mContainerConfig->linux->gid_mappings_len);
+
 
         // create the loop mount and make sure it was constructed
-        auto loopMount = std::make_unique<LoopMountDetails>(mRootfsPath, mount, uid, gid, mUtils);
+        std::unique_ptr<LoopMountDetails> loopMount(
+            std::make_unique<LoopMountDetails>(
+                mRootfsPath,
+                mount,
+                tmp_uid,
+                tmp_gid,
+                mUtils)
+            );
+
         if (loopMount)
         {
             loopDetails.emplace_back(std::move(loopMount));
@@ -279,7 +309,6 @@ std::vector<LoopMountDetails::LoopMount> Storage::getLoopMounts()
     AI_LOG_FN_ENTRY();
 
     std::vector<LoopMountDetails::LoopMount> mounts;
-    mounts.reserve(mContainerConfig->rdk_plugins->storage->data->loopback_len);
 
     // Check if container has mount data
     if (mContainerConfig->rdk_plugins->storage->data)
@@ -351,4 +380,48 @@ std::vector<LoopMountDetails::LoopMount> Storage::getLoopMounts()
 
     AI_LOG_FN_EXIT();
     return mounts;
+}
+
+// -----------------------------------------------------------------------------
+/**
+ *  @brief Gets userId or groupId based on mappings
+ *
+ *  @param[in]  id          Id we want to map
+ *  @param[in]  mapping     Mapping that should be used
+ *  @param[in]  mapping_len Length of mapping
+ *
+ *  @return if found mapped id, if not found initial id
+ */
+uint32_t Storage::getMappedId(uint32_t id, rt_defs_id_mapping **mapping, size_t mapping_len)
+{
+    AI_LOG_FN_ENTRY();
+
+    uint32_t tmp_id = id;
+
+    // get id of the container inside host
+    for (size_t i = 0; i < mapping_len; i++)
+    {
+        // No need to check if container_id, size or host_id is present as all those fields
+        // are required ones, this means that if mapping point exists it has all 3 of those
+
+        // Check if id is higher than mapping one, if not it is not the mapping we are looking for
+        if (id >= mapping[i]->container_id)
+        {
+            uint32_t shift = id - mapping[i]->container_id;
+            // Check if id is inside this mapping
+            if (shift < mapping[i]->size)
+            {
+                // Shift host as much as ID was shifted
+                tmp_id = mapping[i]->host_id + shift;
+            }
+        }
+    }
+
+    if (tmp_id == id)
+    {
+        AI_LOG_WARN("Mapping not found for id '%d'", id);
+    }
+
+    AI_LOG_FN_EXIT();
+    return tmp_id;
 }

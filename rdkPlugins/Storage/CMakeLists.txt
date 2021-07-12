@@ -24,10 +24,9 @@ project(Storage)
 add_library( ${PROJECT_NAME}
         SHARED
         source/Storage.cpp
-        ../Common/source/ImageManager.cpp
-        ../Common/source/StorageHelper.cpp
-        ../Common/source/LoopMountDetails.cpp
-        ../Common/source/MappedId.cpp
+        source/ImageManager.cpp
+        source/StorageHelper.cpp
+        source/LoopMountDetails.cpp
         )
 
 install(

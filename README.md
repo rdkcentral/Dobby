@@ -58,7 +58,7 @@ cmake -DCMAKE_BUILD_TYPE=Debug -DRDK_PLATFORM=DEV_VM -DCMAKE_INSTALL_PREFIX:PATH
 
 
 #### Enable/Disable Plugins
-In addition to all the above, each RDK plugin has a setting for enabling it for builds. The `Logging`, `Networking`, `IPC`, `Storage` and `Minidump` plugins are enabled by default.
+In addition to all the above, each RDK plugin has a setting for enabling it for builds. The `Logging`, `Networking`, `IPC` and `Storage` plugins are enabled by default.
 
 Use `-DPLUGIN_[PLUGINNAME]=[ON|OFF]` to enable or disable plugins for your build.
 
