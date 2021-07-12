@@ -30,11 +30,13 @@ class ImageManager
 public:
     static bool checkFSImage(const std::string & filepath,
                              uid_t userId,
+                             const std::string & fs,
                              bool fix = true);
 
     static bool checkFSImageAt(int dirFd,
                                const std::string & filepath,
                                uid_t userId,
+                               const std::string & fs,
                                bool fix = true);
 
     static bool createFSImage(const std::string & filepath,

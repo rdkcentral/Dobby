@@ -24,11 +24,14 @@
 #define IDobbyRdkPlugin_H
 
 #include "DobbyRdkPluginUtils.h"
-
 #include "rt_dobby_schema.h"
 
+#if defined(DOBBY_BUILD)
 #include <Logging.h>
-#include <json/json.h>
+#else
+#include <Dobby/Logging.h>
+#endif
+
 #include <sys/types.h>
 
 #include <memory>

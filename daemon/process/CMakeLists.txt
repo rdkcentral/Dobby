@@ -95,7 +95,6 @@ if(USE_SYSTEMD)
         )
 endif(USE_SYSTEMD)
 
-
 install( # Specifies the target to install
         TARGETS DobbyDaemon
 
@@ -104,8 +103,33 @@ install( # Specifies the target to install
         )
 
 # Install the settings file for the target platform
+# If the user chooses to override the settings file with the -DSETTINGS_FILE and
+# -DSETTINGS_APPEND flags, then that takes priority. Otherwise fallback to one
+# of the default files
+if(SETTINGS_FILE)
+        if (SETTINGS_APPEND)
+                set( DOBBY_SETTINGS_FILE "${CMAKE_CURRENT_BINARY_DIR}/mergedsettings.json")
+                include(generateSettingsFile)
+                GenerateSettingsFile(
+                        BASE_FILE ${SETTINGS_FILE}
+                        OUTPUT_FILE ${DOBBY_SETTINGS_FILE}
+                        SETTINGS_APPEND_FILE ${SETTINGS_APPEND}
+                )
+        else()
+                set( DOBBY_SETTINGS_FILE ${SETTINGS_FILE})
+        endif()
+else()
+        if ( RDK_PLATFORM STREQUAL "DEV_VM" )
+                set( DOBBY_SETTINGS_FILE "settings/dobby.dev_vm.json")
+        else()
+                set( DOBBY_SETTINGS_FILE "settings/dobby.json")
+        endif()
+endif()
+
+message("Using settings from ${DOBBY_SETTINGS_FILE}")
+
 install(
-        FILES       "settings/${DOBBY_SETTINGS_FILE}"
+        FILES       "${DOBBY_SETTINGS_FILE}"
         RENAME      dobby.json
         DESTINATION /etc/ )
 

@@ -50,50 +50,23 @@ endif()
 
 # Add definition to determine RDK build
 add_definitions( -DRDK )
-add_definitions( -DGENERIC=0 -DXI1=1 -DLLAMA=2 -DXI6=6 )
 
 # Add definition to differentiate between Dobby builds and external projects building DobbyProxy
 add_definitions( -DDOBBY_BUILD )
 
 # If no platform defined then default to Generic
-set( RDK_PLATFORM "GENERIC" CACHE STRING "The target RDK platform, options are \"GENERIC\" (default), \"XI6\", \"XI1\", \"LLAMA\" or \"DEV_VM\"" )
+set( RDK_PLATFORM "GENERIC" CACHE STRING "The target RDK platform, options are \"GENERIC\" (default) or \"DEV_VM\"" )
 string( TOUPPER "${RDK_PLATFORM}" RDK_PLATFORM )
 
 # If developer VM defined, configure platform to be Ubuntu VM machine, else configure set-top box
 if( RDK_PLATFORM STREQUAL "GENERIC" )
+    add_definitions( -DGENERIC=0 )
     add_definitions( -DRDK_PLATFORM=GENERIC )
-    set( DOBBY_SETTINGS_FILE "dobby.json" )
-elseif( RDK_PLATFORM STREQUAL "XI1" )
-    add_definitions( -DRDK_PLATFORM=XI1 )
-    set( DOBBY_SETTINGS_FILE "dobby.xi1.json" )
-elseif( RDK_PLATFORM STREQUAL "LLAMA" )
-    add_definitions( -DRDK_PLATFORM=LLAMA )
-    set( DOBBY_SETTINGS_FILE "dobby.llama.json" )
-elseif( RDK_PLATFORM STREQUAL "XI6" )
-    add_definitions( -DRDK_PLATFORM=XI6 )
-    set( DOBBY_SETTINGS_FILE "dobby.xi6.json" )
 elseif( RDK_PLATFORM STREQUAL "DEV_VM" )
     add_definitions( -DDEV_VM=9 )
     add_definitions( -DRDK_PLATFORM=DEV_VM )
-    set( DOBBY_SETTINGS_FILE "dobby.dev_vm.json" )
 else()
     message( FATAL_ERROR "Unknown RDK_PLATFORM '${RDK_PLATFORM}'" )
-endif()
-
-# If no REGION is defined then default to NONE
-set( REGION "NONE" CACHE STRING "Specifies the region the build is targeting, options are \"NONE\", \"UK\", \"DE\" or \"IT\"" )
-string( TOUPPER "${REGION}" REGION )
-# Set the defines / macros for the region
-if( REGION STREQUAL "NONE" )
-    add_definitions( -DREGION_NONE )
-elseif( REGION STREQUAL "UK" )
-    add_definitions( -DREGION_UK )
-elseif( REGION STREQUAL "IT" )
-    add_definitions( -DREGION_IT )
-elseif( REGION STREQUAL "DE" )
-    add_definitions( -DREGION_DE)
-else()
-    message( FATAL_ERROR "REGION '${REGION}' not supported, must be either \"NONE\", \"UK\", \"DE\" or \"IT\"" )
 endif()
 
 set( BUILD_REFERENCE "" CACHE STRING "Commit hash used to build Dobby" )
@@ -190,8 +163,11 @@ if( ENABLE_PERFETTO_TRACING )
     set( TRACING_CATEGORIES_HEADER "${CMAKE_CURRENT_LIST_DIR}/tracing/include/DobbyTraceCategories.h" )
 endif()
 
+find_package( breakpad QUIET )
+
 # Run libocispec to generate OCI config parsers and necessary C headers
-include(cmake/libocispec.cmake)
+include(Findlibocispec)
+GenerateLibocispec(EXTRA_SCHEMA_PATH "${EXTERNAL_PLUGIN_SCHEMA}")
 
 
 # Main source code
@@ -380,7 +356,7 @@ endif()
 export( PACKAGE Dobby )
 
 # Add targets to build-tree export set DobbyTargets.cmake
-export( TARGETS AppInfraCommon AppInfraLogging IpcService DobbyClientLib
+export( TARGETS AppInfraCommon AppInfraLogging IpcService DobbyClientLib DobbyRdkPluginCommonLib DobbyPluginLauncherLib libocispec
         FILE "${PROJECT_BINARY_DIR}/DobbyTargets.cmake"
 )
 
@@ -394,6 +370,7 @@ set( CONF_INCLUDE_DIRS
       "${PROJECT_SOURCE_DIR}/AppInfrastructure/Public"
       "${PROJECT_SOURCE_DIR}/AppInfrastructure/IpcService/include"
       "${PROJECT_SOURCE_DIR}/AppInfrastructure/Common/include"
+      "${PROJECT_SOURCE_DIR}/rdkPlugins/Common/include"
 )
 
 # Generate config files from .in files

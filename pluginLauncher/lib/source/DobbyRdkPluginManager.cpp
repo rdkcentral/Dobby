@@ -21,6 +21,7 @@
  *
  */
 #include "DobbyRdkPluginManager.h"
+#include "DobbyRdkPluginDependencySolver.h"
 #include "IDobbyRdkPlugin.h"
 
 #include <Logging.h>
@@ -53,7 +54,8 @@ DobbyRdkPluginManager::DobbyRdkPluginManager(std::shared_ptr<rt_dobby_schema> co
     : mContainerConfig(containerConfig),
       mRootfsPath(rootfsPath),
       mPluginPath(pluginPath),
-      mUtils(utils)
+      mUtils(utils),
+      mDependencySolver(std::make_unique<DobbyRdkPluginDependencySolver>())
 {
     AI_LOG_FN_ENTRY();
 
@@ -334,7 +336,7 @@ bool DobbyRdkPluginManager::preprocessPlugins()
             mRequiredPlugins.insert(pluginName);
         }
 
-        mDependencySolver.addPlugin(pluginName);
+        mDependencySolver->addPlugin(pluginName);
     }
 
     // Check if required plugins are loaded, store plugin dependencies.
@@ -359,7 +361,7 @@ bool DobbyRdkPluginManager::preprocessPlugins()
         const std::vector<std::string> pluginDependencies = plugin->getDependencies();
         for (const std::string &dependencyName : pluginDependencies)
         {
-            if (!mDependencySolver.addDependency(pluginName, dependencyName))
+            if (!mDependencySolver->addDependency(pluginName, dependencyName))
             {
                 // This can happen if the name of the dependency is not a name of a plugin defined in the container spec.
                 // The spec is invalid. Abort.
@@ -675,13 +677,13 @@ bool DobbyRdkPluginManager::runPlugins(const IDobbyRdkPlugin::HintFlags &hookPoi
     std::vector<std::string> launchOrder;
     if (hookPoint < IDobbyRdkPlugin::HintFlags::PostHaltFlag)
     {
-        launchOrder = mDependencySolver.getOrderOfDependency();
+        launchOrder = mDependencySolver->getOrderOfDependency();
     }
     else
     {
         // Reverse the order for the shutdown hooks, so that the plugins
         // on which other plugins depend are shut down later.
-        launchOrder = mDependencySolver.getReversedOrderOfDependency();
+        launchOrder = mDependencySolver->getReversedOrderOfDependency();
     }
     if (launchOrder.empty())
     {

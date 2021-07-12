@@ -176,7 +176,11 @@
             "$ref": "defs-plugins.json#/definitions/LegacyPlugins"
         },
         "rdkPlugins": {
-            "$ref": "defs-plugins.json#/definitions/RdkPlugins"
+            "allOf": [
+                {
+                    "$ref": "defs-plugins.json#/definitions/RdkPlugins"
+                }
+            ]
         },
         "platform": {
             "type" : "object",

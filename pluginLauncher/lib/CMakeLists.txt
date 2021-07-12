@@ -25,7 +25,7 @@ add_library(${PROJECT_NAME} STATIC
 
 target_include_directories(${PROJECT_NAME}
     PUBLIC
-    include
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
 
     PRIVATE
     $<TARGET_PROPERTY:AppInfraLogging,INTERFACE_INCLUDE_DIRECTORIES>
@@ -41,13 +41,7 @@ target_link_libraries(${PROJECT_NAME}
     AppInfraLogging
     AppInfraCommon
 
-    DobbyDaemonLib
-    Threads::Threads
-
     libocispec
-
-    # 3rd party libraries
-    JsonCpp::JsonCpp
 
     # Adds dlopen support (if it's a separate library on target)
     ${CMAKE_DL_LIBS}
@@ -55,4 +49,15 @@ target_link_libraries(${PROJECT_NAME}
 
 set_target_properties( ${PROJECT_NAME}
         PROPERTIES POSITION_INDEPENDENT_CODE ON
+)
+
+install(TARGETS ${PROJECT_NAME}
+        EXPORT DobbyTargets
+        ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+)
+
+
+# Install public headers for external use
+install( DIRECTORY include/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/Dobby/rdkPlugins/
+        FILES_MATCHING PATTERN "IDobbyRdkPlugin.h" PATTERN "DobbyRdkPluginUtils.h"
 )

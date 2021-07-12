@@ -52,6 +52,10 @@
 #  include <ethanlog.h>
 #endif
 
+#ifdef USE_BREAKPAD
+    #include "breakpad_wrapper.h"
+#endif
+
 #include <stdio.h>
 #include <fcntl.h>
 #include <unistd.h>
@@ -204,6 +208,14 @@ void Dobby::nullSigChildHandler(int sigNum, siginfo_t *info, void *context)
 void Dobby::configSignals()
 {
     AI_LOG_FN_ENTRY();
+
+#ifdef USE_BREAKPAD
+    // Breakpad will handle SIGILL, SIGABRT, SIGFPE and SIGSEGV
+    AI_LOG_INFO("Breakpad support enabled");
+    breakpad_ExceptionHandler();
+#else
+    AI_LOG_INFO("Breakpad support disabled");
+#endif
 
     // Ignore SIGPIPE signal - the most annoying signal in the world
     signal(SIGPIPE, SIG_IGN);

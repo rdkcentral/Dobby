@@ -23,6 +23,7 @@ add_library(${PROJECT_NAME}
         source/ThunderSecurityAgent.cpp
 
         ../Networking/source/Netfilter.cpp
+        ../Networking/source/StdStreamPipe.cpp
         )
 
 target_include_directories(${PROJECT_NAME}

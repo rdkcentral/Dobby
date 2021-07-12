@@ -74,6 +74,16 @@ if (ENABLE_PERFETTO_TRACING)
         )
 endif()
 
+# Configure breakpad if we find it
+if(BREAKPAD_FOUND)
+        message("Enabling breakpad support")
+        add_definitions( -DUSE_BREAKPAD )
+
+        target_link_libraries(DobbyDaemonLib
+                Breakpad::BreakpadWrapper
+        )
+endif()
+
 
 if( BUILDING_WITH_RDK_SDK )
 

@@ -92,8 +92,18 @@ private:
 
     void dump(const RuleSet &ruleSet, const char *title = nullptr) const;
 
+    typedef struct IptablesVersion
+    {
+        int major;
+        int minor;
+        int patch;
+    } IptablesVersion;
+
+    IptablesVersion getIptablesVersion() const;
+
 private:
     mutable std::mutex mLock;
+    IptablesVersion mIptablesVersion;
 };
 
 #endif // !defined(NETFILTER_H)

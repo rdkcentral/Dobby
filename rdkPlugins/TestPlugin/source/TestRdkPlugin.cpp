@@ -42,6 +42,7 @@ TestRdkPlugin::TestRdkPlugin(std::shared_ptr<rt_dobby_schema> &containerConfig,
       mUtils(utils)
 {
     AI_LOG_FN_ENTRY();
+
     AI_LOG_FN_EXIT();
 }
 

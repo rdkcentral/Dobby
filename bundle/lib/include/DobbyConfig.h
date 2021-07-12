@@ -54,7 +54,6 @@
 #define RDK_IPC_PLUGIN_NAME             "ipc"
 #define RDK_STORAGE_PLUGIN_NAME         "storage"
 #define RDK_GPU_PLUGIN_NAME             "gpu"
-#define RDK_LOCALTIME_PLUGIN_NAME       "localtime"
 #define RDK_RTSCHEDULING_PLUGIN_NAME    "rtscheduling"
 
 
