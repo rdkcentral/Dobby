@@ -637,7 +637,7 @@ std::list<int> DobbyRdkPluginUtils::files() const
     if (!mStartState)
     {
         AI_LOG_ERROR_EXIT("DobbyStartState dependency is not set");
-        return -1;
+        return {};
     }
 
     const auto fileList = mStartState->files();
@@ -663,7 +663,7 @@ std::list<int> DobbyRdkPluginUtils::files(const std::string& pluginName) const
     if (!mStartState)
     {
         AI_LOG_ERROR_EXIT("DobbyStartState dependency is not set");
-        return -1;
+        return {};
     }
 
     const auto fileList = mStartState->files(pluginName);
