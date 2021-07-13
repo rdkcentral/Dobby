@@ -39,6 +39,7 @@ target_include_directories( ${PROJECT_NAME}
 
         PRIVATE
         ../Networking/include
+        $<TARGET_PROPERTY:DobbyDaemonLib,INTERFACE_INCLUDE_DIRECTORIES>
 )
 
 set_target_properties( ${PROJECT_NAME} PROPERTIES SOVERSION 1 )

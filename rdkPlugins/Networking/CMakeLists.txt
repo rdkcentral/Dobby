@@ -70,6 +70,7 @@ target_include_directories( ${PROJECT_NAME}
         ${LIBNL_INCLUDE_DIR}
         ../../protocol/include
         $<TARGET_PROPERTY:IpcService,INTERFACE_INCLUDE_DIRECTORIES>
+        $<TARGET_PROPERTY:DobbyDaemonLib,INTERFACE_INCLUDE_DIRECTORIES>
 
 )
 

@@ -29,6 +29,11 @@ add_library( ${PROJECT_NAME}
         source/LoopMountDetails.cpp
         )
 
+target_include_directories(${PROJECT_NAME}
+        PRIVATE
+        $<TARGET_PROPERTY:DobbyDaemonLib,INTERFACE_INCLUDE_DIRECTORIES>
+)
+
 install(
         TARGETS ${PROJECT_NAME}
         LIBRARY DESTINATION lib/plugins/dobby
