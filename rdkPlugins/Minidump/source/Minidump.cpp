@@ -83,10 +83,10 @@ bool Minidump::preCreation()
 
     // duplicates file descriptor, as nearly 3 as possible, which will be carried to a container namespace
     int containerFd = mUtils->addFileDescriptor(mName, hostFd);
+    close(hostFd);
     if (containerFd == -1)
     {
         AI_LOG_ERROR_EXIT("failed to add file descriptor %d to preserve container list", hostFd);
-        close(hostFd);
         return false;
     }
 
@@ -97,11 +97,8 @@ bool Minidump::preCreation()
     if (!mUtils->addEnvironmentVar(envVar.str()))
     {
         AI_LOG_ERROR_EXIT("failed to add BREAKPAD_FD environment variable with value %d", containerFd);
-        close(hostFd);
         return false;
     }
-
-    close(hostFd);
 
     AI_LOG_FN_EXIT();
     return true;
@@ -128,12 +125,6 @@ bool Minidump::postHalt()
 
     // copies content of volatile file from RAM to a disk
     bool success = AnonymousFile(hostFd).copyContentTo(destFile);
-    if (success)
-    {
-        AI_LOG_INFO("Minidump copied to: %s", destFile.c_str());
-    }
-
-    close(hostFd);
 
     AI_LOG_FN_EXIT();
     return success;

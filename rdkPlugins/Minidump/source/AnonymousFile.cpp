@@ -21,6 +21,7 @@
 #include "Logging.h"
 
 #include <fcntl.h>
+#include <string.h>
 #include <sys/mman.h>
 #include <sys/types.h>
 #include <unistd.h>
@@ -127,6 +128,10 @@ bool AnonymousFile::copyContentTo(const std::string& destFile)
         return false;
     }
 
+    // it turns out that fclose(fp) will do effectively the same job as close(fd)
+    // therefore this guy will not be fclose'd in here, but rather reset by NULL value
+    // mind that closing related fd will be accomplished by DobbyStartState destructor
+    // so this is totally fine from this class PoV
     auto fp = fdopen(mFd, "r");
     if (fp == NULL)
     {
@@ -135,23 +140,43 @@ bool AnonymousFile::copyContentTo(const std::string& destFile)
     }
 
     long fileSize = getFileSize(fp);
-    long bufferSize = fileSize + 1;
-    char* buffer = (char*) malloc(sizeof(char) * (bufferSize));
+    char* buffer = (char*) malloc(sizeof(char) * (fileSize + 1));
     if (buffer == NULL)
     {
         AI_LOG_SYS_ERROR_EXIT(errno, "failed to allocate buffer for reading fd %d", mFd);
-        fclose(fp);
+        fp = NULL;
         return false;
     }
-
-    buffer[bufferSize] = '\0';
 
     size_t elementsRead = fread(buffer, 1, fileSize, fp);
     if (elementsRead != fileSize)
     {
         AI_LOG_ERROR_EXIT("failed to read fd %d correctly", mFd);
-        fclose(fp);
+        fp = NULL;
         free(buffer);
+        return false;
+    }
+
+    buffer[fileSize] = '\0';
+
+    // since we truncated 'anon_file' to be fixed size, buffer will always be allocated
+    // therefore we need to check if there was anything written to the 'anon_file'
+    if (strncmp(buffer, "0000", 4) != 0)
+    {
+        AI_LOG_DEBUG("Empty file for fd %d", mFd);
+        fp = NULL;
+        free(buffer);
+        AI_LOG_FN_EXIT();
+        return true;
+    }
+
+    // check file header
+    if (strncmp(buffer, "MDMP", 4) != 0)
+    {
+        AI_LOG_WARN("Incorrect file header for fd %d", mFd);
+        fp = NULL;
+        free(buffer);
+        AI_LOG_FN_EXIT();
         return false;
     }
 
@@ -159,15 +184,18 @@ bool AnonymousFile::copyContentTo(const std::string& destFile)
     if (destFd == -1)
     {
         AI_LOG_ERROR_EXIT("Cannot open %s", destFile.c_str());
-        fclose(fp);
+        fp = NULL;
         free(buffer);
         return false;
     }
 
-    write(destFd, buffer, bufferSize);
+    write(destFd, buffer, fileSize + 1);
 
-    fclose(fp);
+    fp = NULL;
     free(buffer);
+    close(destFd);
+
+    AI_LOG_INFO("Minidump copied to: %s", destFile.c_str());
 
     AI_LOG_FN_EXIT();
     return true;
