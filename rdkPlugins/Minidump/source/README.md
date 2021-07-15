@@ -3,6 +3,12 @@
 ## Quick Start
 The main task of Minidump Plugin is to allow the collection of minidump core files from container bounds.
 
+Please note that there are some prerequisites that must be met before this plugin becomes usable.
+
+Minidump Plugin must be:
+* compiled with breakpad library support,
+* using the latest version of breakpad-wrapper library with `BREAKPAD_FD` support.
+
 Minidump files are going to be copied from container bounds into `destinationPath` location (host namespace) once container
 receives signal connected with core dump (e.g. SEGV, BUS). For further details please check: https://man7.org/linux/man-pages/man7/signal.7.html
 
@@ -30,7 +36,7 @@ The options inside this object goes as follows:
 | ------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
 | `destinationPath`   | Directory (host namespace) to which minidump file should be copied                                                                      |
 |---------------------| ----------------Below this point there are optionals things, with default value in square brackets "[]"---------------------------------|
-| `size`              | Size of the image file (in bytes), only valid if image wasn't there before [10485760] (10 MB)                                           |
+| `size`              | Size of the anonymous file (in bytes), which will be used to transfer the minidump file data [10485760] (10 MB)                         |
 
 #### Example
 ```json

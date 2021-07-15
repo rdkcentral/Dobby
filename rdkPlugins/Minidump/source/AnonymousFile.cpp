@@ -93,6 +93,12 @@ int AnonymousFile::create()
 {
     AI_LOG_FN_ENTRY();
 
+    if (mFd != -1)
+    {
+        AI_LOG_FN_EXIT();
+        return mFd;
+    }
+
     mFd = memfd_create("anon_file", MFD_CLOEXEC);
     if (mFd == -1)
     {
@@ -129,11 +135,11 @@ bool AnonymousFile::copyContentTo(const std::string& destFile)
     }
 
     // it turns out that fclose(fp) will do effectively the same job as close(fd)
-    // therefore this guy will not be fclose'd in here, but rather reset by NULL value
+    // therefore this guy will not be fclose'd in here, but rather reset by nullptr value
     // mind that closing related fd will be accomplished by DobbyStartState destructor
     // so this is totally fine from this class PoV
     auto fp = fdopen(mFd, "r");
-    if (fp == NULL)
+    if (!fp)
     {
         AI_LOG_SYS_ERROR_EXIT(errno, "failed to open fd %d for reading", mFd);
         return false;
@@ -141,10 +147,10 @@ bool AnonymousFile::copyContentTo(const std::string& destFile)
 
     long fileSize = getFileSize(fp);
     char* buffer = (char*) malloc(sizeof(char) * (fileSize + 1));
-    if (buffer == NULL)
+    if (!buffer)
     {
         AI_LOG_SYS_ERROR_EXIT(errno, "failed to allocate buffer for reading fd %d", mFd);
-        fp = NULL;
+        fp = nullptr;
         return false;
     }
 
@@ -152,7 +158,7 @@ bool AnonymousFile::copyContentTo(const std::string& destFile)
     if (elementsRead != fileSize)
     {
         AI_LOG_ERROR_EXIT("failed to read fd %d correctly", mFd);
-        fp = NULL;
+        fp = nullptr;
         free(buffer);
         return false;
     }
@@ -164,7 +170,7 @@ bool AnonymousFile::copyContentTo(const std::string& destFile)
     if (strncmp(buffer, "0000", 4) != 0)
     {
         AI_LOG_DEBUG("Empty file for fd %d", mFd);
-        fp = NULL;
+        fp = nullptr;
         free(buffer);
         AI_LOG_FN_EXIT();
         return true;
@@ -174,7 +180,7 @@ bool AnonymousFile::copyContentTo(const std::string& destFile)
     if (strncmp(buffer, "MDMP", 4) != 0)
     {
         AI_LOG_WARN("Incorrect file header for fd %d", mFd);
-        fp = NULL;
+        fp = nullptr;
         free(buffer);
         AI_LOG_FN_EXIT();
         return false;
@@ -184,14 +190,14 @@ bool AnonymousFile::copyContentTo(const std::string& destFile)
     if (destFd == -1)
     {
         AI_LOG_ERROR_EXIT("Cannot open %s", destFile.c_str());
-        fp = NULL;
+        fp = nullptr;
         free(buffer);
         return false;
     }
 
     write(destFd, buffer, fileSize + 1);
 
-    fp = NULL;
+    fp = nullptr;
     free(buffer);
     close(destFd);
 

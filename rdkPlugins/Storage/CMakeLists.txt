@@ -19,7 +19,7 @@
 
 # Project name should match the name of the plugin
 # CMake will prefix this with "lib"
-project(Storage)
+project(StoragePlugin)
 
 add_library( ${PROJECT_NAME}
         SHARED
