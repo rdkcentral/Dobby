@@ -597,6 +597,10 @@ bool DobbyRdkPluginUtils::addEnvironmentVar(const std::string& envVar) const
  *
  *  Lastly to help find issues, this function will log an error and reject
  *  the file descriptor if it doesn't have the FD_CLOEXEC bit set.
+ * 
+ *  Please mind that this call should be used only in preCreation hook.
+ *  That's due to the fact preserve fds list should be initialized
+ *  before container starts.
  *
  *  @param[in]  pluginName  The plugin name for which fd will be recorded
  *  @param[in]  fd          The file descriptor to pass to the container
