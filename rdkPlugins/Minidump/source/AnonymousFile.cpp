@@ -67,7 +67,7 @@ static inline int memfd_create(const char *name, unsigned int flags)
  *
  * @param[in]  size  size boundary of a volatile file
  */
-AnonymousFile::AnonymousFile(size_t size) : mSize(size)
+AnonymousFile::AnonymousFile(size_t size) : mSize(size), mFd(-1)
 {
     AI_LOG_FN_ENTRY();
     AI_LOG_FN_EXIT();
