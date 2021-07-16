@@ -26,6 +26,8 @@
 #include "rt_dobby_schema.h"
 #include "rt_state_schema.h"
 
+#include <IDobbyStartState.h>
+
 #include <sys/types.h>
 #include <string>
 #include <fstream>
@@ -56,7 +58,12 @@ class DobbyRdkPluginUtils
 public:
     DobbyRdkPluginUtils(const std::shared_ptr<rt_dobby_schema> &cfg);
     DobbyRdkPluginUtils(const std::shared_ptr<rt_dobby_schema> &cfg,
+                        const std::shared_ptr<IDobbyStartState> &startState);
+    DobbyRdkPluginUtils(const std::shared_ptr<rt_dobby_schema> &cfg,
                         const std::shared_ptr<const rt_state_schema> &state);
+    DobbyRdkPluginUtils(const std::shared_ptr<rt_dobby_schema> &cfg,
+                        const std::shared_ptr<const rt_state_schema> &state,
+                        const std::shared_ptr<IDobbyStartState> &startState);
     ~DobbyRdkPluginUtils();
 
     // -------------------------------------------------------------------------
@@ -118,11 +125,18 @@ public:
 
     bool addEnvironmentVar(const std::string& envVar) const;
 
+    int addFileDescriptor(const std::string& pluginName, int fd);
+
+    std::list<int> files() const;
+
+    std::list<int> files(const std::string& pluginName) const;
+
 private:
     mutable std::mutex mLock;
 
     std::shared_ptr<rt_dobby_schema> mConf;
     std::shared_ptr<const rt_state_schema> mState;
+    std::shared_ptr<IDobbyStartState> mStartState;
 };
 
 #endif // !defined(DOBBYRDKPLUGINUTILS_H)

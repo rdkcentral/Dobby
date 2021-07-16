@@ -106,7 +106,7 @@ bool MulticastSocketPlugin::postConstruction(const ContainerId &id,
     for (const MulticastSocket &serverSocket : serverSockets)
     {
         int socket = createServerSocket(serverSocket.ipAddress, serverSocket.portNumber);
-        int duppedSocket = startupState->addFileDescriptor(socket);
+        int duppedSocket = startupState->addFileDescriptor(mName, socket);
         close(socket); //close original fd, it's already dupped and stored in startupState
 
         if (duppedSocket == -1)
@@ -127,7 +127,7 @@ bool MulticastSocketPlugin::postConstruction(const ContainerId &id,
     for (const std::string &clientSocket : clientSockets)
     {
         int socket = createClientSocket();
-        int duppedSocket = startupState->addFileDescriptor(socket);
+        int duppedSocket = startupState->addFileDescriptor(mName, socket);
         close(socket); //close original fd, it's already dupped and stored in startupState
 
         if (duppedSocket == -1)

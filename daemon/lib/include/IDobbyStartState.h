@@ -54,15 +54,18 @@ public:
      *  immmediatly after the call.  The file descriptor will be closed
      *  after the container is started and handed over.
      *
+     *  File descriptors are recorded per client (plugin name).
+     *
      *  Lastly to help find issues, this function will log an error and reject
      *  the file descriptor if it doesn't have the FD_CLOEXEC bit set.
      *
-     *  @param[in]  fd      The file descriptor to pass to the container
+     *  @param[in]  pluginName  The plugin name for which fd will be recorded
+     *  @param[in]  fd          The file descriptor to pass to the container
      *
      *  @return the number of the file descriptor inside the container on
      *  success, on failure -1
      */
-    virtual int addFileDescriptor(int fd) = 0;
+    virtual int addFileDescriptor(const std::string& pluginName, int fd) = 0;
 
     // -------------------------------------------------------------------------
     /**
@@ -98,6 +101,24 @@ public:
                           const std::string& fsType,
                           unsigned long mountFlags = 0,
                           const std::list<std::string>& mountOptions = std::list<std::string>()) = 0;
+
+    // -------------------------------------------------------------------------
+    /**
+     *  @brief Gets all file descriptor registered by any client
+     *
+     *  @return List of all file descriptors
+     */
+    virtual std::list<int> files() const = 0;
+
+    // -------------------------------------------------------------------------
+    /**
+     *  @brief Gets all file descriptor registered by concrete client
+     *
+     *  @param[in]  pluginName  RDK plugin name
+     *
+     *  @return List of file descriptors assiociated with given plugin name
+     */
+    virtual std::list<int> files(const std::string& pluginName) const = 0;
 
 };
 

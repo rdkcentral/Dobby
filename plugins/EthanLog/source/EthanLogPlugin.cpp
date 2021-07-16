@@ -230,7 +230,7 @@ bool EthanLogPlugin::postConstruction(const ContainerId& id,
 
 
     // add the fd to the container start-up state
-    int containerFd = startupState->addFileDescriptor(pipeFd);
+    int containerFd = startupState->addFileDescriptor(mName, pipeFd);
     if (containerFd < 0)
     {
         AI_LOG_ERROR("failed to added logging pipe fd to the container");

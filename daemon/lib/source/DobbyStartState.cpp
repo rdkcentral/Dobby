@@ -49,7 +49,7 @@ DobbyStartState::DobbyStartState(const std::shared_ptr<DobbyConfig>& config,
             return;
         }
 
-        mFiles.push_back(fd);
+        mFiles.insert({"Generic", fd});
     }
 
     // all fd's have been dup'ed so we're valid
@@ -63,8 +63,9 @@ DobbyStartState::~DobbyStartState()
     AI_LOG_FN_ENTRY();
 
     // close all the file descriptors we've dup'd
-    for (int fd : mFiles)
+    for (const auto& entry : mFiles)
     {
+        int fd = entry.second;
         if ((fd >= 0) && (close(fd) != 0))
         {
             AI_LOG_SYS_ERROR(errno, "failed to close descriptor");
@@ -80,10 +81,51 @@ bool DobbyStartState::isValid() const
     return mValid;
 }
 
-const std::list<int>& DobbyStartState::files() const
+// -------------------------------------------------------------------------
+/**
+ *  @brief Gets all file descriptor registered by any client
+ *
+ *  @return List of all file descriptors
+ */
+std::list<int> DobbyStartState::files() const
 {
     std::lock_guard<std::mutex> locker(mLock);
-    return mFiles;
+
+    std::list<int> retVal;
+    std::transform(mFiles.cbegin(), mFiles.cend(), std::back_inserter(retVal),
+        [](const auto& entry)
+        {
+            return entry.second;
+        });
+
+    return retVal;
+}
+
+// -------------------------------------------------------------------------
+/**
+ *  @brief Gets all file descriptor registered by concrete client
+ *
+ *  @param[in]  pluginName  RDK plugin name
+ *
+ *  @return List of file descriptors assiociated with given plugin name
+ */
+std::list<int> DobbyStartState::files(const std::string& pluginName) const
+{
+    std::lock_guard<std::mutex> locker(mLock);
+
+    std::list<int> retVal;
+    for (const auto& entry : mFiles)
+    {
+        const auto& key = entry.first;
+        const auto& value = entry.second;
+
+        if (key == pluginName)
+        {
+            retVal.push_back(value);
+        }
+    }
+
+    return retVal;
 }
 
 // -----------------------------------------------------------------------------
@@ -98,15 +140,18 @@ const std::list<int>& DobbyStartState::files() const
  *  after the call.  The file descriptor will be closed after the container is
  *  started and handed over.
  *
+ *  File descriptors are recorded per client (plugin name).
+ *
  *  Lastly to help find issues, this function will log an error and reject the
  *  file descriptor if it doesn't have the FD_CLOEXEC bit set.
  *
+ *  @param[in]  pluginName  The plugin name for which fd will be recorded
  *  @param[in]  fd      The file descriptor to pass to the container
  *
  *  @return the number of the file descriptor inside the container on success,
  *  on failure -1
  */
-int DobbyStartState::addFileDescriptor(int fd)
+int DobbyStartState::addFileDescriptor(const std::string& pluginName, int fd)
 {
     AI_LOG_FN_ENTRY();
 
@@ -131,7 +176,7 @@ int DobbyStartState::addFileDescriptor(int fd)
     std::lock_guard<std::mutex> locker(mLock);
 
     int containerFd = 3 + static_cast<int>(mFiles.size());
-    mFiles.push_back(duppedFd);
+    mFiles.insert({pluginName, duppedFd});
 
     AI_LOG_FN_EXIT();
     return containerFd;
