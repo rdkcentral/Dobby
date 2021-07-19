@@ -122,7 +122,24 @@ DobbyRootfs::DobbyRootfs(const std::shared_ptr<IDobbyUtils>& utils,
         return;
     }
 
-    const std::string rootfsDirPath(bundle->path() + "/" + config->rootfsPath() + "/");
+    if (config->rootfsPath().empty())
+    {
+        AI_LOG_ERROR_EXIT("invalid rootfs");
+        return;
+    }
+
+    std::string rootfsDirPath;
+
+    // absolute path to rootfs
+    if (config->rootfsPath().front() == '/')
+    {
+        rootfsDirPath = config->rootfsPath() + "/";
+    }
+    // relative path to rootfs
+    else
+    {
+        rootfsDirPath = bundle->path() + "/" + config->rootfsPath() + "/";
+    }
 
     // check that rootfs exists in bundle
     if (access(rootfsDirPath.c_str(), F_OK) == -1)

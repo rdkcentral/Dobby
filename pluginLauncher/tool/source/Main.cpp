@@ -264,9 +264,15 @@ bool runPlugins(const IDobbyRdkPlugin::HintFlags &hookPoint, std::shared_ptr<rt_
 std::string getRootfsPath(std::string configPath, std::shared_ptr<rt_dobby_schema> containerConfig)
 {
     const std::string configName = "config.json";
-    const std::string rootfsRelativePath = containerConfig->root->path;
+    const std::string rootfsPath = containerConfig->root->path;
 
-    configPath.replace(configPath.find(configName), configName.length(), rootfsRelativePath);
+    // check if root path is absolute
+    if (rootfsPath.front() == '/')
+    {
+        return rootfsPath;
+    }
+
+    configPath.replace(configPath.find(configName), configName.length(), rootfsPath);
 
     return configPath;
 }
