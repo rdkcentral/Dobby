@@ -24,6 +24,7 @@
 #define IONMEMORYPLUGIN_H
 
 #include <RdkPluginBase.h>
+#include <map>
 
 /**
  *  @class IonMemoryPlugin

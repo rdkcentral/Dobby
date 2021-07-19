@@ -15,4 +15,4 @@ set(DOBBY_INCLUDE_DIRS "@CONF_INCLUDE_DIRS@")
 include("${DOBBY_CMAKE_DIR}/DobbyTargets.cmake")
 
 # These are IMPORTED targets created by DobbyTargets.cmake
-set(DOBBY_LIBRARIES "IpcService;DobbyClientLib;AppInfraLogging;AppInfraCommon")
+set(DOBBY_LIBRARIES "IpcService;DobbyClientLib;AppInfraLogging;AppInfraCommon;DobbyRdkPluginCommonLib;DobbyPluginLauncherLib;libocispec")

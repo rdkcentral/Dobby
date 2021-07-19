@@ -19,7 +19,7 @@
 #ifndef RDKPLUGINBASE_H
 #define RDKPLUGINBASE_H
 
-#include <IDobbyRdkPlugin.h>
+#include "IDobbyRdkPlugin.h"
 
 // -----------------------------------------------------------------------------
 /**

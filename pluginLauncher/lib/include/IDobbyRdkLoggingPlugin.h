@@ -29,7 +29,6 @@
 #include "rt_dobby_schema.h"
 
 #include <Logging.h>
-#include <json/json.h>
 #include <sys/types.h>
 
 #include <string>

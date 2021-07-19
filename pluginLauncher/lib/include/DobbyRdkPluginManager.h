@@ -25,7 +25,6 @@
 
 #include "IDobbyRdkPlugin.h"
 #include "IDobbyRdkLoggingPlugin.h"
-#include "DobbyRdkPluginDependencySolver.h"
 
 #include <sys/types.h>
 #include <map>
@@ -34,6 +33,8 @@
 #include <set>
 #include <vector>
 #include <algorithm>
+
+class DobbyRdkPluginDependencySolver;
 
 // -----------------------------------------------------------------------------
 /**
@@ -82,7 +83,7 @@ private:
     const std::string mRootfsPath;
     const std::string mPluginPath;
     const std::shared_ptr<DobbyRdkPluginUtils> mUtils;
-    DobbyRdkPluginDependencySolver mDependencySolver;
+    std::unique_ptr<DobbyRdkPluginDependencySolver> mDependencySolver;
 };
 
 #endif // !defined(DOBBYRDKPLUGINMANAGER_H)

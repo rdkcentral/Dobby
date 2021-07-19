@@ -29,9 +29,6 @@
 
 REGISTER_RDK_PLUGIN(NetworkingPlugin);
 
-static std::string gDBusService(DOBBY_SERVICE ".plugin.networking");
-
-
 NetworkingPlugin::NetworkingPlugin(std::shared_ptr<rt_dobby_schema> &cfg,
                                    const std::shared_ptr<DobbyRdkPluginUtils> &utils,
                                    const std::string &rootfsPath)
@@ -425,13 +422,14 @@ bool NetworkingPlugin::createRemoteService()
 
     // Append the pid onto the end of the service name so we can run multiple
     // clients
+    std::string dbusServiceName(DOBBY_SERVICE ".plugin.networking");
     char strPid[32];
     sprintf(strPid, ".pid%d", getpid());
-    gDBusService += strPid;
+    dbusServiceName += strPid;
 
     try
     {
-        mIpcService = AI_IPC::createIpcService(DBUS_SYSTEM_ADDRESS, gDBusService);
+        mIpcService = AI_IPC::createIpcService(DBUS_SYSTEM_ADDRESS, dbusServiceName);
         if(!mIpcService->start())
         {
             AI_LOG_ERROR_EXIT("failed to create IPC service");

@@ -70,14 +70,16 @@ const std::string ImageManager::xAttrUserIdName = "user.storage.plugin";
  */
 bool ImageManager::checkFSImage(const std::string & filepath,
                                       uid_t userId,
+                                      const std::string & fs,
                                       bool fix /*= true*/)
 {
-    return checkFSImageAt(AT_FDCWD, filepath, userId, fix);
+    return checkFSImageAt(AT_FDCWD, filepath, userId, fs, fix);
 }
 
 bool ImageManager::checkFSImageAt(int dirFd,
                                         const std::string & filepath,
                                         uid_t userId,
+                                        const std::string & fs,
                                         bool fix /*= true*/)
 {
     AI_LOG_FN_ENTRY();
@@ -139,6 +141,8 @@ bool ImageManager::checkFSImageAt(int dirFd,
         }
     }
 
+    const bool isXfsFs = (0 == strcasecmp(fs.c_str(), "xfs"));
+
     // fork and exec the process
     pid_t pid = vfork();
     if (pid < 0)
@@ -171,10 +175,20 @@ bool ImageManager::checkFSImageAt(int dirFd,
         char filePathBuf[64];
         sprintf(filePathBuf, "/proc/self/fd/%d", duppedImageFd);
 
-        if (fix)
-            execlp("/sbin/e2fsck", "e2fsck", "-f", "-p", filePathBuf, nullptr);
+        if (isXfsFs)
+        {
+            if (fix)
+                execlp("/sbin/xfs_repair", "xfs_repair", "-o", "force_geometry", filePathBuf, nullptr);
+            else
+                execlp("/sbin/xfs_repair", "xfs_repair", "-n", filePathBuf, nullptr);
+        }
         else
-            execlp("/sbin/e2fsck", "e2fsck", "-f", "-n", filePathBuf, nullptr);
+        {
+            if (fix)
+                execlp("/sbin/e2fsck", "e2fsck", "-f", "-p", filePathBuf, nullptr);
+            else
+                execlp("/sbin/e2fsck", "e2fsck", "-f", "-n", filePathBuf, nullptr);
+        }
 
         // execlp failed, but don't bother trying to print an error as we've
         // already redirected stdout & stderr to /dev/null
@@ -197,8 +211,25 @@ bool ImageManager::checkFSImageAt(int dirFd,
     int status;
     if ((waitpid(pid, &status, 0) == -1) || !WIFEXITED(status))
     {
-        AI_LOG_ERROR_EXIT("the e2fsck call failed");
+        AI_LOG_ERROR_EXIT("file system check failed");
         return false;
+    }
+
+    if (isXfsFs)
+    {
+        if (WEXITSTATUS(status) == 64)
+        {
+            AI_LOG_ERROR_EXIT("failed to run the xfs_repair utility");
+            return false;
+        }
+
+        if (WEXITSTATUS(status) == 1)
+        {
+            AI_LOG_ERROR_EXIT("xfs_repair run in no modify mode and filesystem corruption was detected");
+            return false;
+        }
+        AI_LOG_FN_EXIT();
+        return true;
     }
 
     // Quote from the man page:
@@ -365,6 +396,10 @@ bool ImageManager::createFSImageAt(int dirFd,
         {
             type = "ext4";
         }
+        else if (0 == strcasecmp(fs.c_str(), "xfs"))
+        {
+            type = "xfs";
+        }
         else
         {
             //default "ext4"
@@ -372,8 +407,14 @@ bool ImageManager::createFSImageAt(int dirFd,
             type = "ext4";
         }
 
-
-        execlp("/sbin/mke2fs", "mke2fs", "-t", type.c_str(), "-F", filePathBuf, nullptr);
+        if (type.compare("xfs") == 0)
+        {
+            execlp("/sbin/mkfs.xfs", "mkfs.xfs", filePathBuf, nullptr);
+        }
+        else
+        {
+            execlp("/sbin/mke2fs", "mke2fs", "-t", type.c_str(), "-F", filePathBuf, nullptr);
+        }
 
         // execlp failed, but don't bother trying to print an error as we've
         // already redirected stdout & stderr to /dev/null
