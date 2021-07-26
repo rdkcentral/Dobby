@@ -27,7 +27,6 @@
 #include <IDobbyStartState.h>
 
 #include <list>
-#include <map>
 #include <memory>
 #include <mutex>
 #include <string>
@@ -74,7 +73,7 @@ public:
 
 private:
     const std::shared_ptr<DobbyConfig> mConfig;
-    std::multimap<std::string, int> mFiles;
+    std::list<std::pair<std::string, int>> mFiles;
     bool mValid;
     mutable std::mutex mLock;
 };

@@ -49,7 +49,7 @@ DobbyStartState::DobbyStartState(const std::shared_ptr<DobbyConfig>& config,
             return;
         }
 
-        mFiles.insert({"Generic", fd});
+        mFiles.push_back({"Generic", fd});
     }
 
     // all fd's have been dup'ed so we're valid
@@ -176,7 +176,7 @@ int DobbyStartState::addFileDescriptor(const std::string& pluginName, int fd)
     std::lock_guard<std::mutex> locker(mLock);
 
     int containerFd = 3 + static_cast<int>(mFiles.size());
-    mFiles.insert({pluginName, duppedFd});
+    mFiles.push_back({pluginName, duppedFd});
 
     AI_LOG_FN_EXIT();
     return containerFd;
