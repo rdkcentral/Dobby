@@ -67,14 +67,8 @@ bool Minidump::preCreation()
 {
     AI_LOG_FN_ENTRY();
 
-    size_t fileSize = 10 * 1024 * 1024; // default value
-    if (mContainerConfig->rdk_plugins->minidump->data->size_present)
-    {
-        fileSize = mContainerConfig->rdk_plugins->minidump->data->size;
-    }
-
-    // creates file descriptor to a volatile file bounded by size that lives in RAM
-    int hostFd = AnonymousFile(fileSize).create();
+    // creates file descriptor to a volatile file that lives in RAM
+    int hostFd = AnonymousFile().create();
     if (hostFd == -1)
     {
         AI_LOG_ERROR_EXIT("failed to create anonymous file in a host namespace");

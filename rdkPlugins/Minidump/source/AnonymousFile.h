@@ -28,8 +28,7 @@
 class AnonymousFile
 {
 public:
-    explicit AnonymousFile(size_t size);
-    explicit AnonymousFile(int fd);
+    explicit AnonymousFile(int fd = -1);
 
 public:
     int create();
@@ -39,7 +38,6 @@ private:
     long getFileSize(FILE* fp);
 
 private:
-    size_t mSize;
     int mFd;
 };
 

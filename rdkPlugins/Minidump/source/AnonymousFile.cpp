@@ -63,22 +63,11 @@ static inline int memfd_create(const char *name, unsigned int flags)
 #endif
 
 /**
- * @brief Constructor - called when volatile file is about to be created
- *
- * @param[in]  size  size boundary of a volatile file
- */
-AnonymousFile::AnonymousFile(size_t size) : mSize(size), mFd(-1)
-{
-    AI_LOG_FN_ENTRY();
-    AI_LOG_FN_EXIT();
-}
-
-/**
  * @brief Constructor - called when content of already created volatile file matters
  *
  * @param[in]  fd  file descriptor to previously created volatile file
  */
-AnonymousFile::AnonymousFile(int fd) : mFd(fd)
+AnonymousFile::AnonymousFile(int fd /*= -1*/) : mFd(fd)
 {
     AI_LOG_FN_ENTRY();
     AI_LOG_FN_EXIT();
@@ -99,17 +88,12 @@ int AnonymousFile::create()
         return mFd;
     }
 
+    // did some testing and it turns out that data written to memfd is accounted to the container
+    // it is allowed to not truncate and not limit file growing using seals at this point
     mFd = memfd_create("anon_file", MFD_CLOEXEC);
     if (mFd == -1)
     {
         AI_LOG_SYS_ERROR_EXIT(errno, "failed to create anonymous file");
-        return -1;
-    }
-
-    int success = ftruncate(mFd, mSize);
-    if (success == -1)
-    {
-        AI_LOG_SYS_ERROR_EXIT(errno, "failed to truncate anonymous file");
         return -1;
     }
 
@@ -146,6 +130,14 @@ bool AnonymousFile::copyContentTo(const std::string& destFile)
     }
 
     long fileSize = getFileSize(fp);
+    if (!fileSize)
+    {
+        AI_LOG_DEBUG("Empty file for fd %d", mFd);
+        fp = nullptr;
+        AI_LOG_FN_EXIT();
+        return true;
+    }
+
     char* buffer = (char*) malloc(sizeof(char) * (fileSize + 1));
     if (!buffer)
     {
@@ -164,17 +156,6 @@ bool AnonymousFile::copyContentTo(const std::string& destFile)
     }
 
     buffer[fileSize] = '\0';
-
-    // since we truncated 'anon_file' to be fixed size, buffer will always be allocated
-    // therefore we need to check if there was anything written to the 'anon_file'
-    if (strncmp(buffer, "0000", 4) != 0)
-    {
-        AI_LOG_DEBUG("Empty file for fd %d", mFd);
-        fp = nullptr;
-        free(buffer);
-        AI_LOG_FN_EXIT();
-        return true;
-    }
 
     // check file header
     if (strncmp(buffer, "MDMP", 4) != 0)

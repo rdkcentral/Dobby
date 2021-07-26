@@ -385,9 +385,6 @@
                     "properties": {
                         "destinationPath": {
                             "type": "string"
-                        },
-                        "size": {
-                            "$ref": "defs.json#/definitions/int32"
                         }
                     }
                 }

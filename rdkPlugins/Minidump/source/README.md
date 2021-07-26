@@ -35,13 +35,10 @@ The options inside this object goes as follows:
 | Option              | Value                                                                                                                                   |
 | ------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
 | `destinationPath`   | Directory (host namespace) to which minidump file should be copied                                                                      |
-|---------------------| ----------------Below this point there are optionals things, with default value in square brackets "[]"---------------------------------|
-| `size`              | Size of the anonymous file (in bytes), which will be used to transfer the minidump file data [10485760] (10 MB)                         |
 
 #### Example
 ```json
 "data": {
     "destinationPath": "/minidumps",
-    "size": 12582912
 }
 ```

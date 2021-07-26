@@ -49,10 +49,10 @@ public:
     unsigned hookHints() const override;
 
 public:
-    // This hook creates anonymous file and adds it into preserve container list
+    // This hook creates anonymous file and adds its fd into preserve container list
     bool preCreation() override;
 
-    // This hook copies minidump file to host namespace
+    // This hook copies minidump file to a host namespace
     bool postHalt() override;
 
 public:
