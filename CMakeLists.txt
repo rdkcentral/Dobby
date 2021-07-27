@@ -284,6 +284,7 @@ option(PLUGIN_LOGGING "Include Logging plugin" ON)
 option(PLUGIN_NETWORKING "Include Networking plugin" ON)
 option(PLUGIN_IPC "Include IPC plugin" ON)
 option(PLUGIN_STORAGE "Include Storage plugin" ON)
+option(PLUGIN_MINIDUMP "Include Minidump plugin" ON)
 option(PLUGIN_THUNDER "Include Thunder plugin" ON)
 
 # Optional RDK plugins
@@ -313,6 +314,10 @@ endif()
 
 if(PLUGIN_STORAGE)
     add_subdirectory(rdkPlugins/Storage)
+endif()
+
+if(PLUGIN_MINIDUMP)
+    add_subdirectory(rdkPlugins/Minidump)
 endif()
 
 if(PLUGIN_GPU)

@@ -364,6 +364,32 @@
                 }
             }
         },
+        "Minidump": {
+            "type": "object",
+            "required": [
+                "required",
+                "data"
+            ],
+            "properties": {
+                "required": {
+                    "type": "boolean"
+                },
+                "dependsOn": {
+                    "$ref": "defs.json#/definitions/ArrayOfStrings"
+                },
+                "data": {
+                    "type": "object",
+                    "required": [
+                        "destinationPath"
+                    ],
+                    "properties": {
+                        "destinationPath": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "LocalTime": {
             "type": "object",
             "required": [
@@ -535,6 +561,9 @@
                 },
                 "storage": {
                     "$ref": "#/definitions/Storage"
+                },
+                "minidump": {
+                    "$ref": "#/definitions/Minidump"
                 },
                 "localtime": {
                     "$ref": "#/definitions/LocalTime"
