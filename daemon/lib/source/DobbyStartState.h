@@ -56,10 +56,8 @@ public:
 public:
     bool isValid() const;
 
-    const std::list<int>& files() const;
-
 public:
-    int addFileDescriptor(int fd) override;
+    int addFileDescriptor(const std::string& pluginName, int fd) override;
 
     bool addEnvironmentVariable(const std::string& envVar) override;
 
@@ -69,9 +67,13 @@ public:
                   unsigned long mountFlags,
                   const std::list<std::string>& mountOptions) override;
 
+    std::list<int> files() const override;
+
+    std::list<int> files(const std::string& pluginName) const override;
+
 private:
     const std::shared_ptr<DobbyConfig> mConfig;
-    std::list<int> mFiles;
+    std::list<std::pair<std::string, int>> mFiles;
     bool mValid;
     mutable std::mutex mLock;
 };

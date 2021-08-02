@@ -29,6 +29,7 @@ add_library(${PROJECT_NAME}
 target_include_directories(${PROJECT_NAME}
         PRIVATE
         ../Networking/include
+        $<TARGET_PROPERTY:DobbyDaemonLib,INTERFACE_INCLUDE_DIRECTORIES>
         )
 
 install(

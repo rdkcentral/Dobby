@@ -65,7 +65,7 @@ bool LocalTimePlugin::postInstallation()
         return false;
     }
 
-    const std::string localtimeInHost = pathBuf;
+    const std::string localtimeInHost(pathBuf, len);
     const std::string localtimeInContainer = mRootfsPath + "/etc/localtime";
 
     if (localtimeInHost.empty())

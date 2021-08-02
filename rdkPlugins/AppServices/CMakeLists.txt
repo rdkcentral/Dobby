@@ -27,6 +27,7 @@ add_library( ${PROJECT_NAME}
 target_include_directories( AppServicesRdkPlugin
         PRIVATE
         ../Networking/include
+        $<TARGET_PROPERTY:DobbyDaemonLib,INTERFACE_INCLUDE_DIRECTORIES>
         )
 
 install(
