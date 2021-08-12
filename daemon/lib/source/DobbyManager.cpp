@@ -1464,7 +1464,7 @@ std::string DobbyManager::statsOfContainer(int32_t cd) const
     else
     {
         // create a stats object for the container
-        DobbyStats stats(it->first, mEnvironment);
+        DobbyStats stats(it->first, mEnvironment, mUtilities);
 
         // get the raw stats and add the "id" and "state" fields
         Json::Value jsonStats = stats.stats();
@@ -1486,8 +1486,9 @@ std::string DobbyManager::statsOfContainer(int32_t cd) const
         }
 
         // convert the json stats to a string and return
-        Json::FastWriter writer;
-        return writer.write(jsonStats);
+        Json::StreamWriterBuilder builder;
+        builder["indentation"] = " ";
+        return Json::writeString(builder, jsonStats);
     }
 
     return std::string();
