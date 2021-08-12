@@ -36,10 +36,12 @@
 #include <regex>
 
 #include <sstream>
+#include <ext/stdio_filebuf.h>
 
 DobbyStats::DobbyStats(const ContainerId& id,
-                       const std::shared_ptr<IDobbyEnv>& env)
-    : mStats(getStats(id, env))
+                       const std::shared_ptr<IDobbyEnv>& env,
+                       const std::shared_ptr<IDobbyUtils> &utils)
+    : mStats(getStats(id, env, utils))
 {
 }
 
@@ -99,7 +101,8 @@ const Json::Value& DobbyStats::stats() const
  *  could be found.
  */
 Json::Value DobbyStats::getStats(const ContainerId& id,
-                                 const std::shared_ptr<IDobbyEnv>& env)
+                                 const std::shared_ptr<IDobbyEnv>& env,
+                                 const std::shared_ptr<IDobbyUtils> &utils)
 {
     AI_LOG_FN_ENTRY();
 
@@ -111,13 +114,16 @@ Json::Value DobbyStats::getStats(const ContainerId& id,
         // the pids entry should be the same for all cgroups, so we might as well
         // use the cpuacct cgroup to get the pids from
         stats["pids"] =
-            readMultipleCgroupValues(id, cpuCgroupPath, "cgroup.procs");
+            readMultipleCgroupValuesJson(id, cpuCgroupPath, "cgroup.procs");
+
+        stats["processes"] =
+            getProcessTree(id, cpuCgroupPath, utils);
 
         // get the cpu usage values
         stats["cpu"]["usage"]["total"] =
             readSingleCgroupValue(id, cpuCgroupPath, "cpuacct.usage");
         stats["cpu"]["usage"]["percpu"] =
-            readMultipleCgroupValues(id, cpuCgroupPath, "cpuacct.usage_percpu");
+            readMultipleCgroupValuesJson(id, cpuCgroupPath, "cpuacct.usage_percpu");
     }
 
     // the timestamp value is generally used to calculate the cpu usage, so set
@@ -347,16 +353,16 @@ Json::Value DobbyStats::readSingleCgroupValue(const ContainerId& id,
  *
  *  @return The value read as a json object, typically an integer value.
  */
-Json::Value DobbyStats::readMultipleCgroupValues(const ContainerId& id,
+std::vector<int64_t> DobbyStats::readMultipleCgroupValues(const ContainerId& id,
                                                  const std::string& cgroupMntPath,
                                                  const std::string& cgroupfileName)
 {
     char buf[4096];
 
     if (readCgroupFile(id, cgroupMntPath, cgroupfileName, buf, sizeof(buf)) <= 0)
-        return Json::Value::null;
+        return {};
 
-    Json::Value array(Json::arrayValue);
+    std::vector<int64_t> values;
 
     char* saveptr = nullptr;
     const char delims[] = " \t\n\r";
@@ -369,17 +375,187 @@ Json::Value DobbyStats::readMultipleCgroupValues(const ContainerId& id,
             AI_LOG_SYS_ERROR(errno, "failed to convert '%s' contents to uint64_t",
                              cgroupfileName.c_str());
         }
-        else if (value == ULONG_LONG_MAX)
+        else if (value == LONG_LONG_MAX)
         {
-            array.append(-1);
+            values.emplace_back(-1);
         }
         else
         {
-            array.append(static_cast<Json::LargestUInt>(value));
+            values.emplace_back(value);
         }
 
         token = strtok_r(nullptr, delims, &saveptr);
     }
 
+    return values;
+}
+
+Json::Value DobbyStats::readMultipleCgroupValuesJson(const ContainerId& id,
+                                                    const std::string& cgroupMntPath,
+                                                    const std::string& cgroupfileName)
+{
+    std::vector<int64_t> cgroupValues = readMultipleCgroupValues(id, cgroupMntPath, cgroupfileName);
+
+    Json::Value array(Json::arrayValue);
+
+    for(const auto& value : cgroupValues)
+    {
+        array.append(static_cast<Json::LargestInt>(value));
+    }
+
     return array;
+}
+
+// -----------------------------------------------------------------------------
+/**
+ *  @brief Builds a json array of the processes running in the container
+ *
+ *  Will return a json array with all the processes inside the container with
+ *  their filename, cmdline and PID (both in the host and container namespace)
+ *
+ * "processes": [
+ *           {
+ *               "pid": "2345",
+ *               "nsPid": "1"
+ *               "file": "/usr/libexec/DobbyInit",
+ *               "cmdline": "/usr/libexec/DobbyInit sleep 30",
+ *           }
+ *       ]
+ *
+ *  @param[in]  id              The string id of the container.
+ *
+ *  @return Json array with all container processes
+ */
+Json::Value DobbyStats::getProcessTree(const ContainerId& id,
+                                       const std::string& cpuCgroupMntPath,
+                                       const std::shared_ptr<IDobbyUtils> &utils)
+{
+    std::vector<int64_t> cgroupValues = readMultipleCgroupValues(id, cpuCgroupMntPath, "cgroup.procs");
+
+    Json::Value array(Json::arrayValue);
+
+    for (auto pid : cgroupValues)
+    {
+        if (pid > std::numeric_limits<pid_t>::max() || pid < 0)
+        {
+            AI_LOG_WARN("Invalid PID found: %ld", pid);
+            continue;
+        }
+
+        Json::Value processJson;
+        getProcessInfo(pid, utils).Serialise(processJson);
+        array.append(processJson);
+    };
+
+    return array;
+}
+
+// -----------------------------------------------------------------------------
+/**
+ *  @brief Returns information about a given PID
+ *
+ *  @param[in]  pid     The PID to get information about
+ *
+ *  @returns    Process struct containing information about the specified
+ *              process
+ */
+DobbyStats::Process DobbyStats::getProcessInfo(pid_t pid,
+                                               const std::shared_ptr<IDobbyUtils> &utils)
+{
+    AI_LOG_FN_ENTRY();
+
+    // Get the path to the executable (resolving symlinks)
+    char exePath[32];
+    snprintf(exePath, sizeof(exePath), "/proc/%d/exe", pid);
+
+    char processPathBuf[PATH_MAX];
+    std::string processPath;
+    ssize_t len = readlink(exePath, processPathBuf, sizeof(processPathBuf));
+    if (len <= 0)
+    {
+        AI_LOG_SYS_ERROR(errno, "readlink failed on %s", exePath);
+    }
+    else
+    {
+        processPath = std::string(processPathBuf, len);
+    }
+
+    // Get the full process command line including arguments given
+    char cmdlinePath[32];
+    snprintf(cmdlinePath, sizeof(cmdlinePath), "/proc/%d/cmdline", pid);
+
+    std::string processCmdline;
+    processCmdline = utils->readTextFile(cmdlinePath);
+    std::replace( processCmdline.begin(), processCmdline.end(), '\0', ' ');
+
+    // Get the PID of the process from the perspective of the container
+    pid_t nsPid = readNsPidFromProc(pid);
+
+    Process process {
+        pid,
+        nsPid,
+        processPath,
+        processCmdline
+    };
+
+    AI_LOG_FN_EXIT();
+    return process;
+}
+
+// -----------------------------------------------------------------------------
+/**
+ * @brief Given a pid (in global namespace) tries to find what it's namespace
+ * pid is.
+ *
+ * This reads the /proc/<pid>/status file, line NStgid.
+ *
+ * @param[in] pid      The real pid of the process to lookup.
+ * @returns            Set of all the real pids within the container.
+ */
+pid_t DobbyStats::readNsPidFromProc(pid_t pid)
+{
+    char filePathBuf[32];
+    sprintf(filePathBuf, "/proc/%d/status", pid);
+
+    // get the list of all pids within the container
+    int fd = open(filePathBuf, O_CLOEXEC | O_RDONLY);
+    if (fd < 0)
+    {
+        AI_LOG_SYS_ERROR(errno, "failed to open %s'", filePathBuf);
+        return -1;
+    }
+
+    // nb: stdio_filebuf closes the fd on destruction
+    __gnu_cxx::stdio_filebuf<char> statusFileBuf(fd, std::ios::in);
+    std::istream statusFileStream(&statusFileBuf);
+
+    std::string line;
+    while (std::getline(statusFileStream, line))
+    {
+        if (line.compare(0, 7, "NStgid:") == 0)
+        {
+            int realPid = -1, nsPid = -1;
+
+            // skip the row header and read the next two integer (pid) values
+            if (sscanf(line.c_str(), "NStgid:\t%d\t%d", &realPid, &nsPid) != 2)
+            {
+                AI_LOG_WARN("failed to parse NStgid field, '%s' -> %d %d",
+                            line.c_str(), realPid, nsPid);
+                nsPid = -1;
+            }
+
+            // the first pid should be the one in the global namespace
+            else if ((realPid != pid) || (nsPid < 1))
+            {
+                AI_LOG_WARN("failed to parse NStgid field, '%s' -> %d %d",
+                            line.c_str(), realPid, nsPid);
+                nsPid = -1;
+            }
+
+            return nsPid;
+        }
+    }
+
+    AI_LOG_WARN("failed to find the NStgid field in the '%s' file", filePathBuf);
+    return -1;
 }

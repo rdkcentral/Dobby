@@ -25,14 +25,15 @@
 
 #include <ContainerId.h>
 #include <IDobbyEnv.h>
+#include "IDobbyUtils.h"
 
 #include <memory>
 #include <string>
 
 #if defined(RDK)
-#  include <json/json.h>
+#include <json/json.h>
 #else
-#  include <jsoncpp/json.h>
+#include <jsoncpp/json.h>
 #endif
 
 class IDobbyEnv;
@@ -52,39 +53,69 @@ class IDobbyEnv;
 class DobbyStats
 {
 public:
-    DobbyStats(const ContainerId& id,
-               const std::shared_ptr<IDobbyEnv>& env);
+    DobbyStats(const ContainerId &id,
+               const std::shared_ptr<IDobbyEnv> &env,
+               const std::shared_ptr<IDobbyUtils> &utils);
     ~DobbyStats();
 
 public:
-    const Json::Value& stats() const;
+    const Json::Value &stats() const;
 
 private:
-    static ssize_t readCgroupFile(const ContainerId& id,
-                                  const std::string& cgroupMntPath,
-                                  const std::string& cgroupfileName,
-                                  char* buf, size_t bufLen);
+    typedef struct Process
+    {
+        const pid_t pid;
+        const pid_t nsPid;
+        const std::string fileName;
+        const std::string cmdline;
 
-    static Json::Value readSingleCgroupValue(const ContainerId& id,
-                                             const std::string& cgroupMntPath,
-                                             const std::string& cgroupfileName);
+        inline void Serialise(Json::Value &root)
+        {
+            root["pid"] = pid;
+            root["nsPid"] = nsPid;
+            root["executable"] = fileName;
+            root["cmdline"] = cmdline;
+        }
+    } Process;
 
-    static  Json::Value readMultipleCgroupValues(const ContainerId& id,
-                                                 const std::string& cgroupMntPath,
-                                                 const std::string& cgroupfileName);
+private:
+    static ssize_t readCgroupFile(const ContainerId &id,
+                                  const std::string &cgroupMntPath,
+                                  const std::string &cgroupfileName,
+                                  char *buf, size_t bufLen);
 
-    static Json::Value getStats(const ContainerId& id,
-                                const std::shared_ptr<IDobbyEnv>& env);
+    static Json::Value readSingleCgroupValue(const ContainerId &id,
+                                             const std::string &cgroupMntPath,
+                                             const std::string &cgroupfileName);
+
+    static std::vector<int64_t> readMultipleCgroupValues(const ContainerId &id,
+                                                         const std::string &cgroupMntPath,
+                                                         const std::string &cgroupfileName);
+
+    static Json::Value readMultipleCgroupValuesJson(const ContainerId &id,
+                                                    const std::string &cgroupMntPath,
+                                                    const std::string &cgroupfileName);
+
+    static Json::Value getStats(const ContainerId &id,
+                                const std::shared_ptr<IDobbyEnv> &env,
+                                const std::shared_ptr<IDobbyUtils> &utils);
+
+    static Json::Value getProcessTree(const ContainerId &id,
+                                      const std::string &cpuCgroupMntPath,
+                                      const std::shared_ptr<IDobbyUtils> &utils);
 
 #if defined(RDK)
-    static Json::Value readIonCgroupHeaps(const ContainerId& id,
+    static Json::Value readIonCgroupHeaps(const ContainerId &id,
                                           const std::string &ionCgroupPath);
 #endif
 
+    static Process getProcessInfo(pid_t pid,
+                                  const std::shared_ptr<IDobbyUtils> &utils);
+
+    static pid_t readNsPidFromProc(pid_t pid);
 
 private:
     const Json::Value mStats;
 };
-
 
 #endif // !defined(DOBBYSTATS_H)
