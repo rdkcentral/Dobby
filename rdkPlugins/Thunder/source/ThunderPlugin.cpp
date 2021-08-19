@@ -19,6 +19,7 @@
 
 #include "ThunderPlugin.h"
 #include "ThunderSecurityAgent.h"
+#include "IpTablesRuleGenerator.h"
 
 #include <fcntl.h>
 #include <unistd.h>
@@ -77,15 +78,33 @@ unsigned ThunderPlugin::hookHints() const
  */
 bool ThunderPlugin::postInstallation()
 {
+
+    // If localhost masquerade, configure container to just use 127.0.0.1:9998
+    std::string thunderIp;
+    if (mContainerConfig->rdk_plugins->thunder->data->localhost_masquerade_present &&
+        mContainerConfig->rdk_plugins->thunder->data->localhost_masquerade)
+    {
+        thunderIp = "127.0.0.1";
+    }
+    else
+    {
+        thunderIp = "100.64.11.1";
+    }
+
+
     // Set up the /etc/hosts and /etc/service files
     std::string hostFilePath = mRootfsPath + "/etc/hosts";
-    if (!mUtils->writeTextFile(hostFilePath, "100.64.11.1\tthunder\t\n",
+
+    char buf[64];
+    snprintf(buf, sizeof(buf), "%s\tthunder\t\n", thunderIp.c_str());
+
+    if (!mUtils->writeTextFile(hostFilePath, buf,
                                O_CREAT | O_APPEND | O_WRONLY, 0644))
     {
         AI_LOG_ERROR("Failed to update hosts file with Thunder IP address");
     }
 
-    char buf[64];
+    bzero(buf, sizeof(buf));
     snprintf(buf, sizeof(buf), "thunder\t%hu/tcp\t\t# Thunder Services\n", mThunderPort);
 
     std::string servicesFilePath = mRootfsPath + "/etc/services";
@@ -94,9 +113,9 @@ bool ThunderPlugin::postInstallation()
         AI_LOG_ERROR("Failed to update services file with Thunder details");
     }
 
-    // Set the THUNDER_ACCESS envvar to the Dobby bridge IP address
+    // Set the THUNDER_ACCESS envvar
     bzero(buf, sizeof(buf));
-    snprintf(buf, sizeof(buf), "THUNDER_ACCESS=100.64.11.1:%hu", mThunderPort);
+    snprintf(buf, sizeof(buf), "THUNDER_ACCESS=%s:%hu", thunderIp.c_str(), mThunderPort);
     mUtils->addEnvironmentVar(buf);
 
     return true;
@@ -174,6 +193,38 @@ bool ThunderPlugin::createRuntime()
     {
         AI_LOG_ERROR_EXIT("Failed to apply Thunder iptables rules for '%s'", mUtils->getContainerId().c_str());
         return false;
+    }
+
+    if (mContainerConfig->rdk_plugins->thunder->data->localhost_masquerade_present &&
+        mContainerConfig->rdk_plugins->thunder->data->localhost_masquerade)
+    {
+        // Construct the localhost masquerade rule
+        Netfilter::RuleSet masqueradeRuleSet;
+
+        // get the ip address and veth name assigned to the container
+        ContainerNetworkInfo networkInfo;
+        if (!mUtils->getContainerNetworkInfo(networkInfo))
+        {
+            AI_LOG_ERROR_EXIT("failed to get IP address and veth name assigned to container");
+            return false;
+        }
+
+        std::list<std::string> natRules;
+        const std::string dnatRule =
+            IpTablesRuleGenerator::createMasqueradeDnatRule("thunder", mUtils->getContainerId(), 9998, "tcp", AF_INET);
+        const std::string snatRule =
+            IpTablesRuleGenerator::createMasqueradeSnatRule("thunder", mUtils->getContainerId(), networkInfo.ipAddress, "tcp", AF_INET);
+
+        masqueradeRuleSet[Netfilter::TableType::Nat].emplace_back(dnatRule);
+        masqueradeRuleSet[Netfilter::TableType::Nat].emplace_back(snatRule);
+
+        const pid_t containerPid = mUtils->getContainerPid();
+        if (!mUtils->callInNamespace(containerPid, CLONE_NEWNET,
+                                    &ThunderPlugin::setupLocalhostMasquerade, this, masqueradeRuleSet))
+        {
+            AI_LOG_ERROR_EXIT("Failed to add Thunder localhost masquerade iptables rules inside container");
+            return false;
+        }
     }
 
     AI_LOG_FN_EXIT();
@@ -283,6 +334,32 @@ Netfilter::RuleSet ThunderPlugin::constructRules() const
 
     AI_LOG_FN_EXIT();
     return ruleSet;
+}
+
+bool ThunderPlugin::setupLocalhostMasquerade(Netfilter::RuleSet& ruleSet) const
+{
+    std::shared_ptr<Netfilter> nsNetfilter = std::make_shared<Netfilter>();
+
+    // Add rules to cache
+    if (!nsNetfilter->addRules(ruleSet, AF_INET, Netfilter::Operation::Insert))
+    {
+        AI_LOG_ERROR_EXIT("failed to setup Thunder localhost masquerade iptables rules inside container for '%s''", mUtils->getContainerId().c_str());
+        return false;
+    }
+
+    // actually apply the rules
+    if (!nsNetfilter->applyRules(AF_INET))
+    {
+        AI_LOG_ERROR_EXIT("Failed to apply Thunder iptables rules for '%s'", mUtils->getContainerId().c_str());
+        return false;
+    }
+
+    // Enable route_localnet inside the container
+    const std::string routingFilename = "/proc/sys/net/ipv4/conf/eth0/route_localnet";
+    mUtils->writeTextFile(routingFilename, "1", O_TRUNC | O_WRONLY, 0);
+
+    AI_LOG_FN_EXIT();
+    return true;
 }
 
 // -----------------------------------------------------------------------------

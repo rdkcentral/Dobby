@@ -130,14 +130,4 @@ std::string createAcceptRule(const PortForward &portForward,
                              const std::string &vethName,
                              const int ipVersion);
 
-std::string createMasqueradeDnatRule(const PortForward &portForward,
-                                     const std::string &id,
-                                     const std::string &ipAddress,
-                                     const int ipVersion);
-
-std::string createMasqueradeSnatRule(const PortForward &portForward,
-                                    const std::string &id,
-                                    const std::string &ipAddress,
-                                    const int ipVersion);
-
 #endif // !defined(PORTFORWARDING_H)

@@ -78,6 +78,8 @@ public:
 private:
     Netfilter::RuleSet constructRules() const;
 
+    bool setupLocalhostMasquerade(Netfilter::RuleSet& ruleSet) const;
+
     std::string constructDNATRule(const std::string &containerIp,
                                   in_port_t port) const;
 
@@ -89,6 +91,9 @@ private:
     std::string constructACCEPTRule(const std::string &containerIp,
                                     const std::string &vethName,
                                     in_port_t port) const;
+
+    std::string createMasqueradeDnatRule(const in_port_t &port) const;
+    std::string createMasqueradeSnatRule(const std::string &ipAddress) const;
 
 private:
     const std::string mName;

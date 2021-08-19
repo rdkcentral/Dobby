@@ -9,7 +9,9 @@ Add the following section to your OCI runtime configuration `config.json` file t
         "thunder": {
             "required": true,
             "dependsOn": ["networking"],
-            "data": {}
+            "data": {
+                "bearerUrl": "http://localhost"
+            }
         }
     }
 }
@@ -36,6 +38,13 @@ The URL defines which roles the container will have based on the Thunder ACL fil
     "bearerUrl": "http://localhost"
 }
 ```
+
+### Localhost Masquerade
+If `localhostmasquerade` is set to `true`, Thunder will be made available inside the container on `127.0.0.1:9998` and `THUNDER_ACCESS` will be set to `127.0.0.1:9998` to match.
+
+This is set to `false` by default.
+
+When enabled, Thunder will still also be accessible on `100.64.11.1:9998`.
 
 ### Connection Limit
 *Note: this feature is currently disabled - change `mEnableConnLimit` in `ThunderPlugin.cpp` to true to enable*

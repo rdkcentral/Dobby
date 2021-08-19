@@ -497,6 +497,9 @@
                         "bearerUrl": {
                             "type": "string"
                         },
+                        "localhostMasquerade": {
+                            "type": "boolean"
+                        },
                         "connLimit": {
                             "type": "integer"
                         }
