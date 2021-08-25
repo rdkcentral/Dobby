@@ -109,27 +109,43 @@ bool ThunderPlugin::preCreation()
     // Add an environment variable to the config containing the token
     if (mContainerConfig->rdk_plugins->thunder->data->bearer_url)
     {
-#if defined(DEV_VM)
-        std::string agentPath = "/tmp/SecurityAgent/token";
-#else
-        std::string agentPath = "/tmp/securityagent";
-#endif
+        // Socket could be in different location depending on ThunderClientLibraries
+        // version
+        std::string agentPath;
+        std::vector<std::string> securityAgentTokenPaths = {
+            "/tmp/SecurityAgent/token",
+            "/tmp/securityagent"
+        };
+
         const char *envAgentPath = getenv("SECURITYAGENT_PATH");
-        if (envAgentPath)
+        if (envAgentPath && access(envAgentPath, F_OK) == 0)
         {
             agentPath = std::string(envAgentPath);
+            AI_LOG_INFO("Security agent socket set by SECURITYAGENT_PATH env var to %s", agentPath.c_str());
         }
-        if (access(agentPath.c_str(), F_OK) != 0)
+        else
         {
-            AI_LOG_ERROR("No thunder security agent socket, cannot generate token");
+            for(const auto& path : securityAgentTokenPaths)
+            {
+                if (access(path.c_str(), F_OK) == 0)
+                {
+                    AI_LOG_INFO("Security agent socket found at %s", path.c_str());
+                    agentPath = path;
+                    break;
+                }
+            }
+        }
+
+        if (agentPath.empty())
+        {
+            AI_LOG_ERROR("No thunder security agent socket found, cannot generate token");
             return false;
         }
 
         auto securityAgent = std::make_shared<ThunderSecurityAgent>(agentPath);
         if (!securityAgent || !securityAgent->open())
         {
-            AI_LOG_ERROR("failed to open the security agent socket, disabling "
-                         "token generation");
+            AI_LOG_ERROR("failed to open the security agent socket at %s, disabling token generation", agentPath.c_str());
             securityAgent.reset();
             return false;
         }
