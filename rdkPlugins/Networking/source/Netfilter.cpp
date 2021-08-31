@@ -350,6 +350,11 @@ Netfilter::RuleSet Netfilter::getRuleSet(const int ipVersion) const
         }
     }
 
+    if (ruleSet.size() == 0)
+    {
+        AI_LOG_WARN("iptables-save returned no rules - suspicious");
+    }
+
     AI_LOG_FN_EXIT();
     return ruleSet;
 }
@@ -421,6 +426,12 @@ bool Netfilter::checkDuplicates(RuleSets ruleCache, const int ipVersion) const
     // get the existing iptables rules
     RuleSet existing = getRuleSet(ipVersion);
 
+    if (existing.size() == 0)
+    {
+        AI_LOG_ERROR("Failed to get existing iptables rules - cannot determine which rules to write");
+        return false;
+    }
+
     // trim duplicates rules from the rulesets we want to add to iptables
     trimDuplicates(existing, ruleCache.appendRuleSet, Operation::Append);
     trimDuplicates(existing, ruleCache.insertRuleSet, Operation::Insert);
@@ -431,6 +442,7 @@ bool Netfilter::checkDuplicates(RuleSets ruleCache, const int ipVersion) const
     if (ruleCache.appendRuleSet.empty() && ruleCache.insertRuleSet.empty() &&
         ruleCache.deleteRuleSet.empty() && ruleCache.unchangedRuleSet.empty())
     {
+        AI_LOG_INFO("All container iptables rules are duplicates - no new rules to write");
         AI_LOG_FN_EXIT();
         return false;
     }
@@ -488,7 +500,6 @@ bool Netfilter::applyRules(const int ipVersion)
     if (!checkDuplicates(ruleCache, ipVersion))
     {
         // all of the rules were duplicate, none left to write
-        AI_LOG_WARN("all iptables rules are already set");
         AI_LOG_FN_EXIT();
         return true;
     }
