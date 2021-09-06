@@ -146,18 +146,21 @@ bool DobbyRdkPluginManager::loadPlugins()
             if (fstatat(dirfd(dir), namelist[i]->d_name, &buf, AT_NO_AUTOMOUNT) != 0)
             {
                 AI_LOG_SYS_ERROR(errno, "failed to stat '%s'", namelist[i]->d_name);
+                free(namelist[i]);
                 continue;
             }
 
             if (!S_ISREG(buf.st_mode))
             {
                 // symlink doesn't point to a regular file so skip it
+                free(namelist[i]);
                 continue;
             }
         }
         else if (namelist[i]->d_type != DT_REG)
         {
             // the entry is not a regular file so skip it
+            free(namelist[i]);
             continue;
         }
 
@@ -189,6 +192,7 @@ bool DobbyRdkPluginManager::loadPlugins()
         {
             dlclose(libHandle);
             AI_LOG_DEBUG("%s does not contain create/destroy functions, skipping...\n", namelist[i]->d_name);
+            free(namelist[i]);
             continue;
         }
 
@@ -237,6 +241,7 @@ bool DobbyRdkPluginManager::loadPlugins()
         {
             AI_LOG_WARN("plugin for library '%s' failed to register", libPath);
             dlclose(libHandle);
+            free(namelist[i]);
             continue;
         }
 
@@ -246,6 +251,7 @@ bool DobbyRdkPluginManager::loadPlugins()
             AI_LOG_WARN("plugin for library '%s' returned an invalid name", libPath);
             plugin.reset();
             dlclose(libHandle);
+            free(namelist[i]);
             continue;
         }
 
