@@ -65,6 +65,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/uio.h>
+#include <sys/syscall.h>
 #include <inttypes.h>
 
 volatile sig_atomic_t Dobby::mSigTerm = 0;
@@ -270,7 +271,7 @@ void Dobby::logConsolePrinter(int level, const char *file, const char *func,
     struct timespec ts;
     clock_gettime(CLOCK_MONOTONIC, &ts);
 
-    struct iovec iov[5];
+    struct iovec iov[6];
     char tbuf[32];
 
     iov[0].iov_base = tbuf;
@@ -278,55 +279,61 @@ void Dobby::logConsolePrinter(int level, const char *file, const char *func,
                               ts.tv_sec, ts.tv_nsec / 1000);
     iov[0].iov_len = std::min<size_t>(iov[0].iov_len, sizeof(tbuf));
 
+
+    char threadbuf[32];
+    iov[1].iov_base = threadbuf;
+    iov[1].iov_len = snprintf(threadbuf, sizeof(threadbuf), "<T-%lu> ", syscall(SYS_gettid));
+    iov[1].iov_len = std::min<size_t>(iov[1].iov_len, sizeof(threadbuf));
+
     switch (level)
     {
         case AI_DEBUG_LEVEL_FATAL:
-            iov[1].iov_base = (void*)"FTL: ";
-            iov[1].iov_len = 5;
+            iov[2].iov_base = (void*)"FTL: ";
+            iov[2].iov_len = 5;
             break;
         case AI_DEBUG_LEVEL_ERROR:
-            iov[1].iov_base = (void*)"ERR: ";
-            iov[1].iov_len = 5;
+            iov[2].iov_base = (void*)"ERR: ";
+            iov[2].iov_len = 5;
             break;
         case AI_DEBUG_LEVEL_WARNING:
-            iov[1].iov_base = (void*)"WRN: ";
-            iov[1].iov_len = 5;
+            iov[2].iov_base = (void*)"WRN: ";
+            iov[2].iov_len = 5;
             break;
         case AI_DEBUG_LEVEL_MILESTONE:
-            iov[1].iov_base = (void*)"MIL: ";
-            iov[1].iov_len = 5;
+            iov[2].iov_base = (void*)"MIL: ";
+            iov[2].iov_len = 5;
             break;
         case AI_DEBUG_LEVEL_INFO:
-            iov[1].iov_base = (void*)"NFO: ";
-            iov[1].iov_len = 5;
+            iov[2].iov_base = (void*)"NFO: ";
+            iov[2].iov_len = 5;
             break;
         case AI_DEBUG_LEVEL_DEBUG:
-            iov[1].iov_base = (void*)"DBG: ";
-            iov[1].iov_len = 5;
+            iov[2].iov_base = (void*)"DBG: ";
+            iov[2].iov_len = 5;
             break;
         default:
-            iov[1].iov_base = (void*)": ";
-            iov[1].iov_len = 2;
+            iov[2].iov_base = (void*)": ";
+            iov[2].iov_len = 2;
             break;
     }
 
     char fbuf[160];
-    iov[2].iov_base = (void*)fbuf;
+    iov[3].iov_base = (void*)fbuf;
     if (!file || !func || (line <= 0))
-        iov[2].iov_len = snprintf(fbuf, sizeof(fbuf), "< M:? F:? L:? > ");
+        iov[3].iov_len = snprintf(fbuf, sizeof(fbuf), "< M:? F:? L:? > ");
     else
-        iov[2].iov_len = snprintf(fbuf, sizeof(fbuf), "< M:%.*s F:%.*s L:%d > ",
+        iov[3].iov_len = snprintf(fbuf, sizeof(fbuf), "< M:%.*s F:%.*s L:%d > ",
                                   64, file, 64, func, line);
-    iov[2].iov_len = std::min<size_t>(iov[2].iov_len, sizeof(fbuf));
+    iov[3].iov_len = std::min<size_t>(iov[3].iov_len, sizeof(fbuf));
 
-    iov[3].iov_base = const_cast<char*>(message);
-    iov[3].iov_len = strlen(message);
+    iov[4].iov_base = const_cast<char*>(message);
+    iov[4].iov_len = strlen(message);
 
-    iov[4].iov_base = (void*)"\n";
-    iov[4].iov_len = 1;
+    iov[5].iov_base = (void*)"\n";
+    iov[5].iov_len = 1;
 
 
-    writev(fileno((level < AI_DEBUG_LEVEL_INFO) ? stderr : stdout), iov, 5);
+    writev(fileno((level < AI_DEBUG_LEVEL_INFO) ? stderr : stdout), iov, 6);
 }
 
 #if defined(RDK) && defined(USE_SYSTEMD)
