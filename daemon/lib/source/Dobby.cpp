@@ -86,7 +86,6 @@ Dobby::Dobby(const std::string& dbusAddress,
     : mEnvironment(std::make_shared<DobbyEnv>(settings))
     , mUtilities(std::make_shared<DobbyUtils>())
     , mIPCUtilities(std::make_shared<DobbyIPCUtils>(dbusAddress, ipcService))
-    , mContainerLogger(std::make_shared<DobbyLogger>(settings))
     , mWorkQueue(new DobbyWorkQueue)
     , mPluginWorkQueue(new DobbyWorkQueue)
     , mIpcService(ipcService)
@@ -115,7 +114,7 @@ Dobby::Dobby(const std::string& dbusAddress,
 
     // create the container manager which does all the heavy lifting
     mManager = std::make_shared<DobbyManager>(mEnvironment, mUtilities,
-                            mIPCUtilities, mContainerLogger, settings, startedCb, stoppedCb);
+                            mIPCUtilities, settings, startedCb, stoppedCb);
     if (!mManager)
     {
         AI_LOG_FATAL("failed to create manager");
