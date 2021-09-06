@@ -968,6 +968,55 @@ static void shutdownCommand(const std::shared_ptr<IDobbyProxy>& dobbyProxy,
 
 // -----------------------------------------------------------------------------
 /**
+ * @brief
+ *
+ *
+ *
+ */
+static void setLogLevelCommand(const std::shared_ptr<IDobbyProxy>& dobbyProxy,
+                               const std::shared_ptr<const IReadLineContext>& readLine,
+                               const std::vector<std::string>& args)
+{
+    AI_LOG_FN_ENTRY();
+
+    if (args.size() < 1 || args[0].empty())
+    {
+        readLine->printLnError("must provide at least one arg; <level>");
+        return;
+    }
+
+    const std::string level = args[0];
+
+    int levelNo;
+    if (strcasecmp(level.c_str(), "FATAL") == 0)
+        levelNo = AI_DEBUG_LEVEL_FATAL;
+    else if (strcasecmp(level.c_str(), "ERROR") == 0)
+        levelNo = AI_DEBUG_LEVEL_ERROR;
+    else if (strcasecmp(level.c_str(), "WARNING") == 0)
+        levelNo = AI_DEBUG_LEVEL_WARNING;
+    else if (strcasecmp(level.c_str(), "MILESTONE") == 0)
+        levelNo = AI_DEBUG_LEVEL_MILESTONE;
+    else if (strcasecmp(level.c_str(), "INFO") == 0)
+        levelNo = AI_DEBUG_LEVEL_INFO;
+    else if (strcasecmp(level.c_str(), "DEBUG") == 0)
+        levelNo = AI_DEBUG_LEVEL_DEBUG;
+    else
+    {
+        readLine->printLnError("Error: invalid LEVEL argument, possible values are "
+                               "FATAL, ERROR, WARNING, MILESTONE, INFO or DEBUG\n");
+        return;
+    }
+
+    if (!dobbyProxy->setLogLevel(levelNo))
+    {
+        readLine->printLnError("failed to set log level");
+    }
+
+    AI_LOG_FN_EXIT();
+}
+
+// -----------------------------------------------------------------------------
+/**
  * @brief Initialises the interactive commands
  *
  *
@@ -1034,6 +1083,13 @@ static void initCommands(const std::shared_ptr<IReadLine>& readLine,
                          "wait <id> <state>",
                          "Waits for a container with ID to enter a specified state (started, stopped)\n",
                          "\n");
+
+    readLine->addCommand("set-log-level",
+                         std::bind(setLogLevelCommand, dobbyProxy, std::placeholders::_1, std::placeholders::_2),
+                         "set-log-level <level>",
+                         "Dynamically change the log level of the DobbyDaeon daemon. possible values:\n"
+                         "FATAL, ERROR, WARNING, MILESTONE, INFO or DEBUG",
+                         "\n");                         
 
 #if (AI_BUILD_TYPE == AI_DEBUG) && defined(LEGACY_COMPONENTS)
     readLine->addCommand("dumpspec",
