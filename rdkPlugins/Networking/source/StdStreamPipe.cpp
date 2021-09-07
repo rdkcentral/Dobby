@@ -76,7 +76,7 @@ int StdStreamPipe::writeFd() const
 std::string StdStreamPipe::getPipeContents() const
 {
     std::string contents;
-    char buf[256];
+    char buf[256] = {0};
 
     while (true)
     {

@@ -76,7 +76,6 @@
 DobbyManager::DobbyManager(const std::shared_ptr<IDobbyEnv> &env,
                            const std::shared_ptr<IDobbyUtils> &utils,
                            const std::shared_ptr<IDobbyIPCUtils> &ipcUtils,
-                           const std::shared_ptr<DobbyLogger> logger,
                            const std::shared_ptr<const IDobbySettings> &settings,
                            const ContainerStartedFunc &containerStartedCb,
                            const ContainerStoppedFunc &containerStoppedCb)
@@ -86,8 +85,8 @@ DobbyManager::DobbyManager(const std::shared_ptr<IDobbyEnv> &env,
     , mUtilities(utils)
     , mIPCUtilities(ipcUtils)
     , mSettings(settings)
-    , mLogger(logger)
-    , mRunc(new DobbyRunC(utils, settings))
+    , mLogger(std::make_unique<DobbyLogger>(settings))
+    , mRunc(std::make_unique<DobbyRunC>(utils, settings))
     , mState(std::make_shared<DobbyState>(settings))
     , mRuncMonitorTerminate(false)
 #if defined(LEGACY_COMPONENTS)
@@ -112,6 +111,12 @@ DobbyManager::~DobbyManager()
     // TODO: clean-up all containers
 
     stopRuncMonitorThread();
+
+    // We must wait for all logging threads to finish before we start
+    // destructing DobbyManager, otherwise there's a chance we'll unload
+    // the logging plugin whilst the thread is logging data, which leads
+    // to undefined behaviour
+    mLogger->ShutdownLoggers();
 }
 
 // -----------------------------------------------------------------------------

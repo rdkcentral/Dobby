@@ -56,7 +56,8 @@ public:
     // Logging Specific Methods
     void LoggingLoop(IDobbyRdkLoggingPlugin::ContainerInfo containerInfo,
                      const bool isBuffer,
-                     const bool createNew) override;
+                     const bool createNew,
+                     const std::atomic_bool& cancellationToken) override;
 
 private:
     // Locations the plugin can send the logs
@@ -69,10 +70,10 @@ private:
 
 private:
     LoggingSink GetContainerSink();
-    void FileSink(const ContainerInfo &containerInfo, bool exitEof, bool createNew);
-    void DevNullSink(const ContainerInfo &containerInfo, bool exitEof);
+    void FileSink(const ContainerInfo &containerInfo, bool exitEof, bool createNew, const std::atomic_bool &cancellationToken);
+    void DevNullSink(const ContainerInfo &containerInfo, bool exitEof, const std::atomic_bool &cancellationToken);
 #if defined(USE_SYSTEMD)
-    void JournaldSink(const ContainerInfo &containerInfo, bool exitEof);
+    void JournaldSink(const ContainerInfo &containerInfo, bool exitEof, const std::atomic_bool &cancellationToken);
 #endif
 
 private:

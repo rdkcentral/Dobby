@@ -217,6 +217,8 @@ void DobbyRootfs::unmountAllAt(const std::string& pathPrefix)
 
     // process each line of the file, we are looking for any mount point that
     // is prefixed with the above path
+    char mntRoot[256 + 1] = {0};
+    char mntPoint[256 + 1] = {0};
     while ((rd = getline(&line, &len, fp)) >= 0)
     {
         if ((line == nullptr) || (rd < 8))
@@ -228,9 +230,6 @@ void DobbyRootfs::unmountAllAt(const std::string& pathPrefix)
         // process the individual mount line
         int mntId, parentMntId;
         unsigned devMajor, devMinor;
-        char mntRoot[256 + 1];
-        char mntPoint[256 + 1];
-
         if (sscanf(line, "%i %i %u:%u %256s %256s", &mntId, &parentMntId,
                                                     &devMajor, &devMinor,
                                                     mntRoot, mntPoint) != 6)

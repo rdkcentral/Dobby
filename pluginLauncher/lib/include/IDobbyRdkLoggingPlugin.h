@@ -60,7 +60,8 @@ public:
 
     virtual void LoggingLoop(ContainerInfo containerInfo,
                              const bool isBuffer,
-                             const bool createNew) = 0;
+                             const bool createNew,
+                             const std::atomic_bool& cancellationToken) = 0;
 };
 
 // -----------------------------------------------------------------------------

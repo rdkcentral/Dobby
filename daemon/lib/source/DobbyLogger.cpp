@@ -28,7 +28,8 @@
 #include <chrono>
 
 DobbyLogger::DobbyLogger(const std::shared_ptr<const IDobbySettings> &settings)
-    : mSocketPath(settings->consoleSocketPath())
+    : mSocketPath(settings->consoleSocketPath()),
+      mCancellationToken(ATOMIC_VAR_INIT(false))
 {
     AI_LOG_FN_ENTRY();
 
@@ -52,11 +53,15 @@ DobbyLogger::DobbyLogger(const std::shared_ptr<const IDobbySettings> &settings)
 
 DobbyLogger::~DobbyLogger()
 {
+    AI_LOG_FN_ENTRY();
+
     // Clean up when we're done
     if (unlink(mSocketPath.c_str()))
     {
         AI_LOG_SYS_ERROR(errno, "Failed to remove socket at '%s'", mSocketPath.c_str());
     }
+
+    AI_LOG_FN_EXIT();
 }
 
 /**
@@ -190,8 +195,17 @@ void DobbyLogger::connectionMonitorThread(const int socketFd)
         int connection = TEMP_FAILURE_RETRY(accept(socketFd, NULL, NULL));
         if (connection < 0)
         {
-            AI_LOG_SYS_ERROR(errno, "Error accepting connection");
-            break;
+            // If we're shutting down, this is expected
+            if (mCancellationToken)
+            {
+                return;
+            }
+            else
+            {
+                AI_LOG_SYS_ERROR(errno, "Error accepting connection");
+                break;
+            }
+
         }
 
         struct ucred conCredentials = {};
@@ -244,6 +258,57 @@ void DobbyLogger::connectionMonitorThread(const int socketFd)
 }
 
 /**
+ * @brief Stops all logging threads
+ */
+void DobbyLogger::ShutdownLoggers()
+{
+    AI_LOG_FN_ENTRY();
+
+    AI_LOG_INFO("Currently %lu logging threads running. Sending cancellation request", mFutures.size());
+
+    mCancellationToken = true;
+
+    // Close the Pty socket
+    if (shutdown(mSocketFd, SHUT_RDWR) < 0)
+    {
+        AI_LOG_SYS_WARN(errno, "Failed to shutdown socket %d", mSocketFd);
+    }
+
+    if (close(mSocketFd) < 0)
+    {
+        AI_LOG_SYS_WARN(errno, "Failed to close socket %d", mSocketFd);
+    }
+
+
+    // Go through and wait for all futures to end
+    for(const auto& future : mFutures)
+    {
+        if (!future.second.valid())
+        {
+            AI_LOG_INFO("Invalid future");
+            continue;
+        }
+
+        AI_LOG_INFO("Logging thread for PID %d is running, waiting for it to finish...", future.first);
+        std::chrono::seconds duration(1);
+        auto status = future.second.wait_for(duration);
+
+        if (status == std::future_status::ready)
+        {
+            AI_LOG_INFO("Logging thread finished");
+        }
+        else
+        {
+            AI_LOG_WARN("Logging thread did not complete in allocated time");
+        }
+    }
+
+    mFutures.clear();
+
+    return;
+}
+
+/**
  * @brief If the logging thread for the container with PID containerPid is
  * still running, wait for up to 2 seconds for it to finish flushing it's
  * logs to prevent Dobby from freeing resources before the logging has finished
@@ -286,7 +351,7 @@ void DobbyLogger::WaitForLoggingToFinish(pid_t containerPid)
     }
 
     // Delete the future from the map
-    mFutures.erase(containerPid);
+    mFutures.erase(it);
 }
 
 /**
@@ -331,18 +396,20 @@ bool DobbyLogger::StartContainerLogging(std::string containerId,
     }
 
     // Create a task to run the logging thread
-    std::packaged_task<void(IDobbyRdkLoggingPlugin::ContainerInfo, bool, bool)> loggingTask(std::bind(
+    std::packaged_task<void(IDobbyRdkLoggingPlugin::ContainerInfo, bool, bool, std::atomic_bool&)> loggingTask(std::bind(
         &IDobbyRdkLoggingPlugin::LoggingLoop,
         loggingPlugin,
         std::placeholders::_1,
         std::placeholders::_2,
-        std::placeholders::_3));
+        std::placeholders::_3,
+        std::placeholders::_4));
 
     std::future<void> result = loggingTask.get_future();
     // Actually start the thread
-    std::thread thread = std::thread(std::move(loggingTask), it->second, false, createNewLog);
+    std::thread thread = std::thread(std::move(loggingTask), it->second, false, createNewLog, std::ref(mCancellationToken));
     // Thread is long running and we shouldn't block - detach it
     thread.detach();
+
     mFutures.insert(std::make_pair(containerPid, std::move(result)));
 
     // Thread is up and running, don't need to track the connection any more
@@ -393,7 +460,7 @@ bool DobbyLogger::DumpBuffer(int bufferMemFd,
         return false;
     }
 
-    loggingPlugin->LoggingLoop(info, true, createNewLog);
+    loggingPlugin->LoggingLoop(info, true, createNewLog, false);
 
     AI_LOG_FN_EXIT();
     return true;
