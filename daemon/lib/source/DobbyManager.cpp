@@ -260,7 +260,44 @@ void DobbyManager::setupWorkspace(const std::shared_ptr<IDobbyEnv> &env)
  */
 void DobbyManager::cleanupContainers()
 {
-    // get a list of currently running containers and there status
+    AI_LOG_FN_ENTRY();
+
+    // Do a manual check for leftover containers ourselves to improve startup performance
+    const std::string workDir = mRunc->getWorkingDir();
+    DIR *d = opendir(workDir.c_str());
+    if (!d)
+    {
+        AI_LOG_SYS_WARN(errno, "Could not access %s dir", workDir.c_str());
+    }
+
+    int count = 0;
+    struct dirent *entry = {};
+    while ((entry = readdir(d)) != nullptr)
+    {
+        // Skip "." and ".." dirs
+        if ((entry->d_name[0] == '.') && ((entry->d_name[1] == '\0') ||
+                                          ((entry->d_name[1] == '.') && (entry->d_name[2] == '\0'))))
+        {
+            continue;
+        }
+
+        if (entry->d_type == DT_DIR)
+        {
+            count++;
+        }
+    }
+    closedir(d);
+
+    // No old containers - return
+    if (count == 0)
+    {
+        return;
+    }
+
+    AI_LOG_INFO("%d old containers found - attenpting to clean up", count);
+
+    // Now do a full callout to crun so that we can find what state the containers
+    // are in
     const std::map<ContainerId, DobbyRunC::ContainerStatus> containers = mRunc->list();
     for (const auto &container : containers)
     {
@@ -285,10 +322,14 @@ void DobbyManager::cleanupContainers()
                 // Don't bother capturing hook logs here
                 std::shared_ptr<DobbyDevNullStream> nullstream = std::make_shared<DobbyDevNullStream>();
                 AI_LOG_INFO("attempting to destroy old container '%s'", id.c_str());
-                mRunc->destroy(id, nullstream);
+                // Force delete by default as we have no idea what condition the container is in
+                // and it may not respond to a normal delete
+                mRunc->destroy(id, nullstream, true);
                 break;
         }
     }
+
+    AI_LOG_FN_EXIT();
 }
 
 /**

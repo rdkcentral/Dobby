@@ -70,7 +70,7 @@ public:
                                    const std::list<int> &files = std::list<int>(),
                                    const std::string& customConfigPath = "") const;
 
-    bool destroy(const ContainerId &id, const std::shared_ptr<const IDobbyStream> &console) const;
+    bool destroy(const ContainerId &id, const std::shared_ptr<const IDobbyStream> &console, bool force = false) const;
     bool start(const ContainerId &id, const std::shared_ptr<const IDobbyStream> &console) const;
     bool kill(const ContainerId &id, int signal, bool all = false) const;
     bool pause(const ContainerId &id) const;
@@ -87,6 +87,9 @@ public:
               const std::shared_ptr<const DobbyBundle> &bundle,
               const std::shared_ptr<const IDobbyStream> &console,
               const std::list<int> &files = std::list<int>()) const;
+
+public:
+    const std::string getWorkingDir() const;
 
 private:
     pid_t forkExecRunC(const std::vector<const char *> &args,

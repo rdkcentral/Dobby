@@ -613,39 +613,48 @@ std::pair<pid_t, pid_t> DobbyRunC::exec(const ContainerId& id, const std::string
  *
  *  @return true or false based on the return code of the runc tool.
  */
-bool DobbyRunC::destroy(const ContainerId& id, const std::shared_ptr<const IDobbyStream>& console) const
+bool DobbyRunC::destroy(const ContainerId& id, const std::shared_ptr<const IDobbyStream>& console, bool force /*= false*/) const
 {
     AI_LOG_FN_ENTRY();
 
     AI_TRACE_EVENT("Dobby", "runc::destroy");
 
-    // run the following command "runc delete <id>"
-    // Start by being nice and issuing a "normal" delete
-    pid_t pid = forkExecRunC({ "delete", id.c_str() },
-                             { }, {}, console, console);
-    if (pid <= 0)
+    // If we're not forcing this, start by attempting to delete gracefully
+    int status = 0;
+    pid_t pid;
+    bool success = false;
+    if (!force)
     {
-        AI_LOG_ERROR_EXIT("failed to execute runc tool");
-        return false;
-    }
+        // run the following command "runc delete <id>"
+        // Start by being nice and issuing a "normal" delete
+        pid = forkExecRunC({"delete", id.c_str()},
+                                 {}, {}, console, console);
+        if (pid <= 0)
+        {
+            AI_LOG_ERROR_EXIT("failed to execute runc tool");
+            return false;
+        }
 
-    // block waiting for the forked process to complete
-    int status;
-    if (TEMP_FAILURE_RETRY(waitpid(pid, &status, 0)) < 0)
-    {
-        AI_LOG_SYS_ERROR_EXIT(errno, "waitpid failed");
-        return false;
-    }
-    if (!WIFEXITED(status))
-    {
-        AI_LOG_ERROR_EXIT("runc didn't exit?  status=0x%08x", status);
-        return false;
+        // block waiting for the forked process to complete
+        int status;
+        if (TEMP_FAILURE_RETRY(waitpid(pid, &status, 0)) < 0)
+        {
+            AI_LOG_SYS_ERROR_EXIT(errno, "waitpid failed");
+            return false;
+        }
+        if (!WIFEXITED(status))
+        {
+            AI_LOG_ERROR_EXIT("runc didn't exit?  status=0x%08x", status);
+            return false;
+        }
+
+        success = WEXITSTATUS(status) == EXIT_SUCCESS;
     }
 
     // If we failed to delete the container, try again with --force
-    if (WEXITSTATUS(status) != EXIT_SUCCESS)
+    if (!success)
     {
-        AI_LOG_WARN("Container '%s' could not be deleted - force deleting", id.c_str());
+        AI_LOG_WARN("Force deleting container %s", id.c_str());
 
         pid = forkExecRunC({ "delete", "-f", id.c_str() },
                             { }, {}, console, console);
@@ -942,6 +951,11 @@ std::map<ContainerId, DobbyRunC::ContainerStatus> DobbyRunC::list() const
     AI_LOG_FN_EXIT();
 
     return containers;
+}
+
+const std::string DobbyRunC::getWorkingDir() const
+{
+    return mWorkingDir;
 }
 
 // -----------------------------------------------------------------------------
