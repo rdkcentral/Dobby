@@ -68,7 +68,11 @@ static bool gDaemonise = true;
 static bool gNoConsole = false;
 
 //
+#if (AI_BUILD_TYPE == AI_DEBUG)
+static int gLogLevel = AI_DEBUG_LEVEL_INFO;
+#else
 static int gLogLevel = AI_DEBUG_LEVEL_MILESTONE;
+#endif
 
 //
 static bool gUseSyslog = false;
