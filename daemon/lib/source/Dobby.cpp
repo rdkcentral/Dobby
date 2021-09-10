@@ -2065,13 +2065,20 @@ void Dobby::onContainerStopped(int32_t cd, const ContainerId& id, int status)
  */
 void Dobby::initWatchdog()
 {
+    AI_LOG_FN_ENTRY();
+
     uint64_t usecTimeout;
 
     int ret = sd_watchdog_enabled(1, &usecTimeout);
+
     if (ret < 0)
     {
         AI_LOG_SYS_ERROR(-ret, "failed to get watchdog enabled state");
         return;
+    }
+    else if (ret == 0)
+    {
+        AI_LOG_WARN("Not enabling watchdog");
     }
     else if (ret > 0)
     {
@@ -2084,6 +2091,8 @@ void Dobby::initWatchdog()
                                    false,
                                    std::bind(&Dobby::onWatchdogTimer, this));
     }
+
+    AI_LOG_FN_EXIT();
 }
 
 // -----------------------------------------------------------------------------
