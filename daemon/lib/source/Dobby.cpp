@@ -2079,18 +2079,17 @@ void Dobby::initWatchdog()
     else if (ret == 0)
     {
         AI_LOG_WARN("Not enabling watchdog");
+        return;
     }
-    else if (ret > 0)
-    {
-        usecTimeout /= 4;
 
-        AI_LOG_INFO("starting watchdog timer with period %" PRId64, usecTimeout);
+    usecTimeout /= 4;
 
-        mWatchdogTimerId =
-            mUtilities->startTimer(std::chrono::microseconds(usecTimeout),
-                                   false,
-                                   std::bind(&Dobby::onWatchdogTimer, this));
-    }
+    AI_LOG_INFO("starting watchdog timer with period %" PRId64, usecTimeout);
+
+    mWatchdogTimerId =
+        mUtilities->startTimer(std::chrono::microseconds(usecTimeout),
+                                false,
+                                std::bind(&Dobby::onWatchdogTimer, this));
 
     AI_LOG_FN_EXIT();
 }
