@@ -50,6 +50,7 @@ SDBusIpcService::SDBusIpcService(const std::string &busAddress,
     : mDefaultTimeoutUsecs(25 * 1000 * 1000)
     , mSDBus(nullptr)
     , mStarted(false)
+    , mValid(false)
     , mHandlerTag(1)
     , mExecCounter(1)
     , mLastExecTag(0)
@@ -95,6 +96,9 @@ SDBusIpcService::SDBusIpcService(const std::string &busAddress,
         AI_LOG_FATAL("failed to init object");
         return;
     }
+
+    mValid = true;
+    return;
 }
 
 
@@ -104,6 +108,7 @@ SDBusIpcService::SDBusIpcService(BusType busType,
     : mDefaultTimeoutUsecs(25 * 1000 * 1000)
     , mSDBus(nullptr)
     , mStarted(false)
+    , mValid(false)
     , mHandlerTag(1)
     , mExecCounter(1)
     , mLastExecTag(0)
@@ -143,6 +148,9 @@ SDBusIpcService::SDBusIpcService(BusType busType,
         AI_LOG_FATAL("failed to init object");
         return;
     }
+
+    mValid = true;
+    return;
 }
 
 SDBusIpcService::~SDBusIpcService()
@@ -193,6 +201,12 @@ SDBusIpcService::~SDBusIpcService()
 }
 
 // -----------------------------------------------------------------------------
+bool SDBusIpcService::isValid() const
+{
+    return mValid;
+}
+
+// -----------------------------------------------------------------------------
 /*!
     \internal
 
@@ -224,6 +238,7 @@ bool SDBusIpcService::init(const std::string &serviceName,
         {
             AI_LOG_SYS_ERROR(-rc, "failed to register service name '%s' on bus",
                              serviceName.c_str());
+            return false;
         }
     }
 
