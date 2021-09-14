@@ -589,7 +589,6 @@ int main(int argc, char * argv[])
         ipcService->stop();
     }
 
-
     // Milestone
     if (rc == EXIT_SUCCESS)
     {
