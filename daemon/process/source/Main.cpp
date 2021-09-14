@@ -559,8 +559,15 @@ int main(int argc, char * argv[])
     // Create the IPC service and start it, this spawns a thread and runs the dbus
     // event loop inside it.
     std::shared_ptr<AI_IPC::IIpcService> ipcService = setupIpcService();
+
     if (!ipcService)
     {
+        rc = EXIT_FAILURE;
+    }
+    else if (!ipcService->isServiceAvailable(DOBBY_SERVICE))
+    {
+        // Double check we did actually make ourselves available on the bus
+        AI_LOG_ERROR("IPC Service initialised but service %s is not available on the bus", DOBBY_SERVICE);
         rc = EXIT_FAILURE;
     }
     else
