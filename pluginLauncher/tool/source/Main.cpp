@@ -41,6 +41,7 @@
 #include <unordered_map>
 #include <mutex>
 #include <sys/syscall.h>
+#include <sys/uio.h>
 
 #ifdef USE_SYSTEMD
     #define SD_JOURNAL_SUPPRESS_LOCATION
