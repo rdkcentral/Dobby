@@ -40,6 +40,15 @@
 #include <set>
 #include <unordered_map>
 #include <mutex>
+#include <sys/syscall.h>
+
+#ifdef USE_SYSTEMD
+    #define SD_JOURNAL_SUPPRESS_LOCATION
+    #include <systemd/sd-journal.h>
+    #include <systemd/sd-daemon.h>
+#endif // USE_SYSTEMD
+
+
 
 // Can override the plugin path at build time by setting -DPLUGIN_PATH=/path/to/plugins/
 #ifndef PLUGIN_PATH
@@ -48,6 +57,7 @@
 
 static std::string gConfigPath;
 static std::string gHookName;
+static std::string gContainerId;
 
 // -----------------------------------------------------------------------------
 /**
@@ -277,12 +287,145 @@ std::string getRootfsPath(std::string configPath, std::shared_ptr<rt_dobby_schem
     return configPath;
 }
 
+// -----------------------------------------------------------------------------
+/**
+ *  @brief Writes logging output to the console.
+ *
+ *  This duplicates code in the Logging component, but unfortunately we can't
+ *  use the function there without messing up the API for all other things
+ *  that use it.
+ *
+ */
+void logConsolePrinter(int level, const char *file, const char *func,
+                              int line, const char *message)
+{
+    struct timespec ts;
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+
+    struct iovec iov[6];
+    char tbuf[32];
+
+    iov[0].iov_base = tbuf;
+    iov[0].iov_len = snprintf(tbuf, sizeof(tbuf), "%.010lu.%.06lu ",
+                              ts.tv_sec, ts.tv_nsec / 1000);
+    iov[0].iov_len = std::min<size_t>(iov[0].iov_len, sizeof(tbuf));
+
+
+    char threadbuf[32];
+    iov[1].iov_base = threadbuf;
+    iov[1].iov_len = snprintf(threadbuf, sizeof(threadbuf), "<T-%lu> ", syscall(SYS_gettid));
+    iov[1].iov_len = std::min<size_t>(iov[1].iov_len, sizeof(threadbuf));
+
+    switch (level)
+    {
+        case AI_DEBUG_LEVEL_FATAL:
+            iov[2].iov_base = (void*)"FTL: ";
+            iov[2].iov_len = 5;
+            break;
+        case AI_DEBUG_LEVEL_ERROR:
+            iov[2].iov_base = (void*)"ERR: ";
+            iov[2].iov_len = 5;
+            break;
+        case AI_DEBUG_LEVEL_WARNING:
+            iov[2].iov_base = (void*)"WRN: ";
+            iov[2].iov_len = 5;
+            break;
+        case AI_DEBUG_LEVEL_MILESTONE:
+            iov[2].iov_base = (void*)"MIL: ";
+            iov[2].iov_len = 5;
+            break;
+        case AI_DEBUG_LEVEL_INFO:
+            iov[2].iov_base = (void*)"NFO: ";
+            iov[2].iov_len = 5;
+            break;
+        case AI_DEBUG_LEVEL_DEBUG:
+            iov[2].iov_base = (void*)"DBG: ";
+            iov[2].iov_len = 5;
+            break;
+        default:
+            iov[2].iov_base = (void*)": ";
+            iov[2].iov_len = 2;
+            break;
+    }
+
+    char fbuf[160];
+    iov[3].iov_base = (void*)fbuf;
+    if (!file || !func || (line <= 0))
+        iov[3].iov_len = snprintf(fbuf, sizeof(fbuf), "< M:? F:? L:? > ");
+    else
+        iov[3].iov_len = snprintf(fbuf, sizeof(fbuf), "< M:%.*s F:%.*s L:%d > ",
+                                  64, file, 64, func, line);
+    iov[3].iov_len = std::min<size_t>(iov[3].iov_len, sizeof(fbuf));
+
+    iov[4].iov_base = const_cast<char*>(message);
+    iov[4].iov_len = strlen(message);
+
+    iov[5].iov_base = (void*)"\n";
+    iov[5].iov_len = 1;
+
+
+    writev(fileno((level < AI_DEBUG_LEVEL_INFO) ? stderr : stdout), iov, 6);
+}
+
+#ifdef USE_SYSTEMD
+// -----------------------------------------------------------------------------
+/**
+ *  @brief Writes logging output to journald.
+ *
+ */
+void JournaldPrinter(int level, const char *file, const char *func,
+                     int line, const char *message)
+{
+    int priority;
+    switch (level)
+    {
+        case AI_DEBUG_LEVEL_FATAL:          priority = LOG_CRIT;      break;
+        case AI_DEBUG_LEVEL_ERROR:          priority = LOG_ERR;       break;
+        case AI_DEBUG_LEVEL_WARNING:        priority = LOG_WARNING;   break;
+        case AI_DEBUG_LEVEL_MILESTONE:      priority = LOG_NOTICE;    break;
+        case AI_DEBUG_LEVEL_INFO:           priority = LOG_INFO;      break;
+        case AI_DEBUG_LEVEL_DEBUG:          priority = LOG_DEBUG;     break;
+        default:
+            return;
+    }
+
+    sd_journal_send("SYSLOG_IDENTIFIER=%s", gContainerId.c_str(),
+                    "PRIORITY=%i", priority,
+                    "CODE_FILE=%s", file,
+                    "CODE_LINE=%i", line,
+                    "CODE_FUNC=%s", func,
+                    "MESSAGE=%s", message,
+                    nullptr);
+}
+#endif
+
+// -----------------------------------------------------------------------------
+/**
+ *  @brief Logging callback, called every time a log message needs to be emitted
+ *
+ */
+void logPrinter(int level, const char *file, const char *func,
+                              int line, const char *message)
+
+{
+    // Write to both stdout/err and journald
+    logConsolePrinter(level, file, func, line, message);
+
+#ifdef USE_SYSTEMD
+    // TODO:: Add command-line argument to enable/disable this based on Dobby
+    // log settings (i.e. only do this if Dobby launched with --journald flag)
+    JournaldPrinter(level, file, func, line, message);
+#endif
+}
+
 /**
  * @brief Entrypoint
  */
 int main(int argc, char *argv[])
 {
     parseArgs(argc, argv);
+
+    AICommon::initLogging(logPrinter);
 
     if (gHookName.empty())
     {
@@ -294,8 +437,6 @@ int main(int argc, char *argv[])
         AI_LOG_ERROR_EXIT("Path to container's OCI config is required");
         return EXIT_FAILURE;
     }
-
-    AI_LOG_MILESTONE("Running hook %s", gHookName.c_str());
 
     // Work out which hook we need to run
     IDobbyRdkPlugin::HintFlags hookPoint = determineHookPoint(gHookName);
@@ -326,6 +467,9 @@ int main(int argc, char *argv[])
         AI_LOG_ERROR("Failed to parse OCI config with error: %s", err);
         return EXIT_FAILURE;
     }
+
+    gContainerId = std::string(containerConfig->hostname);
+    AI_LOG_MILESTONE("Running hook %s for container '%s'", gHookName.c_str(), gContainerId.c_str());
 
     // Get the path of the container rootfs to give to plugins
     const std::string rootfsPath = getRootfsPath(fullConfigPath, containerConfig);

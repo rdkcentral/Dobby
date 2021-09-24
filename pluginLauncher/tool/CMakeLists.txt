@@ -43,9 +43,6 @@ target_link_libraries(${PROJECT_NAME}
     # Export the logging symbols so plugins can use AI_LOG correctly
     -Wl,--dynamic-list=${CMAKE_CURRENT_LIST_DIR}/exported.syms
 
-    # 3rd party libraries
-    JsonCpp::JsonCpp
-
     # Adds dlopen support (if it's a separate library on target)
     ${CMAKE_DL_LIBS}
 
@@ -53,6 +50,13 @@ target_link_libraries(${PROJECT_NAME}
     # from within plugins using IPCService
     Threads::Threads
 )
+
+if(USE_SYSTEMD)
+        target_link_libraries(${PROJECT_NAME}
+                systemd
+        )
+endif(USE_SYSTEMD)
+
 
 install(
     TARGETS ${PROJECT_NAME}

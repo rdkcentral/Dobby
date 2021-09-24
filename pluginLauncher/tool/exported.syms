@@ -1,4 +1,6 @@
 {
     # Export the log level (set with -v flags)
     __ai_debug_log_level;
+    __ai_debug_log_printf;
+    __ai_debug_log_sys_printf;
 };
