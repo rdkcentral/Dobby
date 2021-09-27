@@ -16,12 +16,13 @@ You must have SSH keys configured on your host machine such that you can pull co
 
 If you wish to clone/build Dobby from your own fork, change the `git clone` URL in the `Clone DOBBY repo and install` section of the Vagrantfile.
 
-Once installed, run the following commands:
+Once Vagrant is installed, run the following commands:
 
 ```
 cd <dobby_repo>/develop/vagrant
 vagrant up
 ```
+
 You will be prompted to choose a network adaptor to bridge into the VM - pick your main network adaptor you use to connect to the internet. Now wait for Vagrant to build the VM - this can take some time so go grab a cup of coffee!
 
 Once Vagrant has built the VM, you can SSH into it by running
@@ -51,7 +52,7 @@ The Dobby source code will be cloned to `~/srcDobby` and can be viewed/developed
 cd ~/srcDobby/build
 
 cmake -DCMAKE_BUILD_TYPE=Debug -DRDK_PLATFORM=DEV_VM -DCMAKE_INSTALL_PREFIX:PATH=/usr ../
-make -j6
+make -j$(nproc)
 sudo make install
 ```
 
@@ -67,7 +68,7 @@ To launch a container using DobbyTool:
 
 2. In one terminal, run
 
-   `sudo DobbyDaemon -v --nofork`
+   `sudo DobbyDaemon --nofork`
 
    to launch the Dobby daemon process.
 
@@ -91,12 +92,22 @@ To launch a container using DobbyTool:
 
 See the Dobby `README.md` file for more information on the available tools and commands.
 
-## Thunder & OCIContainer
+## Thunder & RDKServices
+Thunder and RDKServices repos are cloned as part of the VM provisioning, but are not built by default.
 
-Thunder and the `OCIContainer` NanoService are both installed on the VM. To start Thunder, run `/usr/local/bin/WPEFramework`. You can then issue commands to OCIContainer over curl as per the OCIContainer README.md file. Thunder is configured to listen on port `9998`.
+To manually build Thunder, run the following scripts
+
+```
+cd ~/srcThunder/scripts
+./build_thunder_r2.sh
+./build_rdkservices.sh
+```
+
+All the necessary dependencies should already be installed.
+
+Edit the scripts accordingly to enable/disable your desired Thunder features/plugins.
 
 It is possible to access Thunder from the host machine if you enable port forwarding in the Vagrantfile as per the documentation here: https://www.vagrantup.com/docs/networking/forwarded_ports.html
-
 
 ## Known Issues
 
