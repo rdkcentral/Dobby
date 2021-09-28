@@ -295,6 +295,8 @@ option(PLUGIN_RTSCHEDULING "Include RtScheduling plugin" OFF)
 option(PLUGIN_HTTPPROXY "Include HttpProxy plugin" OFF)
 option(PLUGIN_APPSERVICES "Include AppServices plugin" OFF)
 option(PLUGIN_IONMEMORY "Include ION Memory plugin" OFF)
+option(PLUGIN_DEVICEMAPPER "Include DeviceMapper plugin" OFF)
+
 
 if(PLUGIN_TESTPLUGIN)
     add_subdirectory(rdkPlugins/TestPlugin)
@@ -346,6 +348,10 @@ endif()
 
 if(PLUGIN_IONMEMORY)
     add_subdirectory(rdkPlugins/IONMemory)
+endif()
+
+if(PLUGIN_DEVICEMAPPER)
+    add_subdirectory(rdkPlugins/DeviceMapper)
 endif()
 
 # Export targets in Dobby package
