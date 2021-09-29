@@ -61,6 +61,8 @@ public:
 
     ~IpcService() override;
 
+    virtual bool isValid() const override;
+
     virtual std::shared_ptr<AI_IPC::IAsyncReplyGetter> invokeMethod(const AI_IPC::Method& method, const  AI_IPC::VariantList& args, int timeoutMs = -1) override;
 
     virtual bool invokeMethod(const AI_IPC::Method& method, const  AI_IPC::VariantList& args,  AI_IPC::VariantList& replyArgs, int timeoutMs = -1) override;
@@ -130,6 +132,8 @@ private:
     int mNextSignalHandlerRegId;
 
     const int mDefaultTimeoutMs;
+
+    bool mValid;
 
 #if (AI_BUILD_TYPE == AI_DEBUG)
 

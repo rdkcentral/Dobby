@@ -44,6 +44,13 @@ public:
     virtual ~IIpcService() = default;
 
     /**
+     * @brief Returns true if we initialised ourselves successfully
+     *
+     * @returns True if the service was initialised successfully. False if we failed to initialise
+     */
+    virtual bool isValid() const = 0;
+
+    /**
      * @brief Invoke a method and get reply asynchronously
      *
      * @parameter[in]   method         Method definition

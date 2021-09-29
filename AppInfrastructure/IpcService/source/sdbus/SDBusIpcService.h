@@ -63,6 +63,8 @@ public:
     SDBusIpcService(const std::string &busAddress, const std::string& serviceName, int defaultTimeoutMs = -1);
     ~SDBusIpcService() final;
 
+    bool isValid() const override;
+
     std::shared_ptr<AI_IPC::IAsyncReplyGetter> invokeMethod(const AI_IPC::Method &method, const AI_IPC::VariantList &args, int timeoutMs) override;
     bool invokeMethod(const AI_IPC::Method &method, const AI_IPC::VariantList &args, AI_IPC::VariantList &replyArgs, int timeoutMs) override;
 
@@ -112,6 +114,8 @@ private:
     sd_bus *mSDBus;
 
     std::atomic<bool> mStarted;
+
+    bool mValid;
 
     struct RegisteredMethod
     {
