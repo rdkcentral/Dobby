@@ -76,7 +76,6 @@
 DobbyManager::DobbyManager(const std::shared_ptr<IDobbyEnv> &env,
                            const std::shared_ptr<IDobbyUtils> &utils,
                            const std::shared_ptr<IDobbyIPCUtils> &ipcUtils,
-                           const std::shared_ptr<DobbyLogger> logger,
                            const std::shared_ptr<const IDobbySettings> &settings,
                            const ContainerStartedFunc &containerStartedCb,
                            const ContainerStoppedFunc &containerStoppedCb)
@@ -86,8 +85,8 @@ DobbyManager::DobbyManager(const std::shared_ptr<IDobbyEnv> &env,
     , mUtilities(utils)
     , mIPCUtilities(ipcUtils)
     , mSettings(settings)
-    , mLogger(logger)
-    , mRunc(new DobbyRunC(utils, settings))
+    , mLogger(std::make_unique<DobbyLogger>(settings))
+    , mRunc(std::make_unique<DobbyRunC>(utils, settings))
     , mState(std::make_shared<DobbyState>(settings))
     , mRuncMonitorTerminate(false)
 #if defined(LEGACY_COMPONENTS)
@@ -112,6 +111,12 @@ DobbyManager::~DobbyManager()
     // TODO: clean-up all containers
 
     stopRuncMonitorThread();
+
+    // We must wait for all logging threads to finish before we start
+    // destructing DobbyManager, otherwise there's a chance we'll unload
+    // the logging plugin whilst the thread is logging data, which leads
+    // to undefined behaviour
+    mLogger->ShutdownLoggers();
 }
 
 // -----------------------------------------------------------------------------
@@ -255,7 +260,44 @@ void DobbyManager::setupWorkspace(const std::shared_ptr<IDobbyEnv> &env)
  */
 void DobbyManager::cleanupContainers()
 {
-    // get a list of currently running containers and there status
+    AI_LOG_FN_ENTRY();
+
+    // Do a manual check for leftover containers ourselves to improve startup performance
+    const std::string workDir = mRunc->getWorkingDir();
+    DIR *d = opendir(workDir.c_str());
+    if (!d)
+    {
+        AI_LOG_SYS_WARN(errno, "Could not access %s dir", workDir.c_str());
+    }
+
+    int count = 0;
+    struct dirent *entry = {};
+    while ((entry = readdir(d)) != nullptr)
+    {
+        // Skip "." and ".." dirs
+        if ((entry->d_name[0] == '.') && ((entry->d_name[1] == '\0') ||
+                                          ((entry->d_name[1] == '.') && (entry->d_name[2] == '\0'))))
+        {
+            continue;
+        }
+
+        if (entry->d_type == DT_DIR)
+        {
+            count++;
+        }
+    }
+    closedir(d);
+
+    // No old containers - return
+    if (count == 0)
+    {
+        return;
+    }
+
+    AI_LOG_INFO("%d old containers found - attenpting to clean up", count);
+
+    // Now do a full callout to crun so that we can find what state the containers
+    // are in
     const std::map<ContainerId, DobbyRunC::ContainerStatus> containers = mRunc->list();
     for (const auto &container : containers)
     {
@@ -280,10 +322,14 @@ void DobbyManager::cleanupContainers()
                 // Don't bother capturing hook logs here
                 std::shared_ptr<DobbyDevNullStream> nullstream = std::make_shared<DobbyDevNullStream>();
                 AI_LOG_INFO("attempting to destroy old container '%s'", id.c_str());
-                mRunc->destroy(id, nullstream);
+                // Force delete by default as we have no idea what condition the container is in
+                // and it may not respond to a normal delete
+                mRunc->destroy(id, nullstream, true);
                 break;
         }
     }
+
+    AI_LOG_FN_EXIT();
 }
 
 /**

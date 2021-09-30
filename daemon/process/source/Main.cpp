@@ -52,6 +52,10 @@
 
 #include <string>
 #include <memory>
+#include <chrono>
+#include <thread>
+#include <cmath>
+
 
 
 // The default realtime priority to run the daemon as, on RDK it defaults to off
@@ -68,7 +72,11 @@ static bool gDaemonise = true;
 static bool gNoConsole = false;
 
 //
+#if (AI_BUILD_TYPE == AI_DEBUG)
+static int gLogLevel = AI_DEBUG_LEVEL_INFO;
+#else
 static int gLogLevel = AI_DEBUG_LEVEL_MILESTONE;
+#endif
 
 //
 static bool gUseSyslog = false;
@@ -401,6 +409,68 @@ static std::string getAIDbusAddress(bool privateBus)
 }
 #endif // (AI_BUILD_TYPE == AI_DEBUG)
 
+
+// -----------------------------------------------------------------------------
+/**
+ * @brief Attempt to set up an IPC service and register the Dobby service
+ *
+ * Will automatically retry connecting to the IPC service up to a set amount
+ * with exponential backoff
+ *
+ * @returns On success - instance of IPCService. On failure - nullptr
+ */
+static std::shared_ptr<AI_IPC::IIpcService> setupIpcService()
+{
+    const int maxRetries = 5;
+    const int baseBackoffTime = 200; // ms
+
+    std::shared_ptr<AI_IPC::IIpcService> ipcService;
+    for (int i = 1; i <= maxRetries; i++)
+    {
+        try
+        {
+            // Create IPCServices that attach to the dbus daemons
+            if (gDbusAddress.empty())
+            {
+                ipcService = AI_IPC::createSystemBusIpcService(DOBBY_SERVICE);
+            }
+            else
+            {
+                ipcService = AI_IPC::createIpcService(gDbusAddress, DOBBY_SERVICE);
+            }
+        }
+        catch (const std::exception &e)
+        {
+            AI_LOG_ERROR("failed to create IPC service with error %s. Attempt %d/%d.", e.what(), i, maxRetries);
+        }
+
+        if (!ipcService)
+        {
+            AI_LOG_ERROR("failed to create one of the IPC services. Attempt %d/%d.", i, maxRetries);
+        }
+        else if (!ipcService->isValid())
+        {
+            AI_LOG_ERROR("Failed to initialise the IPC service. Attempt %d/%d.", i, maxRetries);
+        }
+        else
+        {
+            return ipcService;
+        }
+
+        if (i < maxRetries)
+        {
+            ipcService.reset();
+            const int backoffTime = std::pow(2, (i - 1)) * baseBackoffTime;
+
+            AI_LOG_INFO("Retrying in %dms", backoffTime);
+            std::this_thread::sleep_for(std::chrono::milliseconds(backoffTime));
+        }
+    }
+
+    AI_LOG_FATAL("Failed to create IPC Service - max retries hit");
+    return nullptr;
+}
+
 // -----------------------------------------------------------------------------
 /**
  * @brief
@@ -488,28 +558,16 @@ int main(int argc, char * argv[])
 
     // Create the IPC service and start it, this spawns a thread and runs the dbus
     // event loop inside it.
-    std::shared_ptr<AI_IPC::IIpcService> ipcService;
-    try
-    {
-        // Create IPCServices that attach to the dbus daemons
-        if (gDbusAddress.empty())
-        {
-            ipcService = AI_IPC::createSystemBusIpcService(DOBBY_SERVICE);
-        }
-        else
-        {
-            ipcService = AI_IPC::createIpcService(gDbusAddress, DOBBY_SERVICE);
-        }
-    }
-    catch (const std::exception& e)
-    {
-        AI_LOG_ERROR("failed to create IPC service: %s", e.what());
-        rc = EXIT_FAILURE;
-    }
+    std::shared_ptr<AI_IPC::IIpcService> ipcService = setupIpcService();
 
     if (!ipcService)
     {
-        AI_LOG_ERROR("failed to create one of the IPC services");
+        rc = EXIT_FAILURE;
+    }
+    else if (!ipcService->isServiceAvailable(DOBBY_SERVICE))
+    {
+        // Double check we did actually make ourselves available on the bus
+        AI_LOG_ERROR("IPC Service initialised but service %s is not available on the bus", DOBBY_SERVICE);
         rc = EXIT_FAILURE;
     }
     else
@@ -538,7 +596,6 @@ int main(int argc, char * argv[])
         ipcService->stop();
     }
 
-
     // Milestone
     if (rc == EXIT_SUCCESS)
     {
@@ -547,6 +604,6 @@ int main(int argc, char * argv[])
 
     // And we're done
     AICommon::termLogging();
-    return EXIT_SUCCESS;
+    return rc;
 }
 

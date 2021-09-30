@@ -379,10 +379,17 @@ void Netfilter::trimDuplicates(RuleSet &existing, RuleSet &newRuleSet, Operation
     for (std::pair<const TableType, std::list<std::string>> &newRules : newRuleSet)
     {
         const TableType &table = newRules.first;
+        AI_LOG_DEBUG("Trimming duplicates for rule type %d", int(table));
         std::list<std::string> &tableRules = newRules.second;
 
         // get the existing table
-        const std::list<std::string> &existingRules = (*(existing.find(table))).second;
+        auto existingIt = existing.find(table);
+        if (existingIt == existing.end())
+        {
+            AI_LOG_WARN("Could not find any existing rules for table type %d", int(table));
+            continue;
+        }
+        const std::list<std::string> &existingRules = (*(existingIt)).second;
 
         // iterate through all rules in the table to check for duplicates
         auto it = tableRules.begin();

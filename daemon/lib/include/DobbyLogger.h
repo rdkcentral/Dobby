@@ -54,6 +54,7 @@ public:
                     const bool createNewLog);
 
     void WaitForLoggingToFinish(pid_t containerPid);
+    void ShutdownLoggers();
 
 private:
     int createUnixSocket(const std::string path);
@@ -67,6 +68,8 @@ private:
 
     std::map<pid_t, IDobbyRdkLoggingPlugin::ContainerInfo> mTempConnections;
     std::map<pid_t, std::future<void>> mFutures;
+
+    std::atomic_bool mCancellationToken;
 };
 
 #endif // !defined(DOBBYLOGGER_H)

@@ -76,12 +76,25 @@ DobbyRdkPluginManager::~DobbyRdkPluginManager()
     // first then close the library as the destructor needs to be called from
     // the library.
 
+    // FIXME:: During daemon shutdown, due to a race condition in rare circumstances something can still
+    // hold a reference to the logging plugin, meaning use_count() is > 1 at this point.
+    // If we attempt to dlclose() the plugin in this scenario the daemon will segfault.
+
+    // This shouldn't happen, but we make some safety checks here just in case until
+    // the root case is fixed. Don't attempt to dlclose() the plugin whilst a reference
+    // is still held elsewhere.
+    std::vector<std::string> doNotUnload = {};
+
     // All loggers are also plugins
     auto itl = mLoggers.begin();
     for (; itl != mLoggers.end(); ++itl)
     {
+        if (itl->second.second.use_count() > 1)
+        {
+            doNotUnload.emplace_back(itl->first);
+        }
+
         itl->second.second.reset();
-        // Don't close, as need to clean up plugin list
     }
 
     mLoggers.clear();
@@ -89,8 +102,29 @@ DobbyRdkPluginManager::~DobbyRdkPluginManager()
     auto it = mPlugins.begin();
     for (; it != mPlugins.end(); ++it)
     {
+        if (it->second.second.use_count() > 1)
+        {
+            doNotUnload.emplace_back(it->first);
+        }
+
         it->second.second.reset();
-        dlclose(it->second.first);
+
+        if (doNotUnload.size() > 0)
+        {
+            // If the plugin is not in the doNotUnload list, close it
+            if (std::find(doNotUnload.begin(), doNotUnload.end(), it->first) == doNotUnload.end())
+            {
+                dlclose(it->second.first);
+            }
+            else
+            {
+                AI_LOG_ERROR("Cannot unload plugin %s due to reference still being held", it->first.c_str());
+            }
+        }
+        else
+        {
+            dlclose(it->second.first);
+        }
     }
 
     mPlugins.clear();
@@ -146,18 +180,21 @@ bool DobbyRdkPluginManager::loadPlugins()
             if (fstatat(dirfd(dir), namelist[i]->d_name, &buf, AT_NO_AUTOMOUNT) != 0)
             {
                 AI_LOG_SYS_ERROR(errno, "failed to stat '%s'", namelist[i]->d_name);
+                free(namelist[i]);
                 continue;
             }
 
             if (!S_ISREG(buf.st_mode))
             {
                 // symlink doesn't point to a regular file so skip it
+                free(namelist[i]);
                 continue;
             }
         }
         else if (namelist[i]->d_type != DT_REG)
         {
             // the entry is not a regular file so skip it
+            free(namelist[i]);
             continue;
         }
 
@@ -189,6 +226,7 @@ bool DobbyRdkPluginManager::loadPlugins()
         {
             dlclose(libHandle);
             AI_LOG_DEBUG("%s does not contain create/destroy functions, skipping...\n", namelist[i]->d_name);
+            free(namelist[i]);
             continue;
         }
 
@@ -237,6 +275,7 @@ bool DobbyRdkPluginManager::loadPlugins()
         {
             AI_LOG_WARN("plugin for library '%s' failed to register", libPath);
             dlclose(libHandle);
+            free(namelist[i]);
             continue;
         }
 
@@ -246,6 +285,7 @@ bool DobbyRdkPluginManager::loadPlugins()
             AI_LOG_WARN("plugin for library '%s' returned an invalid name", libPath);
             plugin.reset();
             dlclose(libHandle);
+            free(namelist[i]);
             continue;
         }
 

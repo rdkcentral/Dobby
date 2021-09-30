@@ -107,6 +107,7 @@ IpcService::IpcService(BusType busType, const std::string& serviceName, int defa
     , mRunning(false)
     , mNextSignalHandlerRegId(1)
     , mDefaultTimeoutMs(defaultTimeoutMs)
+    , mValid(false)
 #if (AI_BUILD_TYPE == AI_DEBUG)
     , mInMonitorMode(false)
     , mMonitorCb(nullptr)
@@ -160,6 +161,8 @@ IpcService::IpcService(BusType busType, const std::string& serviceName, int defa
         throw std::runtime_error( "Failed to connect to dbus" );
     }
 
+    mValid = true;
+
     AI_LOG_FN_EXIT();
 }
 
@@ -192,6 +195,8 @@ IpcService::IpcService(const std::string& dbusAddress, const std::string& servic
         throw std::runtime_error("Failed to connect to dbus");
     }
 
+    mValid = true;
+
     AI_LOG_FN_EXIT();
 }
 
@@ -210,6 +215,11 @@ IpcService::~IpcService()
     }
 
     AI_LOG_FN_EXIT();
+}
+
+bool IpcService::isValid() const
+{
+    return mValid;
 }
 
 std::shared_ptr<IAsyncReplyGetter> IpcService::invokeMethod(const Method& method, const VariantList& args, int timeoutMs /*= -1*/)

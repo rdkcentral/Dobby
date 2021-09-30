@@ -131,7 +131,8 @@ std::vector<std::string> LoggingPlugin::getDependencies() const
  */
 void LoggingPlugin::LoggingLoop(ContainerInfo containerInfo,
                                 const bool isBuffer,
-                                const bool createNew)
+                                const bool createNew,
+                                const std::atomic_bool &cancellationToken)
 {
     AI_LOG_FN_ENTRY();
 
@@ -142,18 +143,18 @@ void LoggingPlugin::LoggingLoop(ContainerInfo containerInfo,
     {
     case LoggingSink::File:
         // If we're not creating a new file, append to the existing log
-        FileSink(containerInfo, isBuffer, createNew);
+        FileSink(containerInfo, isBuffer, createNew, cancellationToken);
         break;
     case LoggingSink::Journald:
 #if defined(USE_SYSTEMD)
-        JournaldSink(containerInfo, isBuffer);
+        JournaldSink(containerInfo, isBuffer, cancellationToken);
 #else
         AI_LOG_ERROR("Logging plugin built without systemd support - cannot use journald");
-        DevNullSink(containerInfo, isBuffer);
+        DevNullSink(containerInfo, isBuffer, cancellationToken);
 #endif
         break;
     case LoggingSink::DevNull:
-        DevNullSink(containerInfo, isBuffer);
+        DevNullSink(containerInfo, isBuffer, cancellationToken);
         break;
     default:
         break;
@@ -225,7 +226,8 @@ LoggingPlugin::LoggingSink LoggingPlugin::GetContainerSink()
  *                      and wait for the fd to be deleted. Set to true when
  *                      dumping the contents of a buffer
  */
-void LoggingPlugin::JournaldSink(const ContainerInfo &containerInfo, bool exitEof)
+void LoggingPlugin::JournaldSink(const ContainerInfo &containerInfo, bool exitEof,
+                                 const std::atomic_bool &cancellationToken)
 {
     AI_LOG_INFO("starting logger for container '%s' to journald (PID: %d)",
                 mUtils->getContainerId().c_str(), containerInfo.containerPid);
@@ -270,7 +272,7 @@ void LoggingPlugin::JournaldSink(const ContainerInfo &containerInfo, bool exitEo
     // Read from the fd until the file is closed
     // Journald expects messages to be single lines, so we need to process incoming
     // data to split into individual lines
-    while (true)
+    while (!cancellationToken)
     {
         // Work out how much space is left in the buffer and read as much as we can
         bufferRemaining = sizeof(buf) - bufferUsed;
@@ -326,6 +328,11 @@ void LoggingPlugin::JournaldSink(const ContainerInfo &containerInfo, bool exitEo
         bufferUsed -= (lineStart - buf);
         memmove(buf, lineStart, bufferUsed);
     }
+
+    if (cancellationToken)
+    {
+        AI_LOG_INFO("Logging thread shut down by cancellation token");
+    }
 }
 #endif //#if defined(USE_SYSTEMD)
 
@@ -339,7 +346,8 @@ void LoggingPlugin::JournaldSink(const ContainerInfo &containerInfo, bool exitEo
  *                      and wait for the fd to be deleted. Set to true when
  *                      dumping the contents of a buffer
  */
-void LoggingPlugin::DevNullSink(const ContainerInfo &containerInfo, bool exitEof)
+void LoggingPlugin::DevNullSink(const ContainerInfo &containerInfo, bool exitEof,
+                                const std::atomic_bool &cancellationToken)
 {
     int devNullFd = open("/dev/null", O_CLOEXEC | O_WRONLY);
 
@@ -358,7 +366,7 @@ void LoggingPlugin::DevNullSink(const ContainerInfo &containerInfo, bool exitEof
     ssize_t ret;
 
     // Read from the fd until the file is closed
-    while (true)
+    while (!cancellationToken)
     {
         // FD is blocking, so this will just block this thread until there
         // is data to be read
@@ -374,6 +382,12 @@ void LoggingPlugin::DevNullSink(const ContainerInfo &containerInfo, bool exitEof
             break;
         }
         write(devNullFd, buf, ret);
+    }
+
+
+    if (cancellationToken)
+    {
+        AI_LOG_INFO("Logging thread shut down by cancellation token");
     }
 
     // Close /dev/null
@@ -395,7 +409,8 @@ void LoggingPlugin::DevNullSink(const ContainerInfo &containerInfo, bool exitEof
  * @param[in] createNew Whether to create a new empty log file or append to an
  *                      existing file if it already exists
  */
-void LoggingPlugin::FileSink(const ContainerInfo &containerInfo, bool exitEof, bool createNew)
+void LoggingPlugin::FileSink(const ContainerInfo &containerInfo, bool exitEof, bool createNew,
+                             const std::atomic_bool &cancellationToken)
 {
     const mode_t mode = 0644;
 
@@ -463,7 +478,7 @@ void LoggingPlugin::FileSink(const ContainerInfo &containerInfo, bool exitEof, b
     bool limitHit = false;
 
     // Read from the fd until the file is closed
-    while (true)
+    while (!cancellationToken)
     {
         // FD is blocking, so this will just block this thread until there
         // is data to be read
@@ -498,6 +513,11 @@ void LoggingPlugin::FileSink(const ContainerInfo &containerInfo, bool exitEof, b
             limitHit = true;
             write(devNullFd, buf, ret);
         }
+    }
+
+    if (cancellationToken)
+    {
+        AI_LOG_INFO("Logging thread shut down by cancellation token");
     }
 
     // Separate sections of log file for reabability

@@ -83,7 +83,6 @@ public:
     DobbyManager(const std::shared_ptr<IDobbyEnv>& env,
                  const std::shared_ptr<IDobbyUtils>& utils,
                  const std::shared_ptr<IDobbyIPCUtils>& ipcUtils,
-                 const std::shared_ptr<DobbyLogger> logger,
                  const std::shared_ptr<const IDobbySettings>& settings,
                  const ContainerStartedFunc& containerStartedCb,
                  const ContainerStoppedFunc& containerStoppedCb);
@@ -211,9 +210,9 @@ private:
     const std::shared_ptr<IDobbyUtils> mUtilities;
     const std::shared_ptr<IDobbyIPCUtils> mIPCUtilities;
     const std::shared_ptr<const IDobbySettings> mSettings;
-    const std::shared_ptr<DobbyLogger> mLogger;
 
 private:
+    std::unique_ptr<DobbyLogger> mLogger;
     std::unique_ptr<DobbyRunC> mRunc;
     std::shared_ptr<DobbyState> mState;
 

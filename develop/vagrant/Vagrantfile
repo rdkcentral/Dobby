@@ -22,8 +22,11 @@ Builds & installs the following components (plus dependencies):
   * Dobby (https://github.com/rdkcentral/Dobby/)
   * Crun (https://github.com/containers/crun)
   * Smcroute (https://github.com/troglobit/smcroute)
-  * Thunder (https://github.com/rdkcentral/Thunder)
-  * OCIContainer NanoService (https://github.com/rdkcentral/rdkservices)
+  * libnl (https://github.com/thom311/libnl)
+
+Clones the following (not built automatically)
+  * Thunder + ClientLibraries + Interfaces (https://github.com/rdkcentral/Thunder/)
+  * RDKServices (https://github.com/rdkcentral/rdkservices/)
 ################################################################################
 =end
 
@@ -31,21 +34,21 @@ Vagrant.configure("2") do |config|
 
     ##################################################
     #
-    # VM Configuration (Ubuntu 16.04)
+    # VM Configuration (Ubuntu 20.04)
     #
-    config.vm.box = "ubuntu/xenial64"
+    config.vm.box = "ubuntu/focal64"
 
-    config.vm.hostname = "dobby-vagrant"
-    config.vm.define "dobby-vagrant"
+    config.vm.hostname = "dobby-vagrant-focal"
+    config.vm.define "dobby-vagrant-focal"
 
     config.vm.network "public_network"
 
     config.vagrant.plugins = "vagrant-disksize"
     config.vagrant.plugins = "vagrant-vbguest"
-    config.disksize.size = '20GB'
+    config.disksize.size = '25GB'
 
     config.vm.provider "virtualbox" do |vb|
-        vb.memory = "6144"  # Change this to reduce the amount of RAM assigned to the VM
+        vb.memory = "4096"  # Change this to reduce the amount of RAM assigned to the VM
         vb.cpus = "6"       # Change this to reduce the amount of cores assigned to the VM
         vb.customize ["modifyvm", :id, "--ioapic", "on", "--vram", "100", "--graphicscontroller", "vmsvga", "--audio", "none"]
     end
@@ -74,62 +77,26 @@ Vagrant.configure("2") do |config|
     #
     config.vm.provision "shell", inline: <<-SHELL
         sudo add-apt-repository ppa:deadsnakes/ppa
-        apt update && apt upgrade
+        apt update -y && apt upgrade -y
         apt install figlet
     SHELL
 
     ##################################################
     #
-    # Install dependencies inc. CMake 3.8.2
+    # Install dependencies
     #
     config.vm.provision "shell", inline: <<-SHELL
         figlet DEPENDENCIES  # ASCII banner
 
-        apt install -y build-essential libctemplate-dev libjsoncpp-dev libjsoncpp1 libjsoncpp-doc libdbus-1-dev libdbus-cpp-dev dbus libdbus-c++-dev libnl-3-dev libnl-route-3-dev libsystemd-dev libcap-dev runc bison flex zlib1g-dev autoconf python-pip python3.7  pkgconf libtool seccomp libseccomp-dev libyajl2 libyajl-dev go-md2man python3-pip gdb libcurl4-openssl-dev libssl-dev libgpgme11-dev
-        alias python=python3.7
-        pip3 install jsonref
-
-        figlet GCC
-        # Use GCC/G++ 6.4 as the default instead of 5.4 to match build environment
-        add-apt-repository -y ppa:jonathonf/gcc
-        apt update && apt install -y gcc-6 g++-6
-        update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-6 10
-        update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-6 10
-
-        figlet CMAKE
-        # If CMake is already installed, skip
-        if [ ! -f "/usr/local/bin/cmake" ]; then
-            mkdir ~/temp
-            cd ~/temp
-            wget https://cmake.org/files/v3.8/cmake-3.8.2.tar.gz
-            tar -xzvf cmake-3.8.2.tar.gz
-            cd ./cmake-3.8.2
-            ./bootstrap --parallel=$(nproc)
-            make -j$(nproc)
-            make install
-
-            cd ~
-            rm -rf ~/temp
-        fi
-
+        apt install -y build-essential cmake make git gcc pkgconf libtool libctemplate-dev libjsoncpp-dev libjsoncpp1 libdbus-1-dev libsystemd-dev libyajl-dev libcap-dev go-md2man autoconf automake libseccomp-dev libboost-dev valgrind libcunit1-dev liblog4c-dev libfreetype6-dev libjpeg-dev xorg-dev python3 python3-pip libarchive-dev libcurl4 libcurl4-gnutls-dev libssl-dev libgpgme11-dev libtool-bin libarchive13 bison flex
         #
         # Create build folders, links etc...
         #
-        ln -s /usr/include/jsoncpp/json/ /usr/include/json
-        ln -s /usr/include/dbus-1.0/dbus /usr/include/dbus
         cp /usr/lib/x86_64-linux-gnu/dbus-1.0/include/dbus/dbus-arch-deps.h /usr/include/dbus-1.0/dbus
-
         mkdir -p /usr/lib/plugins/dobby
         mkdir -p /opt/persistent/rdk
         mkdir -p /var/volatile/rdk/dobby/bundles
         chmod 755 /var/volatile/rdk/dobby/bundles
-
-        # Hardcoded .so locations in the code so need to create a symlink
-        ln -s /lib/x86_64-linux-gnu/libreadline.so.* /lib/
-
-        # iptables commands are in a different dir in Ubuntu
-        ln -s /sbin/iptables-save /usr/sbin/iptables-save
-        ln -s /sbin/iptables-restore /usr/sbin/iptables-restore
     SHELL
 
     ##################################################
@@ -140,14 +107,9 @@ Vagrant.configure("2") do |config|
         figlet CRUN  # ASCII banner
         mkdir ~/crun
         cd ~/crun
-        git clone --depth 1 --branch 0.15 https://github.com/containers/crun.git .
-
-        # Apply patch for pid file not being created properly
-        cp /vagrant/0001-container-truncate-pid-file-before-writing-it.patch ./
-        patch -p1 < 0001-container-truncate-pid-file-before-writing-it.patch
-
+        git clone https://github.com/containers/crun.git .
         ./autogen.sh
-        ./configure --disable-systemd
+        ./configure
         sudo make install -j$(nproc)
         sudo ln -s /usr/local/bin/crun /usr/bin/crun
     SHELL
@@ -160,8 +122,7 @@ Vagrant.configure("2") do |config|
         figlet SMCROUTE  # ASCII banner
         mkdir ~/smcroute
         cd ~/smcroute
-        git clone --depth 1 --branch 2.4.4 https://github.com/troglobit/smcroute.git .
-
+        git clone --depth 1 --branch 2.5.2 https://github.com/troglobit/smcroute.git .
         ./autogen.sh
         ./configure
         sudo make install -j$(nproc)
@@ -172,22 +133,16 @@ Vagrant.configure("2") do |config|
 
     ##################################################
     #
-    # Build & install the BOOST libraries v1.61.0.2 (match OpenEmbedded version)
+    # Clone and build latest libnl 3.5
     #
     config.vm.provision "shell", privileged: false, inline: <<-SHELL
-        figlet BOOST  # ASCII banner
-        mkdir ~/
-        cd ~/
-        wget http://launchpadlibrarian.net/277227509/libboost-all-dev_1.61.0.2_amd64.deb
-
-        # Not a pretty solution... but it works
-        sudo dpkg -i ./libboost-all-dev_1.61.0.2_amd64.deb  # Attempt to install package - fails on missing dependencies
-        sudo apt-get -f install -y                          # Force install dependencies
-        sudo dpkg -i ./libboost-all-dev_1.61.0.2_amd64.deb  # Attempt to install again - fails on more missing dependencies
-        sudo apt-get -f install -y                          # Force install more dependencies
-        sudo dpkg -i ./libboost-all-dev_1.61.0.2_amd64.deb  # Successful install
-
-        rm ./libboost-all-dev_1.61.0.2_amd64.deb
+        figlet libnl  # ASCII banner
+        mkdir ~/libnl
+        cd ~/libnl
+        git clone --depth 1 --branch libnl3_5_0 https://github.com/thom311/libnl.git .
+        ./autogen.sh
+        ./configure --prefix=/usr --sysconfdir=/etc --disable-static
+        sudo make install -j$(nproc)
     SHELL
 
     ##################################################
@@ -202,15 +157,14 @@ Vagrant.configure("2") do |config|
         mkdir ~/srcDobby
         cd ~/srcDobby
         git clone https://github.com/rdkcentral/Dobby.git .
-
         mkdir build
         cd build
         cmake -DCMAKE_BUILD_TYPE=Debug -DRDK_PLATFORM=DEV_VM -DCMAKE_INSTALL_PREFIX:PATH=/usr ../
         make -j$(nproc)
         sudo make install
-
         # Link for the DobbyInit tool
         sudo ln -s /usr/local/libexec/ /usr/libexec
+        sudo ln -s /lib/x86_64-linux-gnu/libreadline.so.* /lib/
     SHELL
 
     ##################################################
@@ -242,78 +196,18 @@ Vagrant.configure("2") do |config|
 
     ##################################################
     #
-    # Clone and build THUNDER
+    # Install Thunder R2 & rdkservices + deps
     #
+    config.vm.provision "file", source: "./Thunder", destination: "~/srcThunder/scripts"
     config.vm.provision "shell", privileged: false, inline: <<-SHELL
-        figlet THUNDER REPO # ASCII banner
+        figlet Thunder
+        pip3 install jsonref
 
-        # Make sure any extra Thunder dependencies are installed
-        sudo apt install -y gcc libtool autoconf pkg-config libarchive13 libarchive-dev libcurl3 libcurl4-gnutls-dev libssl-dev libgpgme11-dev libtool-bin
-
-        mkdir -p ~/srcThunder/Thunder
-        cd ~/srcThunder/Thunder
-        git clone https://github.com/rdkcentral/Thunder.git .
-
-        cd ~/srcThunder/Thunder/Source
-        ln -s ../Tools tools
-
-        # Install Thunder Tools
-        figlet THUNDER TOOLS # ASCII banner
-        cd ~/srcThunder/Thunder/Tools
-        cmake  -DGENERIC_CMAKE_MODULE_PATH=/usr/local/lib/cmake ./CMakeLists.txt
-        make -j$(nproc)
-        sudo make install
-
-        # Install Thunder
-        figlet THUNDER BUILD # ASCII banner
-        cd ~/srcThunder/Thunder
-        cmake  -DGENERIC_CMAKE_MODULE_PATH=/usr/local/lib/cmake -DDEBUG=ON -DVIRTUALINPUT=ON -DPLUGINS=ON -DCORE=ON -DPORT=9998 -DBINDING=127.0.0.1 -DPERSISTENT_PATH=/opt -DCMAKE_MODULE_PATH=./Tools ./CMakeLists.txt
-        make -j$(nproc)
-        sudo make install
-
-        ##################################################
-        #
-        # Clone RDKSERVICES
-        #
-        figlet RDK SERVICES  # ASCII banner
-        # Install Thunder service plugins
-        mkdir -p ~/srcThunder/rdkServices
-        cd ~/srcThunder/rdkServices
-        git clone https://github.com/rdkcentral/rdkservices.git .
-
-        ##################################################
-        #
-        # Build RDKSERVICES
-        #
-        # Only build the OCIContainer plugin in this VM, others not needed
-        #
-        cd ~/srcThunder/rdkServices
-        sed -i "s/include(services.cmake)/ if(BUILD_VAGRANT) \\n    # DO NOTHING FOR NOW \\n else()\\n    # include(services.cmake) \\n endif() \\n /g" CMakeLists.txt
-        mkdir build
-        cd build
-        # Disable default plugins, enable only OCIContainer
-        cmake  -DBUILD_TYPE=Debug -DBUILD_VAGRANT=true \
-               -DPLUGIN_DATA_CAPTURE=OFF \
-               -DPLUGIN_DISPLAYSETTINGS=OFF \
-               -DPLUGIN_LOGGING_PREFERENCES=OFF \
-               -DPLUGIN_USER_PREFERENCES=OFF \
-               -DPLUGIN_SYSTEMSERVICES=OFF \
-               -DPLUGIN_CONTROLSERVICE=OFF \
-               -DENABLE_TRACE_CONTROL=false \
-               -DENABLE_MONITOR=true \
-               -DENABLE_DEVICE_INFO=true \
-               -DPLUGIN_OCICONTAINER=ON \
-               -DRDK_PLATFORM=DEV_VM ../
-
-        make -j$(nproc)
-        sudo make install
-        # Create symlinks for required components
-        sudo ln -s /usr/local/lib/libWPE*        /usr/lib/
-        sudo ln -s /usr/local/lib/wpeframework/  /usr/lib/
-        sudo ln -s /usr/share/WPEFramework/      /usr/local/share
-        sudo ln -s /usr/etc/WPEFramework/        /etc/WPEFramework
-
-        figlet "FINISHED"  # ASCII banner
+        mkdir -p ~/srcThunder
+        cd ~/srcThunder
+        git clone -b R2 https://github.com/rdkcentral/Thunder.git
+        git clone -b R2 https://github.com/rdkcentral/ThunderInterfaces.git
+        git clone -b R2 https://github.com/rdkcentral/ThunderClientLibraries.git
+        git clone https://github.com/rdkcentral/rdkservices.git
     SHELL
-
 end

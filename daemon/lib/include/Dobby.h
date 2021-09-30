@@ -139,7 +139,6 @@ private:
     std::shared_ptr<DobbyIPCUtils> mIPCUtilities;
     std::shared_ptr<DobbyManager> mManager;
 
-    std::shared_ptr<DobbyLogger> mContainerLogger;
     std::unique_ptr<DobbyWorkQueue> mWorkQueue;
     std::unique_ptr<DobbyWorkQueue> mPluginWorkQueue;
 
