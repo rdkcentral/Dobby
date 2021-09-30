@@ -507,7 +507,7 @@ bool DobbyProxy::setLogLevel(int level) const
     bool result = false;
 
     if (invokeMethod(DOBBY_ADMIN_INTERFACE,
-                     DOBBY_ADMIN_METHOD_SET_LOG_METHOD,
+                     DOBBY_ADMIN_METHOD_SET_LOG_LEVEL,
                      params, returns))
     {
         if (!AI_IPC::parseVariantList<bool>(returns, &result))
