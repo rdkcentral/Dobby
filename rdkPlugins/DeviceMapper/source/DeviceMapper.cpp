@@ -19,6 +19,7 @@
 
 #include "DeviceMapper.h"
 
+#include <Logging.h>
 #include <algorithm>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -63,6 +64,8 @@ unsigned DeviceMapperPlugin::hookHints() const
  */
 bool DeviceMapperPlugin::preCreation()
 {
+    AI_LOG_FN_ENTRY();
+
     if (!mValid)
     {
         AI_LOG_WARN("Invalid config file");
@@ -90,6 +93,7 @@ bool DeviceMapperPlugin::preCreation()
     // of them, so something's gone wrong
     if (deviceNodes.size() == 0)
     {
+        AI_LOG_FN_EXIT();
         return false;
     }
 
@@ -100,45 +104,49 @@ bool DeviceMapperPlugin::preCreation()
         auto configDevice = mContainerConfig->linux->devices[i];
         std::string devicePath = configDevice->path;
 
+        // Is this device one we're interested in?
         auto devIt = std::find_if(deviceNodes.begin(), deviceNodes.end(),
                                 [&p = devicePath](DevNode n)
                                 {
                                     return p == n.path;
                                 });
 
-        if (devIt != deviceNodes.end())
+        if (devIt == deviceNodes.end())
         {
-            if (devIt->major == configDevice->major && devIt->minor == configDevice->minor)
-            {
-                // Config is correct, nothing to do
-                AI_LOG_DEBUG("No fixup needed for %s", devIt->path.c_str());
-                continue;
-            }
-
-            AI_LOG_INFO("Fixing major/minor ID for dev node '%s'", devIt->path.c_str());
-
-            // Track that we changed this node, as we'll refer to it later to
-            // fix up the cgroup allow list
-            DevNode tmp = {
-                devicePath,
-                devIt->major,
-                devIt->minor,
-                configDevice->major,
-                configDevice->minor,
-                devIt->mode
-            };
-
-            incorrectDevNodes.emplace_back(tmp);
-
-            // Edit the config
-            configDevice->major = devIt->major;
-            configDevice->minor = devIt->minor;
+            continue;
         }
+
+        // Check if the ids in config match the real ids
+        if (devIt->major == configDevice->major && devIt->minor == configDevice->minor)
+        {
+            // Config is correct, nothing to do
+            AI_LOG_DEBUG("No fixup needed for %s", devIt->path.c_str());
+            continue;
+        }
+
+        AI_LOG_INFO("Fixing major/minor ID for dev node '%s'", devIt->path.c_str());
+
+        // Track that we changed this node, as we'll refer to it later to
+        // fix up the cgroup allow list
+        DevNode tmp = {
+            devicePath,
+            devIt->major,
+            devIt->minor,
+            configDevice->major,
+            configDevice->minor,
+            devIt->mode
+        };
+        incorrectDevNodes.emplace_back(tmp);
+
+        // Edit the config
+        configDevice->major = devIt->major;
+        configDevice->minor = devIt->minor;
     }
 
     if (incorrectDevNodes.size() == 0)
     {
         // No more work to do
+        AI_LOG_FN_EXIT();
         return true;
     }
 
@@ -147,7 +155,8 @@ bool DeviceMapperPlugin::preCreation()
     {
         auto configDev = mContainerConfig->linux->resources->devices[i];
 
-        // See if the device matches one we just fixed
+        // See if the device matches one we just fixed (have to compare ids as
+        // the dev path isn't in this section)
         auto it = std::find_if(incorrectDevNodes.begin(), incorrectDevNodes.end(),
                                 [&cd = configDev](DevNode node)
                                 {
@@ -164,17 +173,30 @@ bool DeviceMapperPlugin::preCreation()
         configDev->minor = it->minor;
     }
 
+    AI_LOG_FN_EXIT();
     return true;
 }
 
 // End hook methods
 
+/**
+ * @brief Gets the actual details about the device node (major/minor ids)
+ * at a given path
+ *
+ * @param[in]   path    The path of the device
+ * @param[out]  node    The details about the device
+ *
+ * @return True if device node details got successfully
+ */
 bool DeviceMapperPlugin::getDevNodeFromPath(const std::string& path, DeviceMapperPlugin::DevNode& node)
 {
+    AI_LOG_FN_ENTRY();
+
     struct stat buf;
     if (stat(path.c_str(), &buf) != 0)
     {
         AI_LOG_SYS_WARN(errno, "failed to stat dev node @ '%s'", path.c_str());
+        AI_LOG_FN_EXIT();
         return false;
     }
 
@@ -183,6 +205,7 @@ bool DeviceMapperPlugin::getDevNodeFromPath(const std::string& path, DeviceMappe
     node.minor = (int64_t)minor(buf.st_rdev);
     node.mode = (buf.st_mode & 0666);
 
+    AI_LOG_FN_EXIT();
     return true;
 }
 

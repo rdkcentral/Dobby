@@ -2,7 +2,7 @@
 * If not stated otherwise in this file or this component's LICENSE file the
 * following copyright and licenses apply:
 *
-* Copyright 2020 Sky UK
+* Copyright 2021 Sky UK
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -29,14 +29,6 @@
 #include <string>
 #include <memory>
 
-/**
- * @brief Simple Dobby RDK Plugin
- *
- * Implements all hook points to print a simple statement showing the hook has been
- * called successfully.
- *
- * Can be used as a reference implementation for future plugins
- */
 class DeviceMapperPlugin : public RdkPluginBase
 {
 public:
@@ -49,8 +41,6 @@ public:
     {
         return mName;
     };
-
-    // Override to return the appropriate hints for what we implement
     unsigned hookHints() const override;
 
 public:
