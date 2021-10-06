@@ -90,11 +90,17 @@ bool DeviceMapperPlugin::preCreation()
     }
 
     // We know we have some devices we're interested in, but we didn't find any
-    // of them, so something's gone wrong
+    // of them, so something's gone wrong. This is a failure
     if (deviceNodes.size() == 0)
     {
         AI_LOG_FN_EXIT();
         return false;
+    }
+
+    // Don't consider this a failure (fix up what we can) but log it for reference
+    if (deviceNodes.size() != mContainerConfig->rdk_plugins->devicemapper->data->devices_len)
+    {
+        AI_LOG_WARN("Could not find all device nodes listed in plugin config");
     }
 
     // Fix up the devices list
@@ -153,6 +159,12 @@ bool DeviceMapperPlugin::preCreation()
     // Fix up the cgroup list
     for (size_t i = 0; i < mContainerConfig->linux->resources->devices_len; i++)
     {
+        // Nothing left to do, we can finish early
+        if (incorrectDevNodes.size() == 0)
+        {
+            break;
+        }
+
         auto configDev = mContainerConfig->linux->resources->devices[i];
 
         // See if the device matches one we just fixed (have to compare ids as
@@ -171,6 +183,13 @@ bool DeviceMapperPlugin::preCreation()
         AI_LOG_INFO("Fixing major/minor ID in cgroup allow list for dev node '%s'", it->path.c_str());
         configDev->major = it->major;
         configDev->minor = it->minor;
+
+        incorrectDevNodes.erase(it);
+    }
+
+    if (incorrectDevNodes.size() != 0)
+    {
+        AI_LOG_WARN("Some invalid devices in the device list were not found in the cgroup allow list");
     }
 
     AI_LOG_FN_EXIT();

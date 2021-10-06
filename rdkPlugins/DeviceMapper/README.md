@@ -1,7 +1,8 @@
 # Dobby RDK Device Mapper Plugin
 
 ## Quick Start
-Add the following section to your OCI runtime configuration `config.json` file to enable logging to a file. This will capture all the stdout/err from the container (in addition to any output from `DobbyPluginLauncher`) and redirect it to the specified file.
+Add the following section to your OCI runtime configuration `config.json` file to enable the DeviceMapper plugin. This will automatically correct the major/minor IDs of the listed devices to match the IDs of the current nodes on the device. This is useful if some devices are assigned dynamic IDs and can change between boots. You must add the device nodes to the container config as normal, with a unique major/minor ID. This plugin just corrects invalid IDs and will not add new devices to the config dynamically.
+
 
 ```json
 {
