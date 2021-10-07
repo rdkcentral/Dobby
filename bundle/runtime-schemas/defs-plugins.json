@@ -504,6 +504,32 @@
                 }
             }
         },
+        "DeviceMapper": {
+            "type": "object",
+            "required": [
+                "required",
+                "data"
+            ],
+            "properties": {
+                "required": {
+                    "type": "boolean"
+                },
+                "dependsOn": {
+                    "$ref": "defs.json#/definitions/ArrayOfStrings"
+                },
+                "data": {
+                    "type": "object",
+                    "properties": {
+                        "devices": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "TestRdkPlugin": {
             "type": "object",
             "required": [
@@ -579,6 +605,9 @@
                 },
                 "testrdkplugin": {
                     "$ref": "#/definitions/TestRdkPlugin"
+                },
+                "devicemapper": {
+                    "$ref": "#/definitions/DeviceMapper"
                 }
             }
         }
