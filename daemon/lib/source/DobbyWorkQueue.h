@@ -30,7 +30,7 @@
 #include <atomic>
 #include <thread>
 #include <mutex>
-#include <condition_variable>
+#include "ConditionVariable.h"
 #include <functional>
 
 class DobbyWorkQueue
@@ -67,12 +67,12 @@ private:
     bool mExitRequested;
     std::atomic<std::thread::id> mRunningThreadId;
 
-    std::mutex mWorkQueueLock;
-    std::condition_variable mWorkQueueCond;
+    AICommon::Mutex mWorkQueueLock;
+    AICommon::ConditionVariable mWorkQueueCond;
     std::queue< WorkItem > mWorkQueue;
 
-    std::mutex mWorkCompleteLock;
-    std::condition_variable mWorkCompleteCond;
+    AICommon::Mutex mWorkCompleteLock;
+    AICommon::ConditionVariable mWorkCompleteCond;
     uint64_t mWorkCompleteCounter;
 };
 
