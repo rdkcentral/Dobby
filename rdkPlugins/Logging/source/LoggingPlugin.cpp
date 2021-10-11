@@ -72,22 +72,27 @@ bool LoggingPlugin::postInstallation()
 {
     AI_LOG_INFO("Running Logging postInstallation hook");
 
-    // Redirect hook output to stdout/stderr
-    if (mContainerConfig->annotations == nullptr)
+    // Plugin launcher will automatically send hook output to journald so don't
+    // want to duplicate it by capturing it here too
+    if (GetContainerSink() != LoggingSink::Journald)
     {
-        mContainerConfig->annotations = (json_map_string_string *)calloc(1, sizeof(json_map_string_string));
+        // Redirect hook output to stdout/stderr
+        if (mContainerConfig->annotations == nullptr)
+        {
+            mContainerConfig->annotations = (json_map_string_string *)calloc(1, sizeof(json_map_string_string));
+        }
+        mContainerConfig->annotations->keys =
+            (char **)realloc(mContainerConfig->annotations->keys, sizeof(char *) * (mContainerConfig->annotations->len + 2));
+        mContainerConfig->annotations->values =
+            (char **)realloc(mContainerConfig->annotations->values, sizeof(char *) * (mContainerConfig->annotations->len + 2));
+
+        mContainerConfig->annotations->keys[mContainerConfig->annotations->len] = strdup("run.oci.hooks.stderr");
+        mContainerConfig->annotations->values[mContainerConfig->annotations->len] = strdup("/dev/stderr");
+        mContainerConfig->annotations->keys[mContainerConfig->annotations->len + 1] = strdup("run.oci.hooks.stdout");
+        mContainerConfig->annotations->values[mContainerConfig->annotations->len + 1] = strdup("/dev/stdout");
+
+        mContainerConfig->annotations->len += 2;
     }
-    mContainerConfig->annotations->keys =
-        (char **)realloc(mContainerConfig->annotations->keys, sizeof(char *) * (mContainerConfig->annotations->len + 2));
-    mContainerConfig->annotations->values =
-        (char **)realloc(mContainerConfig->annotations->values, sizeof(char *) * (mContainerConfig->annotations->len + 2));
-
-    mContainerConfig->annotations->keys[mContainerConfig->annotations->len] = strdup("run.oci.hooks.stderr");
-    mContainerConfig->annotations->values[mContainerConfig->annotations->len] = strdup("/dev/stderr");
-    mContainerConfig->annotations->keys[mContainerConfig->annotations->len + 1] = strdup("run.oci.hooks.stdout");
-    mContainerConfig->annotations->values[mContainerConfig->annotations->len + 1] = strdup("/dev/stdout");
-
-    mContainerConfig->annotations->len += 2;
 
     // We need to use an isolated terminal to give each container its own ptty
     mContainerConfig->process->terminal = true;
