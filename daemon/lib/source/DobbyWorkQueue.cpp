@@ -59,7 +59,7 @@ void DobbyWorkQueue::exit()
     else
     {
         // take the lock and set the terminate flag
-        std::unique_lock<std::mutex> locker(mWorkQueueLock);
+        std::unique_lock<AICommon::Mutex> locker(mWorkQueueLock);
 
         // set the exit request flag and drop the lock
         mExitRequested = true;
@@ -118,7 +118,7 @@ bool DobbyWorkQueue::runUntil(const std::chrono::steady_clock::time_point &deadl
     };
 
     // run the event loop by processing all lambdas posted to the work queue
-    std::unique_lock<std::mutex> locker(mWorkQueueLock);
+    std::unique_lock<AICommon::Mutex> locker(mWorkQueueLock);
 
     // store the id of the thread running the loop
     mRunningThreadId = std::this_thread::get_id();
@@ -203,7 +203,7 @@ bool DobbyWorkQueue::doWork(WorkFunc &&work)
     }
 
     // otherwise add to the queue and return
-    std::unique_lock<std::mutex> queueLocker(mWorkQueueLock);
+    std::unique_lock<AICommon::Mutex> queueLocker(mWorkQueueLock);
 
     // add to the queue
     const uint64_t tag = ++mWorkCounter;
@@ -216,7 +216,7 @@ bool DobbyWorkQueue::doWork(WorkFunc &&work)
 
 
     // then wait for the function to be executed
-    std::unique_lock<std::mutex> completeLocker(mWorkCompleteLock);
+    std::unique_lock<AICommon::Mutex> completeLocker(mWorkCompleteLock);
     while (mWorkCompleteCounter < tag)
     {
         // wait with a timeout for debugging, we log an error if been waiting
@@ -256,7 +256,7 @@ bool DobbyWorkQueue::postWork(WorkFunc &&work)
     else
     {
         // otherwise add to the queue and wait till processed
-        std::lock_guard<std::mutex> locker(mWorkQueueLock);
+        std::lock_guard<AICommon::Mutex> locker(mWorkQueueLock);
 
         // add to the queue
         const uint64_t tag = ++mWorkCounter;
