@@ -25,6 +25,7 @@
 
 #include <Netfilter.h>
 #include <RdkPluginBase.h>
+#include <IpTablesRuleGenerator.h>
 
 #include <sys/types.h>
 #include <netinet/in.h>
@@ -100,9 +101,6 @@ private:
     std::string constructACCEPTRule(const std::string &containerIp,
                                     const std::string &vethName,
                                     in_port_t port) const;
-
-    std::string createMasqueradeDnatRule(const in_port_t &port) const;
-    std::string createMasqueradeSnatRule(const std::string &ipAddress) const;
 
 private:
     const std::string mName;

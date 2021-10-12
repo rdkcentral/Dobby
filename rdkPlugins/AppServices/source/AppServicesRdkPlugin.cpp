@@ -600,91 +600,17 @@ Netfilter::RuleSet AppServicesRdkPlugin::constructMasqueradeRules() const
 
     for (const auto &port : allPorts)
     {
-        const std::string dnatRule = createMasqueradeDnatRule(port);
+        const std::string dnatRule =
+            IpTablesRuleGenerator::createMasqueradeDnatRule("asplugin", mUtils->getContainerId(), port, "tcp", AF_INET);
         natRules.emplace_back(dnatRule);
     }
 
-    std::string snatRule = createMasqueradeSnatRule(networkInfo.ipAddress);
+    const std::string snatRule =
+        IpTablesRuleGenerator::createMasqueradeSnatRule("asplugin", mUtils->getContainerId(), networkInfo.ipAddress, "tcp", AF_INET);
     natRules.emplace_back(snatRule);
 
     ruleSet[Netfilter::TableType::Nat] = std::move(natRules);
 
     AI_LOG_FN_EXIT();
     return ruleSet;
-}
-
-// -----------------------------------------------------------------------------
-/**
- *  @brief Constructs an OUTPUT DNAT rule to forward packets from 127.0.0.1 inside
- *  the container to the bridge device (100.64.11.1) on the given port
- *
- *  @param[in]  portForward The port to forward.
- *
- *  @return returns the created rule.
- */
-std::string AppServicesRdkPlugin::createMasqueradeDnatRule(const in_port_t &port) const
-{
-    char buf[256];
-    const std::string containerId(mUtils->getContainerId().c_str());
-
-#if defined(DEV_VM)
-    const std::string comment("asplugin:" + containerId);
-#else
-    const std::string comment("\"asplugin:" + containerId + "\"");
-#endif
-
-    std::string baseRule("OUTPUT "
-                         "-o lo "
-                         "-p tcp "      // protocol
-                         "-m tcp "      // protocol
-                         "--dport %hu " // port number
-                         "-j DNAT "
-                         "-m comment --comment %s "         // Container id
-                         "--to-destination 100.64.11.1:%hu" // Bridge address:port
-    );
-
-    // populate fields in base rule
-    snprintf(buf, sizeof(buf), baseRule.c_str(),
-             port,
-             comment.c_str(),
-             port);
-
-    return std::string(buf);
-}
-
-// -----------------------------------------------------------------------------
-/**
- *  @brief Constructs an POSTROUTING SNAT rule so that the source address is changed
- *  to the veth0 inside the container so we get the replies.
- *
- *  @param[in]  ipAddress   The ip address of the container.
- *
- *  @return returns the created rule.
- *
- */
-std::string AppServicesRdkPlugin::createMasqueradeSnatRule(const std::string &ipAddress) const
-{
-    char buf[256];
-    const std::string containerId(mUtils->getContainerId().c_str());
-
-#if defined(DEV_VM)
-    const std::string comment("asplugin:" + containerId);
-#else
-    const std::string comment("\"asplugin:" + containerId + "\"");
-#endif
-
-    std::string baseRule("POSTROUTING "
-                         "-p tcp "         // protocol
-                         "-s 127.0.0.1 "   // container localhost
-                         "-d 100.64.11.1 " // bridge address
-                         "-j SNAT "
-                         "-m comment --comment %s " // container id
-                         "--to %s");                // container address
-
-    // populate fields in base rule
-    snprintf(buf, sizeof(buf), baseRule.c_str(),
-             comment.c_str(),
-             ipAddress.c_str());
-
-    return std::string(buf);
 }
