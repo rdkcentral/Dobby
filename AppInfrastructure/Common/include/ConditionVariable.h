@@ -122,6 +122,13 @@ private:
             ts.tv_nsec -= 1000000000L;
             ts.tv_sec += 1;
         }
+        else if (ts.tv_nsec < 0L)
+        {
+            // This can happend when rel_time.tv_nsec is big negative, and ts.tv_nsec
+            // is small positive
+            ts.tv_nsec += 1000000000L;
+            ts.tv_sec -= 1;
+        }
 
         return ts;
     }
@@ -158,6 +165,11 @@ public:
     std::cv_status wait_for(std::unique_lock<AICommon::Mutex>& lock,
                             const std::chrono::duration<Rep, Period>& rel_time)
     {
+        if (rel_time.count() < 0)
+        {
+            AI_LOG_DEBUG("Negative wait period, timeout occured");
+            return std::cv_status::timeout;
+        }
     #if defined(HAS_PTHREAD_COND_TIMEDWAIT_RELATIVE_NP)
         const struct timespec ts = calcTimeoutRel(std::chrono::duration_cast<std::chrono::nanoseconds>(rel_time));
         int err = pthread_cond_timedwait_relative_np(&mCond, lock.mutex()->native_handle(), &ts);
@@ -185,6 +197,11 @@ public:
                   const std::chrono::duration<Rep, Period>& rel_time,
                   Predicate pred)
     {
+        if (rel_time.count() < 0)
+        {
+            AI_LOG_DEBUG("Negative wait period, timeout occured");
+            return pred();
+        }
     #if defined(HAS_PTHREAD_COND_TIMEDWAIT_RELATIVE_NP)
         const struct timespec ts = calcTimeoutRel(std::chrono::duration_cast<std::chrono::nanoseconds>(rel_time));
     #else
