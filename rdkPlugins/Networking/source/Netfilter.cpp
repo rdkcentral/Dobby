@@ -23,7 +23,11 @@
 #include "Netfilter.h"
 #include "StdStreamPipe.h"
 
-#include <Logging.h>
+#if defined (DOBBY_BUILD)
+    #include <Logging.h>
+#else
+    #include <Dobby/Logging.h>
+#endif
 
 #include <vector>
 #include <sstream>

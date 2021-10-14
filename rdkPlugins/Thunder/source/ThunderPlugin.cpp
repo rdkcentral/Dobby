@@ -18,7 +18,10 @@
 */
 
 #include "ThunderPlugin.h"
-#include "ThunderSecurityAgent.h"
+
+#ifdef HAS_SECURITY_AGENT
+#include <WPEFramework/securityagent/securityagent.h>
+#endif
 
 #include <fcntl.h>
 #include <unistd.h>
@@ -49,6 +52,17 @@ ThunderPlugin::ThunderPlugin(std::shared_ptr<rt_dobby_schema> &containerConfig,
       mEnableConnLimit(false)
 {
     AI_LOG_FN_ENTRY();
+
+    AI_LOG_FN_EXIT();
+}
+
+ThunderPlugin::~ThunderPlugin()
+{
+    AI_LOG_FN_ENTRY();
+
+#ifdef HAS_SECURITY_AGENT
+    securityagent_dispose();
+#endif
 
     AI_LOG_FN_EXIT();
 }
@@ -109,6 +123,10 @@ bool ThunderPlugin::preCreation()
     // Add an environment variable to the config containing the token
     if (mContainerConfig->rdk_plugins->thunder->data->bearer_url)
     {
+#ifdef HAS_SECURITY_AGENT
+        // Do a sanity check to see if the token exists for performance - don't
+        // bother attempting to generate a token if we know we can't
+
         // Socket could be in different location depending on ThunderClientLibraries
         // version
         std::string agentPath;
@@ -117,22 +135,13 @@ bool ThunderPlugin::preCreation()
             "/tmp/securityagent"
         };
 
-        const char *envAgentPath = getenv("SECURITYAGENT_PATH");
-        if (envAgentPath && access(envAgentPath, F_OK) == 0)
+        for(const auto& path : securityAgentTokenPaths)
         {
-            agentPath = std::string(envAgentPath);
-            AI_LOG_INFO("Security agent socket set by SECURITYAGENT_PATH env var to %s", agentPath.c_str());
-        }
-        else
-        {
-            for(const auto& path : securityAgentTokenPaths)
+            if (access(path.c_str(), F_OK) == 0)
             {
-                if (access(path.c_str(), F_OK) == 0)
-                {
-                    AI_LOG_INFO("Security agent socket found at %s", path.c_str());
-                    agentPath = path;
-                    break;
-                }
+                AI_LOG_INFO("Security agent socket found at %s", path.c_str());
+                agentPath = path;
+                break;
             }
         }
 
@@ -142,20 +151,47 @@ bool ThunderPlugin::preCreation()
             return false;
         }
 
-        auto securityAgent = std::make_shared<ThunderSecurityAgent>(agentPath);
-        if (!securityAgent || !securityAgent->open())
+        // Protect from unbounded payload size
+        const size_t maxPayloadSize = 2048;
+        const std::string payload(mContainerConfig->rdk_plugins->thunder->data->bearer_url);
+        const size_t inputLength = std::min(maxPayloadSize, payload.length());
+
+        if (payload.length() > maxPayloadSize)
         {
-            AI_LOG_ERROR("failed to open the security agent socket at %s, disabling token generation", agentPath.c_str());
-            securityAgent.reset();
+            AI_LOG_WARN("Bearer URL is too long and will be truncated");
+        }
+
+        std::vector<uint8_t> buffer;
+        buffer.resize(maxPayloadSize);
+        memcpy(buffer.data(), payload.c_str(), inputLength);
+
+        // Retry twice
+        const int maxRetryCount = 2;
+        int tokenLength;
+        for (int i = 1; i <= maxRetryCount; i++)
+        {
+            if ((tokenLength = GetToken(maxPayloadSize, inputLength, buffer.data())) < 0)
+            {
+                AI_LOG_ERROR("Failed to generate Thunder token - attempt %d/%d", i, maxRetryCount);
+            }
+            else
+            {
+                break;
+            }
+        }
+
+        if (tokenLength < 0)
+        {
+            // Couldn't generate the token
+            AI_LOG_FN_EXIT();
             return false;
         }
 
-        AI_LOG_INFO("Generating token for %s", mContainerConfig->rdk_plugins->thunder->data->bearer_url);
-        const std::string token = securityAgent->getToken(mContainerConfig->rdk_plugins->thunder->data->bearer_url);
-        if (!token.empty())
-        {
-            mUtils->addEnvironmentVar("THUNDER_SECURITY_TOKEN=" + token);
-        }
+        std::string token(reinterpret_cast<const char *>(buffer.data()), tokenLength);
+        mUtils->addEnvironmentVar("THUNDER_SECURITY_TOKEN=" + token);
+#else
+        AI_LOG_ERROR("bearerUrl set in config but Dobby built without SecurityAgent support. Cannot generate token");
+#endif
     }
     else
     {

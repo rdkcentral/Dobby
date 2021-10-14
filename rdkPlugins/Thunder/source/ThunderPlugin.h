@@ -21,7 +21,11 @@
 #define THUNDERPLUGIN_H
 
 #include <Netfilter.h>
-#include <RdkPluginBase.h>
+#if defined (DOBBY_BUILD)
+    #include <RdkPluginBase.h>
+#else
+    #include <Dobby/rdkPlugins/RdkPluginBase.h>
+#endif
 
 #include <sys/types.h>
 #include <netinet/in.h>
@@ -54,6 +58,8 @@ public:
     ThunderPlugin(std::shared_ptr<rt_dobby_schema> &containerConfig,
                   const std::shared_ptr<DobbyRdkPluginUtils> &utils,
                   const std::string &rootfsPath);
+
+    ~ThunderPlugin();
 
 public:
     inline std::string name() const override

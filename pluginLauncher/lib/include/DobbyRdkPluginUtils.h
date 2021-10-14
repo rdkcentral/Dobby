@@ -26,7 +26,11 @@
 #include "rt_dobby_schema.h"
 #include "rt_state_schema.h"
 
-#include <IDobbyStartState.h>
+#if defined (DOBBY_BUILD)
+    #include <IDobbyStartState.h>
+#else
+    #include <Dobby/rdkPlugins/IDobbyStartState.h>
+#endif
 
 #include <sys/types.h>
 #include <string>
