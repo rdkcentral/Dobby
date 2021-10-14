@@ -60,9 +60,14 @@ ThunderPlugin::~ThunderPlugin()
 {
     AI_LOG_FN_ENTRY();
 
-#ifdef HAS_SECURITY_AGENT
-    securityagent_dispose();
-#endif
+    // TODO:: We should call this, but only when the daemon is shutting down
+    // Currently this will be called at every container exit, which will
+    // cause issues as this needs to be a singleton for the life of the dameon
+    // (otherwise will lockup)
+
+    // #ifdef HAS_SECURITY_AGENT
+    //      securityagent_dispose();
+    // #endif
 
     AI_LOG_FN_EXIT();
 }
