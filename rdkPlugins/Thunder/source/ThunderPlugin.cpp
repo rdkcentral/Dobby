@@ -60,10 +60,21 @@ ThunderPlugin::~ThunderPlugin()
 {
     AI_LOG_FN_ENTRY();
 
-    // TODO:: We should call this, but only when the daemon is shutting down
-    // Currently this will be called at every container exit, which will
-    // cause issues as this needs to be a singleton for the life of the dameon
-    // (otherwise will lockup)
+    /*
+    TODO:: To be a good citizen, we should call dispose() to clean up after
+    ourselves when we're done.
+
+    However this dtor is called every time a container exits, so we end up
+    disposing the singleton then attempting to reuse it, causing Dobby to
+    lock up. In theory the singleton should be recreated when we call GetToken
+    but this doesn't work properly and hangs (bug in Thunder?). We should ideally
+    only call this when the entire daemon goes for shutdown, not after every
+    container exit.
+
+    Not calling dispose() causes some Thunder warnings at daemon shutdown
+    but does not seem to cause a crash or user-facing issue so ignoring it for
+    now.
+    */
 
     // #ifdef HAS_SECURITY_AGENT
     //      securityagent_dispose();
