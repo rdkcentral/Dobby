@@ -93,3 +93,8 @@ if( BUILDING_WITH_RDK_SDK )
             CTemplate::libctemplate )
 
 endif()
+
+# Install public headers for external use
+install( DIRECTORY include/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/Dobby/rdkPlugins/
+        FILES_MATCHING PATTERN "IDobbyStartState.h"
+)
