@@ -256,11 +256,13 @@ bool DobbyWorkQueue::postWork(WorkFunc &&work)
     else
     {
         // otherwise add to the queue and wait till processed
-        std::lock_guard<AICommon::Mutex> locker(mWorkQueueLock);
+        std::unique_lock<AICommon::Mutex> locker(mWorkQueueLock);
 
         // add to the queue
         const uint64_t tag = ++mWorkCounter;
         mWorkQueue.emplace(tag, std::move(work));
+
+        locker.unlock();
 
         // wake the event loop
         mWorkQueueCond.notify_one();
