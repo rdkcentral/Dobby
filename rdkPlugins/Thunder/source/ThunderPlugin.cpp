@@ -136,34 +136,37 @@ bool ThunderPlugin::preCreation()
 {
     AI_LOG_FN_ENTRY();
 
+    // Socket could be in different location depending on ThunderClientLibraries
+    // version
+    std::string agentPath = "/tmp/SecurityAgent/token";
+    bool socketExists = access(agentPath.c_str(), F_OK) == 0;
+
+    if (mContainerConfig->rdk_plugins->thunder->data->trusted)
+    {
+        if (!socketExists)
+        {
+            AI_LOG_ERROR("Thunder security agent socket not found @ '%s', cannot add bind-mount",
+                         agentPath.c_str());
+        }
+        else
+        {
+            // This is a "trusted" app so we will allow it to generate a token
+            // by itself
+            AI_LOG_INFO("Container is trusted. Adding bind mount for Thunder SecurityAgent socket @ '%s'",
+                        agentPath.c_str());
+            mUtils->addMount(agentPath, agentPath, "bind",
+                             {"bind", "ro", "nosuid", "nodev", "noexec"});
+        }
+    }
+
     // Add an environment variable to the config containing the token
     if (mContainerConfig->rdk_plugins->thunder->data->bearer_url)
     {
 #ifdef HAS_SECURITY_AGENT
-        // Do a sanity check to see if the token exists for performance - don't
-        // bother attempting to generate a token if we know we can't
-
-        // Socket could be in different location depending on ThunderClientLibraries
-        // version
-        std::string agentPath;
-        std::vector<std::string> securityAgentTokenPaths = {
-            "/tmp/SecurityAgent/token",
-            "/tmp/securityagent"
-        };
-
-        for(const auto& path : securityAgentTokenPaths)
+        if (!socketExists)
         {
-            if (access(path.c_str(), F_OK) == 0)
-            {
-                AI_LOG_INFO("Security agent socket found at %s", path.c_str());
-                agentPath = path;
-                break;
-            }
-        }
-
-        if (agentPath.empty())
-        {
-            AI_LOG_ERROR("No thunder security agent socket found, cannot generate token");
+            AI_LOG_ERROR("Thunder security agent socket not found @ '%s', cannot generate token",
+                         agentPath.c_str());
             return false;
         }
 
