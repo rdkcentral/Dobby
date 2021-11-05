@@ -25,6 +25,7 @@
 
 #include <fcntl.h>
 #include <unistd.h>
+#include <sys/stat.h>
 
 /**
  * Need to do this at the start of every plugin to make sure the correct
@@ -49,9 +50,13 @@ ThunderPlugin::ThunderPlugin(std::shared_ptr<rt_dobby_schema> &containerConfig,
       mUtils(utils),
       mNetfilter(std::make_shared<Netfilter>()),
       mThunderPort(9998), // Change this if Thunder runs on non-standard port
-      mEnableConnLimit(false)
+      mEnableConnLimit(false),
+      mSocketDirectory("/tmp/SecurityAgent"),
+      mSocketPath(mSocketDirectory + "/token")
 {
     AI_LOG_FN_ENTRY();
+
+    mSocketExists = access(mSocketPath.c_str(), F_OK) == 0;
 
     AI_LOG_FN_EXIT();
 }
@@ -129,6 +134,27 @@ bool ThunderPlugin::postInstallation()
     snprintf(buf, sizeof(buf), "THUNDER_ACCESS=100.64.11.1:%hu", mThunderPort);
     mUtils->addEnvironmentVar(buf);
 
+    // Check if app is trusted - do in PostInstallation so we don't add duplicate
+    // mounts
+    if (mContainerConfig->rdk_plugins->thunder->data->trusted_present && mContainerConfig->rdk_plugins->thunder->data->trusted)
+    {
+        if (!mSocketExists)
+        {
+            AI_LOG_ERROR("Thunder security agent socket not found @ '%s', cannot add bind-mount",
+                         mSocketPath.c_str());
+        }
+        else
+        {
+            // This is a "trusted" app so we will allow it to generate a token
+            // by itself
+            AI_LOG_INFO("Container is trusted. Adding bind mount for Thunder SecurityAgent socket @ '%s'",
+                        mSocketPath.c_str());
+
+            mUtils->addMount(mSocketPath, mSocketPath, "bind",
+                             {"bind", "ro", "nosuid", "nodev", "noexec"});
+        }
+    }
+
     return true;
 }
 
@@ -136,34 +162,31 @@ bool ThunderPlugin::preCreation()
 {
     AI_LOG_FN_ENTRY();
 
+    if (mContainerConfig->rdk_plugins->thunder->data->trusted_present &&
+        mContainerConfig->rdk_plugins->thunder->data->trusted && mSocketExists)
+    {
+        // The /tmp/SecurityAgent dir must have +x set for search
+        // Do this every time as this will be reset every bootup
+        struct stat buf;
+        if (stat(mSocketDirectory.c_str(), &buf) != 0)
+        {
+            AI_LOG_SYS_WARN(errno, "stat failed on '%s'", mSocketDirectory.c_str());
+        }
+
+        if (chmod(mSocketDirectory.c_str(), buf.st_mode | S_IXOTH) != 0)
+        {
+            AI_LOG_SYS_WARN(errno, "failed to set the thunder socket permissions");
+        }
+    }
+
     // Add an environment variable to the config containing the token
     if (mContainerConfig->rdk_plugins->thunder->data->bearer_url)
     {
 #ifdef HAS_SECURITY_AGENT
-        // Do a sanity check to see if the token exists for performance - don't
-        // bother attempting to generate a token if we know we can't
-
-        // Socket could be in different location depending on ThunderClientLibraries
-        // version
-        std::string agentPath;
-        std::vector<std::string> securityAgentTokenPaths = {
-            "/tmp/SecurityAgent/token",
-            "/tmp/securityagent"
-        };
-
-        for(const auto& path : securityAgentTokenPaths)
+        if (!mSocketExists)
         {
-            if (access(path.c_str(), F_OK) == 0)
-            {
-                AI_LOG_INFO("Security agent socket found at %s", path.c_str());
-                agentPath = path;
-                break;
-            }
-        }
-
-        if (agentPath.empty())
-        {
-            AI_LOG_ERROR("No thunder security agent socket found, cannot generate token");
+            AI_LOG_ERROR("Thunder security agent socket not found @ '%s', cannot generate token",
+                         mSocketPath.c_str());
             return false;
         }
 
