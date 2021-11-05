@@ -50,9 +50,13 @@ ThunderPlugin::ThunderPlugin(std::shared_ptr<rt_dobby_schema> &containerConfig,
       mUtils(utils),
       mNetfilter(std::make_shared<Netfilter>()),
       mThunderPort(9998), // Change this if Thunder runs on non-standard port
-      mEnableConnLimit(false)
+      mEnableConnLimit(false),
+      mSocketDirectory("/tmp/SecurityAgent"),
+      mSocketPath(mSocketDirectory + "/token")
 {
     AI_LOG_FN_ENTRY();
+
+    mSocketExists = access(mSocketPath.c_str(), F_OK) == 0;
 
     AI_LOG_FN_EXIT();
 }
@@ -130,6 +134,27 @@ bool ThunderPlugin::postInstallation()
     snprintf(buf, sizeof(buf), "THUNDER_ACCESS=100.64.11.1:%hu", mThunderPort);
     mUtils->addEnvironmentVar(buf);
 
+    // Check if app is trusted - do in PostInstallation so we don't add duplicate
+    // mounts
+    if (mContainerConfig->rdk_plugins->thunder->data->trusted_present && mContainerConfig->rdk_plugins->thunder->data->trusted)
+    {
+        if (!mSocketExists)
+        {
+            AI_LOG_ERROR("Thunder security agent socket not found @ '%s', cannot add bind-mount",
+                         mSocketPath.c_str());
+        }
+        else
+        {
+            // This is a "trusted" app so we will allow it to generate a token
+            // by itself
+            AI_LOG_INFO("Container is trusted. Adding bind mount for Thunder SecurityAgent socket @ '%s'",
+                        mSocketPath.c_str());
+
+            mUtils->addMount(mSocketPath, mSocketPath, "bind",
+                             {"bind", "ro", "nosuid", "nodev", "noexec"});
+        }
+    }
+
     return true;
 }
 
@@ -137,41 +162,20 @@ bool ThunderPlugin::preCreation()
 {
     AI_LOG_FN_ENTRY();
 
-    // Socket could be in different location depending on ThunderClientLibraries
-    // version
-    const std::string socketDirectory = "/tmp/SecurityAgent";
-    const std::string agentPath = socketDirectory + "/token";
-
-    bool socketExists = access(agentPath.c_str(), F_OK) == 0;
-
-    if (mContainerConfig->rdk_plugins->thunder->data->trusted)
+    if (mContainerConfig->rdk_plugins->thunder->data->trusted_present &&
+        mContainerConfig->rdk_plugins->thunder->data->trusted && mSocketExists)
     {
-        if (!socketExists)
+        // The /tmp/SecurityAgent dir must have +x set for search
+        // Do this every time as this will be reset every bootup
+        struct stat buf;
+        if (stat(mSocketDirectory.c_str(), &buf) != 0)
         {
-            AI_LOG_ERROR("Thunder security agent socket not found @ '%s', cannot add bind-mount",
-                         agentPath.c_str());
+            AI_LOG_SYS_WARN(errno, "stat failed on '%s'", mSocketDirectory.c_str());
         }
-        else
+
+        if (chmod(mSocketDirectory.c_str(), buf.st_mode | S_IXOTH) != 0)
         {
-            // This is a "trusted" app so we will allow it to generate a token
-            // by itself
-            AI_LOG_INFO("Container is trusted. Adding bind mount for Thunder SecurityAgent socket @ '%s'",
-                        agentPath.c_str());
-
-            // The /tmp/SecurityAgent dir must have +x set for search
-            struct stat buf;
-            if (stat(socketDirectory.c_str(), &buf) != 0)
-            {
-                AI_LOG_SYS_WARN(errno, "stat failed on '%s'", socketDirectory.c_str());
-            }
-
-            if (chmod(socketDirectory.c_str(), buf.st_mode | S_IXOTH) != 0)
-            {
-                AI_LOG_SYS_WARN(errno, "failed to set the thunder socket permissions");
-            }
-
-            mUtils->addMount(agentPath, agentPath, "bind",
-                             {"bind", "ro", "nosuid", "nodev", "noexec"});
+            AI_LOG_SYS_WARN(errno, "failed to set the thunder socket permissions");
         }
     }
 
@@ -179,10 +183,10 @@ bool ThunderPlugin::preCreation()
     if (mContainerConfig->rdk_plugins->thunder->data->bearer_url)
     {
 #ifdef HAS_SECURITY_AGENT
-        if (!socketExists)
+        if (!mSocketExists)
         {
             AI_LOG_ERROR("Thunder security agent socket not found @ '%s', cannot generate token",
-                         agentPath.c_str());
+                         mSocketPath.c_str());
             return false;
         }
 
