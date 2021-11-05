@@ -25,6 +25,7 @@
 
 #include <fcntl.h>
 #include <unistd.h>
+#include <sys/stat.h>
 
 /**
  * Need to do this at the start of every plugin to make sure the correct
@@ -138,7 +139,9 @@ bool ThunderPlugin::preCreation()
 
     // Socket could be in different location depending on ThunderClientLibraries
     // version
-    std::string agentPath = "/tmp/SecurityAgent/token";
+    const std::string socketDirectory = "/tmp/SecurityAgent";
+    const std::string agentPath = socketDirectory + "/token";
+
     bool socketExists = access(agentPath.c_str(), F_OK) == 0;
 
     if (mContainerConfig->rdk_plugins->thunder->data->trusted)
@@ -154,6 +157,19 @@ bool ThunderPlugin::preCreation()
             // by itself
             AI_LOG_INFO("Container is trusted. Adding bind mount for Thunder SecurityAgent socket @ '%s'",
                         agentPath.c_str());
+
+            // The /tmp/SecurityAgent dir must have +x set for search
+            struct stat buf;
+            if (stat(socketDirectory.c_str(), &buf) != 0)
+            {
+                AI_LOG_SYS_WARN(errno, "stat failed on '%s'", socketDirectory.c_str());
+            }
+
+            if (chmod(socketDirectory.c_str(), buf.st_mode | S_IXOTH) != 0)
+            {
+                AI_LOG_SYS_WARN(errno, "failed to set the thunder socket permissions");
+            }
+
             mUtils->addMount(agentPath, agentPath, "bind",
                              {"bind", "ro", "nosuid", "nodev", "noexec"});
         }
