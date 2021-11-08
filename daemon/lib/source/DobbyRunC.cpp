@@ -181,6 +181,7 @@ std::pair<pid_t, pid_t> DobbyRunC::create(const ContainerId &id,
     if (pid <= 0)
     {
         AI_LOG_ERROR_EXIT("failed to execute runc tool");
+        return {-1,-1};
     }
 
     // block waiting for the forked process to complete
