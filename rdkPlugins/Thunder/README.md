@@ -37,6 +37,17 @@ The URL defines which roles the container will have based on the Thunder ACL fil
 }
 ```
 
+### Trusted
+If the app is trusted, then it can generate tokens itself - Dobby will mount in the SecurityAgent socket.
+
+:warning: This must only be enabled on apps that are from a known, trusted source where the source code can be verified by the operator, 3rd party apps should not be allowed to generate their own token. This is because it would be possible for an app to spoof their identity and generate a token for a different application.
+
+```json
+"data": {
+    "trusted": true
+}
+```
+
 ### Connection Limit
 *Note: this feature is currently disabled - change `mEnableConnLimit` in `ThunderPlugin.cpp` to true to enable*
 

@@ -108,5 +108,8 @@ private:
 private:
     std::mutex mLock;
     const bool mEnableConnLimit;
+    const std::string mSocketDirectory;
+    const std::string mSocketPath;
+    bool mSocketExists;
 };
 #endif // !defined(THUNDERPLUGIN_H)

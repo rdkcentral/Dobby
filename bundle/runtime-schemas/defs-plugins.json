@@ -494,6 +494,9 @@
                 "data": {
                     "type": "object",
                     "properties": {
+                        "trusted": {
+                            "type": "boolean"
+                        },
                         "bearerUrl": {
                             "type": "string"
                         },
