@@ -98,6 +98,8 @@ private:
                        const std::shared_ptr<const IDobbyStream> &stdoutStream = nullptr,
                        const std::shared_ptr<const IDobbyStream> &stderrStream = nullptr) const;
 
+    pid_t readPidFile(const std::string pidFilePath) const;
+
     ContainerStatus getContainerStatusFromJson(const Json::Value &state) const;
 
 private:

@@ -192,7 +192,16 @@ std::pair<pid_t, pid_t> DobbyRunC::create(const ContainerId &id,
 
     timeout_pid = fork();
     if (timeout_pid == 0) {
-        usleep(500000);
+        // Wait 0.5 second
+        struct timespec timeout_val, remaining;
+        timeout_val.tv_nsec = 500000000L;
+        timeout_val.tv_sec = 0;
+
+        // In case signal comes during wait
+        while(nanosleep(&timeout_val, &remaining) && errno==EINTR){
+            timeout_val=remaining;
+        }
+
         _exit(0);
     }
 
@@ -204,7 +213,7 @@ std::pair<pid_t, pid_t> DobbyRunC::create(const ContainerId &id,
             exited_pid != timeout_pid &&
             exited_pid != worker_pid)
         {
-            AI_LOG_WARN("Found non-waited process with pid %d", exited_pid);
+            AI_LOG_DEBUG("Found non-waited process with pid %d", exited_pid);
         }
     } while (exited_pid >= 0 && 
             exited_pid != timeout_pid &&
@@ -246,7 +255,7 @@ std::pair<pid_t, pid_t> DobbyRunC::create(const ContainerId &id,
     // Now as we had finished both forks we can safely exit if necessary
     if (exited_pid == timeout_pid)
     {
-        AI_LOG_WARN("Timeout occurred");
+        AI_LOG_WARN("Timeout occured - container creation has hung. Cleaning up");
 
         // We need to clean up after failed container creation, as we
         // don't know when in creation process it failed do full step
@@ -264,21 +273,14 @@ std::pair<pid_t, pid_t> DobbyRunC::create(const ContainerId &id,
         {
             // We are not sure if process started, so check if we can get
             // container pid, read the file
-            const size_t maxLength = 64;
-            std::string pidFileContents = mUtilities->readTextFile(pidFilePath, maxLength);
-            if (!pidFileContents.empty())
+            pid_t containerPid = readPidFile(pidFilePath);
+            if (containerPid > 0)
             {
-                // and try to convert the file content into pid
-                char *endptr;
-                pid_t containerPid = static_cast<pid_t>(strtol(pidFileContents.c_str(), &endptr, 0));
-                if (endptr != pidFileContents.c_str())
+                // wait for the half-started container to terminate
+                if (waitpid(containerPid, nullptr, 0) < 0)
                 {
-                    // wait for the half-started container to terminate
-                    if (waitpid(containerPid, nullptr, 0) < 0)
-                    {
-                        AI_LOG_SYS_ERROR(errno, "error waiting for (non-running) container '%s' to terminate",
-                                        id.c_str());
-                    }
+                    AI_LOG_SYS_ERROR(errno, "error waiting for (non-running) container '%s' to terminate",
+                                    id.c_str());
                 }
             }
         }
@@ -313,19 +315,10 @@ std::pair<pid_t, pid_t> DobbyRunC::create(const ContainerId &id,
 
     // now need to read the pid file it created so we know were to find the
     // container
-    const size_t maxLength = 64;
-    std::string pidFileContents = mUtilities->readTextFile(pidFilePath, maxLength);
-    if (pidFileContents.empty())
+    pid_t containerPid = readPidFile(pidFilePath);
+    if (containerPid < 0)
     {
-        AI_LOG_ERROR_EXIT("failed to read pid file contents");
-        return {-1,-1};
-    }
-
-    char *endptr;
-    pid_t containerPid = static_cast<pid_t>(strtol(pidFileContents.c_str(), &endptr, 0));
-    if (endptr == pidFileContents.c_str())
-    {
-        AI_LOG_ERROR_EXIT("failed to to convert '%s' to a pid", pidFileContents.c_str());
+        AI_LOG_ERROR_EXIT("Wrong container pid");
         return {-1,-1};
     }
 
@@ -1286,4 +1279,32 @@ pid_t DobbyRunC::forkExecRunC(const std::vector<const char*>& args,
     return pid;
 }
 
+// -----------------------------------------------------------------------------
+/**
+ *  @brief Reads file with pid of the container and converts it into pid_t
+ *  type variable.
+ *
+ *  @return container pid, -1 if failed
+ *
+ */
+pid_t DobbyRunC::readPidFile(const std::string pidFilePath) const
+{
+    const size_t maxLength = 64;
+    std::string pidFileContents = mUtilities->readTextFile(pidFilePath, maxLength);
+    if (pidFileContents.empty())
+    {
+        AI_LOG_ERROR_EXIT("failed to read pid file contents");
+        return -1;
+    }
+
+    char *endptr;
+    pid_t containerPid = static_cast<pid_t>(strtol(pidFileContents.c_str(), &endptr, 0));
+    if (endptr == pidFileContents.c_str())
+    {
+        AI_LOG_ERROR_EXIT("failed to to convert '%s' to a pid", pidFileContents.c_str());
+        return -1;
+    }
+
+    return containerPid;
+}
 
