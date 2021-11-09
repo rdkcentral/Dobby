@@ -72,7 +72,7 @@ public:
 
     bool destroy(const ContainerId &id, const std::shared_ptr<const IDobbyStream> &console, bool force = false) const;
     bool start(const ContainerId &id, const std::shared_ptr<const IDobbyStream> &console) const;
-    bool kill(const ContainerId &id, int signal, bool all = false) const;
+    bool killCont(const ContainerId &id, int signal, bool all = false) const;
     bool pause(const ContainerId &id) const;
     bool resume(const ContainerId &id) const;
     std::pair<pid_t, pid_t> exec(const ContainerId &id,
