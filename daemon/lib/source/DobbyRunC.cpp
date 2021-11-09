@@ -318,7 +318,7 @@ std::pair<pid_t, pid_t> DobbyRunC::create(const ContainerId &id,
     pid_t containerPid = readPidFile(pidFilePath);
     if (containerPid < 0)
     {
-        AI_LOG_ERROR_EXIT("Wrong container pid");
+        AI_LOG_ERROR_EXIT("Wrong container pid, read from file failed");
         return {-1,-1};
     }
 
@@ -1293,7 +1293,7 @@ pid_t DobbyRunC::readPidFile(const std::string pidFilePath) const
     std::string pidFileContents = mUtilities->readTextFile(pidFilePath, maxLength);
     if (pidFileContents.empty())
     {
-        AI_LOG_ERROR_EXIT("failed to read pid file contents");
+        AI_LOG_INFO("failed to read pid file contents");
         return -1;
     }
 
@@ -1301,7 +1301,7 @@ pid_t DobbyRunC::readPidFile(const std::string pidFilePath) const
     pid_t containerPid = static_cast<pid_t>(strtol(pidFileContents.c_str(), &endptr, 0));
     if (endptr == pidFileContents.c_str())
     {
-        AI_LOG_ERROR_EXIT("failed to to convert '%s' to a pid", pidFileContents.c_str());
+        AI_LOG_INFO("failed to to convert '%s' to a pid", pidFileContents.c_str());
         return -1;
     }
 
