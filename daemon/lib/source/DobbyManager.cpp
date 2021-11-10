@@ -313,7 +313,7 @@ void DobbyManager::cleanupContainers()
             case DobbyRunC::ContainerStatus::Pausing:
             case DobbyRunC::ContainerStatus::Running:
                 AI_LOG_INFO("attempting to kill old container '%s'", id.c_str());
-                mRunc->killCont(id, SIGKILL, true);
+                mRunc->kill(id, SIGKILL, true);
                 // fall through
 
             case DobbyRunC::ContainerStatus::Created:
@@ -550,7 +550,7 @@ bool DobbyManager::createAndStartContainer(const ContainerId &id,
 
         // Something went wrong during container start, clean up everything
         // kill the container created
-        if (!mRunc->killCont(id, SIGKILL))
+        if (!mRunc->kill(id, SIGKILL))
         {
             AI_LOG_ERROR("failed to kill (non-running) container for '%s'",
                         id.c_str());
@@ -1122,7 +1122,7 @@ bool DobbyManager::stopContainer(int32_t cd, bool withPrejudice)
     // we are consistent with the tools
     else if (container->state == DobbyContainer::State::Running)
     {
-        if (!mRunc->killCont(id, withPrejudice ? SIGKILL : SIGTERM))
+        if (!mRunc->kill(id, withPrejudice ? SIGKILL : SIGTERM))
         {
             AI_LOG_WARN("failed to send signal to '%s'", id.c_str());
             AI_LOG_FN_EXIT();
@@ -1155,7 +1155,7 @@ bool DobbyManager::stopContainer(int32_t cd, bool withPrejudice)
             }
 
             // Container has been resumed, so kill it now
-            if (!mRunc->killCont(id, withPrejudice ? SIGKILL : SIGTERM))
+            if (!mRunc->kill(id, withPrejudice ? SIGKILL : SIGTERM))
             {
                 AI_LOG_WARN("failed to send signal to '%s'", id.c_str());
                 AI_LOG_FN_EXIT();

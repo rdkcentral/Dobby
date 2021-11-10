@@ -72,7 +72,7 @@ public:
 
     bool destroy(const ContainerId &id, const std::shared_ptr<const IDobbyStream> &console, bool force = false) const;
     bool start(const ContainerId &id, const std::shared_ptr<const IDobbyStream> &console) const;
-    bool killCont(const ContainerId &id, int signal, bool all = false) const;
+    bool kill(const ContainerId &id, int signal, bool all = false) const;
     bool pause(const ContainerId &id) const;
     bool resume(const ContainerId &id) const;
     std::pair<pid_t, pid_t> exec(const ContainerId &id,
@@ -97,8 +97,6 @@ private:
                        const std::list<int> &files = std::list<int>(),
                        const std::shared_ptr<const IDobbyStream> &stdoutStream = nullptr,
                        const std::shared_ptr<const IDobbyStream> &stderrStream = nullptr) const;
-
-    pid_t readPidFile(const std::string pidFilePath) const;
 
     ContainerStatus getContainerStatusFromJson(const Json::Value &state) const;
 
