@@ -484,6 +484,8 @@ bool Netfilter::applyRules(const int ipVersion)
 {
     AI_LOG_FN_ENTRY();
 
+    AI_LOG_INFO("Applying iptables rules for IPv%d", ipVersion == AF_INET ? 4 : 6);
+
     // we simply need to pipe the fixed iptables rules into iptables-restore
     // without flushing the existing rules
 

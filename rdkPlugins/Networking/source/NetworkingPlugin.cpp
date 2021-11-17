@@ -249,9 +249,22 @@ bool NetworkingPlugin::createRuntime()
     }
 
     // apply iptables changes
-    if (!mNetfilter->applyRules(AF_INET) || !mNetfilter->applyRules(AF_INET6))
+    bool iptablesSuccess = true;
+    if (mHelper->ipv4() && !mNetfilter->applyRules(AF_INET))
     {
-        AI_LOG_ERROR_EXIT("failed to apply iptables rules");
+        AI_LOG_ERROR("failed to apply iptables rules");
+        iptablesSuccess = false;
+    }
+
+    if (mHelper->ipv6() && !mNetfilter->applyRules(AF_INET6))
+    {
+        AI_LOG_ERROR("failed to apply iptables IPv6 rules");
+        iptablesSuccess = false;
+    }
+
+    if (!iptablesSuccess)
+    {
+        AI_LOG_FN_EXIT();
         return false;
     }
 
