@@ -233,9 +233,10 @@ std::pair<pid_t, pid_t> DobbyRunC::create(const ContainerId &id,
         }
         else
         {
-            // Worker is stuck, we need to kill it
+            // Worker is stuck, we need to kill whole group
+            // in case any child process was stuck too
             AI_LOG_DEBUG("Can kill after timeout");
-            kill(worker_pid, SIGKILL);
+            killpg(worker_pid, SIGKILL);
             // Collect the worker process
             waitpid(worker_pid, &status, 0);
             // Collect child of worker if any
@@ -1249,8 +1250,8 @@ pid_t DobbyRunC::forkExecRunC(const std::vector<const char*>& args,
             _exit(EXIT_FAILURE);
 
         // Create a new SID for the child process
-        //if (setsid() < 0)
-        //    _exit(EXIT_FAILURE);
+        if (setsid() < 0)
+            _exit(EXIT_FAILURE);
 
         // Change the current working directory
         if ((chdir("/")) < 0)
