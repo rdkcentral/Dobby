@@ -2053,6 +2053,57 @@ void Dobby::onContainerStopped(int32_t cd, const ContainerId& id, int status)
 }
 
 #if defined(RDK) && defined(USE_SYSTEMD)
+#define WATCHDOG_TIMEOUT_SEC 10L
+#define WATCHDOG_UPDATE_SEC  (WATCHDOG_TIMEOUT_SEC/2)
+#define HIGH_USAGE_TIME_SEC  120L
+
+// -----------------------------------------------------------------------------
+/**
+ *  @brief This function should be run as a thread for wagging watchdog
+ *
+ *  As on some platforms we expirienced heavy load from unidentified source
+ *  Dobby got shut down by the watchdog. It is hard to pinpoint which process
+ *  is taking those resources, but it looks like this happens during boot-up.
+ *  This function if run as a separate thread will work around the problem by
+ *  creating high priority watchdog wagger for the time period where the
+ *  issue exists. During this time there will be 2 concurrent wagging procedures,
+ *  but this doesn't harm.
+ *  We should delete this code when we find out the real offender.
+ *
+ */
+void wagWatchdogHeavyLoad()
+{
+    struct timespec wag_period, remaining;
+    int ping_count;
+
+    // set the lowest priority of real time policy
+    struct sched_param sp;
+    sp.sched_priority = sched_get_priority_min(SCHED_RR);
+    int ret;
+
+    ret = sched_setscheduler(0, SCHED_RR, &sp);
+    if (ret == -1) {
+        AI_LOG_ERROR("Couldn't schedule real time priority for wagWatchdogHeavyLoad");
+        return;
+    }
+
+    pthread_setname_np(pthread_self(), "DOBBY_WATCHDOG");
+
+    for (ping_count = HIGH_USAGE_TIME_SEC/WATCHDOG_UPDATE_SEC; ping_count > 0; ping_count--)
+    {
+        wag_period.tv_sec = WATCHDOG_UPDATE_SEC;
+        wag_period.tv_nsec = 0L;
+
+        // wait for desired time
+        while(nanosleep(&wag_period, &remaining) && errno==EINTR){
+            wag_period=remaining;
+        }
+
+        // We probably shouldn't log fails inside here, as logger could be blocked.
+        sd_notify(0, "WATCHDOG=1");
+    }
+}
+
 // -----------------------------------------------------------------------------
 /**
  *  @brief Starts a timer to ping ourselves over dbus to send a watchdog
@@ -2090,6 +2141,10 @@ void Dobby::initWatchdog()
         mUtilities->startTimer(std::chrono::microseconds(usecTimeout),
                                 false,
                                 std::bind(&Dobby::onWatchdogTimer, this));
+
+    // Run heavy load wagger thread
+    std::thread wagger(wagWatchdogHeavyLoad);
+    wagger.detach();
 
     AI_LOG_FN_EXIT();
 }
