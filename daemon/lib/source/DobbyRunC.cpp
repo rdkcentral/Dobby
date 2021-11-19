@@ -192,10 +192,10 @@ std::pair<pid_t, pid_t> DobbyRunC::create(const ContainerId &id,
 
     timeout_pid = fork();
     if (timeout_pid == 0) {
-        // Wait 0.5 second
+        // Wait 5.5 second
         struct timespec timeout_val, remaining;
         timeout_val.tv_nsec = 500000000L;
-        timeout_val.tv_sec = 0;
+        timeout_val.tv_sec = 5;
 
         // In case signal comes during wait
         while(nanosleep(&timeout_val, &remaining) && errno==EINTR){
