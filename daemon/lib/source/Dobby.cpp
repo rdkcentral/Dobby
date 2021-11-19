@@ -2059,19 +2059,19 @@ void Dobby::onContainerStopped(int32_t cd, const ContainerId& id, int status)
 
 // -----------------------------------------------------------------------------
 /**
- *  @brief This function should be run as thread fro wagging watchdog
+ *  @brief This function should be run as a thread for wagging watchdog
  *
  *  As on some platforms we expirienced heavy load from unidentified source
  *  Dobby got shut down by the watchdog. It is hard to pinpoint which process
- *  is taking those resources, but it looks like this happens during bootup.
- *  This function if run as separate thread will work around the problem by
+ *  is taking those resources, but it looks like this happens during boot-up.
+ *  This function if run as a separate thread will work around the problem by
  *  creating high priority watchdog wagger for the time period where the
- *  issue exists. During this time there will be 2 concurent wagging procedures,
+ *  issue exists. During this time there will be 2 concurrent wagging procedures,
  *  but this doesn't harm.
  *  We should delete this code when we find out the real offender.
  *
  */
-void wag_watchdog_heavy_load()
+void wagWatchdogHeavyLoad()
 {
     struct timespec wag_period, remaining;
     int ping_count;
@@ -2083,8 +2083,11 @@ void wag_watchdog_heavy_load()
 
     ret = sched_setscheduler(0, SCHED_RR, &sp);
     if (ret == -1) {
-        AI_LOG_ERROR("Couldn't schedule real time priority for wag_watchdog_heavy_load");
+        AI_LOG_ERROR("Couldn't schedule real time priority for wagWatchdogHeavyLoad");
+        return;
     }
+
+    pthread_setname_np(pthread_self(), "DOBBY_WATCHDOG");
 
     for (ping_count = HIGH_USAGE_TIME_SEC/WATCHDOG_UPDATE_SEC; ping_count > 0; ping_count--)
     {
@@ -2140,7 +2143,7 @@ void Dobby::initWatchdog()
                                 std::bind(&Dobby::onWatchdogTimer, this));
 
     // Run heavy load wagger thread
-    std::thread wagger(wag_watchdog_heavy_load);
+    std::thread wagger(wagWatchdogHeavyLoad);
     wagger.detach();
 
     AI_LOG_FN_EXIT();
