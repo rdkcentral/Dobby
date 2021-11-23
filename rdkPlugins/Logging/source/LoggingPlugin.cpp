@@ -231,18 +231,12 @@ LoggingPlugin::LoggingSink LoggingPlugin::GetContainerSink()
  *                      and wait for the fd to be deleted. Set to true when
  *                      dumping the contents of a buffer
  */
-void LoggingPlugin::JournaldSink(const ContainerInfo &containerInfo, bool exitEof,
+void LoggingPlugin::JournaldSink(const ContainerInfo &containerInfo,
+                                 bool exitEof,
                                  const std::atomic_bool &cancellationToken)
 {
     AI_LOG_INFO("starting logger for container '%s' to journald (PID: %d)",
                 mUtils->getContainerId().c_str(), containerInfo.containerPid);
-
-    char buf[8192];
-    memset(buf, 0, sizeof(buf));
-
-    ssize_t bytesRead;
-    size_t bufferUsed = 0;
-    size_t bufferRemaining = 0;
 
     // Read options from config to set the journald priority, default to LOG_INFO
     int logPriority = LOG_INFO;
@@ -274,69 +268,44 @@ void LoggingPlugin::JournaldSink(const ContainerInfo &containerInfo, bool exitEo
         }
     }
 
-    // Read from the fd until the file is closed
-    // Journald expects messages to be single lines, so we need to process incoming
-    // data to split into individual lines
+    char buf[PTY_BUFFER_SIZE];
+    memset(buf, 0, sizeof(buf));
+
+    ssize_t ret;
+    ssize_t offset = 0;
+
+    // Create a file descriptor we can write to
+    // journald will handle line breaks etc automatically so we don't need
+    // to worry about them
+    int outputFd = sd_journal_stream_fd(mUtils->getContainerId().c_str(), logPriority, 1);
+
     while (!cancellationToken)
     {
-        // Work out how much space is left in the buffer and read as much as we can
-        bufferRemaining = sizeof(buf) - bufferUsed;
-
-        bytesRead = read(containerInfo.pttyFd, &buf[bufferUsed], bufferRemaining);
-        if (bytesRead < 0)
+        ret = read(containerInfo.pttyFd, buf, sizeof(buf));
+        if (ret < 0)
         {
             AI_LOG_INFO("Container %s terminated, terminating logging thread",
                         mUtils->getContainerId().c_str());
             break;
         }
-        if (bytesRead == 0 && exitEof)
+        if (ret == 0 && exitEof)
         {
             break;
         }
-        bufferUsed += bytesRead;
+        offset += ret;
 
-        // Loop through the received data, finding the position of new lines. Only
-        // send complete lines to journald
-        char *lineStart = buf;
-        char *lineEnd;
-        while ((lineEnd = static_cast<char *>(memchr(lineStart, '\n', bufferUsed - (lineStart - buf)))) != nullptr)
-        {
-            *lineEnd = 0;
-
-            std::string msg(lineStart, strlen(lineStart));
-
-            // Despite what documentation says, we need to remove any line break
-            // characters. Only matched on the \n so we still need to remove the
-            // \r if there is one
-            if (msg.back() == '\r')
-            {
-                msg.pop_back();
-            }
-
-            if (!msg.empty())
-            {
-                // Note PID in "journalctl -f" will show as daemon PID, but when
-                // viewing journald in full JSON format, the container PID is
-                // visible
-                sd_journal_send("MESSAGE=%s", msg.c_str(),
-                                "PRIORITY=%i", logPriority,
-                                "SYSLOG_IDENTIFIER=%s", mUtils->getContainerId().c_str(),
-                                "OBJECT_PID=%ld", containerInfo.containerPid,
-                                "SYSLOG_PID=%ld", containerInfo.containerPid,
-                                NULL);
-            }
-
-            lineStart = lineEnd + 1;
-        }
-
-        // Shift buffer down so the unprocessed data is at the start
-        bufferUsed -= (lineStart - buf);
-        memmove(buf, lineStart, bufferUsed);
+        write(outputFd, buf, ret);
     }
 
     if (cancellationToken)
     {
         AI_LOG_INFO("Logging thread shut down by cancellation token");
+    }
+
+    // Close the journald fd
+    if (close(outputFd) != 0)
+    {
+        AI_LOG_SYS_ERROR(errno, "Failed to close journald stream fd");
     }
 }
 #endif //#if defined(USE_SYSTEMD)
@@ -365,7 +334,7 @@ void LoggingPlugin::DevNullSink(const ContainerInfo &containerInfo, bool exitEof
     AI_LOG_INFO("starting logger for container '%s' to /dev/null",
                 mUtils->getContainerId().c_str());
 
-    char buf[8192];
+    char buf[PTY_BUFFER_SIZE];
     memset(buf, 0, sizeof(buf));
 
     ssize_t ret;
@@ -472,9 +441,7 @@ void LoggingPlugin::FileSink(const ContainerInfo &containerInfo, bool exitEof, b
     AI_LOG_DEBUG("starting logger for container '%s' to write to '%s' (limit %zd bytes)",
                 mUtils->getContainerId().c_str(), pathName.c_str(), limit);
 
-    // TODO:: Replace with splice/sendfile to avoid copying data in and out of
-    // userspace. This should perform OK for our needs for now though
-    char buf[8192];
+    char buf[PTY_BUFFER_SIZE];
     memset(buf, 0, sizeof(buf));
 
     ssize_t ret;

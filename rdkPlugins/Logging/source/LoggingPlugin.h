@@ -28,6 +28,9 @@
 #include <memory>
 #include <mutex>
 
+// Max pty buffer size is 4096
+#define PTY_BUFFER_SIZE 4096
+
 /**
  * @brief Dobby Logging plugin
  */
