@@ -272,12 +272,18 @@ void LoggingPlugin::JournaldSink(const ContainerInfo &containerInfo,
     memset(buf, 0, sizeof(buf));
 
     ssize_t ret;
-    ssize_t offset = 0;
 
     // Create a file descriptor we can write to
-    // journald will handle line breaks etc automatically so we don't need
-    // to worry about them
+    // journald will handle line breaks etc automatically
     int outputFd = sd_journal_stream_fd(mUtils->getContainerId().c_str(), logPriority, 1);
+
+    if (outputFd < 0)
+    {
+        AI_LOG_SYS_ERROR(-outputFd, "Failed to create journald stream fd");
+
+        // Just use /dev/null instead
+        outputFd = open("/dev/null", O_CLOEXEC | O_WRONLY);
+    }
 
     while (!cancellationToken)
     {
@@ -292,7 +298,6 @@ void LoggingPlugin::JournaldSink(const ContainerInfo &containerInfo,
         {
             break;
         }
-        offset += ret;
 
         write(outputFd, buf, ret);
     }
