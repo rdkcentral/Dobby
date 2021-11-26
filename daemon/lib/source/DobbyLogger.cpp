@@ -179,7 +179,7 @@ void DobbyLogger::connectionMonitorThread(const int socketFd)
 {
     AI_LOG_FN_ENTRY();
 
-    pthread_setname_np(pthread_self(), "DOBBY_LOGGER_CONNECTION_MONITOR");
+    pthread_setname_np(pthread_self(), "DOBBY_LOG_MON");
 
     AI_LOG_INFO("Dobby Logger socket monitoring thread started");
 
