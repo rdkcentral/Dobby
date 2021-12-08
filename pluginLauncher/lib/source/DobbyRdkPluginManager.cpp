@@ -662,8 +662,8 @@ bool DobbyRdkPluginManager::executeHook(const std::string &pluginName,
 
 // -----------------------------------------------------------------------------
 /**
- * Runs the specified hook for a given plugin, controls if execution takes
- * less than timeoutMs value.
+ * Runs the specified hook for a given plugin, checks if execution takes
+ * less than timeoutMs value, and if so kills the process.
  *
  * @param[in]   pluginName      Name of the plugin to run
  * @param[in]   hook            Which hook to execute
@@ -685,7 +685,7 @@ bool DobbyRdkPluginManager::executeHookTimeout(const std::string &pluginName,
     void* sharedMemory = mmap(NULL, sharedMemorySize, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
 
     // Set result as fail in case we need to kill worker
-    *(char *)sharedMemory = 0;
+    *static_cast<char *>(sharedMemory) = 0;
 
     workerPid = fork();
     if (workerPid == 0)
@@ -697,13 +697,14 @@ bool DobbyRdkPluginManager::executeHookTimeout(const std::string &pluginName,
         char result = (char) executeHook(pluginName, hook);
 
         // Set result in shared memory
-        *(char *)sharedMemory = result;
+        *static_cast<char *>(sharedMemory) = result;
 
         _exit(0);
     }
     else if (workerPid < 0)
     {
         AI_LOG_ERROR_EXIT("Failed to create for for executeHookTimeout");
+        munmap(sharedMemory, sharedMemorySize);
         return false;
     }
 
@@ -772,7 +773,7 @@ bool DobbyRdkPluginManager::executeHookTimeout(const std::string &pluginName,
     }
 
     // get result and free shared memory
-    bool result = (bool) *(char *)sharedMemory;
+    bool result = static_cast<bool>(*static_cast<char *>(sharedMemory));
     munmap(sharedMemory, sharedMemorySize);
     return result;
 }
