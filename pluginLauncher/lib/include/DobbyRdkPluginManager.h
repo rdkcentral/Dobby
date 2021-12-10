@@ -66,10 +66,6 @@ private:
     bool preprocessPlugins();
     bool executeHook(const std::string &pluginName,
                      const IDobbyRdkPlugin::HintFlags hook) const;
-    bool executeHookTimeout(const std::string &pluginName,
-                            const IDobbyRdkPlugin::HintFlags hook,
-                            const uint timeoutMs) const;
-    std::string HookPointToString(const IDobbyRdkPlugin::HintFlags &hookPoint) const;
 
     bool implementsHook(const std::string &pluginName,
                         const IDobbyRdkPlugin::HintFlags hook) const;
