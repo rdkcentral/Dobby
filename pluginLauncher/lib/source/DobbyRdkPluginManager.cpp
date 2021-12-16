@@ -831,11 +831,14 @@ std::string DobbyRdkPluginManager::HookPointToString(const IDobbyRdkPlugin::Hint
  * fail or are not loaded, then it logs an error but continues running other plugins
  *
  * @param[in]   hookPoint   Which hook point to execute
+ * @param[in]   timeoutMs   Timeout in miliseconds, if 0 (default value) then there
+ *                          will be no timeout.
  *
  * @return True if all required plugins ran successfully
  *
  */
-bool DobbyRdkPluginManager::runPlugins(const IDobbyRdkPlugin::HintFlags &hookPoint) const
+bool DobbyRdkPluginManager::runPlugins(const IDobbyRdkPlugin::HintFlags &hookPoint,
+                                       const uint timeoutMs /*=0*/) const
 {
     AI_LOG_FN_ENTRY();
 
@@ -891,9 +894,17 @@ bool DobbyRdkPluginManager::runPlugins(const IDobbyRdkPlugin::HintFlags &hookPoi
             continue;
         }
 
+        bool success = false;
         // Everything looks good, run the plugin
         AI_LOG_INFO("Running %s plugin", pluginName.c_str());
-        const bool success = executeHookTimeout(pluginName, hookPoint, 4000);
+        if (timeoutMs != 0)
+        {
+            success = executeHookTimeout(pluginName, hookPoint, timeoutMs);
+        }
+        else
+        {
+            success = executeHook(pluginName, hookPoint);
+        }
 
         // If the plugin has failed and is required, don't bother running any
         // other plugins. If it's not required, just log it

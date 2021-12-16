@@ -252,7 +252,7 @@ bool runPlugins(const IDobbyRdkPlugin::HintFlags &hookPoint, std::shared_ptr<rt_
         return {};
     }
 
-    bool success = pluginManager.runPlugins(hookPoint);
+    bool success = pluginManager.runPlugins(hookPoint, 4000);
 
     if (!success)
     {
