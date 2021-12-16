@@ -962,6 +962,20 @@ int32_t DobbyManager::startContainerFromBundle(const ContainerId &id,
                 AI_LOG_FN_EXIT();
                 return cd;
             }
+            else
+            {
+                // If the container was launched from a custom config, delete
+                // the custom config, if we succeed to start then cleanup will
+                // be done by onChildExit.
+                if (!container->customConfigFilePath.empty())
+                {
+                    if (remove(container->customConfigFilePath.c_str()) != 0)
+                    {
+                        AI_LOG_SYS_ERROR(errno, "Failed to remove custom config '%s'",
+                        container->customConfigFilePath.c_str());
+                    }
+                }
+            }
         }
     }
     else
