@@ -130,8 +130,11 @@ function(GenerateLibocispec)
     # Now run the generator to make our code
     execute_process(
         WORKING_DIRECTORY ${LIBOCISPEC_DIR}
-        COMMAND python3 ./src/generate.py --gen-common --gen-ref --root=./schemas --out=${LIBOCISPEC_GENERATED_DIR} ./schemas/rt
+        COMMAND python3 ./src/generate.py --gen-ref --root=./schemas --out=${LIBOCISPEC_GENERATED_DIR} ./schemas/rt
     )
+
+    file(COPY "${LIBOCISPEC_DIR}/src/json_common.c" DESTINATION ${LIBOCISPEC_GENERATED_DIR}/)
+    file(COPY "${LIBOCISPEC_DIR}/src/json_common.h" DESTINATION ${LIBOCISPEC_GENERATED_DIR}/)
 
     # DobbyConfig needs to be able to see a list of plugins' names and pointers to their structs
     # Add plugin tables to Dobby's schema

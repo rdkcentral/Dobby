@@ -65,7 +65,7 @@ def process_c_file(c_file):
     pattern = re.compile("if \(ret->([a-z]+) == NULL && \*err != 0\)")
     pattern2 = re.compile("ret = calloc \(1, sizeof \(\*ret\)\);")
     function_start_pattern = re.compile("make_[a-z_]+_rdk_plugins")
-    function_end_pattern = re.compile("if \(tree->type == yajl_t_object && \(ctx->options & OPT_PARSE_STRICT\)\)")
+    function_end_pattern = re.compile("return move_ptr \(ret\);")
 
     with open(c_file, 'r') as file:
         file_content = file.readlines()
@@ -83,7 +83,7 @@ def process_c_file(c_file):
             for match in re.finditer(pattern, line):
                 # print('Found on line %s: %s' % (i+1, match.group()))
                 # print(match.group(1))
-                add_c_content(match.group(1), file_content, i+5)
+                add_c_content(match.group(1), file_content, i+4)
                 found_plugins_count += 1
                 longest_plugin_name = max(longest_plugin_name, len(match.group(1)))
 
