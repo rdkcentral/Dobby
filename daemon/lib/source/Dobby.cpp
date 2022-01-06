@@ -687,7 +687,9 @@ void Dobby::ping(std::shared_ptr<AI_IPC::IAsyncReplySender> replySender)
     AI_LOG_FN_ENTRY();
 
     // Not expecting any arguments
-    AI_LOG_INFO(DOBBY_ADMIN_METHOD_PING "()");
+    // Drop Ping() log messages down to debug so we can run Dobby at INFO level
+    // logging without spamming the log
+    AI_LOG_DEBUG(DOBBY_ADMIN_METHOD_PING "()");
 
     // Send an empty pong reply back
     AI_IPC::VariantList results;
