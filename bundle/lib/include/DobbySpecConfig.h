@@ -113,6 +113,7 @@ public:
     const std::string& rootfsPath() const override;
 
 private:
+    bool loadConfig();
     bool parseSpec(ctemplate::TemplateDictionary* dictionary,
                    const std::string& json,
                    int bundleFd);

@@ -226,44 +226,19 @@ DobbySpecConfig::DobbySpecConfig(const std::shared_ptr<IDobbyUtils> &utils,
         AI_LOG_INFO("current platform has %d cores", mNumCores);
     }
 
-    // create a dictionary object
-    mDictionary = new ctemplate::TemplateDictionary("spec");
-
-    // because jsoncpp can throw exceptions if we fail to check the json types
-    // before performing conversions we wrap the whole parse operation in a
-    // try / catch
-    try
+    if (!loadConfig())
     {
-        // go and parse dobby spec into OCI config using a template dictionary
-        mValid = parseSpec(mDictionary, specJson, bundle->dirFd());
+        // failed to load config, try to recover backup and repeat
+        std::string backupConfigPath = bundlePath + "/config-dobby.json";
+        if(access(backupConfigPath.c_str(), F_OK) == 0 ) {
+            // backup exists, recover it
+            std::ofstream srcCfg(backupConfigPath, std::ios::binary);
+            std::ifstream dstCfg(bundlePath + "/config.json", std::ios::binary);
+            dstCfg << srcCfg.rdbuf();
 
-        // bundle persistence is set to default when starting from a spec,
-        // so we can go ahead and finalise container config preparation!
-        if(!bundle->getPersistence())
-        {
-            // deserialise config.json
-            parser_error err;
-            std::string configPath = bundle->path() + "/config.json";
-            mConf = std::shared_ptr<rt_dobby_schema>(
-                        rt_dobby_schema_parse_file(configPath.c_str(), nullptr, &err),
-                        free_rt_dobby_schema);
-
-            if (mConf.get() == nullptr || err)
-            {
-                AI_LOG_ERROR_EXIT("Failed to parse bundle config, err '%s'", err);
-                mValid = false;
-            }
-            else
-            {
-                // convert OCI config to compliant using libocispec
-                mValid &= DobbyConfig::convertToCompliant(id, mConf, bundle->path());
-            }
+            // retry loading attempt
+            loadConfig();
         }
-    }
-    catch (const Json::Exception& e)
-    {
-        AI_LOG_ERROR("exception thrown during spec parsing - %s", e.what());
-        mValid = false;
     }
 }
 
@@ -332,6 +307,51 @@ DobbySpecConfig::~DobbySpecConfig()
 
 bool DobbySpecConfig::isValid() const
 {
+    return mValid;
+}
+
+bool DobbySpecConfig::loadConfig()
+{
+    // create a dictionary object
+    mDictionary = new ctemplate::TemplateDictionary("spec");
+
+    // because jsoncpp can throw exceptions if we fail to check the json types
+    // before performing conversions we wrap the whole parse operation in a
+    // try / catch
+    try
+    {
+        // go and parse dobby spec into OCI config using a template dictionary
+        mValid = parseSpec(mDictionary, specJson, bundle->dirFd());
+
+        // bundle persistence is set to default when starting from a spec,
+        // so we can go ahead and finalise container config preparation!
+        if(!bundle->getPersistence())
+        {
+            // deserialise config.json
+            parser_error err;
+            std::string configPath = bundle->path() + "/config.json";
+            mConf = std::shared_ptr<rt_dobby_schema>(
+                        rt_dobby_schema_parse_file(configPath.c_str(), nullptr, &err),
+                        free_rt_dobby_schema);
+
+            if (mConf.get() == nullptr || err)
+            {
+                AI_LOG_ERROR_EXIT("Failed to parse bundle config, err '%s'", err);
+                mValid = false;
+            }
+            else
+            {
+                // convert OCI config to compliant using libocispec
+                mValid &= DobbyConfig::convertToCompliant(id, mConf, bundle->path());
+            }
+        }
+    }
+    catch (const Json::Exception& e)
+    {
+        AI_LOG_ERROR("exception thrown during spec parsing - %s", e.what());
+        mValid = false;
+    }
+
     return mValid;
 }
 
