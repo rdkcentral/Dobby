@@ -31,6 +31,7 @@
 #include <limits.h>
 #include <sys/types.h>
 #include <sys/sysinfo.h>
+#include <fstream>
 
 
 // -----------------------------------------------------------------------------
@@ -60,6 +61,54 @@ DobbyBundleConfig::DobbyBundleConfig(const std::shared_ptr<IDobbyUtils>& utils,
     , mConsoleLimit(-1)
     , mRootfsPath("rootfs")
 {
+    if(!constructConfig(id, bundlePath))
+    {
+        AI_LOG_WARN("Failed to create dobby config, retrying with backup");
+        // We failed to create config, probably source file was corrupted
+        // try to recover original config and create it again from that
+        std::string backupConfig = bundlePath + "/config-dobby.json";
+        if( access( backupConfig.c_str(), F_OK ) == 0 ) 
+        {
+            // return config file to original state
+            std::ifstream src(backupConfig, std::ios::binary);
+            std::ofstream dst(bundlePath + "/config.json", std::ios::binary);
+            dst << src.rdbuf();
+
+            // we need to re-run post installation hook, so remove success flag
+            std::string postInstallPath = bundlePath + "/postinstallhooksuccess";
+            remove(postInstallPath.c_str());
+
+            // Retry creation of config
+            constructConfig(id, bundlePath);
+        }
+    }
+
+    if(!mValid)
+    {
+        AI_LOG_ERROR("Failed to create dobby config");
+    }
+}
+
+DobbyBundleConfig::~DobbyBundleConfig()
+{
+}
+
+// -----------------------------------------------------------------------------
+/**
+ *  @brief Creates config object
+ *
+ *  This method parses OCI config and creates dobby config based on that.
+ *  This was an old constructor for DobbyBundleConfig, but we need to be able
+ *  to recover in case config gets damaged.
+ * 
+ *  @param[in]  id            Container ID.
+ *  @param[in]  bundlePath    Path to the container's OCI bundle
+ * 
+ *
+ *  @return true if the config is valid, otherwise false.
+ */
+bool DobbyBundleConfig::constructConfig(const ContainerId& id, const std::string& bundlePath)
+{
     // because jsoncpp can throw exceptions if we fail to check the json types
     // before performing conversions we wrap the whole parse operation in a
     // try / catch
@@ -68,7 +117,7 @@ DobbyBundleConfig::DobbyBundleConfig(const std::shared_ptr<IDobbyUtils>& utils,
         // go and parse the OCI config file for plugins to use
         mValid = parseOCIConfig(bundlePath);
 
-        // deserialise config.json
+        // de-serialise config.json
         parser_error err;
         std::string configPath = bundlePath + "/config.json";
         mConf = std::shared_ptr<rt_dobby_schema>(
@@ -91,10 +140,8 @@ DobbyBundleConfig::DobbyBundleConfig(const std::shared_ptr<IDobbyUtils>& utils,
         AI_LOG_ERROR("exception thrown during config parsing - %s", e.what());
         mValid = false;
     }
-}
 
-DobbyBundleConfig::~DobbyBundleConfig()
-{
+    return mValid;
 }
 
 bool DobbyBundleConfig::isValid() const
