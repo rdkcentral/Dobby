@@ -15,26 +15,26 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+project(MulticastSocketsPlugin)
 
-add_library( LegacyMulticastSocketsPlugin
-    MODULE
-    source/MulticastSocketsPlugin.cpp
-    $<TARGET_OBJECTS:DobbyPluginCommonLib>
-)
+add_library( ${PROJECT_NAME}
+        SHARED
+        source/MulticastSocketsPlugin.cpp
+        )
 
-target_include_directories( LegacyMulticastSocketsPlugin
-    PRIVATE
-    $<TARGET_PROPERTY:DobbyPluginCommonLib,INTERFACE_INCLUDE_DIRECTORIES>
-    $<TARGET_PROPERTY:DobbyDaemonLib,INTERFACE_INCLUDE_DIRECTORIES>
-    $<TARGET_PROPERTY:AppInfraLogging,INTERFACE_INCLUDE_DIRECTORIES>
-)
-
-set_target_properties( LegacyMulticastSocketsPlugin PROPERTIES
-    VERSION   ${DOBBY_MAJOR_VERSION}.1.0
-    SOVERSION ${DOBBY_MAJOR_VERSION}
+target_include_directories(${PROJECT_NAME}
+        PRIVATE
+        $<TARGET_PROPERTY:DobbyDaemonLib,INTERFACE_INCLUDE_DIRECTORIES>
 )
 
 install(
-    TARGETS LegacyMulticastSocketsPlugin
-    LIBRARY DESTINATION lib/plugins/dobby
+        TARGETS ${PROJECT_NAME}
+        LIBRARY DESTINATION lib/plugins/dobby
+        NAMELINK_SKIP
+        )
+
+target_link_libraries(${PROJECT_NAME}
+        DobbyRdkPluginCommonLib
 )
+
+set_target_properties( ${PROJECT_NAME} PROPERTIES SOVERSION 1 )

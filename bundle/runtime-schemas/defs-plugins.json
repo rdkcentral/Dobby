@@ -533,6 +533,54 @@
                 }
             }
         },
+        "MulticastSockets": {
+            "type": "object",
+            "required": [
+                "required",
+                "data"
+            ],
+            "properties": {
+                "required": {
+                    "type": "boolean"
+                },
+                "dependsOn": {
+                    "$ref": "defs.json#/definitions/ArrayOfStrings"
+                },
+                "data": {
+                    "type": "object",
+                    "properties": {
+                        "serverSockets": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "properties": {
+                                    "name": {
+                                        "type": "string"
+                                    },
+                                    "ip": {
+                                        "type": "string"
+                                    },
+                                    "port": {
+                                        "type": "integer"
+                                    }
+                                }
+                            }
+                        },
+                        "clientSockets": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "properties": {
+                                    "name": {
+                                        "type": "string"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "TestRdkPlugin": {
             "type": "object",
             "required": [
@@ -611,6 +659,9 @@
                 },
                 "devicemapper": {
                     "$ref": "#/definitions/DeviceMapper"
+                },
+                "multicastsockets": {
+                    "$ref": "#/definitions/MulticastSockets"
                 }
             }
         }

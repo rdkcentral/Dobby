@@ -296,6 +296,7 @@ option(PLUGIN_HTTPPROXY "Include HttpProxy plugin" OFF)
 option(PLUGIN_APPSERVICES "Include AppServices plugin" OFF)
 option(PLUGIN_IONMEMORY "Include ION Memory plugin" OFF)
 option(PLUGIN_DEVICEMAPPER "Include DeviceMapper plugin" OFF)
+option(PLUGIN_MULTICASTSOCKETS "Include MulticastSockets plugin" OFF)
 
 
 if(PLUGIN_TESTPLUGIN)
@@ -353,6 +354,11 @@ endif()
 if(PLUGIN_DEVICEMAPPER)
     add_subdirectory(rdkPlugins/DeviceMapper)
 endif()
+
+if(PLUGIN_MULTICASTSOCKETS)
+    add_subdirectory(rdkPlugins/MulticastSockets)
+endif()
+
 
 # Export targets in Dobby package
 # ---------------------------------------------------------

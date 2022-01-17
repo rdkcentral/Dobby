@@ -35,6 +35,9 @@ MulticastSocketPlugin::MulticastSocketPlugin(const std::shared_ptr<IDobbyEnv> &e
     : mName("MulticastSockets"), mUtilities(utils)
 {
     AI_LOG_FN_ENTRY();
+
+    AI_LOG_INFO("This version of the MulticastSocket plugin is deprecated");
+
     AI_LOG_FN_EXIT();
 }
 
