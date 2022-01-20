@@ -34,6 +34,7 @@ DobbyState::DobbyState(const std::shared_ptr<const IDobbySettings> &settings)
 
     // start from xxx.xxx.xxx.2 to leave xxx.xxx.xxx.1 open for bridge device
     in_addr_t addrBegin = mSettings->addressRange() + 2;
+    AI_LOG_INFO(">>> ADDR BEGIN IS %u", addrBegin);
     in_addr_t addrEnd = addrBegin + TOTAL_ADDRESS_POOL_SIZE;
 
     // populate the pool of available addresses

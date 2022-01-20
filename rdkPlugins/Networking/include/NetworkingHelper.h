@@ -48,6 +48,7 @@ public:
 
 public:
     static struct in6_addr in6addrCreate(const in_addr_t inaddr);
+    static in_addr_t StringToIpAddress(const std::string &ipAddr);
 
 private:
     bool mIpv4Enabled;

@@ -61,7 +61,8 @@ public:
     std::vector<std::string> getDependencies() const override;
 
 private:
-    bool createRemoteService();
+    std::vector<std::string> GetExternalInterfacesFromSettings() const;
+    std::vector<std::string> GetAvailableExternalInterfaces() const;
 
 private:
     bool mValid;

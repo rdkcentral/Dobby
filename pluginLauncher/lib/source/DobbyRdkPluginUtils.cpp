@@ -153,8 +153,9 @@ bool DobbyRdkPluginUtils::getContainerNetworkInfo(ContainerNetworkInfo &networkI
         AI_LOG_ERROR_EXIT("Could not get container network info - could not get ID");
         return false;
     }
+    networkInfo.containerId = containerId;
 
-    const std::string fileName = ADDRESS_FILE_PREFIX + getContainerId();
+    const std::string fileName = ADDRESS_FILE_DIR + getContainerId();
 
     struct stat buffer;
     if (stat(fileName.c_str(), &buffer) != 0)

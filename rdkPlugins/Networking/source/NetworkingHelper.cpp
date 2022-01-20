@@ -96,6 +96,7 @@ bool NetworkingHelper::storeContainerInterface(in_addr_t addr, const std::string
 {
     // store IPv4 address in binary form
     mIpv4Addr = addr;
+    AI_LOG_INFO("<><><><> %u", mIpv4Addr);
 
     // construct IPv4 address string from binary form
     char ipv4AddressStr[INET_ADDRSTRLEN];
@@ -106,6 +107,7 @@ bool NetworkingHelper::storeContainerInterface(in_addr_t addr, const std::string
         return false;
     }
     mIpv4AddrStr = ipv4AddressStr;
+    AI_LOG_INFO(">>>>>>>>>>>> %s", ipv4AddressStr);
 
     // construct IPv6 address from IPv4 address
     mIpv6Addr = in6addrCreate(addr);
@@ -149,4 +151,20 @@ struct in6_addr NetworkingHelper::in6addrCreate(const in_addr_t inaddr)
     address.s6_addr[15] = (inaddrHost >>  0) & 0x000000ff;
 
     return address;
+}
+
+in_addr_t NetworkingHelper::StringToIpAddress(const std::string &ipAddr)
+{
+    in_addr_t tmp;
+
+    // size_t lastDot = ipAddr.rfind(".");
+    // // convert the string to in_addr_t
+    // size_t firstDot = ipAddr.find(".");
+    // tmp = stoul(ipAddr.substr(0, firstDot)) << 24 & 0xff000000;
+    // size_t secondDot = ipAddr.find(".", firstDot + 1);
+    // tmp |= stoul(ipAddr.substr(firstDot + 1, secondDot)) << 16 & 0x00ff0000;
+    // tmp |= stoul(ipAddr.substr(secondDot + 1, lastDot)) << 8 & 0x0000ff00;
+
+    inet_pton(AF_INET, ipAddr.c_str(), &tmp);
+    return htonl(tmp);
 }

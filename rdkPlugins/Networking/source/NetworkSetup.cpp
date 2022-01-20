@@ -21,6 +21,7 @@
 #include "Netlink.h"
 #include "BridgeInterface.h"
 #include "TapInterface.h"
+#include "NetworkingHelper.h"
 
 #include "Netfilter.h"
 
@@ -32,6 +33,7 @@
 #include <sys/types.h>
 #include <sys/mount.h>
 #include <sys/wait.h>
+#include <dirent.h>
 
 #define PEER_NAME "eth0" // name of the interface created inside containers
 
@@ -529,7 +531,8 @@ bool saveContainerAddress(const std::shared_ptr<DobbyRdkPluginUtils> &utils,
     AI_LOG_FN_ENTRY();
 
     // get ip address from daemon
-    const in_addr_t ipAddress = dobbyProxy->getIpAddress(vethName);
+    const in_addr_t ipAddress = NetworkSetup::GetAvailableIpv4Address(utils);
+    //AI_LOG_INFO("Daemon = %u. New code = %u", ipAddressFromDaemon, ipAddress);
     if (!ipAddress)
     {
         AI_LOG_ERROR_EXIT("failed to get ip address from daemon");
@@ -544,7 +547,17 @@ bool saveContainerAddress(const std::shared_ptr<DobbyRdkPluginUtils> &utils,
     }
 
     // Create a temp file we can mount into the container
-    std::string tmpFilename = ADDRESS_FILE_PREFIX + utils->getContainerId();
+    struct stat buf;
+    if (stat(ADDRESS_FILE_DIR, &buf) != 0)
+    {
+        if (!utils->mkdirRecursive(ADDRESS_FILE_DIR, 0644))
+        {
+            AI_LOG_ERROR_EXIT("Failed to create dir");
+            return false;
+        }
+    }
+
+    std::string tmpFilename = ADDRESS_FILE_DIR + utils->getContainerId();
 
     // combine ip address and veth name strings
     const std::string fileContent(std::string() + helper->ipv4AddrStr() + "/" + vethName);
@@ -588,8 +601,8 @@ bool setupContainerNet(const std::shared_ptr<NetworkingHelper> &helper)
 
     // step 2 - set the address of the ifaceName interface inside the container
 
-    // first add IPv4 address if enabled
-    // nb: htonl used for address to convert to network byte order
+    // // first add IPv4 address if enabled
+    // // nb: htonl used for address to convert to network byte order
     const std::string ifaceName(PEER_NAME);
     if (helper->ipv4())
     {
@@ -1030,6 +1043,8 @@ void NetworkSetup::addResolvMount(const std::shared_ptr<DobbyRdkPluginUtils> &ut
     const std::string source = "/etc/resolv.conf";
     const std::string destination = "/etc/resolv.conf";
 
+    AI_LOG_INFO("HERE3");
+
     // iterate through the mounts to check that the mount doesn't already exist
     for (size_t i=0; i < cfg->mounts_len; i++)
     {
@@ -1040,6 +1055,8 @@ void NetworkSetup::addResolvMount(const std::shared_ptr<DobbyRdkPluginUtils> &ut
             return;
         }
     }
+
+    AI_LOG_INFO("HERE4");
 
     // add the mount
     utils->addMount(source, destination, "bind",
@@ -1073,4 +1090,93 @@ void NetworkSetup::addNetworkNamespace(const std::shared_ptr<rt_dobby_schema> &c
     cfg->linux->namespaces_len++;
     cfg->linux->namespaces = (rt_defs_linux_namespace_reference**)realloc(cfg->linux->namespaces, sizeof(rt_defs_linux_namespace_reference*) * cfg->linux->namespaces_len);
     cfg->linux->namespaces[cfg->linux->namespaces_len-1] = netNs;
+}
+
+
+
+
+in_addr_t NetworkSetup::GetAvailableIpv4Address(const std::shared_ptr<DobbyRdkPluginUtils> &utils)
+{
+    // TODO:: THIS IMPLEMENTATION IS BAD - it can allocate invalid IP addresses outside the subnet
+    // range. Refactor to use pool of known good IPs and remove existing containers from the pool
+
+    std::vector<ContainerNetworkInfo> existingNetworks;
+
+    // start from xxx.xxx.xxx.2 to leave xxx.xxx.xxx.1 open for bridge device
+    in_addr_t bridgeIp = INADDR_BRIDGE;
+    in_addr_t addrBegin = bridgeIp + 1;
+
+    // Dir doesn't exist, no containers have run yet
+    struct stat buf;
+    if (stat(ADDRESS_FILE_DIR, &buf) != 0)
+    {
+        return addrBegin;
+    }
+
+    // Work out what addresses are in use
+    DIR *dir = opendir(ADDRESS_FILE_DIR);
+    if (!dir)
+    {
+        AI_LOG_SYS_ERROR(errno, "Failed to open directory @ '%s", ADDRESS_FILE_DIR);
+        closedir(dir);
+        return -1;
+    }
+
+    struct dirent *entry = nullptr;
+    char pathBuf[PATH_MAX + 1] = {};
+    while ((entry = readdir(dir)) != nullptr)
+    {
+        if (entry->d_type == DT_REG)
+        {
+            if (entry->d_name[0] != '.')
+            {
+                std::string fullPath = std::string(ADDRESS_FILE_DIR) + entry->d_name;
+                std::string addressFileStr = utils->readTextFile(fullPath);
+                if (!addressFileStr.empty())
+                {
+                    ContainerNetworkInfo networkInfo;
+                    const std::string ip = addressFileStr.substr(0, addressFileStr.find("/"));
+
+                    // check if string contains a veth name after the ip address
+                    if (addressFileStr.length() <= ip.length() + 1)
+                    {
+                        AI_LOG_ERROR("failed to get veth name from %s", pathBuf);
+                        return false;
+                    }
+
+                    networkInfo.containerId = entry->d_name;
+                    networkInfo.ipAddress = ip;
+                    networkInfo.ipAddressRaw = NetworkingHelper::StringToIpAddress(ip);
+                    networkInfo.vethName = addressFileStr.substr(ip.length() + 1, addressFileStr.length());
+                    existingNetworks.emplace_back(networkInfo);
+                }
+            }
+        }
+    }
+
+    closedir(dir);
+
+    if (existingNetworks.size() == 0)
+    {
+        return addrBegin;
+    }
+
+    if (existingNetworks.size() >= 250)
+    {
+        AI_LOG_ERROR("Exhasted IP address allocations");
+        return -1;
+    }
+
+    std::sort(existingNetworks.begin(), existingNetworks.end(), [](ContainerNetworkInfo a, ContainerNetworkInfo b) {
+        return a.ipAddressRaw < b.ipAddressRaw;
+    });
+
+    for (auto &&i : existingNetworks)
+    {
+        AI_LOG_INFO("%s - %s (%u)", i.containerId.c_str(), i.ipAddress.c_str(), i.ipAddressRaw);
+    }
+
+    in_addr_t nextIp = existingNetworks.back().ipAddressRaw + 1;
+    AI_LOG_INFO("Next ip is %u", nextIp);
+    return nextIp;
 }

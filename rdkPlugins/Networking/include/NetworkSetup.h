@@ -71,6 +71,11 @@ namespace NetworkSetup
                         const std::shared_ptr<rt_dobby_schema> &cfg);
 
     void addNetworkNamespace(const std::shared_ptr<rt_dobby_schema> &cfg);
+
+    in_addr_t GetAvailableIpv4Address(const std::shared_ptr<DobbyRdkPluginUtils> &utils);
+
+    bool enableArpNotify(const std::shared_ptr<DobbyRdkPluginUtils> &utils,
+                         const std::string &ifName);
 };
 
 bool setupContainerNet(const std::shared_ptr<NetworkingHelper> &helper);
