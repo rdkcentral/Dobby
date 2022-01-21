@@ -1873,8 +1873,9 @@ bool DobbyManager::onPostHaltHook(const std::unique_ptr<DobbyContainer> &contain
         return false;
     }
 
-    // Attempt to run the plugins specified in the config file
-    if (!container->rdkPluginManager->runPlugins(IDobbyRdkPlugin::HintFlags::PostHaltFlag))
+    // Attempt to run the plugins specified in the config file. PostHalt hooks cannot modify
+    // the config struct so we should be safe to run in the forked process.
+    if (!container->rdkPluginManager->runPlugins(IDobbyRdkPlugin::HintFlags::PostHaltFlag, 4000))
     {
         AI_LOG_ERROR("Failure in postHalt hook");
         AI_LOG_FN_EXIT();
