@@ -34,6 +34,9 @@
 #include <dlfcn.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/wait.h>
+#include <sys/mman.h>
+#include <signal.h>
 
 #include <functional>
 #include <list>
@@ -659,25 +662,132 @@ bool DobbyRdkPluginManager::executeHook(const std::string &pluginName,
 
 // -----------------------------------------------------------------------------
 /**
- * @brief Run the plugins specified in the container config at the given hook point.
- * Returns true if all required plugins execute successfully. If non-required plugins
- * fail or are not loaded, then it logs an error but continues running other plugins
+ * Runs the specified hook for a given plugin, checks if execution takes
+ * less than timeoutMs value, and if so kills the process.
  *
- * @param[in]   hookPoint   Which hook point to execute
+ * @param[in]   pluginName      Name of the plugin to run
+ * @param[in]   hook            Which hook to execute
+ * @param[in]   timeoutMs       Timeout value in miliseconds
  *
- * @return True if all required plugins ran successfully
- *
+ * @return True if the hook executed successfully
  */
-bool DobbyRdkPluginManager::runPlugins(const IDobbyRdkPlugin::HintFlags &hookPoint) const
+bool DobbyRdkPluginManager::executeHookTimeout(const std::string &pluginName,
+                                                const IDobbyRdkPlugin::HintFlags hook,
+                                                const uint timeoutMs) const
 {
-    AI_LOG_FN_ENTRY();
+    int status;
+    pid_t exitedPid;
+    pid_t workerPid;
+    pid_t timeoutPid;
+    const size_t sharedMemorySize = 1;
 
-    if (!mValid)
+    // Create shared memory to get result from hook execution
+    void* sharedMemory = mmap(NULL, sharedMemorySize, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
+
+    // Set result as fail in case we need to kill worker
+    *static_cast<char *>(sharedMemory) = 0;
+
+    workerPid = fork();
+    if (workerPid == 0)
     {
-        AI_LOG_ERROR_EXIT("Container config invalid. Plugins will not be run");
+        // Create a new SID for the child process
+        if (setsid() < 0)
+            _exit(EXIT_FAILURE);
+
+        char result = (char) executeHook(pluginName, hook);
+
+        // Set result in shared memory
+        *static_cast<char *>(sharedMemory) = result;
+
+        _exit(0);
+    }
+    else if (workerPid < 0)
+    {
+        AI_LOG_ERROR_EXIT("Failed to create for for executeHookTimeout");
+        munmap(sharedMemory, sharedMemorySize);
         return false;
     }
 
+    timeoutPid = fork();
+    if (timeoutPid == 0) {
+        struct timespec timeout_val, remaining;
+        timeout_val.tv_nsec = (long)(timeoutMs % 1000) * 1000000;
+        timeout_val.tv_sec = timeoutMs/1000;
+
+        // In case signal comes during wait
+        while(nanosleep(&timeout_val, &remaining) && errno==EINTR){
+            timeout_val=remaining;
+        }
+
+        _exit(0);
+    }
+
+    // Wait for either worker or timeout to finish
+    do
+    {
+        exitedPid = TEMP_FAILURE_RETRY(wait(&status));
+        if (exitedPid >= 0 &&
+            exitedPid != timeoutPid &&
+            exitedPid != workerPid)
+        {
+            AI_LOG_DEBUG("Found non-waited process with pid %d", exitedPid);
+        }
+    } while (exitedPid >= 0 &&
+            exitedPid != timeoutPid &&
+            exitedPid != workerPid);
+
+    if (exitedPid == timeoutPid)
+    {
+        // Timeout occurred
+        AI_LOG_ERROR("Timeout executing plugin %s hookpoint %s",
+                    pluginName.c_str(), HookPointToString(hook).c_str());
+
+        // Check if we can kill workerPid (if it ended already
+        // then we will be unable to kill)
+        if (kill(workerPid, 0) == -1)
+        {
+            // Cannot kill process, probably already dead
+            // treat it as if it would return proper waitpid
+            AI_LOG_DEBUG("Cannot kill after timeout");
+            exitedPid = waitpid(workerPid, &status, WNOHANG);
+        }
+        else
+        {
+            // Worker is stuck, we need to kill whole group
+            // in case any child process was stuck too
+            AI_LOG_DEBUG("Can kill after timeout");
+            killpg(workerPid, SIGKILL);
+            // Collect the worker process
+            waitpid(workerPid, &status, 0);
+            // Collect child of worker if any
+            wait(nullptr);
+        }
+
+    }
+    else if (exitedPid == workerPid)
+    {
+        // Worker finished
+        kill(timeoutPid, SIGKILL);
+        // Collect the timeout process
+        wait(nullptr);
+    }
+
+    // get result and free shared memory
+    bool result = static_cast<bool>(*static_cast<char *>(sharedMemory));
+    munmap(sharedMemory, sharedMemorySize);
+    return result;
+}
+
+// -----------------------------------------------------------------------------
+/**
+ * Converts hook point into human readable string
+ *
+ * @param[in]   hook            Which hook to translate
+ *
+ * @return std::string with representation, empty if not found.
+ */
+std::string DobbyRdkPluginManager::HookPointToString(const IDobbyRdkPlugin::HintFlags &hookPoint) const
+{
     // Get the hook name as string, mostly just for logging purposes
     std::string hookName;
     switch (hookPoint)
@@ -710,6 +820,38 @@ bool DobbyRdkPluginManager::runPlugins(const IDobbyRdkPlugin::HintFlags &hookPoi
         break;
     default:
         AI_LOG_ERROR_EXIT("Unknown Hook Point");
+    }
+    return hookName;
+}
+
+// -----------------------------------------------------------------------------
+/**
+ * @brief Run the plugins specified in the container config at the given hook point.
+ * Returns true if all required plugins execute successfully. If non-required plugins
+ * fail or are not loaded, then it logs an error but continues running other plugins
+ *
+ * @param[in]   hookPoint   Which hook point to execute
+ * @param[in]   timeoutMs   Timeout in miliseconds, if 0 (default value) then there
+ *                          will be no timeout.
+ *
+ * @return True if all required plugins ran successfully
+ *
+ */
+bool DobbyRdkPluginManager::runPlugins(const IDobbyRdkPlugin::HintFlags &hookPoint,
+                                       const uint timeoutMs /*=0*/) const
+{
+    AI_LOG_FN_ENTRY();
+
+    if (!mValid)
+    {
+        AI_LOG_ERROR_EXIT("Container config invalid. Plugins will not be run");
+        return false;
+    }
+
+    // Get the hook name as string, mostly just for logging purposes
+    std::string hookName = HookPointToString(hookPoint);
+    if(hookName.empty())
+    {
         return false;
     }
 
@@ -752,9 +894,17 @@ bool DobbyRdkPluginManager::runPlugins(const IDobbyRdkPlugin::HintFlags &hookPoi
             continue;
         }
 
+        bool success = false;
         // Everything looks good, run the plugin
         AI_LOG_INFO("Running %s plugin", pluginName.c_str());
-        const bool success = executeHook(pluginName, hookPoint);
+        if (timeoutMs != 0)
+        {
+            success = executeHookTimeout(pluginName, hookPoint, timeoutMs);
+        }
+        else
+        {
+            success = executeHook(pluginName, hookPoint);
+        }
 
         // If the plugin has failed and is required, don't bother running any
         // other plugins. If it's not required, just log it
