@@ -454,6 +454,7 @@ int main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
     const std::string fullConfigPath = std::string(absPath);
+    free(absPath);
     AI_LOG_DEBUG("Loading container config from file: '%s'", fullConfigPath.c_str());
 
     parser_error err;

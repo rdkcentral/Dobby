@@ -207,6 +207,7 @@ bool IPAllocator::updateFromStore()
         }
     }
 
+    closedir(dir);
     return true;
 }
 
