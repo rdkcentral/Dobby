@@ -23,7 +23,6 @@
 #include "Netfilter.h"
 #include "NetworkingHelper.h"
 #include "rt_dobby_schema.h"
-#include <DobbyRdkPluginProxy.h>
 #include <DobbyRdkPluginUtils.h>
 
 #include <arpa/inet.h>
@@ -52,7 +51,6 @@ namespace NetworkSetup
 
     bool setupVeth(const std::shared_ptr<DobbyRdkPluginUtils> &utils,
                    const std::shared_ptr<Netfilter> &netfilter,
-                   const std::shared_ptr<DobbyRdkPluginProxy> &dobbyProxy,
                    const std::shared_ptr<NetworkingHelper> &helper,
                    const std::string &rootfsPath,
                    const std::string &containerId,
@@ -71,11 +69,6 @@ namespace NetworkSetup
                         const std::shared_ptr<rt_dobby_schema> &cfg);
 
     void addNetworkNamespace(const std::shared_ptr<rt_dobby_schema> &cfg);
-
-    in_addr_t GetAvailableIpv4Address(const std::shared_ptr<DobbyRdkPluginUtils> &utils);
-
-    bool enableArpNotify(const std::shared_ptr<DobbyRdkPluginUtils> &utils,
-                         const std::string &ifName);
 };
 
 bool setupContainerNet(const std::shared_ptr<NetworkingHelper> &helper);

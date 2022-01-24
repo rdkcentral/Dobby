@@ -41,6 +41,7 @@
 #include <mutex>
 #include <arpa/inet.h>
 
+
 // TODO:: This would be better stored in the dobby workspace dir rather than /tmp,
 // but we don't programatically know the workspace dir in this code.
 #define ADDRESS_FILE_DIR          "/tmp/dobby/plugin/networking/"
@@ -51,6 +52,11 @@ typedef struct ContainerNetworkInfo
     std::string ipAddress;
     in_addr_t ipAddressRaw;
     std::string containerId;
+
+    bool operator==(const ContainerNetworkInfo &rhs) const
+    {
+        return ipAddressRaw == rhs.ipAddressRaw || containerId == rhs.containerId;
+    }
 } ContainerNetworkInfo;
 
 // -----------------------------------------------------------------------------
@@ -137,6 +143,9 @@ public:
     std::list<int> files() const;
 
     std::list<int> files(const std::string& pluginName) const;
+
+private:
+    std::string ipAddressToString(const in_addr_t &ipAddress);
 
 private:
     mutable std::mutex mLock;

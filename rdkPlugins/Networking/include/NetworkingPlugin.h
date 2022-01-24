@@ -22,7 +22,6 @@
 
 #include <RdkPluginBase.h>
 #include <DobbyProtocol.h>
-#include <DobbyRdkPluginProxy.h>
 #include "Netfilter.h"
 #include "NetworkingHelper.h"
 #include "IpcFactory.h"
@@ -56,6 +55,7 @@ public:
     bool postInstallation() override;
     bool createRuntime() override;
     bool postHalt() override;
+    bool postStop() override;
 
 public:
     std::vector<std::string> getDependencies() const override;
@@ -76,7 +76,6 @@ private:
     const rt_defs_plugins_networking_data *mPluginData;
 
     std::shared_ptr<AI_IPC::IIpcService> mIpcService;
-    std::shared_ptr<DobbyRdkPluginProxy> mDobbyProxy;
     std::shared_ptr<NetworkingHelper> mHelper;
     std::shared_ptr<Netfilter> mNetfilter;
 };

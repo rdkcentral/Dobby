@@ -1,19 +1,44 @@
-// #ifndef IPALLOCATOR_H
-// #define IPALLOCATOR_H
+#ifndef IPALLOCATOR_H
+#define IPALLOCATOR_H
 
-// #include "DobbyRdkPluginUtils.h"
+#include <DobbyRdkPluginUtils.h>
+#include "NetworkingPluginCommon.h"
 
-// class IPAllocator
-// {
-// public:
-//     IPAllocator();
-//     ~IPAllocator();
+#include <memory>
+#include <arpa/inet.h>
+#include <queue>
 
-// public:
-//     in_addr_t GetNextFreeIpAddress(const std::string& containerId);
+#define TOTAL_ADDRESS_POOL_SIZE 250
 
-// private:
-//     in_addr_t IpGenerator();
-// };
+class DobbyRdkPluginUtils;
 
-// #endif
+class IPAllocator
+{
+public:
+    IPAllocator(const std::shared_ptr<DobbyRdkPluginUtils> &utils);
+    ~IPAllocator();
+
+public:
+    in_addr_t allocateIpAddress(const std::string &vethName);
+    in_addr_t allocateIpAddress(const std::string &containerId, const std::string &vethName);
+    bool deallocateIpAddress(const std::string &containerId);
+    bool getContainerNetworkInfo(const std::string &containerId, ContainerNetworkInfo &networkInfo);
+    bool clearIpAddresses();
+
+public:
+    static in_addr_t stringToIpAddress(const std::string &ipAddressStr);
+    static std::string ipAddressToString(const in_addr_t &ipAddress);
+
+private:
+    in_addr_t ipGenerator(const std::string &containerId);
+    bool updateFromStore();
+
+    bool getNetworkInfo(const std::string &filePath, ContainerNetworkInfo &networkInfo);
+
+private:
+    std::queue<in_addr_t> mUnallocatedIps;
+    std::vector<ContainerNetworkInfo> mAllocatedIps;
+    const std::shared_ptr<DobbyRdkPluginUtils> mUtils;
+};
+
+#endif

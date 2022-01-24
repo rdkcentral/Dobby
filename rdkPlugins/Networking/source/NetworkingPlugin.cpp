@@ -23,6 +23,7 @@
 #include "MulticastForwarder.h"
 #include "NetworkSetup.h"
 #include "Netlink.h"
+#include "IPAllocator.h"
 
 #include <fcntl.h>
 #include <unistd.h>
@@ -40,7 +41,6 @@ NetworkingPlugin::NetworkingPlugin(std::shared_ptr<rt_dobby_schema> &cfg,
       mUtils(utils),
       mRootfsPath(rootfsPath),
       mIpcService(nullptr),
-      mDobbyProxy(nullptr),
       mNetfilter(std::make_shared<Netfilter>())
 {
     AI_LOG_FN_ENTRY();
@@ -103,6 +103,7 @@ unsigned NetworkingPlugin::hookHints() const
     return (
         IDobbyRdkPlugin::HintFlags::PostInstallationFlag |
         IDobbyRdkPlugin::HintFlags::CreateRuntimeFlag |
+        IDobbyRdkPlugin::HintFlags::PostStopFlag |
         IDobbyRdkPlugin::HintFlags::PostHaltFlag
     );
 }
@@ -187,8 +188,7 @@ bool NetworkingPlugin::createRuntime()
     }
 
     // setup veth, ip address and iptables rules for container
-    if (!NetworkSetup::setupVeth(mUtils, mNetfilter, mDobbyProxy, mHelper,
-                                 mRootfsPath, mUtils->getContainerId(), mNetworkType))
+    if (!NetworkSetup::setupVeth(mUtils, mNetfilter, mHelper, mRootfsPath, mUtils->getContainerId(), mNetworkType))
     {
         AI_LOG_ERROR_EXIT("failed to setup virtual ethernet device");
         return false;
@@ -253,6 +253,22 @@ bool NetworkingPlugin::createRuntime()
 }
 
 /**
+ * @brief OCI Hook - Run in host namespace
+ */
+bool NetworkingPlugin::postStop()
+{
+    AI_LOG_FN_ENTRY();
+
+    // Make sure our IP gets deallocated (in case postHalt doesn't run)
+    IPAllocator ipAllocator(mUtils);
+    ipAllocator.deallocateIpAddress(mUtils->getContainerId());
+
+    AI_LOG_FN_EXIT();
+
+    return true;
+}
+
+/**
  * @brief Dobby Hook - Run in host namespace when container terminates
  */
 bool NetworkingPlugin::postHalt()
@@ -274,15 +290,18 @@ bool NetworkingPlugin::postHalt()
         return true;
     }
 
+    // Get container veth/ip
     ContainerNetworkInfo networkInfo;
-    if (!mUtils->getContainerNetworkInfo(networkInfo))
+    IPAllocator ipAllocator(mUtils);
+    if (!ipAllocator.getContainerNetworkInfo(mUtils->getContainerId(), networkInfo))
     {
         AI_LOG_WARN("Failed to get container network info");
         success = false;
     }
     else
     {
-        mHelper->storeContainerInterface(NetworkingHelper::StringToIpAddress(networkInfo.ipAddress), networkInfo.vethName);
+        // Update instance of network helper
+        mHelper->storeContainerInterface(networkInfo.ipAddressRaw, networkInfo.vethName);
 
         // delete the veth pair for the container
         if (!NetworkSetup::removeVethPair(mNetfilter, mHelper, networkInfo.vethName, mNetworkType, mUtils->getContainerId()))
@@ -292,14 +311,8 @@ bool NetworkingPlugin::postHalt()
         }
     }
 
-    // remove the address file from the host
-    const std::string addressFilePath = ADDRESS_FILE_DIR + mUtils->getContainerId();
-    if (unlink(addressFilePath.c_str()) == -1)
-    {
-        AI_LOG_WARN("failed to remove address file for container %s at %s",
-                    mUtils->getContainerId().c_str(), addressFilePath.c_str());
-        success = false;
-    }
+    // Release the IP from the pool
+    ipAllocator.deallocateIpAddress(mUtils->getContainerId());
 
     // get external interfaces from daemon
     const std::vector<std::string> extIfaces = GetExternalInterfacesFromSettings();
@@ -315,6 +328,7 @@ bool NetworkingPlugin::postHalt()
         std::shared_ptr<Netlink> netlink = std::make_shared<Netlink>();
         auto bridgeConnections = netlink->getAttachedIfaces(BRIDGE_NAME);
 
+        // Ignore the tap0 device as that may or may not be present, doesn't matter for this check
         if (bridgeConnections.size() == 0 || (bridgeConnections.size() == 1 && strcmp(bridgeConnections.front().name, "dobby_tap0") == 0))
         {
             if (!NetworkSetup::removeBridgeDevice(mNetfilter, extIfaces))

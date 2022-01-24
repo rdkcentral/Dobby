@@ -124,6 +124,13 @@ pid_t DobbyRdkPluginUtils::getContainerPid() const
  */
 std::string DobbyRdkPluginUtils::getContainerId() const
 {
+    // If we can retrieve the ID from the state, then use it
+    if (mState && mState->id)
+    {
+        return std::string(mState->id);
+    }
+
+    // Fall back to hostname for non-OCI hooks
     if (!mConf)
     {
         AI_LOG_ERROR_EXIT("Failed to load config");
@@ -146,45 +153,31 @@ std::string DobbyRdkPluginUtils::getContainerId() const
  */
 bool DobbyRdkPluginUtils::getContainerNetworkInfo(ContainerNetworkInfo &networkInfo)
 {
-    // Attempt to find the file
-    const std::string containerId = getContainerId();
-    if (containerId.empty())
-    {
-        AI_LOG_ERROR_EXIT("Could not get container network info - could not get ID");
-        return false;
-    }
-    networkInfo.containerId = containerId;
-
-    const std::string fileName = ADDRESS_FILE_DIR + getContainerId();
-
-    struct stat buffer;
-    if (stat(fileName.c_str(), &buffer) != 0)
-    {
-        AI_LOG_WARN("Could not get container network info - file %s does not exist. Has the network plugin run yet?", fileName.c_str());
-        return false;
-    }
-
     // Parse the file
-    const std::string addressFileStr = readTextFile(fileName);
+    std::string filePath = ADDRESS_FILE_DIR + getContainerId();
+    const std::string addressFileStr = readTextFile(filePath);
     if (addressFileStr.empty())
     {
-        AI_LOG_ERROR_EXIT("failed to get IP address and veth name assigned to"
-                          "container from %s",
-                          fileName.c_str());
+        AI_LOG_ERROR_EXIT("failed to get IP address and veth name assigned to container from %s",
+                          filePath.c_str());
         return false;
     }
 
-    const std::string ip = addressFileStr.substr(0, addressFileStr.find("/"));
+    const std::string ipStr = addressFileStr.substr(0, addressFileStr.find("/"));
+    const in_addr_t ip = std::stoi(ipStr);
 
     // check if string contains a veth name after the ip address
-    if (addressFileStr.length() <= ip.length() + 1)
+    if (addressFileStr.length() <= ipStr.length() + 1)
     {
-        AI_LOG_ERROR("failed to get veth name from %s", fileName.c_str());
+        AI_LOG_ERROR("failed to get veth name from %s", filePath.c_str());
         return false;
     }
 
-    networkInfo.ipAddress = ip;
-    networkInfo.vethName = addressFileStr.substr(ip.length() + 1, addressFileStr.length());
+    networkInfo.containerId = basename(filePath.c_str());
+    networkInfo.ipAddressRaw = ip;
+    networkInfo.ipAddress = ipAddressToString(htonl(ip));
+    networkInfo.vethName = addressFileStr.substr(ipStr.length() + 1, addressFileStr.length());
+
     return true;
 }
 
@@ -677,3 +670,15 @@ std::list<int> DobbyRdkPluginUtils::files(const std::string& pluginName) const
     return fileList;
 }
 
+
+
+std::string DobbyRdkPluginUtils::ipAddressToString(const in_addr_t &ipAddress)
+{
+    char str[INET_ADDRSTRLEN];
+    in_addr_t tmp = ipAddress;
+
+    inet_ntop(AF_INET, &tmp, str, sizeof(str));
+
+    AI_LOG_DEBUG("Converted IP %u -> %s", ipAddress, str);
+    return std::string(str);
+}
