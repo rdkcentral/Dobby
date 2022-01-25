@@ -22,18 +22,15 @@ public:
     in_addr_t allocateIpAddress(const std::string &vethName);
     in_addr_t allocateIpAddress(const std::string &containerId, const std::string &vethName);
     bool deallocateIpAddress(const std::string &containerId);
-    bool getContainerNetworkInfo(const std::string &containerId, ContainerNetworkInfo &networkInfo);
-    bool clearIpAddresses();
+    bool getContainerNetworkInfo(const std::string &containerId, ContainerNetworkInfo &networkInfo) const;
 
 public:
     static in_addr_t stringToIpAddress(const std::string &ipAddressStr);
     static std::string ipAddressToString(const in_addr_t &ipAddress);
 
 private:
-    in_addr_t ipGenerator(const std::string &containerId);
     bool updateFromStore();
-
-    bool getNetworkInfo(const std::string &filePath, ContainerNetworkInfo &networkInfo);
+    bool getNetworkInfo(const std::string &filePath, ContainerNetworkInfo &networkInfo) const;
 
 private:
     std::queue<in_addr_t> mUnallocatedIps;

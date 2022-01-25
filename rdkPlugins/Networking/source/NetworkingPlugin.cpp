@@ -259,9 +259,18 @@ bool NetworkingPlugin::postStop()
 {
     AI_LOG_FN_ENTRY();
 
-    // Make sure our IP gets deallocated (in case postHalt doesn't run)
-    IPAllocator ipAllocator(mUtils);
-    ipAllocator.deallocateIpAddress(mUtils->getContainerId());
+    // In some scenarios, the PostHalt hook might not run (e.g. if we're cleaning up
+    // old containers at boot).
+    // Make sure we clean up after ourselves
+    const std::string containerId = mUtils->getContainerId();
+    const std::string addressFilePath = ADDRESS_FILE_DIR + containerId;
+
+    if (access(addressFilePath.c_str(), F_OK) == 0)
+    {
+        IPAllocator ipAllocator(mUtils);
+        ipAllocator.deallocateIpAddress(containerId);
+    }
+
 
     AI_LOG_FN_EXIT();
 
@@ -408,6 +417,12 @@ std::vector<std::string> NetworkingPlugin::GetAvailableExternalInterfaces() cons
 {
     std::vector<std::string> externalIfaces = GetExternalInterfacesFromSettings();
 
+    if (externalIfaces.size() == 0)
+    {
+        AI_LOG_WARN("No external network interfaces defined in settings file");
+        return {};
+    }
+
     // Look in the /sys/class/net for available interfaces
     struct dirent *dir;
     DIR *d = opendir("/sys/class/net");
@@ -435,7 +450,7 @@ std::vector<std::string> NetworkingPlugin::GetAvailableExternalInterfaces() cons
         if (std::find(availableIfaces.begin(), availableIfaces.end(), it->c_str()) == availableIfaces.end())
         {
             AI_LOG_WARN("Interface '%s' from settings file not available", it->c_str());
-            externalIfaces.erase(it);
+            it = externalIfaces.erase(it);
         }
         else
         {

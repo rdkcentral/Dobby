@@ -42,10 +42,6 @@ IPAllocator::IPAllocator(const std::shared_ptr<DobbyRdkPluginUtils> &utils)
             {
                 mUnallocatedIps.push(addr);
             }
-            else
-            {
-                AI_LOG_DEBUG("Skipping %u", addr);
-            }
         }
     }
 
@@ -58,11 +54,27 @@ IPAllocator::~IPAllocator()
     AI_LOG_FN_EXIT();
 }
 
+/**
+ * @brief Allocated an IP address for the currently running container with the
+ * specified veth
+ *
+ * @param[in]  vethName     Name of the veth interface used by the container
+ *
+ * @return Allocated IP address. -1 on error
+ */
 in_addr_t IPAllocator::allocateIpAddress(const std::string &vethName)
 {
     return allocateIpAddress(mUtils->getContainerId(), vethName);
 }
 
+/**
+ * @brief Allocated an IP address with the specified veth
+ *
+ * @param[in]  containerId  Name of the container to associate the IP with
+ * @param[in]  vethName     Name of the veth interface used by the container
+ *
+ * @return Allocated IP address. -1 on error
+ */
 in_addr_t IPAllocator::allocateIpAddress(const std::string &containerId, const std::string &vethName)
 {
     AI_LOG_FN_ENTRY();
@@ -86,6 +98,14 @@ in_addr_t IPAllocator::allocateIpAddress(const std::string &containerId, const s
     return ipAddress;
 }
 
+/**
+ * @brief Releases a previously allocated IP address back to the pool so it can
+ * be re-used by other containers
+ *
+ * @param[in]   containerId     Name of the container to deallocate the IP for
+ *
+ * @return True on success, false on error
+ */
 bool IPAllocator::deallocateIpAddress(const std::string &containerId)
 {
     AI_LOG_FN_ENTRY();
@@ -122,16 +142,32 @@ bool IPAllocator::deallocateIpAddress(const std::string &containerId)
     return true;
 }
 
-bool IPAllocator::getContainerNetworkInfo(const std::string &containerId, ContainerNetworkInfo &networkInfo)
+/**
+ * @brief Retrieves the networking information (veth, ip) for a given container
+ *
+ * @param[in]   containerId     Name of the container to retrieve the information about
+ * @param[out]  networkInfo     Struct to store the container network info in
+ *
+ * @return True on success, false on failure
+ */
+bool IPAllocator::getContainerNetworkInfo(const std::string &containerId, ContainerNetworkInfo &networkInfo) const
 {
     const std::string filePath = ADDRESS_FILE_DIR + mUtils->getContainerId();
     return getNetworkInfo(filePath, networkInfo);
 }
 
-
-
-bool IPAllocator::getNetworkInfo(const std::string &filePath, ContainerNetworkInfo &networkInfo)
+/**
+ * @brief Retrieves the networking information (veth, ip) from a file from the store
+ *
+ * @param[in]   filePath        Path to the file to parse for information about the container network
+ * @param[out]  networkInfo     Struct to store the container network info in
+ *
+ * @return True on success, false on failure
+ */
+bool IPAllocator::getNetworkInfo(const std::string &filePath, ContainerNetworkInfo &networkInfo) const
 {
+    AI_LOG_FN_ENTRY();
+
     // Parse the file
     const std::string addressFileStr = mUtils->readTextFile(filePath);
     if (addressFileStr.empty())
@@ -147,7 +183,7 @@ bool IPAllocator::getNetworkInfo(const std::string &filePath, ContainerNetworkIn
     // check if string contains a veth name after the ip address
     if (addressFileStr.length() <= ipStr.length() + 1)
     {
-        AI_LOG_ERROR("failed to get veth name from %s", filePath.c_str());
+        AI_LOG_ERROR_EXIT("failed to get veth name from %s", filePath.c_str());
         return false;
     }
 
@@ -156,11 +192,19 @@ bool IPAllocator::getNetworkInfo(const std::string &filePath, ContainerNetworkIn
     networkInfo.ipAddress = ipAddressToString(htonl(ip));
     networkInfo.vethName = addressFileStr.substr(ipStr.length() + 1, addressFileStr.length());
 
+    AI_LOG_FN_EXIT();
     return true;
 }
 
+/**
+ * @brief Synchronise the in-memory pool of allocated IPs with the disk store
+ *
+ * @return True on success
+ */
 bool IPAllocator::updateFromStore()
 {
+    AI_LOG_FN_ENTRY();
+
     // Dir doesn't exist, no containers have run yet
     struct stat buf;
     if (stat(ADDRESS_FILE_DIR, &buf) != 0)
@@ -172,6 +216,7 @@ bool IPAllocator::updateFromStore()
             return false;
         }
 
+        AI_LOG_FN_EXIT();
         return true;
     }
 
@@ -179,7 +224,7 @@ bool IPAllocator::updateFromStore()
     DIR *dir = opendir(ADDRESS_FILE_DIR);
     if (!dir)
     {
-        AI_LOG_SYS_ERROR(errno, "Failed to open directory @ '%s", ADDRESS_FILE_DIR);
+        AI_LOG_SYS_ERROR_EXIT(errno, "Failed to open directory @ '%s", ADDRESS_FILE_DIR);
         closedir(dir);
         return -1;
     }
@@ -208,9 +253,19 @@ bool IPAllocator::updateFromStore()
     }
 
     closedir(dir);
+
+    AI_LOG_FN_EXIT();
     return true;
 }
 
+/**
+ * @brief Convert an string to an IP address. Note - doesn't do any
+ * byte-order modifications
+ *
+ * @param[in]   ipAddr      IP Address to convert
+ *
+ * @return IP address integer
+ */
 in_addr_t IPAllocator::stringToIpAddress(const std::string &ipAddr)
 {
     in_addr_t tmp;
@@ -221,6 +276,14 @@ in_addr_t IPAllocator::stringToIpAddress(const std::string &ipAddr)
     return tmp;
 }
 
+/**
+ * @brief Convert an IP address to string. Note - doesn't do any
+ * byte-order modifications
+ *
+ * @param[in]   ipAddress      IP Address to convert
+ *
+ * @return IP address string
+ */
 std::string IPAllocator::ipAddressToString(const in_addr_t &ipAddress)
 {
     char str[INET_ADDRSTRLEN];
