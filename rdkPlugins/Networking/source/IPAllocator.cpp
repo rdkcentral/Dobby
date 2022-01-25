@@ -33,7 +33,7 @@ IPAllocator::IPAllocator(const std::shared_ptr<DobbyRdkPluginUtils> &utils)
     AI_LOG_FN_ENTRY();
 
     // Update internal state based on the disk store
-    if (!updateFromStore())
+    if (!getContainerIpsFromDisk())
     {
         AI_LOG_ERROR("Failed to initialise IP backing store");
     }
@@ -43,7 +43,6 @@ IPAllocator::IPAllocator(const std::shared_ptr<DobbyRdkPluginUtils> &utils)
     in_addr_t addrEnd = addrBegin + TOTAL_ADDRESS_POOL_SIZE;
 
     // Populate the pool of available addresses
-
     // Nothing allocated already, create full pool
     if (mAllocatedIps.size() == 0)
     {
@@ -54,8 +53,10 @@ IPAllocator::IPAllocator(const std::shared_ptr<DobbyRdkPluginUtils> &utils)
     }
     else
     {
+        // Already some IPs allocated
         for (in_addr_t addr = addrBegin; addr < addrEnd; addr++)
         {
+            // Only add IPs to the unallocated queue that aren't in use
             if (std::find_if(mAllocatedIps.begin(), mAllocatedIps.end(), [addr](const ContainerNetworkInfo &info)
                              { return info.ipAddressRaw == addr; }) == mAllocatedIps.end())
             {
@@ -171,7 +172,7 @@ bool IPAllocator::deallocateIpAddress(const std::string &containerId)
  */
 bool IPAllocator::getContainerNetworkInfo(const std::string &containerId, ContainerNetworkInfo &networkInfo) const
 {
-    const std::string filePath = ADDRESS_FILE_DIR + mUtils->getContainerId();
+    const std::string filePath = ADDRESS_FILE_DIR + containerId;
     return getNetworkInfo(filePath, networkInfo);
 }
 
@@ -196,8 +197,8 @@ bool IPAllocator::getNetworkInfo(const std::string &filePath, ContainerNetworkIn
         return false;
     }
 
+    // file contains IP address in in_addr_t form
     const std::string ipStr = addressFileStr.substr(0, addressFileStr.find("/"));
-    const in_addr_t ip = std::stoi(ipStr);
 
     // check if string contains a veth name after the ip address
     if (addressFileStr.length() <= ipStr.length() + 1)
@@ -206,8 +207,11 @@ bool IPAllocator::getNetworkInfo(const std::string &filePath, ContainerNetworkIn
         return false;
     }
 
+    const in_addr_t ip = std::stoi(ipStr);
     networkInfo.containerId = basename(filePath.c_str());
     networkInfo.ipAddressRaw = ip;
+
+    // Convert the in_addr_t value to a human readable value (e.g. 100.64.11.x)
     networkInfo.ipAddress = ipAddressToString(htonl(ip));
     networkInfo.vethName = addressFileStr.substr(ipStr.length() + 1, addressFileStr.length());
 
@@ -220,9 +224,11 @@ bool IPAllocator::getNetworkInfo(const std::string &filePath, ContainerNetworkIn
  *
  * @return True on success
  */
-bool IPAllocator::updateFromStore()
+bool IPAllocator::getContainerIpsFromDisk()
 {
     AI_LOG_FN_ENTRY();
+
+    mAllocatedIps.clear();
 
     // Dir doesn't exist, no containers have run yet
     struct stat buf;

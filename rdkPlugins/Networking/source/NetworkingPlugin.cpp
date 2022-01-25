@@ -124,7 +124,6 @@ bool NetworkingPlugin::postInstallation()
         // a new /etc/resolv.conf is created rather than mounting the host's
         if (!mPluginData->dnsmasq)
         {
-            AI_LOG_INFO("Adding resolv.conf mount");
             NetworkSetup::addResolvMount(mUtils, mContainerConfig);
         }
 
@@ -318,7 +317,7 @@ bool NetworkingPlugin::postHalt()
     ipAllocator.deallocateIpAddress(mUtils->getContainerId());
 
     // get external interfaces from daemon
-    const std::vector<std::string> extIfaces = GetExternalInterfacesFromSettings();
+    const std::vector<std::string> extIfaces = GetAvailableExternalInterfaces();
     if (extIfaces.empty())
     {
         AI_LOG_WARN("couldn't find external network interfaces in settings,"
@@ -407,6 +406,15 @@ std::vector<std::string> NetworkingPlugin::getDependencies() const
 
 // Begin private methods
 
+/**
+ *  @brief Gets the external interfaces that are actually available. Looks in the
+ *  settings for the interfaces Dobby should use, then checks if the device
+ *  actually has those interfaces available. Will return empty vector if none of
+ *  the ifaces in the settings file are available
+ *
+ *  @return Available external interfaces from the ones defined in dobby
+ *  settings
+ */
 std::vector<std::string> NetworkingPlugin::GetAvailableExternalInterfaces() const
 {
     std::vector<std::string> externalIfaces = GetExternalInterfacesFromSettings();
@@ -461,6 +469,12 @@ std::vector<std::string> NetworkingPlugin::GetAvailableExternalInterfaces() cons
     return externalIfaces;
 }
 
+/**
+ * @brief Gets the external interfaces defined in the dobby settings file, regardless
+ * of whether they actually exist on the platform or not
+ *
+ * @return All external interfaces from dobby settings file
+ */
 std::vector<std::string> NetworkingPlugin::GetExternalInterfacesFromSettings() const
 {
     // We don't have jsoncpp here, so use yajl from libocispec
@@ -470,19 +484,19 @@ std::vector<std::string> NetworkingPlugin::GetExternalInterfacesFromSettings() c
 
     if (settingsFile.empty())
     {
-        AI_LOG_ERROR("Could not read file @ '/etc/dobby.json'");
+        AI_LOG_ERROR("Could not read settings file @ '/etc/dobby.json'");
         return {};
     }
 
     yajl_val tree;
-    parser_error err = nullptr;
     char errbuf[1024];
 
     // Parse the settings file
     tree = yajl_tree_parse (settingsFile.c_str(), errbuf, sizeof (errbuf));
-    if (!tree || err)
+    if (!tree || strlen(errbuf) > 0)
     {
-        AI_LOG_ERROR_EXIT("Failed to parse Dobby settings file, err '%s'", err);
+        yajl_tree_free(tree);
+        AI_LOG_ERROR_EXIT("Failed to parse Dobby settings file, err '%s'", errbuf);
         return {};
     }
 
@@ -502,6 +516,5 @@ std::vector<std::string> NetworkingPlugin::GetExternalInterfacesFromSettings() c
     }
 
     yajl_tree_free(tree);
-
     return ifacesFromSettings;
 }

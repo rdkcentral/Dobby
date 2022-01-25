@@ -1014,8 +1014,6 @@ void NetworkSetup::addResolvMount(const std::shared_ptr<DobbyRdkPluginUtils> &ut
     const std::string source = "/etc/resolv.conf";
     const std::string destination = "/etc/resolv.conf";
 
-    AI_LOG_INFO("HERE3");
-
     // iterate through the mounts to check that the mount doesn't already exist
     for (size_t i=0; i < cfg->mounts_len; i++)
     {
@@ -1026,8 +1024,6 @@ void NetworkSetup::addResolvMount(const std::shared_ptr<DobbyRdkPluginUtils> &ut
             return;
         }
     }
-
-    AI_LOG_INFO("HERE4");
 
     // add the mount
     utils->addMount(source, destination, "bind",

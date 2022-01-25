@@ -55,7 +55,7 @@ typedef struct ContainerNetworkInfo
 
     bool operator==(const ContainerNetworkInfo &rhs) const
     {
-        if (containerId.empty())
+        if (containerId.empty() || rhs.containerId.empty())
         {
             return ipAddressRaw == rhs.ipAddressRaw;
         }

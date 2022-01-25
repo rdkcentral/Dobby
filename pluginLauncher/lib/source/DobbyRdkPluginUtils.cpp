@@ -154,7 +154,9 @@ std::string DobbyRdkPluginUtils::getContainerId() const
 bool DobbyRdkPluginUtils::getContainerNetworkInfo(ContainerNetworkInfo &networkInfo)
 {
     // Parse the file
-    std::string filePath = ADDRESS_FILE_DIR + getContainerId();
+    networkInfo.containerId = getContainerId();
+    std::string filePath = ADDRESS_FILE_DIR + networkInfo.containerId;
+
     const std::string addressFileStr = readTextFile(filePath);
     if (addressFileStr.empty())
     {
@@ -163,8 +165,8 @@ bool DobbyRdkPluginUtils::getContainerNetworkInfo(ContainerNetworkInfo &networkI
         return false;
     }
 
+    // file contains IP address in in_addr_t form
     const std::string ipStr = addressFileStr.substr(0, addressFileStr.find("/"));
-    const in_addr_t ip = std::stoi(ipStr);
 
     // check if string contains a veth name after the ip address
     if (addressFileStr.length() <= ipStr.length() + 1)
@@ -173,8 +175,10 @@ bool DobbyRdkPluginUtils::getContainerNetworkInfo(ContainerNetworkInfo &networkI
         return false;
     }
 
-    networkInfo.containerId = basename(filePath.c_str());
+    const in_addr_t ip = std::stoi(ipStr);
     networkInfo.ipAddressRaw = ip;
+
+    // Convert the in_addr_t value to a human readable value (e.g. 100.64.11.x)
     networkInfo.ipAddress = ipAddressToString(htonl(ip));
     networkInfo.vethName = addressFileStr.substr(ipStr.length() + 1, addressFileStr.length());
 

@@ -48,7 +48,7 @@ public:
     static std::string ipAddressToString(const in_addr_t &ipAddress);
 
 private:
-    bool updateFromStore();
+    bool getContainerIpsFromDisk();
     bool getNetworkInfo(const std::string &filePath, ContainerNetworkInfo &networkInfo) const;
 
 private:
