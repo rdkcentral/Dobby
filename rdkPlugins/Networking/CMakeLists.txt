@@ -42,7 +42,6 @@ install(
 
 target_link_libraries( ${PROJECT_NAME}
         DobbyRdkPluginCommonLib
-        IpcService
 
         # 3rd party libraries
         Threads::Threads
@@ -50,24 +49,12 @@ target_link_libraries( ${PROJECT_NAME}
         LIBNL::libnl-route
 )
 
-if (USE_SYSTEMD)
-        target_link_libraries( ${PROJECT_NAME}
-                systemd
-        )
-else()
-        target_link_libraries( ${PROJECT_NAME}
-                DBUS::libdbus
-        )
-endif()
-
 target_include_directories( ${PROJECT_NAME}
         PUBLIC
         include
 
         PRIVATE
         ${LIBNL_INCLUDE_DIR}
-        ../../protocol/include
-        $<TARGET_PROPERTY:IpcService,INTERFACE_INCLUDE_DIRECTORIES>
         $<TARGET_PROPERTY:DobbyDaemonLib,INTERFACE_INCLUDE_DIRECTORIES>
 
 )

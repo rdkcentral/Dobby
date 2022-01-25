@@ -21,16 +21,13 @@
 #define NETWORKINGPLUGIN_H
 
 #include <RdkPluginBase.h>
-#include <DobbyProtocol.h>
 #include "Netfilter.h"
 #include "NetworkingHelper.h"
-#include "IpcFactory.h"
 
 #include <sys/types.h>
 #include <netinet/in.h>
 #include <unistd.h>
 #include <string>
-
 
 /**
  * @class Dobby Networking Plugin
@@ -75,7 +72,6 @@ private:
     const std::string mRootfsPath;
     const rt_defs_plugins_networking_data *mPluginData;
 
-    std::shared_ptr<AI_IPC::IIpcService> mIpcService;
     std::shared_ptr<NetworkingHelper> mHelper;
     std::shared_ptr<Netfilter> mNetfilter;
 };

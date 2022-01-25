@@ -29,6 +29,7 @@
 #include <unistd.h>
 #include <dirent.h>
 #include <sys/stat.h>
+#include <algorithm>
 
 REGISTER_RDK_PLUGIN(NetworkingPlugin);
 
@@ -40,7 +41,6 @@ NetworkingPlugin::NetworkingPlugin(std::shared_ptr<rt_dobby_schema> &cfg,
       mContainerConfig(cfg),
       mUtils(utils),
       mRootfsPath(rootfsPath),
-      mIpcService(nullptr),
       mNetfilter(std::make_shared<Netfilter>())
 {
     AI_LOG_FN_ENTRY();
@@ -83,12 +83,6 @@ NetworkingPlugin::NetworkingPlugin(std::shared_ptr<rt_dobby_schema> &cfg,
 NetworkingPlugin::~NetworkingPlugin()
 {
     AI_LOG_FN_ENTRY();
-
-    // stop the remote service if it was initialised
-    if (mIpcService)
-    {
-        mIpcService->stop();
-    }
 
     AI_LOG_FN_EXIT();
 }

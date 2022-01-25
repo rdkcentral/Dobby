@@ -101,7 +101,7 @@ in_addr_t IPAllocator::allocateIpAddress(const std::string &containerId, const s
     in_addr_t ipAddress = mUnallocatedIps.front();
     mUnallocatedIps.pop();
 
-    AI_LOG_INFO("Allocating %s IP address %s (%u)", containerId.c_str(), ipAddressToString(htonl(ipAddress)).c_str(), ipAddress);
+    AI_LOG_DEBUG("Allocating %s IP address %s (%u)", containerId.c_str(), ipAddressToString(htonl(ipAddress)).c_str(), ipAddress);
 
     std::string addressFilePath = ADDRESS_FILE_DIR + containerId;
     const std::string fileContent(std::to_string(ipAddress) + "/" + vethName);
@@ -150,7 +150,7 @@ bool IPAllocator::deallocateIpAddress(const std::string &containerId)
     auto itr = std::find(mAllocatedIps.begin(), mAllocatedIps.end(), tmp);
     if (itr != mAllocatedIps.end())
     {
-        AI_LOG_INFO("Deallocating IP address %s for %s", itr->ipAddress.c_str(), containerId.c_str());
+        AI_LOG_DEBUG("Deallocating IP address %s for %s", itr->ipAddress.c_str(), containerId.c_str());
 
         // Remove allocation and add back to the unallocated queue for re-use
         mAllocatedIps.erase(itr);
