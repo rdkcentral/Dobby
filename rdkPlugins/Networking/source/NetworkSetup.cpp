@@ -21,7 +21,8 @@
 #include "Netlink.h"
 #include "BridgeInterface.h"
 #include "TapInterface.h"
-
+#include "NetworkingHelper.h"
+#include "IPAllocator.h"
 #include "Netfilter.h"
 
 #include <Logging.h>
@@ -32,8 +33,8 @@
 #include <sys/types.h>
 #include <sys/mount.h>
 #include <sys/wait.h>
+#include <dirent.h>
 
-#define PEER_NAME "eth0" // name of the interface created inside containers
 
 // -----------------------------------------------------------------------------
 /**
@@ -513,7 +514,6 @@ bool NetworkSetup::setupBridgeDevice(const std::shared_ptr<DobbyRdkPluginUtils> 
  *  The ip address is stored in the NetworkingHelper object provided in args.
  *
  *  @param[in]  utils           Instance of DobbyRdkPluginUtils.
- *  @param[in]  dobbyProxy      Instance of DobbyRdkPluginProxy.
  *  @param[in]  helper          Instance of NetworkingHelper.
  *  @param[in]  rootfsPath      Path to the rootfs on the host.
  *  @param[in]  vethName        Name of the virtual ethernet device
@@ -521,18 +521,18 @@ bool NetworkSetup::setupBridgeDevice(const std::shared_ptr<DobbyRdkPluginUtils> 
  *  @return true if successful, otherwise false.
  */
 bool saveContainerAddress(const std::shared_ptr<DobbyRdkPluginUtils> &utils,
-                          const std::shared_ptr<DobbyRdkPluginProxy> &dobbyProxy,
                           const std::shared_ptr<NetworkingHelper> &helper,
                           const std::string &rootfsPath,
                           const std::string &vethName)
 {
     AI_LOG_FN_ENTRY();
 
-    // get ip address from daemon
-    const in_addr_t ipAddress = dobbyProxy->getIpAddress(vethName);
+    // Allocate an IP for the container
+    IPAllocator ipAllocator(utils);
+    const in_addr_t ipAddress = ipAllocator.allocateIpAddress(vethName);
     if (!ipAddress)
     {
-        AI_LOG_ERROR_EXIT("failed to get ip address from daemon");
+        AI_LOG_ERROR_EXIT("failed to get ip address");
         return false;
     }
 
@@ -540,19 +540,6 @@ bool saveContainerAddress(const std::shared_ptr<DobbyRdkPluginUtils> &utils,
     if (!helper->storeContainerInterface(ipAddress, vethName))
     {
         AI_LOG_ERROR_EXIT("failed to set ip addresses");
-        return false;
-    }
-
-    // Create a temp file we can mount into the container
-    std::string tmpFilename = ADDRESS_FILE_PREFIX + utils->getContainerId();
-
-    // combine ip address and veth name strings
-    const std::string fileContent(std::string() + helper->ipv4AddrStr() + "/" + vethName);
-
-    // write address and veth name to a file
-    if (!utils->writeTextFile(tmpFilename, fileContent, O_CREAT | O_TRUNC, 0644))
-    {
-        AI_LOG_ERROR_EXIT("failed to write ip address file");
         return false;
     }
 
@@ -589,7 +576,6 @@ bool setupContainerNet(const std::shared_ptr<NetworkingHelper> &helper)
     // step 2 - set the address of the ifaceName interface inside the container
 
     // first add IPv4 address if enabled
-    // nb: htonl used for address to convert to network byte order
     const std::string ifaceName(PEER_NAME);
     if (helper->ipv4())
     {
@@ -697,7 +683,6 @@ bool setupContainerNet(const std::shared_ptr<NetworkingHelper> &helper)
  *
  *  @param[in]  utils           Instance of DobbyRdkPluginUtils.
  *  @param[in]  netfilter       Instance of Netfilter.
- *  @param[in]  dobbyProxy      Instance of DobbyRdkPluginProxy.
  *  @param[in]  helper          Instance of NetworkingHelper.
  *  @param[in]  rootfsPath      Path to the rootfs on the host.
  *  @param[in]  containerId     The id of the container.
@@ -707,7 +692,6 @@ bool setupContainerNet(const std::shared_ptr<NetworkingHelper> &helper)
  */
 bool NetworkSetup::setupVeth(const std::shared_ptr<DobbyRdkPluginUtils> &utils,
                              const std::shared_ptr<Netfilter> &netfilter,
-                             const std::shared_ptr<DobbyRdkPluginProxy> &dobbyProxy,
                              const std::shared_ptr<NetworkingHelper> &helper,
                              const std::string &rootfsPath,
                              const std::string &containerId,
@@ -741,9 +725,8 @@ bool NetworkSetup::setupVeth(const std::shared_ptr<DobbyRdkPluginUtils> &utils,
         return false;
     }
 
-    // step 4 - get and save the ip address for container in DobbyDaemon and an
-    // address file in the container rootfs
-    if (!saveContainerAddress(utils, dobbyProxy, helper, rootfsPath, vethName))
+    // step 4 - get and save the ip address for container
+    if (!saveContainerAddress(utils, helper, rootfsPath, vethName))
     {
         AI_LOG_ERROR_EXIT("failed to get address for container '%s'",
                           containerId.c_str());

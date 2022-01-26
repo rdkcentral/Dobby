@@ -56,7 +56,6 @@ class IDobbySettings;
 class DobbyRunC;
 class DobbyStartState;
 class DobbyLegacyPluginManager;
-class DobbyState;
 class DobbyConfig;
 
 class DobbyContainer;
@@ -125,11 +124,6 @@ public:
     int32_t stateOfContainer(int32_t cd) const;
 
     std::string statsOfContainer(int32_t cd) const;
-
-    uint32_t getBridgeConnections();
-    uint32_t getIpAddress(const std::string &vethName);
-    bool freeIpAddress(in_addr_t address);
-    std::vector<std::string> getExtIfaces();
 
 public:
     std::string ociConfigOfContainer(int32_t cd) const;
@@ -214,7 +208,6 @@ private:
 private:
     std::unique_ptr<DobbyLogger> mLogger;
     std::unique_ptr<DobbyRunC> mRunc;
-    std::shared_ptr<DobbyState> mState;
 
 private:
     std::thread mRuncMonitorThread;
