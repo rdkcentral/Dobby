@@ -532,7 +532,7 @@ bool saveContainerAddress(const std::shared_ptr<DobbyRdkPluginUtils> &utils,
     const in_addr_t ipAddress = ipAllocator.allocateIpAddress(vethName);
     if (!ipAddress)
     {
-        AI_LOG_ERROR_EXIT("failed to get ip address from daemon");
+        AI_LOG_ERROR_EXIT("failed to get ip address");
         return false;
     }
 
@@ -725,8 +725,7 @@ bool NetworkSetup::setupVeth(const std::shared_ptr<DobbyRdkPluginUtils> &utils,
         return false;
     }
 
-    // step 4 - get and save the ip address for container in DobbyDaemon and an
-    // address file in the container rootfs
+    // step 4 - get and save the ip address for container
     if (!saveContainerAddress(utils, helper, rootfsPath, vethName))
     {
         AI_LOG_ERROR_EXIT("failed to get address for container '%s'",

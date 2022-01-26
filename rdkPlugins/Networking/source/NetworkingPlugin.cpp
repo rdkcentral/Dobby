@@ -316,7 +316,7 @@ bool NetworkingPlugin::postHalt()
     // Release the IP from the pool
     ipAllocator.deallocateIpAddress(mUtils->getContainerId());
 
-    // get external interfaces from daemon
+    // get external interfaces
     const std::vector<std::string> extIfaces = GetAvailableExternalInterfaces();
     if (extIfaces.empty())
     {

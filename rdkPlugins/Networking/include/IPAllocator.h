@@ -52,9 +52,11 @@ private:
     bool getNetworkInfo(const std::string &filePath, ContainerNetworkInfo &networkInfo) const;
 
 private:
-    std::queue<in_addr_t> mUnallocatedIps;
-    std::vector<ContainerNetworkInfo> mAllocatedIps;
     const std::shared_ptr<DobbyRdkPluginUtils> mUtils;
+    const in_addr_t mBeginAddress;
+    const in_addr_t mEndAddress;
+
+    std::vector<ContainerNetworkInfo> mAllocatedIps;
 };
 
 #endif

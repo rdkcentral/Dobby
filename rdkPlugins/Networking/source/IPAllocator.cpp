@@ -28,7 +28,9 @@
 #include <unistd.h>
 
 IPAllocator::IPAllocator(const std::shared_ptr<DobbyRdkPluginUtils> &utils)
-    : mUtils(utils)
+    : mUtils(utils),
+      mBeginAddress(INADDR_BRIDGE + 1),
+      mEndAddress(mBeginAddress + TOTAL_ADDRESS_POOL_SIZE)
 {
     AI_LOG_FN_ENTRY();
 
@@ -36,33 +38,6 @@ IPAllocator::IPAllocator(const std::shared_ptr<DobbyRdkPluginUtils> &utils)
     if (!getContainerIpsFromDisk())
     {
         AI_LOG_ERROR("Failed to initialise IP backing store");
-    }
-
-    // Start from xxx.xxx.xxx.2 to leave xxx.xxx.xxx.1 open for bridge device
-    in_addr_t addrBegin = INADDR_BRIDGE + 1;
-    in_addr_t addrEnd = addrBegin + TOTAL_ADDRESS_POOL_SIZE;
-
-    // Populate the pool of available addresses
-    // Nothing allocated already, create full pool
-    if (mAllocatedIps.size() == 0)
-    {
-        for (in_addr_t addr = addrBegin; addr < addrEnd; addr++)
-        {
-            mUnallocatedIps.push(addr);
-        }
-    }
-    else
-    {
-        // Already some IPs allocated
-        for (in_addr_t addr = addrBegin; addr < addrEnd; addr++)
-        {
-            // Only add IPs to the unallocated queue that aren't in use
-            if (std::find_if(mAllocatedIps.begin(), mAllocatedIps.end(), [addr](const ContainerNetworkInfo &info)
-                             { return info.ipAddressRaw == addr; }) == mAllocatedIps.end())
-            {
-                mUnallocatedIps.push(addr);
-            }
-        }
     }
 
     AI_LOG_FN_EXIT();
@@ -99,8 +74,24 @@ in_addr_t IPAllocator::allocateIpAddress(const std::string &containerId, const s
 {
     AI_LOG_FN_ENTRY();
 
-    in_addr_t ipAddress = mUnallocatedIps.front();
-    mUnallocatedIps.pop();
+    // Attempt to find a free IP address
+    in_addr_t ipAddress = 0;
+    for (in_addr_t addr = mBeginAddress; addr < mEndAddress; addr++)
+    {
+        // If the IP address isn't allocated, we can use it
+        if (std::find_if(mAllocatedIps.begin(), mAllocatedIps.end(), [addr](const ContainerNetworkInfo &info)
+                         { return info.ipAddressRaw == addr; }) == mAllocatedIps.end())
+        {
+            ipAddress = addr;
+            break;
+        }
+    }
+
+    if (ipAddress == 0)
+    {
+        AI_LOG_ERROR_EXIT("IP Address pool exhausted - cannot allocate IP address for %s", containerId.c_str());
+        return 0;
+    }
 
     AI_LOG_DEBUG("Allocating %s IP address %s (%u)", containerId.c_str(), ipAddressToString(htonl(ipAddress)).c_str(), ipAddress);
 
@@ -110,8 +101,8 @@ in_addr_t IPAllocator::allocateIpAddress(const std::string &containerId, const s
     // write address and veth name to a file
     if (!mUtils->writeTextFile(addressFilePath, fileContent, O_CREAT | O_TRUNC, 0644))
     {
-        AI_LOG_ERROR_EXIT("failed to write ip address file");
-        return -1;
+        AI_LOG_ERROR_EXIT("failed to write ip address file - could not alloate IP for %s", containerId.c_str());
+        return 0;
     }
 
     AI_LOG_FN_EXIT();
@@ -153,9 +144,8 @@ bool IPAllocator::deallocateIpAddress(const std::string &containerId)
     {
         AI_LOG_DEBUG("Deallocating IP address %s for %s", itr->ipAddress.c_str(), containerId.c_str());
 
-        // Remove allocation and add back to the unallocated queue for re-use
+        // Remove allocation
         mAllocatedIps.erase(itr);
-        mUnallocatedIps.push(itr->ipAddressRaw);
     }
 
     AI_LOG_FN_EXIT();
