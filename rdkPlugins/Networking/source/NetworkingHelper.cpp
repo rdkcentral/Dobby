@@ -18,6 +18,7 @@
 */
 
 #include "NetworkingHelper.h"
+#include "IPAllocator.h"
 
 #include <Logging.h>
 
@@ -98,14 +99,7 @@ bool NetworkingHelper::storeContainerInterface(in_addr_t addr, const std::string
     mIpv4Addr = addr;
 
     // construct IPv4 address string from binary form
-    char ipv4AddressStr[INET_ADDRSTRLEN];
-    struct in_addr ipAddress_ = { htonl(mIpv4Addr) };
-    if (inet_ntop(AF_INET, &ipAddress_, ipv4AddressStr, INET_ADDRSTRLEN) == nullptr)
-    {
-        AI_LOG_SYS_ERROR(errno, "failed to convert in_addr to string");
-        return false;
-    }
-    mIpv4AddrStr = ipv4AddressStr;
+    mIpv4AddrStr = IPAllocator::ipAddressToString(htonl(addr));
 
     // construct IPv6 address from IPv4 address
     mIpv6Addr = in6addrCreate(addr);

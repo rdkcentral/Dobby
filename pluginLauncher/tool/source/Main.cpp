@@ -221,12 +221,10 @@ std::shared_ptr<const rt_state_schema> getContainerState()
  *
  * @return True/false for success/failure for each plugin
  */
-bool runPlugins(const IDobbyRdkPlugin::HintFlags &hookPoint, std::shared_ptr<rt_dobby_schema> containerConfig, const std::string &rootfsPath)
+bool runPlugins(const IDobbyRdkPlugin::HintFlags &hookPoint, std::shared_ptr<rt_dobby_schema> containerConfig, const std::string &rootfsPath, std::shared_ptr<const rt_state_schema> state)
 {
     AI_LOG_DEBUG("Loading plugins from %s", PLUGIN_PATH);
 
-    // Get the OCI hook stdin for the plugins to use
-    std::shared_ptr<const rt_state_schema> state = getContainerState();
     std::shared_ptr<DobbyRdkPluginUtils> rdkPluginUtils;
     if (state)
     {
@@ -456,6 +454,7 @@ int main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
     const std::string fullConfigPath = std::string(absPath);
+    free(absPath);
     AI_LOG_DEBUG("Loading container config from file: '%s'", fullConfigPath.c_str());
 
     parser_error err;
@@ -469,7 +468,19 @@ int main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
-    gContainerId = std::string(containerConfig->hostname);
+    // Get container id from state (using hostname may be incorrect if we
+    // launch multiple containers from same bundle)
+    std::shared_ptr<const rt_state_schema> state = getContainerState();
+    if (state)
+    {
+        gContainerId = std::string(state->id);
+    }
+    else
+    {
+        AI_LOG_WARN("Failed to get container state from stdin");
+        gContainerId = std::string(containerConfig->hostname);
+    }
+
     AI_LOG_MILESTONE("Running hook %s for container '%s'", gHookName.c_str(), gContainerId.c_str());
 
     // Get the path of the container rootfs to give to plugins
@@ -494,7 +505,7 @@ int main(int argc, char *argv[])
 #endif // DEBUG
 
     // Everything looks good, try to run the plugins
-    bool success = runPlugins(hookPoint, containerConfig, rootfsPath);
+    bool success = runPlugins(hookPoint, containerConfig, rootfsPath, state);
 
     if (success)
     {

@@ -66,12 +66,6 @@
 #define DOBBY_DEBUG_START_INPROCESS_TRACING         "StartInProcessTracing"
 #define DOBBY_DEBUG_STOP_INPROCESS_TRACING          "StopInProcessTracing"
 
-#define DOBBY_RDKPLUGIN_INTERFACE               DOBBY_SERVICE ".rdkplugin1"
-#define DOBBY_RDKPLUGIN_GET_BRIDGE_CONNECTIONS      "GetBridgeConnections"
-#define DOBBY_RDKPLUGIN_GET_ADDRESS                 "GetIpAddress"
-#define DOBBY_RDKPLUGIN_FREE_ADDRESS                "FreeIpAddress"
-#define DOBBY_RDKPLUGIN_GET_EXT_IFACES              "GetExternalInterfaces"
-
 #define CONTAINER_STATE_INVALID                 0
 #define CONTAINER_STATE_STARTING                1
 #define CONTAINER_STATE_RUNNING                 2
