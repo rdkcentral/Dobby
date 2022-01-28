@@ -26,6 +26,8 @@
 #include "IDobbyRdkPlugin.h"
 #include "DobbyRdkPluginUtils.h"
 
+#include "IPollLoop.h"
+
 #include "rt_dobby_schema.h"
 
 #include <Logging.h>
@@ -58,10 +60,11 @@ public:
         int pttyFd;
     };
 
-    virtual void LoggingLoop(ContainerInfo containerInfo,
-                             const bool isBuffer,
-                             const bool createNew,
-                             const std::atomic_bool& cancellationToken) = 0;
+    virtual void RegisterPollSources(ContainerInfo& containerInfo,
+                                    bool createNewFile,
+                                    std::shared_ptr<AICommon::IPollLoop> pollLoop) = 0;
+
+    virtual void DumpToLog(ContainerInfo& containerInfo) = 0;
 };
 
 // -----------------------------------------------------------------------------

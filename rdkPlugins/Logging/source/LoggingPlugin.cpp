@@ -29,6 +29,8 @@
 #include <string.h>
 #include <map>
 
+#include "JournaldSink.h"
+
 /**
  * Register the logging plugin with the special logging registration method
  */
@@ -50,6 +52,7 @@ LoggingPlugin::LoggingPlugin(std::shared_ptr<rt_dobby_schema> &containerConfig,
       mUtils(utils)
 {
     AI_LOG_FN_ENTRY();
+
     AI_LOG_FN_EXIT();
 }
 
@@ -74,25 +77,25 @@ bool LoggingPlugin::postInstallation()
 
     // Plugin launcher will automatically send hook output to journald so don't
     // want to duplicate it by capturing it here too
-    if (GetContainerSink() != LoggingSink::Journald)
+    //if (GetContainerSink() != LoggingSink::Journald)
+    //{
+    // Redirect hook output to stdout/stderr
+    if (mContainerConfig->annotations == nullptr)
     {
-        // Redirect hook output to stdout/stderr
-        if (mContainerConfig->annotations == nullptr)
-        {
-            mContainerConfig->annotations = (json_map_string_string *)calloc(1, sizeof(json_map_string_string));
-        }
-        mContainerConfig->annotations->keys =
-            (char **)realloc(mContainerConfig->annotations->keys, sizeof(char *) * (mContainerConfig->annotations->len + 2));
-        mContainerConfig->annotations->values =
-            (char **)realloc(mContainerConfig->annotations->values, sizeof(char *) * (mContainerConfig->annotations->len + 2));
-
-        mContainerConfig->annotations->keys[mContainerConfig->annotations->len] = strdup("run.oci.hooks.stderr");
-        mContainerConfig->annotations->values[mContainerConfig->annotations->len] = strdup("/dev/stderr");
-        mContainerConfig->annotations->keys[mContainerConfig->annotations->len + 1] = strdup("run.oci.hooks.stdout");
-        mContainerConfig->annotations->values[mContainerConfig->annotations->len + 1] = strdup("/dev/stdout");
-
-        mContainerConfig->annotations->len += 2;
+        mContainerConfig->annotations = (json_map_string_string *)calloc(1, sizeof(json_map_string_string));
     }
+    mContainerConfig->annotations->keys =
+        (char **)realloc(mContainerConfig->annotations->keys, sizeof(char *) * (mContainerConfig->annotations->len + 2));
+    mContainerConfig->annotations->values =
+        (char **)realloc(mContainerConfig->annotations->values, sizeof(char *) * (mContainerConfig->annotations->len + 2));
+
+    mContainerConfig->annotations->keys[mContainerConfig->annotations->len] = strdup("run.oci.hooks.stderr");
+    mContainerConfig->annotations->values[mContainerConfig->annotations->len] = strdup("/dev/stderr");
+    mContainerConfig->annotations->keys[mContainerConfig->annotations->len + 1] = strdup("run.oci.hooks.stdout");
+    mContainerConfig->annotations->values[mContainerConfig->annotations->len + 1] = strdup("/dev/stdout");
+
+    mContainerConfig->annotations->len += 2;
+    //}
 
     // We need to use an isolated terminal to give each container its own ptty
     mContainerConfig->process->terminal = true;
@@ -111,7 +114,7 @@ bool LoggingPlugin::postInstallation()
 std::vector<std::string> LoggingPlugin::getDependencies() const
 {
     std::vector<std::string> dependencies;
-    const rt_defs_plugins_logging* pluginConfig = mContainerConfig->rdk_plugins->logging;
+    const rt_defs_plugins_logging *pluginConfig = mContainerConfig->rdk_plugins->logging;
 
     for (size_t i = 0; i < pluginConfig->depends_on_len; i++)
     {
@@ -121,64 +124,35 @@ std::vector<std::string> LoggingPlugin::getDependencies() const
     return dependencies;
 }
 
-/**
- * @brief Public method called by DobbyLogger to start running the logging
- * loop. Destination of the logs depends on the settings in the config file.
- *
- *
- * @param[in]  containerInfo Details about the container and socket connection
- * @param[in]  isBuffer      If true, containerInfo.pttyFd points to a memFd
- *                           containing a fixed size buffer of data that should
- *                           be read until EOF is reached, at which point this
- *                           method should end.
- * @param[in]  createNew     If true, create a new log file (if applicable) instead
- *                           of appending to an existing one
- */
-void LoggingPlugin::LoggingLoop(ContainerInfo containerInfo,
-                                const bool isBuffer,
-                                const bool createNew,
-                                const std::atomic_bool &cancellationToken)
+void LoggingPlugin::RegisterPollSources(ContainerInfo &containerInfo,
+                                        bool createNewFile,
+                                        std::shared_ptr<AICommon::IPollLoop> pollLoop)
 {
     AI_LOG_FN_ENTRY();
 
-    // Work out where to send the logs and start the loop to read/write logs
-    // Will send to /dev/null if unknown sink
-    auto loggingSink = GetContainerSink();
-    switch (loggingSink)
+    if (!mSink)
     {
-    case LoggingSink::File:
-        // If we're not creating a new file, append to the existing log
-        FileSink(containerInfo, isBuffer, createNew, cancellationToken);
-        break;
-    case LoggingSink::Journald:
-#if defined(USE_SYSTEMD)
-        JournaldSink(containerInfo, isBuffer, cancellationToken);
-#else
-        AI_LOG_ERROR("Logging plugin built without systemd support - cannot use journald");
-        DevNullSink(containerInfo, isBuffer, cancellationToken);
-#endif
-        break;
-    case LoggingSink::DevNull:
-        DevNullSink(containerInfo, isBuffer, cancellationToken);
-        break;
-    default:
-        break;
+        mSink = GetContainerSink();
     }
 
-    // Logging loop has finished, close the connection if needed
-    if (containerInfo.connectionFd > 0 && close(containerInfo.connectionFd) != 0)
+    mPollLoop = pollLoop;
+
+    mSink->SetContainerInfo(containerInfo);
+    mPollLoop->addSource(mSink, containerInfo.pttyFd, EPOLLIN);
+
+    AI_LOG_FN_EXIT();
+}
+
+void LoggingPlugin::DumpToLog(ContainerInfo &containerInfo)
+{
+    AI_LOG_FN_ENTRY();
+
+    if (!mSink)
     {
-        AI_LOG_SYS_ERROR(errno, "Failed to close connection");
+        mSink = GetContainerSink();
     }
 
-    // If dumping a buffer, DobbyBufferStream will clean up after itself
-    if (!isBuffer && containerInfo.pttyFd > 0 && fcntl(containerInfo.pttyFd, F_GETFD) != -1)
-    {
-        if (close(containerInfo.pttyFd) != 0)
-        {
-            AI_LOG_SYS_ERROR(errno, "Failed to close container ptty fd");
-        }
-    }
+    mSink->DumpLog(containerInfo);
 
     AI_LOG_FN_EXIT();
 }
@@ -189,13 +163,14 @@ void LoggingPlugin::LoggingLoop(ContainerInfo containerInfo,
  * @brief Converts the "sink: xxx" in the config to a valid log sink. Case
  * insensitive
  */
-LoggingPlugin::LoggingSink LoggingPlugin::GetContainerSink()
+std::shared_ptr<ILoggingSink> LoggingPlugin::GetContainerSink()
 {
     // Check the plugin data is actually there
     if (!mContainerConfig->rdk_plugins->logging->data)
     {
         AI_LOG_WARN("Logging config is null or could not be parsed - sending all logs to /dev/null");
-        return LoggingSink::DevNull;
+        // TODO:: Replace with correct sink
+        return nullptr;
     }
 
     // Convert to lowercase
@@ -205,115 +180,24 @@ LoggingPlugin::LoggingSink LoggingPlugin::GetContainerSink()
     // Work out where to send the logs
     if (sinkString == "file")
     {
-        return LoggingSink::File;
+        // TODO:: Replace with correct sink
+        return nullptr;
     }
     if (sinkString == "journald")
     {
-        return LoggingSink::Journald;
+        // TODO:: Replace with correct sink
+        return std::make_shared<JournaldSink>(mUtils->getContainerId(), mContainerConfig);
     }
     if (sinkString == "devnull")
     {
-        return LoggingSink::DevNull;
+        // TODO:: Replace with correct sink
+        return nullptr;
     }
 
     AI_LOG_WARN("Unknown logging sink - using /dev/null instead");
-    return LoggingSink::DevNull;
+    // TODO:: Replace with correct sink
+    return nullptr;
 }
-
-#if defined(USE_SYSTEMD)
-/**
- * @brief Send container logs to journald
- *
- * @param[in] containerInfo     Info about the container to log including fd
- *                              to read from
- * @param[in] exitEof   Whether this logging loop should finish when it
- *                      reaches the end of the file, or if it should keep looping
- *                      and wait for the fd to be deleted. Set to true when
- *                      dumping the contents of a buffer
- */
-void LoggingPlugin::JournaldSink(const ContainerInfo &containerInfo,
-                                 bool exitEof,
-                                 const std::atomic_bool &cancellationToken)
-{
-    AI_LOG_INFO("starting logger for container '%s' to journald (PID: %d)",
-                mUtils->getContainerId().c_str(), containerInfo.containerPid);
-
-    // Read options from config to set the journald priority, default to LOG_INFO
-    int logPriority = LOG_INFO;
-    if (mContainerConfig->rdk_plugins->logging->data->journald_options)
-    {
-        std::string priority = mContainerConfig->rdk_plugins->logging->data->journald_options->priority;
-        if (!priority.empty())
-        {
-            const std::map<std::string, int> options =
-                {
-                    {"LOG_EMERG", 0},
-                    {"LOG_ALERT", 1},
-                    {"LOG_CRIT", 2},
-                    {"LOG_ERR", 3},
-                    {"LOG_WARNING", 4},
-                    {"LOG_NOTICE", 5},
-                    {"LOG_INFO", 6},
-                    {"LOG_DEBUG", 7}};
-
-            auto it = options.find(priority);
-            if (it != options.end())
-            {
-                logPriority = it->second;
-            }
-            else
-            {
-                AI_LOG_WARN("Could not parse journald priority - using LOG_INFO");
-            }
-        }
-    }
-
-    char buf[PTY_BUFFER_SIZE];
-    memset(buf, 0, sizeof(buf));
-
-    ssize_t ret;
-
-    // Create a file descriptor we can write to
-    // journald will handle line breaks etc automatically
-    int outputFd = sd_journal_stream_fd(mUtils->getContainerId().c_str(), logPriority, 1);
-
-    if (outputFd < 0)
-    {
-        AI_LOG_SYS_ERROR(-outputFd, "Failed to create journald stream fd");
-
-        // Just use /dev/null instead
-        outputFd = open("/dev/null", O_CLOEXEC | O_WRONLY);
-    }
-
-    while (!cancellationToken)
-    {
-        ret = read(containerInfo.pttyFd, buf, sizeof(buf));
-        if (ret < 0)
-        {
-            AI_LOG_INFO("Container %s terminated, terminating logging thread",
-                        mUtils->getContainerId().c_str());
-            break;
-        }
-        if (ret == 0 && exitEof)
-        {
-            break;
-        }
-
-        write(outputFd, buf, ret);
-    }
-
-    if (cancellationToken)
-    {
-        AI_LOG_INFO("Logging thread shut down by cancellation token");
-    }
-
-    // Close the journald fd
-    if (close(outputFd) != 0)
-    {
-        AI_LOG_SYS_ERROR(errno, "Failed to close journald stream fd");
-    }
-}
-#endif //#if defined(USE_SYSTEMD)
 
 /**
  * @brief Send container logs to /dev/null.
@@ -362,7 +246,6 @@ void LoggingPlugin::DevNullSink(const ContainerInfo &containerInfo, bool exitEof
         }
         write(devNullFd, buf, ret);
     }
-
 
     if (cancellationToken)
     {
@@ -444,7 +327,7 @@ void LoggingPlugin::FileSink(const ContainerInfo &containerInfo, bool exitEof, b
     }
 
     AI_LOG_DEBUG("starting logger for container '%s' to write to '%s' (limit %zd bytes)",
-                mUtils->getContainerId().c_str(), pathName.c_str(), limit);
+                 mUtils->getContainerId().c_str(), pathName.c_str(), limit);
 
     char buf[PTY_BUFFER_SIZE];
     memset(buf, 0, sizeof(buf));

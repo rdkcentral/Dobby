@@ -374,6 +374,38 @@ void PollLoop::delSource(const std::shared_ptr<IPollSource>& source)
     return;
 }
 
+void PollLoop::delAllSources()
+{
+    AI_LOG_FN_ENTRY();
+
+    std::lock_guard<Spinlock> locker(mLock);
+    auto it = mSources.begin();
+
+    while (it != mSources.end())
+    {
+        if (it->events & EPOLLDEFERRED)
+        {
+            if (--mDeferredSources == 0)
+            {
+                disableDeferredTimer();
+            }
+        }
+
+        // remove from epoll
+        if (mEPollFd >= 0)
+        {
+            if (epoll_ctl(mEPollFd, EPOLL_CTL_DEL, it->fd, NULL) < 0)
+            {
+                AI_LOG_SYS_ERROR_EXIT(errno, "failed to delete source from epoll");
+            }
+        }
+
+        // erase from the list of sources and exit
+        it = mSources.erase(it);
+    }
+
+    AI_LOG_FN_EXIT();
+}
 
 // -----------------------------------------------------------------------------
 /**
@@ -704,7 +736,7 @@ void PollLoop::run(const std::string& name, int priority)
                             {
                                 // Failed to get the shared_ptr, should we remove
                                 // it from the list of sources ?
-                                AI_LOG_ERROR("failed to get source shared_ptr");
+                               AI_LOG_ERROR("failed to get source shared_ptr");
                             }
                         }
                     }
