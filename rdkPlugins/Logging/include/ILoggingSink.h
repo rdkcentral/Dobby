@@ -8,7 +8,7 @@ class ILoggingSink : public AICommon::IPollSource,
 {
 
 public:
-    virtual void DumpLog(const IDobbyRdkLoggingPlugin::ContainerInfo &containerInfo) = 0;
+    virtual void DumpLog(const int bufferFd, const bool startNewLog) = 0;
 
-    virtual void SetContainerInfo(IDobbyRdkLoggingPlugin::ContainerInfo &containerInfo) = 0;
+    virtual void SetLogOptions(const IDobbyRdkLoggingPlugin::LoggingOptions& options) = 0;
 };

@@ -30,6 +30,7 @@
 #include <map>
 
 #include "JournaldSink.h"
+#include "FileSink.h"
 
 /**
  * Register the logging plugin with the special logging registration method
@@ -77,25 +78,25 @@ bool LoggingPlugin::postInstallation()
 
     // Plugin launcher will automatically send hook output to journald so don't
     // want to duplicate it by capturing it here too
-    //if (GetContainerSink() != LoggingSink::Journald)
-    //{
-    // Redirect hook output to stdout/stderr
-    if (mContainerConfig->annotations == nullptr)
+    if (GetContainerSink() != LoggingSink::Journald)
     {
-        mContainerConfig->annotations = (json_map_string_string *)calloc(1, sizeof(json_map_string_string));
+        // Redirect hook output to stdout/stderr
+        if (mContainerConfig->annotations == nullptr)
+        {
+            mContainerConfig->annotations = (json_map_string_string *)calloc(1, sizeof(json_map_string_string));
+        }
+        mContainerConfig->annotations->keys =
+            (char **)realloc(mContainerConfig->annotations->keys, sizeof(char *) * (mContainerConfig->annotations->len + 2));
+        mContainerConfig->annotations->values =
+            (char **)realloc(mContainerConfig->annotations->values, sizeof(char *) * (mContainerConfig->annotations->len + 2));
+
+        mContainerConfig->annotations->keys[mContainerConfig->annotations->len] = strdup("run.oci.hooks.stderr");
+        mContainerConfig->annotations->values[mContainerConfig->annotations->len] = strdup("/dev/stderr");
+        mContainerConfig->annotations->keys[mContainerConfig->annotations->len + 1] = strdup("run.oci.hooks.stdout");
+        mContainerConfig->annotations->values[mContainerConfig->annotations->len + 1] = strdup("/dev/stdout");
+
+        mContainerConfig->annotations->len += 2;
     }
-    mContainerConfig->annotations->keys =
-        (char **)realloc(mContainerConfig->annotations->keys, sizeof(char *) * (mContainerConfig->annotations->len + 2));
-    mContainerConfig->annotations->values =
-        (char **)realloc(mContainerConfig->annotations->values, sizeof(char *) * (mContainerConfig->annotations->len + 2));
-
-    mContainerConfig->annotations->keys[mContainerConfig->annotations->len] = strdup("run.oci.hooks.stderr");
-    mContainerConfig->annotations->values[mContainerConfig->annotations->len] = strdup("/dev/stderr");
-    mContainerConfig->annotations->keys[mContainerConfig->annotations->len + 1] = strdup("run.oci.hooks.stdout");
-    mContainerConfig->annotations->values[mContainerConfig->annotations->len + 1] = strdup("/dev/stdout");
-
-    mContainerConfig->annotations->len += 2;
-    //}
 
     // We need to use an isolated terminal to give each container its own ptty
     mContainerConfig->process->terminal = true;
@@ -124,53 +125,69 @@ std::vector<std::string> LoggingPlugin::getDependencies() const
     return dependencies;
 }
 
-void LoggingPlugin::RegisterPollSources(ContainerInfo &containerInfo,
-                                        bool createNewFile,
+void LoggingPlugin::RegisterPollSources(LoggingOptions &loggingOptions,
                                         std::shared_ptr<AICommon::IPollLoop> pollLoop)
 {
     AI_LOG_FN_ENTRY();
 
     if (!mSink)
     {
-        mSink = GetContainerSink();
+        mSink = CreateSink(GetContainerSink());
     }
 
-    mPollLoop = pollLoop;
+    mSink->SetLogOptions(loggingOptions);
 
-    mSink->SetContainerInfo(containerInfo);
-    mPollLoop->addSource(mSink, containerInfo.pttyFd, EPOLLIN);
+    if (!mPollLoop)
+    {
+        mPollLoop = pollLoop;
+    }
+
+    mPollLoop->addSource(mSink, loggingOptions.pttyFd, EPOLLIN);
 
     AI_LOG_FN_EXIT();
 }
 
-void LoggingPlugin::DumpToLog(ContainerInfo &containerInfo)
+void LoggingPlugin::DumpToLog(const int bufferFd, const bool startNewLog)
 {
     AI_LOG_FN_ENTRY();
 
     if (!mSink)
     {
-        mSink = GetContainerSink();
+        mSink = CreateSink(GetContainerSink());
     }
 
-    mSink->DumpLog(containerInfo);
+    mSink->DumpLog(bufferFd, startNewLog);
 
     AI_LOG_FN_EXIT();
 }
 
 // Begin private methods
 
+std::shared_ptr<ILoggingSink> LoggingPlugin::CreateSink(LoggingPlugin::LoggingSink sinkType)
+{
+    switch (sinkType)
+    {
+    case LoggingSink::Journald:
+        return std::make_shared<JournaldSink>(mUtils->getContainerId(), mContainerConfig);
+    case LoggingSink::File:
+        return std::make_shared<FileSink>(mUtils->getContainerId(), mContainerConfig);
+    default:
+        return nullptr;
+        break;
+    }
+}
+
 /**
  * @brief Converts the "sink: xxx" in the config to a valid log sink. Case
  * insensitive
  */
-std::shared_ptr<ILoggingSink> LoggingPlugin::GetContainerSink()
+LoggingPlugin::LoggingSink LoggingPlugin::GetContainerSink()
 {
     // Check the plugin data is actually there
     if (!mContainerConfig->rdk_plugins->logging->data)
     {
         AI_LOG_WARN("Logging config is null or could not be parsed - sending all logs to /dev/null");
-        // TODO:: Replace with correct sink
-        return nullptr;
+        return LoggingSink::DevNull;
     }
 
     // Convert to lowercase
@@ -180,23 +197,20 @@ std::shared_ptr<ILoggingSink> LoggingPlugin::GetContainerSink()
     // Work out where to send the logs
     if (sinkString == "file")
     {
-        // TODO:: Replace with correct sink
-        return nullptr;
+        return LoggingSink::File;
     }
     if (sinkString == "journald")
     {
-        // TODO:: Replace with correct sink
-        return std::make_shared<JournaldSink>(mUtils->getContainerId(), mContainerConfig);
+        //return std::make_shared<JournaldSink>(mUtils->getContainerId(), mContainerConfig);
+        return LoggingSink::Journald;
     }
     if (sinkString == "devnull")
     {
-        // TODO:: Replace with correct sink
-        return nullptr;
+        return LoggingSink::DevNull;
     }
 
     AI_LOG_WARN("Unknown logging sink - using /dev/null instead");
-    // TODO:: Replace with correct sink
-    return nullptr;
+    return LoggingSink::DevNull;
 }
 
 /**
@@ -209,7 +223,7 @@ std::shared_ptr<ILoggingSink> LoggingPlugin::GetContainerSink()
  *                      and wait for the fd to be deleted. Set to true when
  *                      dumping the contents of a buffer
  */
-void LoggingPlugin::DevNullSink(const ContainerInfo &containerInfo, bool exitEof,
+void LoggingPlugin::DevNullSink(const LoggingOptions &containerInfo, bool exitEof,
                                 const std::atomic_bool &cancellationToken)
 {
     int devNullFd = open("/dev/null", O_CLOEXEC | O_WRONLY);
@@ -257,137 +271,137 @@ void LoggingPlugin::DevNullSink(const ContainerInfo &containerInfo, bool exitEof
     {
         AI_LOG_SYS_ERROR(errno, "Failed to close /dev/null");
     }
-}
+ }
 
-/**
- * @brief Write container logs to the file specified in the config
- *
- * @param[in] containerInfo     Info about the container to log including fd
- *                              to read from
- * @param[in] exitEof   Whether this logging loop should finish when it
- *                      reaches the end of the file, or if it should keep looping
- *                      and wait for the fd to be deleted. Set to true when
- *                      dumping the contents of a buffer
- * @param[in] createNew Whether to create a new empty log file or append to an
- *                      existing file if it already exists
- */
-void LoggingPlugin::FileSink(const ContainerInfo &containerInfo, bool exitEof, bool createNew,
-                             const std::atomic_bool &cancellationToken)
-{
-    const mode_t mode = 0644;
+// /**
+//  * @brief Write container logs to the file specified in the config
+//  *
+//  * @param[in] containerInfo     Info about the container to log including fd
+//  *                              to read from
+//  * @param[in] exitEof   Whether this logging loop should finish when it
+//  *                      reaches the end of the file, or if it should keep looping
+//  *                      and wait for the fd to be deleted. Set to true when
+//  *                      dumping the contents of a buffer
+//  * @param[in] createNew Whether to create a new empty log file or append to an
+//  *                      existing file if it already exists
+//  */
+// void LoggingPlugin::FileSink(const LoggingOptions &containerInfo, bool exitEof, bool createNew,
+//                              const std::atomic_bool &cancellationToken)
+// {
+//     const mode_t mode = 0644;
 
-    int flags;
-    // Do we want to append to the file or create a new empty file?
-    if (createNew)
-    {
-        flags = O_CREAT | O_TRUNC | O_WRONLY | O_CLOEXEC;
-    }
-    else
-    {
-        flags = O_CREAT | O_APPEND | O_WRONLY | O_CLOEXEC;
-    }
+//     int flags;
+//     // Do we want to append to the file or create a new empty file?
+//     if (createNew)
+//     {
+//         flags = O_CREAT | O_TRUNC | O_WRONLY | O_CLOEXEC;
+//     }
+//     else
+//     {
+//         flags = O_CREAT | O_APPEND | O_WRONLY | O_CLOEXEC;
+//     }
 
-    // Read the options from the config if possible
-    std::string pathName;
-    ssize_t limit = -1;
+//     // Read the options from the config if possible
+//     std::string pathName;
+//     ssize_t limit = -1;
 
-    if (mContainerConfig->rdk_plugins->logging->data->file_options)
-    {
-        pathName = mContainerConfig->rdk_plugins->logging->data->file_options->path;
-        if (mContainerConfig->rdk_plugins->logging->data->file_options->limit_present)
-        {
-            limit = mContainerConfig->rdk_plugins->logging->data->file_options->limit;
-        }
-    }
+//     if (mContainerConfig->rdk_plugins->logging->data->file_options)
+//     {
+//         pathName = mContainerConfig->rdk_plugins->logging->data->file_options->path;
+//         if (mContainerConfig->rdk_plugins->logging->data->file_options->limit_present)
+//         {
+//             limit = mContainerConfig->rdk_plugins->logging->data->file_options->limit;
+//         }
+//     }
 
-    // if limit is -1 it means unlimited, but to make life easier just set it
-    // to the max value
-    if (limit < 0)
-        limit = SSIZE_MAX;
+//     // if limit is -1 it means unlimited, but to make life easier just set it
+//     // to the max value
+//     if (limit < 0)
+//         limit = SSIZE_MAX;
 
-    // Open both our file and /dev/null (so we can send to null if we hit the limit)
-    int outputFd = -1;
-    int devNullFd = open("/dev/null", O_CLOEXEC | O_WRONLY);
+//     // Open both our file and /dev/null (so we can send to null if we hit the limit)
+//     int outputFd = -1;
+//     int devNullFd = open("/dev/null", O_CLOEXEC | O_WRONLY);
 
-    if (pathName.empty())
-    {
-        AI_LOG_ERROR("Log settings set to log to file but no path provided. Sending to /dev/null");
-        outputFd = devNullFd;
-    }
-    else
-    {
-        outputFd = open(pathName.c_str(), flags, mode);
-        if (outputFd < 0)
-        {
-            // we continue creating the thread, it just means the thread will
-            // throw away everything it receives
-            AI_LOG_SYS_ERROR(errno, "failed to open/create '%s'", pathName.c_str());
-            outputFd = devNullFd;
-        }
-    }
+//     if (pathName.empty())
+//     {
+//         AI_LOG_ERROR("Log settings set to log to file but no path provided. Sending to /dev/null");
+//         outputFd = devNullFd;
+//     }
+//     else
+//     {
+//         outputFd = open(pathName.c_str(), flags, mode);
+//         if (outputFd < 0)
+//         {
+//             // we continue creating the thread, it just means the thread will
+//             // throw away everything it receives
+//             AI_LOG_SYS_ERROR(errno, "failed to open/create '%s'", pathName.c_str());
+//             outputFd = devNullFd;
+//         }
+//     }
 
-    AI_LOG_DEBUG("starting logger for container '%s' to write to '%s' (limit %zd bytes)",
-                 mUtils->getContainerId().c_str(), pathName.c_str(), limit);
+//     AI_LOG_DEBUG("starting logger for container '%s' to write to '%s' (limit %zd bytes)",
+//                  mUtils->getContainerId().c_str(), pathName.c_str(), limit);
 
-    char buf[PTY_BUFFER_SIZE];
-    memset(buf, 0, sizeof(buf));
+//     char buf[PTY_BUFFER_SIZE];
+//     memset(buf, 0, sizeof(buf));
 
-    ssize_t ret;
-    ssize_t offset = 0;
+//     ssize_t ret;
+//     ssize_t offset = 0;
 
-    bool limitHit = false;
+//     bool limitHit = false;
 
-    // Read from the fd until the file is closed
-    while (!cancellationToken)
-    {
-        // FD is blocking, so this will just block this thread until there
-        // is data to be read
-        ret = read(containerInfo.pttyFd, buf, sizeof(buf));
-        if (ret < 0)
-        {
-            AI_LOG_INFO("Container %s terminated, terminating logging thread",
-                        mUtils->getContainerId().c_str());
-            break;
-        }
-        if (ret == 0 && exitEof)
-        {
-            break;
-        }
+//     // Read from the fd until the file is closed
+//     while (!cancellationToken)
+//     {
+//         // FD is blocking, so this will just block this thread until there
+//         // is data to be read
+//         ret = read(containerInfo.pttyFd, buf, sizeof(buf));
+//         if (ret < 0)
+//         {
+//             AI_LOG_INFO("Container %s terminated, terminating logging thread",
+//                         mUtils->getContainerId().c_str());
+//             break;
+//         }
+//         if (ret == 0 && exitEof)
+//         {
+//             break;
+//         }
 
-        offset += ret;
+//         offset += ret;
 
-        // Have we hit the size limit?
-        if (offset <= limit)
-        {
-            // Write to the output file
-            write(outputFd, buf, ret);
-        }
-        else
-        {
-            // Hit the limit, send the data into the void
-            if (!limitHit)
-            {
-                AI_LOG_WARN("Logger for container %s has hit maximum size of %zu",
-                            mUtils->getContainerId().c_str(), limit);
-            }
-            limitHit = true;
-            write(devNullFd, buf, ret);
-        }
-    }
+//         // Have we hit the size limit?
+//         if (offset <= limit)
+//         {
+//             // Write to the output file
+//             write(outputFd, buf, ret);
+//         }
+//         else
+//         {
+//             // Hit the limit, send the data into the void
+//             if (!limitHit)
+//             {
+//                 AI_LOG_WARN("Logger for container %s has hit maximum size of %zu",
+//                             mUtils->getContainerId().c_str(), limit);
+//             }
+//             limitHit = true;
+//             write(devNullFd, buf, ret);
+//         }
+//     }
 
-    if (cancellationToken)
-    {
-        AI_LOG_INFO("Logging thread shut down by cancellation token");
-    }
+//     if (cancellationToken)
+//     {
+//         AI_LOG_INFO("Logging thread shut down by cancellation token");
+//     }
 
-    // Separate sections of log file for reabability
-    // (useful if we're writing lots of buffer dumps)
-    std::string marker = "---------------------------------------------\n";
-    write(outputFd, marker.c_str(), marker.length());
+//     // Separate sections of log file for reabability
+//     // (useful if we're writing lots of buffer dumps)
+//     std::string marker = "---------------------------------------------\n";
+//     write(outputFd, marker.c_str(), marker.length());
 
-    // Close the logfile
-    if (outputFd >= 0 && close(outputFd) != 0)
-    {
-        AI_LOG_SYS_ERROR(errno, "Failed to close file");
-    }
-}
+//     // Close the logfile
+//     if (outputFd >= 0 && close(outputFd) != 0)
+//     {
+//         AI_LOG_SYS_ERROR(errno, "Failed to close file");
+//     }
+// }

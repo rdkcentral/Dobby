@@ -367,7 +367,7 @@ void DobbyLogger::connectionMonitorThread(const int socketFd)
 
         std::lock_guard<std::mutex> locker(mLock);
 
-        IDobbyRdkLoggingPlugin::ContainerInfo info{
+        IDobbyRdkLoggingPlugin::LoggingOptions info{
             -1, // Unknown at this point as container isn't running
             connection,
             containerStdioFd};
@@ -414,6 +414,7 @@ bool DobbyLogger::StartContainerLogging(std::string containerId,
     }
 
     it->second.containerPid = containerPid;
+    it->second.createNewLog = createNewLog;
 
     if (!loggingPlugin)
     {
@@ -422,7 +423,7 @@ bool DobbyLogger::StartContainerLogging(std::string containerId,
     }
 
     // Logging plugin should now register poll sources on the epoll loop
-    loggingPlugin->RegisterPollSources(it->second, createNewLog, mPollLoop);
+    loggingPlugin->RegisterPollSources(it->second, mPollLoop);
 
     // Thread is up and running, don't need to track the connection any more
     // as thread can detect when the container closes and clean up
@@ -461,11 +462,6 @@ bool DobbyLogger::DumpBuffer(int bufferMemFd,
         return false;
     }
 
-    IDobbyRdkLoggingPlugin::ContainerInfo info{
-        containerPid,
-        -1, // No open connection that will need closing
-        bufferMemFd};
-
     // Actually do the logging
     if (!loggingPlugin)
     {
@@ -473,7 +469,7 @@ bool DobbyLogger::DumpBuffer(int bufferMemFd,
         return false;
     }
 
-    loggingPlugin->DumpToLog(info);
+    loggingPlugin->DumpToLog(bufferMemFd, createNewLog);
 
     AI_LOG_FN_EXIT();
     return true;
