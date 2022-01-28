@@ -23,6 +23,7 @@ add_library( ${PROJECT_NAME}
         SHARED
         source/LoggingPlugin.cpp
         source/JournaldSink.cpp
+        source/FileSink.cpp
         )
 
 target_include_directories(${PROJECT_NAME}

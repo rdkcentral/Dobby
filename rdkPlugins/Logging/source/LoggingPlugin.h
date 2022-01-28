@@ -60,11 +60,10 @@ public:
     std::vector<std::string> getDependencies() const override;
 
 public:
-    void RegisterPollSources(ContainerInfo &containerInfo,
-                             bool createNewFile,
+    void RegisterPollSources(LoggingOptions &loggingOptions,
                              std::shared_ptr<AICommon::IPollLoop> pollLoop) override;
 
-    void DumpToLog(ContainerInfo& containerInfo) override;
+    void DumpToLog(const int bufferFd, const bool startNewLog) override;
 
 private:
     // Locations the plugin can send the logs
@@ -76,9 +75,10 @@ private:
     };
 
 private:
-    std::shared_ptr<ILoggingSink> GetContainerSink();
-    void FileSink(const ContainerInfo &containerInfo, bool exitEof, bool createNew, const std::atomic_bool &cancellationToken);
-    void DevNullSink(const ContainerInfo &containerInfo, bool exitEof, const std::atomic_bool &cancellationToken);
+    std::shared_ptr<ILoggingSink> CreateSink(LoggingSink sinkType);
+    LoggingSink GetContainerSink();
+    //void FileSink(const LoggingOptions &containerInfo, bool exitEof, bool createNew, const std::atomic_bool &cancellationToken);
+    void DevNullSink(const LoggingOptions &containerInfo, bool exitEof, const std::atomic_bool &cancellationToken);
 
 private:
     const std::string mName;

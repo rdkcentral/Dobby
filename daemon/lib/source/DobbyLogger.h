@@ -71,7 +71,7 @@ private:
     int mSyslogFd;
     int mJournaldFd;
 
-    std::map<pid_t, IDobbyRdkLoggingPlugin::ContainerInfo> mTempConnections;
+    std::map<pid_t, IDobbyRdkLoggingPlugin::LoggingOptions> mTempConnections;
     std::map<pid_t, std::future<void>> mFutures;
 
     bool mShutdown;
