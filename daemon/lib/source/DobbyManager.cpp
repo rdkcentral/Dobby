@@ -109,12 +109,6 @@ DobbyManager::~DobbyManager()
     // TODO: clean-up all containers
 
     stopRuncMonitorThread();
-
-    // We must wait for all logging threads to finish before we start
-    // destructing DobbyManager, otherwise there's a chance we'll unload
-    // the logging plugin whilst the thread is logging data, which leads
-    // to undefined behaviour
-    mLogger->ShutdownLoggers();
 }
 
 // -----------------------------------------------------------------------------
@@ -1054,7 +1048,7 @@ bool DobbyManager::restartContainer(const ContainerId &id,
                 // If main container logging thread is still running,
                 // wait for it to finish before we dump the hook output
                 // to the log
-                mLogger->WaitForLoggingToFinish(container->containerPid);
+                //mLogger->WaitForLoggingToFinish(container->containerPid);
                 mLogger->DumpBuffer(bufferStream->getMemFd(), container->containerPid, loggingPlugin, false);
             }
         }
@@ -2127,7 +2121,7 @@ void DobbyManager::onChildExit()
                         // If main container logging thread is still running,
                         // wait for it to finish before we dump the hook output
                         // to the log
-                        mLogger->WaitForLoggingToFinish(container->containerPid);
+                        //mLogger->WaitForLoggingToFinish(container->containerPid);
                         mLogger->DumpBuffer(bufferStream->getMemFd(), container->containerPid, loggingPlugin, false);
                     }
                 }

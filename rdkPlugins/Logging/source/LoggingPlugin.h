@@ -21,6 +21,10 @@
 
 #include <DobbyLoggerBase.h>
 
+#include "IPollLoop.h"
+#include "PollLoop.h"
+#include "ILoggingSink.h"
+
 #include <sys/types.h>
 
 #include <unistd.h>
@@ -56,11 +60,11 @@ public:
     std::vector<std::string> getDependencies() const override;
 
 public:
-    // Logging Specific Methods
-    void LoggingLoop(IDobbyRdkLoggingPlugin::ContainerInfo containerInfo,
-                     const bool isBuffer,
-                     const bool createNew,
-                     const std::atomic_bool& cancellationToken) override;
+    void RegisterPollSources(ContainerInfo &containerInfo,
+                             bool createNewFile,
+                             std::shared_ptr<AICommon::IPollLoop> pollLoop) override;
+
+    void DumpToLog(ContainerInfo& containerInfo) override;
 
 private:
     // Locations the plugin can send the logs
@@ -72,17 +76,19 @@ private:
     };
 
 private:
-    LoggingSink GetContainerSink();
+    std::shared_ptr<ILoggingSink> GetContainerSink();
     void FileSink(const ContainerInfo &containerInfo, bool exitEof, bool createNew, const std::atomic_bool &cancellationToken);
     void DevNullSink(const ContainerInfo &containerInfo, bool exitEof, const std::atomic_bool &cancellationToken);
-#if defined(USE_SYSTEMD)
-    void JournaldSink(const ContainerInfo &containerInfo, bool exitEof, const std::atomic_bool &cancellationToken);
-#endif
 
 private:
     const std::string mName;
     std::shared_ptr<rt_dobby_schema> mContainerConfig;
     const std::shared_ptr<DobbyRdkPluginUtils> mUtils;
+
+    std::shared_ptr<ILoggingSink> mSink;
+
+    // TODO:: crap
+    std::shared_ptr<AICommon::IPollLoop> mPollLoop;
 };
 
 #endif // !defined(LOGGINGPLUGIN_H)

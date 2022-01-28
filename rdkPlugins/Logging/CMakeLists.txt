@@ -22,10 +22,12 @@ project(LoggingPlugin)
 add_library( ${PROJECT_NAME}
         SHARED
         source/LoggingPlugin.cpp
+        source/JournaldSink.cpp
         )
 
 target_include_directories(${PROJECT_NAME}
         PRIVATE
+        include
         $<TARGET_PROPERTY:DobbyDaemonLib,INTERFACE_INCLUDE_DIRECTORIES>
 )
 

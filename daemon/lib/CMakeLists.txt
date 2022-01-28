@@ -36,6 +36,7 @@ add_library( DobbyDaemonLib
         source/DobbyAsync.cpp
         source/DobbyWorkQueue.cpp
         source/DobbyLogger.cpp
+        source/DobbyLogRelay.cpp
 
         ${ADDITIONAL_SOURCES}
         )

@@ -16,8 +16,18 @@
     "network": {
       "externalInterfaces": [ "enp0s8", "enp0s3" ],
       "addressRange": "100.64.11.0"
-    }
+    },
 
+    "logRelay": {
+      "syslog": {
+        "enable": true,
+        "socketPath": "/tmp/dobby-syslog"
+      },
+      "journald": {
+        "enable": true,
+        "socketPath": "/tmp/dobby-journald"
+      }
+    }
   }
 
 

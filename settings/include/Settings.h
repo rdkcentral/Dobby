@@ -74,6 +74,8 @@ public:
     in_addr_t addressRange() const override;
     std::vector<std::string> defaultPlugins() const override;
 
+    LogRelaySettings logRelaySettings() const override;
+
     void dump(int aiLogLevel = -1) const;
 
 private:
@@ -119,6 +121,8 @@ private:
     std::vector<std::string> mExternalInterfaces;
     std::pair<std::string, in_addr_t> mAddressRange;
     std::vector<std::string>  mDefaultPlugins;
+
+    LogRelaySettings mLogRelaySettings;
 };
 
 #endif // !defined(SETTINGS_H)

@@ -26,6 +26,8 @@
 #include "IDobbyRdkLoggingPlugin.h"
 #include <IDobbySettings.h>
 #include "DobbyRdkPluginManager.h"
+#include "DobbyLogRelay.h"
+#include "PollLoop.h"
 #include <rt_dobby_schema.h>
 
 #include <pthread.h>
@@ -53,10 +55,8 @@ public:
                     std::shared_ptr<IDobbyRdkLoggingPlugin> loggingPlugin,
                     const bool createNewLog);
 
-    void WaitForLoggingToFinish(pid_t containerPid);
-    void ShutdownLoggers();
-
 private:
+    int createDgramSocket(const std::string &path);
     int createUnixSocket(const std::string path);
     int receiveFdFromSocket(const int connectionFd);
     void connectionMonitorThread(const int socketFd);
@@ -65,11 +65,22 @@ private:
     std::mutex mLock;
     int mSocketFd;
     const std::string mSocketPath;
+    const std::string mSyslogSocketPath;
+    const std::string mJournaldSocketPath;
+
+    int mSyslogFd;
+    int mJournaldFd;
 
     std::map<pid_t, IDobbyRdkLoggingPlugin::ContainerInfo> mTempConnections;
     std::map<pid_t, std::future<void>> mFutures;
 
-    std::atomic_bool mCancellationToken;
+    bool mShutdown;
+
+    std::shared_ptr<AICommon::PollLoop> mPollLoop;
+
+    std::shared_ptr<DobbyLogRelay> mSyslogRelay;
+    std::shared_ptr<DobbyLogRelay> mJournaldRelay;
 };
 
 #endif // !defined(DOBBYLOGGER_H)
+
