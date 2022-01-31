@@ -736,7 +736,7 @@ void PollLoop::run(const std::string& name, int priority)
                             {
                                 // Failed to get the shared_ptr, should we remove
                                 // it from the list of sources ?
-                               AI_LOG_ERROR("failed to get source shared_ptr");
+                                AI_LOG_ERROR("failed to get source shared_ptr");
                             }
                         }
                     }

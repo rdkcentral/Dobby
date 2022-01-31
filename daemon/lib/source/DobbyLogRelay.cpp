@@ -1,3 +1,22 @@
+/*
+* If not stated otherwise in this file or this component's LICENSE file the
+* following copyright and licenses apply:
+*
+* Copyright 2022 Sky UK
+*
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+* http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*/
+
 #include "DobbyLogRelay.h"
 
 #include <unistd.h>
@@ -12,7 +31,8 @@
 DobbyLogRelay::DobbyLogRelay(const std::string &sourceSocketPath,
                              const std::string &destinationSocketPath)
     : mSourceSocketPath(sourceSocketPath),
-      mDestinationSocketPath(destinationSocketPath)
+      mDestinationSocketPath(destinationSocketPath),
+      mBuf{}
 {
     AI_LOG_FN_ENTRY();
 
@@ -74,17 +94,16 @@ void DobbyLogRelay::process(const std::shared_ptr<AICommon::IPollLoop> &pollLoop
 {
     if (events & EPOLLIN)
     {
-        char buf[BUFFER_SIZE] = {};
         ssize_t ret;
+        memset(mBuf, 0, sizeof(mBuf));
 
-        ret = TEMP_FAILURE_RETRY(read(mSourceSocketFd, buf, sizeof(buf)));
-
+        ret = TEMP_FAILURE_RETRY(read(mSourceSocketFd, mBuf, sizeof(mBuf)));
         if (ret < 0)
         {
             AI_LOG_SYS_ERROR(errno, "Errror during read");
         }
 
-        if (sendto(mDestinationSocketFd, buf, sizeof(buf), 0, (struct sockaddr *)&mDestinationSocketAddress, sizeof(mDestinationSocketAddress)) < 0)
+        if (sendto(mDestinationSocketFd, mBuf, sizeof(mBuf), 0, (struct sockaddr *)&mDestinationSocketAddress, sizeof(mDestinationSocketAddress)) < 0)
         {
             AI_LOG_SYS_ERROR(errno, "sento failed");
         }

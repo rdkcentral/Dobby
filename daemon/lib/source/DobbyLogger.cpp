@@ -79,8 +79,8 @@ DobbyLogger::DobbyLogger(const std::shared_ptr<const IDobbySettings> &settings)
     mPollLoop->start();
 
     // Monitor that socket for new connections
-    mConnectionMonitor = std::thread(&DobbyLogger::connectionMonitorThread, this, mSocketFd);
-    mConnectionMonitor.detach();
+    std::thread socketConnectionMonitor(&DobbyLogger::connectionMonitorThread, this, mSocketFd);
+    socketConnectionMonitor.detach();
 
     AI_LOG_FN_EXIT();
 }

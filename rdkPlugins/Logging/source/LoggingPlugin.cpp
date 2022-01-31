@@ -153,7 +153,7 @@ void LoggingPlugin::RegisterPollSources(LoggingOptions &loggingOptions,
     // Register the poll source
     if (!mPollLoop->addSource(mSink, loggingOptions.pttyFd, EPOLLIN))
     {
-        AI_LOG_ERROR("Failed to add logging poll source for container %s", mUtils->getContainerId());
+        AI_LOG_ERROR("Failed to add logging poll source for container %s", mUtils->getContainerId().c_str());
     }
 
     AI_LOG_FN_EXIT();
@@ -188,7 +188,8 @@ std::shared_ptr<ILoggingSink> LoggingPlugin::CreateSink(LoggingPlugin::LoggingSi
     case LoggingSink::DevNull:
         return std::make_shared<NullSink>(mUtils->getContainerId(), mContainerConfig);
     default:
-        break;
+        AI_LOG_ERROR("Could not create sink - unknown sink type");
+        return nullptr;
     }
 }
 
