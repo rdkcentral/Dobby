@@ -30,7 +30,14 @@
 #include <sys/un.h>
 #include <limits.h>
 
-
+/**
+ * @brief A logging sink that sends the contents of the container stdout/err to a given file. The file
+ * can have a size limit set.
+ *
+ * Will create the requested file providing the directory exists. Creates a new file each time
+ * this class is instantiated
+ *
+ */
 FileSink::FileSink(const std::string &containerId, std::shared_ptr<rt_dobby_schema> &containerConfig)
     : mContainerConfig(containerConfig),
       mContainerId(containerId),
@@ -78,11 +85,22 @@ FileSink::~FileSink()
     }
 }
 
-void FileSink::SetLogOptions(const IDobbyRdkLoggingPlugin::LoggingOptions& options)
+/**
+ * @brief Sets the log options used by the process() method
+ */
+void FileSink::SetLogOptions(const IDobbyRdkLoggingPlugin::LoggingOptions &options)
 {
     mLoggingOptions = options;
 }
 
+/**
+ * @brief Reads all the available data from the provided fd and writes it to the output
+ * file. Does not attempt to seek the file descriptor back to the start
+ *
+ * If file limit is hit, will send data to /dev/null
+ *
+ * @param[in]   bufferFd    The fd to read from
+ */
 void FileSink::DumpLog(const int bufferFd)
 {
     // Take the lock
@@ -126,6 +144,11 @@ void FileSink::DumpLog(const int bufferFd)
     }
 }
 
+/**
+ * @brief Called by the pollLoop when an event occurs on the container ptty.
+ *
+ * Reads the contents of the ptty and logs to a file
+ */
 void FileSink::process(const std::shared_ptr<AICommon::IPollLoop> &pollLoop, uint32_t events)
 {
     std::lock_guard<std::mutex> locker(mLock);
@@ -137,31 +160,42 @@ void FileSink::process(const std::shared_ptr<AICommon::IPollLoop> &pollLoop, uin
 
         memset(mBuf, 0, sizeof(mBuf));
 
-        ret = read(mLoggingOptions.pttyFd, mBuf, sizeof(mBuf));
-        if (ret <= 0)
+        while (true)
         {
-            return;
-        }
+            ret = TEMP_FAILURE_RETRY(read(mLoggingOptions.pttyFd, mBuf, sizeof(mBuf)));
+            if (ret <= 0)
+            {
+                // We've reached the end of the data we can read so we're done here
+                if (errno == EWOULDBLOCK)
+                {
+                    return;
+                }
 
-        offset += ret;
-        if (offset <= mFileSizeLimit)
-        {
-            // Write to the output file
-            if (write(mOutputFileFd, mBuf, ret) < 0)
-            {
-                AI_LOG_SYS_ERROR(errno, "Write failed");
+                // Something went wrong whilst reading
+                AI_LOG_SYS_ERROR(errno, "Read from container tty failed");
+                return;
             }
-        }
-        else
-        {
-            // Hit the limit, send the data into the void
-            if (!mLimitHit)
+
+            offset += ret;
+            if (offset <= mFileSizeLimit)
             {
-                AI_LOG_WARN("Logger for container %s has hit maximum size of %zu",
-                            mContainerId.c_str(), mFileSizeLimit);
+                // Write to the output file
+                if (write(mOutputFileFd, mBuf, ret) < 0)
+                {
+                    AI_LOG_SYS_ERROR(errno, "Write failed");
+                }
             }
-            mLimitHit = true;
-            write(mDevNullFd, mBuf, ret);
+            else
+            {
+                // Hit the limit, send the data into the void
+                if (!mLimitHit)
+                {
+                    AI_LOG_WARN("Logger for container %s has hit maximum size of %zu",
+                                mContainerId.c_str(), mFileSizeLimit);
+                }
+                mLimitHit = true;
+                write(mDevNullFd, mBuf, ret);
+            }
         }
 
         return;
@@ -169,7 +203,7 @@ void FileSink::process(const std::shared_ptr<AICommon::IPollLoop> &pollLoop, uin
 
     if (events & EPOLLHUP)
     {
-        AI_LOG_INFO("EPOLLHUP! Removing ourself from the event loop!");
+        AI_LOG_DEBUG("EPOLLHUP! Removing ourself from the event loop!");
 
         // Remove ourselves from the event loop
         pollLoop->delSource(shared_from_this());

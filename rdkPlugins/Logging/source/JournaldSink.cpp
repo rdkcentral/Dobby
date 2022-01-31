@@ -126,16 +126,26 @@ void JournaldSink::process(const std::shared_ptr<AICommon::IPollLoop> &pollLoop,
         ssize_t ret;
         memset(mBuf, 0, sizeof(mBuf));
 
-        ret = TEMP_FAILURE_RETRY(read(mLoggingOptions.pttyFd, mBuf, sizeof(mBuf)));
-
-        if (ret < 0)
+        while (true)
         {
-            AI_LOG_SYS_ERROR(errno, "Read from container tty failed");
-        }
+            ret = TEMP_FAILURE_RETRY(read(mLoggingOptions.pttyFd, mBuf, sizeof(mBuf)));
+            if (ret < 0)
+            {
+                // We've reached the end of the data we can read so we're done here
+                if (errno == EWOULDBLOCK)
+                {
+                    return;
+                }
 
-        if (write(mJournaldSteamFd, mBuf, ret) < 0)
-        {
-            AI_LOG_SYS_ERROR(errno, "Write to journald stream failed");
+                // Something went wrong whilst reading
+                AI_LOG_SYS_ERROR(errno, "Read from container tty failed");
+                return;
+            }
+
+            if (write(mJournaldSteamFd, mBuf, ret) < 0)
+            {
+                AI_LOG_SYS_ERROR(errno, "Write to journald stream failed");
+            }
         }
 
         return;
@@ -144,7 +154,7 @@ void JournaldSink::process(const std::shared_ptr<AICommon::IPollLoop> &pollLoop,
     // Container shutdown
     if (events & EPOLLHUP)
     {
-        AI_LOG_INFO("EPOLLHUP! Removing ourselves from the event loop!");
+        AI_LOG_DEBUG("EPOLLHUP! Removing ourselves from the event loop!");
 
         // Remove ourselves from the event loop
         pollLoop->delSource(shared_from_this());

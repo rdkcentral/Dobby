@@ -206,6 +206,11 @@ int DobbyLogger::receiveFdFromSocket(const int connectionFd)
     // Get the fd sent by crun
     int stdioFd;
     memcpy(&stdioFd, CMSG_DATA(cmsg), sizeof(stdioFd));
+
+    // Put the fd into non-blocking mode
+    int flags = fcntl(stdioFd, F_GETFL, 0);
+    fcntl(stdioFd, F_SETFL, flags | O_NONBLOCK);
+
     return stdioFd;
 }
 

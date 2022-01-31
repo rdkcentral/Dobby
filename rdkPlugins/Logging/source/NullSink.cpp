@@ -90,16 +90,27 @@ void NullSink::process(const std::shared_ptr<AICommon::IPollLoop> &pollLoop, uin
         ssize_t ret;
         memset(mBuf, 0, sizeof(mBuf));
 
-        ret = TEMP_FAILURE_RETRY(read(mLoggingOptions.pttyFd, mBuf, sizeof(mBuf)));
-
-        if (ret < 0)
+        while (true)
         {
-            AI_LOG_SYS_ERROR(errno, "Read from container tty failed");
-        }
+            ret = TEMP_FAILURE_RETRY(read(mLoggingOptions.pttyFd, mBuf, sizeof(mBuf)));
 
-        if (write(mDevNullFd, mBuf, ret) < 0)
-        {
-            AI_LOG_SYS_ERROR(errno, "Write to journald stream failed");
+            if (ret < 0)
+            {
+                // We've reached the end of the data we can read so we're done here
+                if (errno == EWOULDBLOCK)
+                {
+                    return;
+                }
+
+                // Something went wrong whilst reading
+                AI_LOG_SYS_ERROR(errno, "Read from container tty failed");
+                return;
+            }
+
+            if (write(mDevNullFd, mBuf, ret) < 0)
+            {
+                AI_LOG_SYS_ERROR(errno, "Write to journald stream failed");
+            }
         }
 
         return;
