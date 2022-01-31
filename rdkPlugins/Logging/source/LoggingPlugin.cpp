@@ -125,6 +125,13 @@ std::vector<std::string> LoggingPlugin::getDependencies() const
     return dependencies;
 }
 
+/**
+ * @brief Adds the necessary poll source(s) to the provided pollLoop instance
+ * based on the logging sink specified in the container config
+ *
+ * @param[in]   loggingOptions  Info about the container such as the fd to read from
+ * @param[in]   pollLoop        The poll loop the sources should be added to
+ */
 void LoggingPlugin::RegisterPollSources(LoggingOptions &loggingOptions,
                                         std::shared_ptr<AICommon::IPollLoop> pollLoop)
 {
@@ -159,6 +166,14 @@ void LoggingPlugin::RegisterPollSources(LoggingOptions &loggingOptions,
     AI_LOG_FN_EXIT();
 }
 
+/**
+ * @brief Dump the contents of a file descriptor to the log sink
+ *
+ * Will block until the contents of the fd has been written to the
+ * log
+ *
+ * @param[in]   bufferFd    The file descriptor to read from
+ */
 void LoggingPlugin::DumpToLog(const int bufferFd)
 {
     AI_LOG_FN_ENTRY();
@@ -177,6 +192,14 @@ void LoggingPlugin::DumpToLog(const int bufferFd)
 
 // Begin private methods
 
+/**
+ * @brief Constructs an instance of the requested sink
+ *
+ * @param[in]  sinkType    The type of sink to be constructed
+ *
+ * @return shared_ptr pointing to the instance of the logging sink. Nullptr if no sink
+ * of the requested type is available
+ */
 std::shared_ptr<ILoggingSink> LoggingPlugin::CreateSink(LoggingPlugin::LoggingSink sinkType)
 {
     switch (sinkType)
