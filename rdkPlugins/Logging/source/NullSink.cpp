@@ -1,4 +1,4 @@
-#include "JournaldSink.h"
+#include "NullSink.h"
 
 #include <unistd.h>
 #include <strings.h>
@@ -8,11 +8,9 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 
-#include <systemd/sd-journal.h>
-
 #include <Logging.h>
 
-JournaldSink::JournaldSink(const std::string &containerId, std::shared_ptr<rt_dobby_schema> &containerConfig)
+NullSink::NullSink(const std::string &containerId, std::shared_ptr<rt_dobby_schema> &containerConfig)
     : mContainerConfig(containerConfig),
       mContainerId(containerId),
       mBuf{}
@@ -21,64 +19,32 @@ JournaldSink::JournaldSink(const std::string &containerId, std::shared_ptr<rt_do
     // journald will handle line breaks etc automatically
     AI_LOG_FN_ENTRY();
 
-    int logPriority = LOG_INFO;
-    if (mContainerConfig->rdk_plugins->logging->data->journald_options)
+    mDevNullFd = open("/dev/null", O_CLOEXEC | O_WRONLY);
+    if (mDevNullFd < 0)
     {
-        std::string priority = mContainerConfig->rdk_plugins->logging->data->journald_options->priority;
-        if (!priority.empty())
-        {
-            const std::map<std::string, int> options =
-                {
-                    {"LOG_EMERG", 0},
-                    {"LOG_ALERT", 1},
-                    {"LOG_CRIT", 2},
-                    {"LOG_ERR", 3},
-                    {"LOG_WARNING", 4},
-                    {"LOG_NOTICE", 5},
-                    {"LOG_INFO", 6},
-                    {"LOG_DEBUG", 7}};
-
-            auto it = options.find(priority);
-            if (it != options.end())
-            {
-                logPriority = it->second;
-            }
-            else
-            {
-                AI_LOG_WARN("Could not parse journald priority - using LOG_INFO");
-            }
-        }
-    }
-
-    mJournaldSteamFd = sd_journal_stream_fd(mContainerId.c_str(), logPriority, 1);
-    if (mJournaldSteamFd < 0)
-    {
-        AI_LOG_SYS_ERROR(-mJournaldSteamFd, "Failed to create journald stream fd");
-
-        // Just use /dev/null instead
-        mJournaldSteamFd = open("/dev/null", O_CLOEXEC | O_WRONLY);
+        AI_LOG_SYS_ERROR(errno, "Failed to open /dev/null");
     }
 
     AI_LOG_FN_EXIT();
 }
 
-JournaldSink::~JournaldSink()
+NullSink::~NullSink()
 {
-    if (mJournaldSteamFd > 0)
+    if (mDevNullFd > 0)
     {
-        if (close(mJournaldSteamFd) < 0)
+        if (close(mDevNullFd) < 0)
         {
             AI_LOG_SYS_ERROR(errno, "Failed to close journald stream");
         }
     }
 }
 
-void JournaldSink::SetLogOptions(const IDobbyRdkLoggingPlugin::LoggingOptions& options)
+void NullSink::SetLogOptions(const IDobbyRdkLoggingPlugin::LoggingOptions &options)
 {
     mLoggingOptions = options;
 }
 
-void JournaldSink::DumpLog(const int bufferFd)
+void NullSink::DumpLog(const int bufferFd)
 {
     std::lock_guard<std::mutex> locker(mLock);
 
@@ -93,11 +59,11 @@ void JournaldSink::DumpLog(const int bufferFd)
             break;
         }
 
-        write(mJournaldSteamFd, mBuf, ret);
+        write(mDevNullFd, mBuf, ret);
     }
 }
 
-void JournaldSink::process(const std::shared_ptr<AICommon::IPollLoop> &pollLoop, uint32_t events)
+void NullSink::process(const std::shared_ptr<AICommon::IPollLoop> &pollLoop, uint32_t events)
 {
     std::lock_guard<std::mutex> locker(mLock);
 
@@ -114,7 +80,7 @@ void JournaldSink::process(const std::shared_ptr<AICommon::IPollLoop> &pollLoop,
             AI_LOG_SYS_ERROR(errno, "Read from container tty failed");
         }
 
-        if (write(mJournaldSteamFd, mBuf, ret) < 0)
+        if (write(mDevNullFd, mBuf, ret) < 0)
         {
             AI_LOG_SYS_ERROR(errno, "Write to journald stream failed");
         }

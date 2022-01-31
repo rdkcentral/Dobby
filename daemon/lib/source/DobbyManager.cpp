@@ -470,7 +470,7 @@ bool DobbyManager::createAndStart(const ContainerId &id,
         // Dump the runtime output to a new file even if the container failed to start
         if (loggingPlugin)
         {
-            mLogger->DumpBuffer(createBuffer->getMemFd(), -1, loggingPlugin, true);
+            mLogger->DumpBuffer(createBuffer->getMemFd(), -1, loggingPlugin);
         }
 
         container->containerPid = -1;
@@ -505,12 +505,12 @@ bool DobbyManager::createAndStart(const ContainerId &id,
     if (loggingPlugin)
     {
         // Dump the contents of the buffers even if the container didn't start
-        mLogger->DumpBuffer(createBuffer->getMemFd(), container->containerPid, loggingPlugin, true);
-        mLogger->DumpBuffer(startBuffer->getMemFd(), container->containerPid, loggingPlugin, false);
+        mLogger->DumpBuffer(createBuffer->getMemFd(), container->containerPid, loggingPlugin);
+        mLogger->DumpBuffer(startBuffer->getMemFd(), container->containerPid, loggingPlugin);
 
         if (started)
         {
-            mLogger->StartContainerLogging(id.str(), pids.first, pids.second, loggingPlugin, false);
+            mLogger->StartContainerLogging(id.str(), pids.first, pids.second, loggingPlugin);
         }
     }
 
@@ -666,7 +666,7 @@ bool DobbyManager::createAndStartContainer(const ContainerId &id,
         auto loggingPlugin = GetContainerLogger(container);
         if (loggingPlugin)
         {
-            mLogger->DumpBuffer(destroyBuffer->getMemFd(), container->containerPid, loggingPlugin, false);
+            mLogger->DumpBuffer(destroyBuffer->getMemFd(), container->containerPid, loggingPlugin);
         }
 
         // clear the pid now it's been killed
@@ -1136,8 +1136,7 @@ bool DobbyManager::restartContainer(const ContainerId &id,
                 // If main container logging thread is still running,
                 // wait for it to finish before we dump the hook output
                 // to the log
-                //mLogger->WaitForLoggingToFinish(container->containerPid);
-                mLogger->DumpBuffer(bufferStream->getMemFd(), container->containerPid, loggingPlugin, false);
+                mLogger->DumpBuffer(bufferStream->getMemFd(), container->containerPid, loggingPlugin);
             }
         }
     }
@@ -1451,7 +1450,7 @@ bool DobbyManager::execInContainer(int32_t cd, const std::string &options, const
                 else
                 {
                     // Spin up thread to capture output from the exec command (could be long running)
-                    mLogger->StartContainerLogging(id.str(), pids.first, container->containerPid, loggingPlugin, false);
+                    mLogger->StartContainerLogging(id.str(), pids.first, container->containerPid, loggingPlugin);
                 }
             }
 
@@ -2230,8 +2229,7 @@ void DobbyManager::onChildExit()
                         // If main container logging thread is still running,
                         // wait for it to finish before we dump the hook output
                         // to the log
-                        //mLogger->WaitForLoggingToFinish(container->containerPid);
-                        mLogger->DumpBuffer(bufferStream->getMemFd(), container->containerPid, loggingPlugin, false);
+                        mLogger->DumpBuffer(bufferStream->getMemFd(), container->containerPid, loggingPlugin);
                     }
                 }
 

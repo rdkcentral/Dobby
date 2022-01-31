@@ -2,8 +2,6 @@
 
 #include "ILoggingSink.h"
 
-#define PTY_BUFFER_SIZE 4096
-
 class FileSink : public ILoggingSink
 {
 public:
@@ -12,7 +10,7 @@ public:
     ~FileSink();
 
 public:
-    void DumpLog(const int bufferFd, const bool startNewLog) override;
+    void DumpLog(const int bufferFd) override;
 
     void SetLogOptions(const IDobbyRdkLoggingPlugin::LoggingOptions &options) override;
 
@@ -20,7 +18,6 @@ public:
 
 private:
     int openFile();
-    void closeFile();
 
 private:
     const std::shared_ptr<rt_dobby_schema> mContainerConfig;
@@ -30,4 +27,9 @@ private:
     ssize_t mFileSizeLimit;
     int mOutputFileFd;
     int mDevNullFd;
+
+    bool mLimitHit;
+    char mBuf[PTY_BUFFER_SIZE];
+
+    std::mutex mLock;
 };
