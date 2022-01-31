@@ -77,8 +77,6 @@ private:
 private:
     std::shared_ptr<ILoggingSink> CreateSink(LoggingSink sinkType);
     LoggingSink GetContainerSink();
-    //void FileSink(const LoggingOptions &containerInfo, bool exitEof, bool createNew, const std::atomic_bool &cancellationToken);
-    void DevNullSink(const LoggingOptions &containerInfo, bool exitEof, const std::atomic_bool &cancellationToken);
 
 private:
     const std::string mName;
@@ -86,8 +84,6 @@ private:
     const std::shared_ptr<DobbyRdkPluginUtils> mUtils;
 
     std::shared_ptr<ILoggingSink> mSink;
-
-    // TODO:: crap
     std::shared_ptr<AICommon::IPollLoop> mPollLoop;
 };
 

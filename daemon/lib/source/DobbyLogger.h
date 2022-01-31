@@ -75,8 +75,6 @@ private:
 
     std::shared_ptr<DobbyLogRelay> mSyslogRelay;
     std::shared_ptr<DobbyLogRelay> mJournaldRelay;
-
-    std::thread mConnectionMonitor;
 };
 
 #endif // !defined(DOBBYLOGGER_H)
