@@ -19,12 +19,21 @@
 # CMake will prefix this with "lib"
 project(LoggingPlugin)
 
-add_library( ${PROJECT_NAME}
-        SHARED
+set(LOGGING_PLUGIN_SRC
         source/LoggingPlugin.cpp
-        source/JournaldSink.cpp
         source/FileSink.cpp
         source/NullSink.cpp
+)
+
+if (USE_SYSTEMD)
+        list(APPEND LOGGING_PLUGIN_SRC
+                source/JournaldSink.cpp
+        )
+endif()
+
+add_library( ${PROJECT_NAME}
+        SHARED
+        ${LOGGING_PLUGIN_SRC}
         )
 
 target_include_directories(${PROJECT_NAME}
@@ -42,5 +51,11 @@ install(
 target_link_libraries(${PROJECT_NAME}
         DobbyRdkPluginCommonLib
 )
+
+if (USE_SYSTEMD)
+        target_link_libraries(${PROJECT_NAME}
+                systemd
+        )
+endif()
 
 set_target_properties( ${PROJECT_NAME} PROPERTIES SOVERSION 1 )

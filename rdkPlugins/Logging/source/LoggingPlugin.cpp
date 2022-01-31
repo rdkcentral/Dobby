@@ -182,7 +182,12 @@ std::shared_ptr<ILoggingSink> LoggingPlugin::CreateSink(LoggingPlugin::LoggingSi
     switch (sinkType)
     {
     case LoggingSink::Journald:
+#ifdef USE_SYSTEMD
         return std::make_shared<JournaldSink>(mUtils->getContainerId(), mContainerConfig);
+#else
+        AI_LOG_ERROR("Cannot create journald sink - Dobby built without systemd support");
+        return std::make_shared<NullSink>(mUtils->getContainerId(), mContainerConfig);
+#endif
     case LoggingSink::File:
         return std::make_shared<FileSink>(mUtils->getContainerId(), mContainerConfig);
     case LoggingSink::DevNull:
