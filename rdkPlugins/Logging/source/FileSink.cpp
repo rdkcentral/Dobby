@@ -1,5 +1,7 @@
 #include "FileSink.h"
 
+#include <Logging.h>
+
 #include <unistd.h>
 #include <strings.h>
 #include <fcntl.h>
@@ -10,20 +12,31 @@
 #include <limits.h>
 
 
-#include <Logging.h>
-
 FileSink::FileSink(const std::string &containerId, std::shared_ptr<rt_dobby_schema> &containerConfig)
     : mContainerConfig(containerConfig),
       mContainerId(containerId),
-      mLoggingOptions({}),
-      mOutputFileFd(openFile())
+      mLoggingOptions{},
+      mLimitHit(false),
+      mBuf{}
 {
     AI_LOG_FN_ENTRY();
 
+    // If we can't open dev/null something weird is going on
     mDevNullFd = open("/dev/null", O_CLOEXEC | O_WRONLY);
     if (mDevNullFd < 0)
     {
         AI_LOG_SYS_ERROR(errno, "Failed to open /dev/null");
+    }
+
+    mOutputFileFd = openFile();
+    if (mOutputFileFd < 0)
+    {
+        // Couldn't open our output file, send to /dev/null to avoid blocking
+        AI_LOG_SYS_ERROR(errno, "Failed to open container logfile - sending to /dev/null");
+        if (mDevNullFd > 0)
+        {
+            mOutputFileFd = mDevNullFd;
+        }
     }
 
     AI_LOG_FN_EXIT();
@@ -31,44 +44,40 @@ FileSink::FileSink(const std::string &containerId, std::shared_ptr<rt_dobby_sche
 
 FileSink::~FileSink()
 {
-    close(mDevNullFd);
+    // Close everything we opened
+    if (close(mDevNullFd) < 0)
+    {
+        AI_LOG_SYS_ERROR(errno, "Failed to close /dev/null");
+    }
 
     if (mOutputFileFd > 0)
     {
-        close(mOutputFileFd);
+        if (close(mOutputFileFd) < 0)
+        {
+            AI_LOG_SYS_ERROR(errno, "Failed to close output file");
+        }
     }
-
-    closeFile();
 }
 
 void FileSink::SetLogOptions(const IDobbyRdkLoggingPlugin::LoggingOptions& options)
 {
     mLoggingOptions = options;
-    AI_LOG_INFO("ptty fd - %d", mLoggingOptions.pttyFd);
 }
 
-void FileSink::DumpLog(const int bufferFd, const bool startNewLog)
+void FileSink::DumpLog(const int bufferFd)
 {
-    // // Starting a new log file? Close the existing file and open a new one so we truncate
-    // if (startNewLog)
-    // {
-    //     AI_LOG_INFO("STARTING NEW FILE!");
-    //     if (mOutputFileFd > 0)
-    //     {
-    //         closeFile();
-    //         mOutputFileFd = openFile();
-    //     }
-    // }
-    char buf[PTY_BUFFER_SIZE];
-    memset(buf, 0, sizeof(buf));
+    // Take the lock
+    std::lock_guard<std::mutex> locker(mLock);
+
+    memset(mBuf, 0, sizeof(mBuf));
 
     ssize_t ret;
     ssize_t offset = 0;
 
-    bool limitHit = false;
+    // Read all the data from the provided file descriptor
     while (true)
     {
-        ret = read(bufferFd, buf, sizeof(buf));
+        ret = read(bufferFd, mBuf, sizeof(mBuf));
         if (ret <= 0)
         {
             break;
@@ -79,7 +88,7 @@ void FileSink::DumpLog(const int bufferFd, const bool startNewLog)
         if (offset <= mFileSizeLimit)
         {
             // Write to the output file
-            if (write(mOutputFileFd, buf, ret) < 0)
+            if (write(mOutputFileFd, mBuf, ret) < 0)
             {
                 AI_LOG_SYS_ERROR(errno, "Write failed");
             }
@@ -87,19 +96,58 @@ void FileSink::DumpLog(const int bufferFd, const bool startNewLog)
         else
         {
             // Hit the limit, send the data into the void
-            if (!limitHit)
+            if (!mLimitHit)
             {
                 AI_LOG_WARN("Logger for container %s has hit maximum size of %zu",
                             mContainerId.c_str(), mFileSizeLimit);
             }
-            limitHit = true;
-            write(mDevNullFd, buf, ret);
+            mLimitHit = true;
+            write(mDevNullFd, mBuf, ret);
         }
     }
 }
 
 void FileSink::process(const std::shared_ptr<AICommon::IPollLoop> &pollLoop, uint32_t events)
 {
+    std::lock_guard<std::mutex> locker(mLock);
+
+    if (events & EPOLLIN)
+    {
+        ssize_t ret;
+        ssize_t offset = 0;
+
+        memset(mBuf, 0, sizeof(mBuf));
+
+        ret = read(mLoggingOptions.pttyFd, mBuf, sizeof(mBuf));
+        if (ret <= 0)
+        {
+            return;
+        }
+
+        offset += ret;
+        if (offset <= mFileSizeLimit)
+        {
+            // Write to the output file
+            if (write(mOutputFileFd, mBuf, ret) < 0)
+            {
+                AI_LOG_SYS_ERROR(errno, "Write failed");
+            }
+        }
+        else
+        {
+            // Hit the limit, send the data into the void
+            if (!mLimitHit)
+            {
+                AI_LOG_WARN("Logger for container %s has hit maximum size of %zu",
+                            mContainerId.c_str(), mFileSizeLimit);
+            }
+            mLimitHit = true;
+            write(mDevNullFd, mBuf, ret);
+        }
+
+        return;
+    }
+
     if (events & EPOLLHUP)
     {
         AI_LOG_INFO("EPOLLHUP! Removing ourself from the event loop!");
@@ -122,28 +170,10 @@ void FileSink::process(const std::shared_ptr<AICommon::IPollLoop> &pollLoop, uin
     }
 }
 
-void FileSink::closeFile()
-{
-    AI_LOG_INFO("Closing output fd");
-    close(mOutputFileFd);
-}
-
 int FileSink::openFile()
 {
     const mode_t mode = 0644;
-
-    int flags;
-    // // Do we want to append to the file or create a new empty file?
-    // if (append)
-    // {
-    //     flags = O_CREAT | O_TRUNC | O_WRONLY | O_CLOEXEC;
-    // }
-    // else
-    // {
-    //     flags = O_CREAT | O_APPEND | O_WRONLY | O_CLOEXEC;
-    // }
-
-    flags = O_CREAT | O_TRUNC | O_APPEND | O_WRONLY | O_CLOEXEC;
+    int flags = O_CREAT | O_TRUNC | O_APPEND | O_WRONLY | O_CLOEXEC;
 
     // Read the options from the config if possible
     std::string pathName;
@@ -159,27 +189,23 @@ int FileSink::openFile()
     // if limit is -1 it means unlimited, but to make life easier just set it
     // to the max value
     if (mFileSizeLimit < 0)
+    {
         mFileSizeLimit = SSIZE_MAX;
+    }
 
     int openedFd = -1;
-
-    // Open both our file and /dev/null (so we can send to null if we hit the limit)
-    int devNullFd = open("/dev/null", O_CLOEXEC | O_WRONLY);
-
     if (pathName.empty())
     {
-        AI_LOG_ERROR("Log settings set to log to file but no path provided. Sending to /dev/null");
-        openedFd = devNullFd;
+        AI_LOG_ERROR("Log settings set to log to file but no path provided");
+        return -1;
     }
     else
     {
-        AI_LOG_INFO(">>> About to open %s", pathName.c_str());
         openedFd = open(pathName.c_str(), flags, mode);
         if (openedFd < 0)
         {
-            // throw away everything we receive
             AI_LOG_SYS_ERROR(errno, "failed to open/create '%s'", pathName.c_str());
-            openedFd = devNullFd;
+            return -1;
         }
     }
 

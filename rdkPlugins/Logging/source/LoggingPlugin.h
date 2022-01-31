@@ -63,7 +63,7 @@ public:
     void RegisterPollSources(LoggingOptions &loggingOptions,
                              std::shared_ptr<AICommon::IPollLoop> pollLoop) override;
 
-    void DumpToLog(const int bufferFd, const bool startNewLog) override;
+    void DumpToLog(const int bufferFd) override;
 
 private:
     // Locations the plugin can send the logs

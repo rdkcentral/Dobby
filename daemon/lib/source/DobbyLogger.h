@@ -47,13 +47,11 @@ public:
     bool StartContainerLogging(std::string containerId,
                                pid_t runtimePid,
                                pid_t containerPid,
-                               std::shared_ptr<IDobbyRdkLoggingPlugin> loggingPlugin,
-                               const bool createNewLog);
+                               std::shared_ptr<IDobbyRdkLoggingPlugin> loggingPlugin);
 
     bool DumpBuffer(int bufferMemFd,
                     pid_t containerPid,
-                    std::shared_ptr<IDobbyRdkLoggingPlugin> loggingPlugin,
-                    const bool createNewLog);
+                    std::shared_ptr<IDobbyRdkLoggingPlugin> loggingPlugin);
 
 private:
     int createDgramSocket(const std::string &path);
@@ -61,25 +59,24 @@ private:
     int receiveFdFromSocket(const int connectionFd);
     void connectionMonitorThread(const int socketFd);
 
+    void closeAndDeleteSocket(const int fd, const std::string& path);
+
 private:
     std::mutex mLock;
+
     int mSocketFd;
     const std::string mSocketPath;
     const std::string mSyslogSocketPath;
     const std::string mJournaldSocketPath;
 
-    int mSyslogFd;
-    int mJournaldFd;
-
     std::map<pid_t, IDobbyRdkLoggingPlugin::LoggingOptions> mTempConnections;
-    std::map<pid_t, std::future<void>> mFutures;
-
-    bool mShutdown;
 
     std::shared_ptr<AICommon::PollLoop> mPollLoop;
 
     std::shared_ptr<DobbyLogRelay> mSyslogRelay;
     std::shared_ptr<DobbyLogRelay> mJournaldRelay;
+
+    std::thread mConnectionMonitor;
 };
 
 #endif // !defined(DOBBYLOGGER_H)

@@ -58,14 +58,12 @@ public:
         int connectionFd;
         // fd of the container pseudo-terminal master fd
         int pttyFd;
-        // If possible, start a new log (i.e. if logging to file, create an empty file)
-        bool createNewLog;
     };
 
     virtual void RegisterPollSources(LoggingOptions& loggingOptions,
                                     std::shared_ptr<AICommon::IPollLoop> pollLoop) = 0;
 
-    virtual void DumpToLog(const int bufferFd, const bool startNewLog) = 0;
+    virtual void DumpToLog(const int bufferFd) = 0;
 };
 
 // -----------------------------------------------------------------------------

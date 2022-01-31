@@ -2,11 +2,11 @@
 
 #include "ILoggingSink.h"
 
-class JournaldSink : public ILoggingSink
+class NullSink : public ILoggingSink
 {
 public:
-    JournaldSink(const std::string &containerId, std::shared_ptr<rt_dobby_schema> &containerConfig);
-    ~JournaldSink();
+    NullSink(const std::string &containerId, std::shared_ptr<rt_dobby_schema> &containerConfig);
+    ~NullSink();
 
 public:
     void DumpLog(const int bufferFd) override;
@@ -16,7 +16,7 @@ public:
     void process(const std::shared_ptr<AICommon::IPollLoop> &pollLoop, uint32_t events) override;
 
 private:
-    int mJournaldSteamFd;
+    int mDevNullFd;
     const std::shared_ptr<rt_dobby_schema> mContainerConfig;
     const std::string mContainerId;
     IDobbyRdkLoggingPlugin::LoggingOptions mLoggingOptions;

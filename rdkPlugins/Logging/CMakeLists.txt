@@ -24,6 +24,7 @@ add_library( ${PROJECT_NAME}
         source/LoggingPlugin.cpp
         source/JournaldSink.cpp
         source/FileSink.cpp
+        source/NullSink.cpp
         )
 
 target_include_directories(${PROJECT_NAME}
