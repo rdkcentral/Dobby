@@ -23,7 +23,6 @@
 #include "Netfilter.h"
 #include "NetworkingHelper.h"
 #include "rt_dobby_schema.h"
-#include <DobbyRdkPluginProxy.h>
 #include <DobbyRdkPluginUtils.h>
 
 #include <arpa/inet.h>
@@ -52,7 +51,6 @@ namespace NetworkSetup
 
     bool setupVeth(const std::shared_ptr<DobbyRdkPluginUtils> &utils,
                    const std::shared_ptr<Netfilter> &netfilter,
-                   const std::shared_ptr<DobbyRdkPluginProxy> &dobbyProxy,
                    const std::shared_ptr<NetworkingHelper> &helper,
                    const std::string &rootfsPath,
                    const std::string &containerId,

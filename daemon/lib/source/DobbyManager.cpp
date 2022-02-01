@@ -35,7 +35,6 @@
 #include "DobbyStats.h"
 #include "DobbyFileAccessFixer.h"
 #include "DobbyAsync.h"
-#include "DobbyState.h"
 
 #if defined(LEGACY_COMPONENTS)
 #  include "DobbySpecConfig.h"
@@ -87,7 +86,6 @@ DobbyManager::DobbyManager(const std::shared_ptr<IDobbyEnv> &env,
     , mSettings(settings)
     , mLogger(std::make_unique<DobbyLogger>(settings))
     , mRunc(std::make_unique<DobbyRunC>(utils, settings))
-    , mState(std::make_shared<DobbyState>(settings))
     , mRuncMonitorTerminate(false)
 #if defined(LEGACY_COMPONENTS)
     , mLegacyPlugins(new DobbyLegacyPluginManager(env, utils))
@@ -962,6 +960,20 @@ int32_t DobbyManager::startContainerFromBundle(const ContainerId &id,
                 AI_LOG_FN_EXIT();
                 return cd;
             }
+            else
+            {
+                // If the container was launched from a custom config, delete
+                // the custom config, if we succeed to start then cleanup will
+                // be done by onChildExit.
+                if (!container->customConfigFilePath.empty())
+                {
+                    if (remove(container->customConfigFilePath.c_str()) != 0)
+                    {
+                        AI_LOG_SYS_ERROR(errno, "Failed to remove custom config '%s'",
+                        container->customConfigFilePath.c_str());
+                    }
+                }
+            }
         }
     }
     else
@@ -1669,102 +1681,6 @@ bool DobbyManager::createBundle(const ContainerId &id,
 }
 #endif //defined(LEGACY_COMPONENTS)
 
-
-
-// -----------------------------------------------------------------------------
-/**
- *  @brief Gets the number of veth interfaces connected through bridge
- *
- *  @return number of interfaces connected
- */
-uint32_t DobbyManager::getBridgeConnections()
-{
-    return mState->getBridgeConnections();
-}
-
-// -----------------------------------------------------------------------------
-/**
- *  @brief Picks the next available ip address from the pool of addresses
- *
- *  @return returns free ip address from the pool, 0 if none available
- */
-uint32_t DobbyManager::getIpAddress(const std::string &vethName)
-{
-    return mState->getIpAddress(vethName);
-}
-
-// -----------------------------------------------------------------------------
-/**
- *  @brief Adds the address back to the pool of available addresses, freeing it
- *  for use by other containers.
- *
- *  @param[in]  address     address to return to the pool of available addresses
- *
- *  @return true on success, false on failure.
- */
-bool DobbyManager::freeIpAddress(uint32_t address)
-{
-    return mState->freeIpAddress(address);
-}
-
-// -----------------------------------------------------------------------------
-/**
- *  @brief Gets the external interfaces that are actually available. Looks in the
- *  settings for the interfaces Dobby should use, then checks if the device
- *  actually has those interfaces available. Will return empty vector if none of
- *  the ifaces in the settings file are available
- *
- *  @return Available external interfaces from the ones defined in dobby
- *  settings
- */
-std::vector<std::string> DobbyManager::getExtIfaces()
-{
-    std::vector<std::string> externalIfaces = mSettings->externalInterfaces();
-
-    // Look in the /sys/class/net for available interfaces
-    struct dirent *dir;
-    DIR *d = opendir("/sys/class/net");
-    if (!d)
-    {
-        AI_LOG_SYS_ERROR(errno, "Could not check for available interfaces");
-        return std::vector<std::string>();
-    }
-
-    std::vector<std::string> availableIfaces = {};
-    while ((dir = readdir(d)) != nullptr)
-    {
-        if (dir->d_name[0] != '.')
-        {
-            availableIfaces.emplace_back(dir->d_name);
-        }
-    }
-    closedir(d);
-
-    // We know what interfaces we want, and what we've got. See if we're missing
-    // any
-    auto it = externalIfaces.cbegin();
-    while (it != externalIfaces.cend())
-    {
-        if (std::find(availableIfaces.begin(), availableIfaces.end(), it->c_str()) == availableIfaces.end())
-        {
-            AI_LOG_WARN("Interface '%s' from settings file not available", it->c_str());
-            externalIfaces.erase(it);
-        }
-        else
-        {
-            ++it;
-        }
-    }
-
-    // If no interfaces are available, something is very wrong
-    if (externalIfaces.size() == 0)
-    {
-        AI_LOG_ERROR("None of the external interfaces defined in the settings file are available");
-    }
-
-    return externalIfaces;
-}
-
 // -----------------------------------------------------------------------------
 /**
  *  @brief Called at the post-installation stage of container startup
@@ -1873,8 +1789,9 @@ bool DobbyManager::onPostHaltHook(const std::unique_ptr<DobbyContainer> &contain
         return false;
     }
 
-    // Attempt to run the plugins specified in the config file
-    if (!container->rdkPluginManager->runPlugins(IDobbyRdkPlugin::HintFlags::PostHaltFlag))
+    // Attempt to run the plugins specified in the config file. PostHalt hooks cannot modify
+    // the config struct so we should be safe to run in the forked process.
+    if (!container->rdkPluginManager->runPlugins(IDobbyRdkPlugin::HintFlags::PostHaltFlag, 4000))
     {
         AI_LOG_ERROR("Failure in postHalt hook");
         AI_LOG_FN_EXIT();

@@ -91,6 +91,8 @@ public:
  */
 private:
     bool parseOCIConfig(const std::string& bundlePath);
+    bool constructConfig(const ContainerId& id,
+                         const std::string& bundlePath);
 
 private:
 #if defined(LEGACY_COMPONENTS)

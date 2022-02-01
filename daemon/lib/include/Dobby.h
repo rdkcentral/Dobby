@@ -43,7 +43,6 @@ class DobbyManager;
 class DobbyWorkQueue;
 class DobbyLogger;
 class IDobbySettings;
-class DobbyState;
 
 // -----------------------------------------------------------------------------
 /**
@@ -104,11 +103,6 @@ private:
     DOBBY_DBUS_METHOD(getOCIConfig);
 #endif //(AI_BUILD_TYPE == AI_DEBUG)
 
-    DOBBY_DBUS_METHOD(getBridgeConnections);
-    DOBBY_DBUS_METHOD(getIpAddress);
-    DOBBY_DBUS_METHOD(freeIpAddress);
-    DOBBY_DBUS_METHOD(getExtIfaces);
-
 #if defined(AI_ENABLE_TRACING)
     DOBBY_DBUS_METHOD(startInProcessTracing);
     DOBBY_DBUS_METHOD(stopInProcessTracing);
@@ -131,16 +125,13 @@ private:
 
 private:
     void runWorkQueue() const;
-    void runPluginWorkQueue() const;
 
 private:
     std::shared_ptr<DobbyEnv> mEnvironment;
     std::shared_ptr<DobbyUtils> mUtilities;
     std::shared_ptr<DobbyIPCUtils> mIPCUtilities;
     std::shared_ptr<DobbyManager> mManager;
-
     std::unique_ptr<DobbyWorkQueue> mWorkQueue;
-    std::unique_ptr<DobbyWorkQueue> mPluginWorkQueue;
 
 private:
     const std::shared_ptr<AI_IPC::IIpcService> mIpcService;
