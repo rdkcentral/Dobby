@@ -25,7 +25,8 @@
 #include <sys/un.h>
 #include <mutex>
 
-#define BUFFER_SIZE (16 * 1024)
+// Need a large buffer to store the entire datagram
+#define BUFFER_SIZE (32 * 1024)
 
 class DobbyLogRelay : public AICommon::IPollSource,
                       public std::enable_shared_from_this<DobbyLogRelay>
@@ -37,7 +38,7 @@ public:
 
 public:
     void process(const std::shared_ptr<AICommon::IPollLoop> &pollLoop, uint32_t events) override;
-    int getSourceFd();
+    void addToPollLoop(const std::shared_ptr<AICommon::IPollLoop> &pollLoop);
 
 private:
     int createDgramSocket(const std::string& path);

@@ -47,14 +47,16 @@ DobbyLogger::DobbyLogger(const std::shared_ptr<const IDobbySettings> &settings)
         AI_LOG_ERROR("Failed to create logging socket");
     }
 
+    // Determine if we should enable the log relay
     auto logRelaySettings = settings->logRelaySettings();
 
     if (logRelaySettings.syslogEnabled)
     {
         if (!mSyslogSocketPath.empty())
         {
+            // Set up syslog relay
             mSyslogRelay = std::make_unique<DobbyLogRelay>(mSyslogSocketPath, "/dev/log");
-            mPollLoop->addSource(mSyslogRelay, mSyslogRelay->getSourceFd(), EPOLLIN);
+            mSyslogRelay->addToPollLoop(mPollLoop);
         }
         else
         {
@@ -66,8 +68,9 @@ DobbyLogger::DobbyLogger(const std::shared_ptr<const IDobbySettings> &settings)
     {
         if (!mJournaldSocketPath.empty())
         {
+            // Set up journald relay
             mJournaldRelay = std::make_unique<DobbyLogRelay>(mJournaldSocketPath, "/run/systemd/journal/socket");
-            mPollLoop->addSource(mJournaldRelay, mJournaldRelay->getSourceFd(), EPOLLIN);
+            mJournaldRelay->addToPollLoop(mPollLoop);
         }
         else
         {
@@ -310,7 +313,6 @@ void DobbyLogger::connectionMonitorThread(const int socketFd)
  * @param[in] runtimePid    PID of the OCI runtime that connected to the socket
  * @param[in] containerPid  PID of the running container
  * @param[in] loggingPlugin Plugin that will process the container logs
- * @param[in] createNewLog  If true, create a new, empty logfile if applicable
  *
  * @return True if thread started successfully
  */
@@ -392,6 +394,9 @@ bool DobbyLogger::DumpBuffer(int bufferMemFd,
     return true;
 }
 
+/**
+ * @brief Closes and deletes a socket at a given fd/path
+ */
 void DobbyLogger::closeAndDeleteSocket(const int fd, const std::string &path)
 {
     if (close(fd) < 0)
