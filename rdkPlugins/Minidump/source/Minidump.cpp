@@ -22,6 +22,7 @@
 
 #include <sstream>
 #include <unistd.h>
+#include <iomanip>
 
 /**
  * Need to do this at the start of every plugin to make sure the correct
@@ -136,8 +137,15 @@ bool Minidump::postHalt()
  */
 std::string Minidump::getDestinationFile()
 {
-    return std::string(mContainerConfig->rdk_plugins->minidump->data->destination_path)
-        + "/" + mUtils->getContainerId() + ".dmp";
+    // If an app crashes multiple times, a previous dump might still exist in the destination
+    // path. Append the current date/time to the filename to prevent conflicts
+    std::time_t currentTime = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+    std::stringstream timeString;
+    timeString << std::put_time(std::localtime(&currentTime), "%FT%T");
+
+    std::string dir(mContainerConfig->rdk_plugins->minidump->data->destination_path);
+
+    return dir + "/" + mUtils->getContainerId() + "-" + timeString.str() + ".dmp";
 }
 
 /**
