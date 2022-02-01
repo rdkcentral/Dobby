@@ -36,7 +36,7 @@ public:
     void process(const std::shared_ptr<AICommon::IPollLoop> &pollLoop, uint32_t events) override;
 
 private:
-    int openFile();
+    int openFile(const std::string& pathName);
 
 private:
     const std::shared_ptr<rt_dobby_schema> mContainerConfig;
@@ -44,6 +44,7 @@ private:
     IDobbyRdkLoggingPlugin::LoggingOptions mLoggingOptions;
 
     ssize_t mFileSizeLimit;
+    std::string mOutputFilePath;
     int mOutputFileFd;
     int mDevNullFd;
 

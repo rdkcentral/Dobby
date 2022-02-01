@@ -94,6 +94,7 @@ JournaldSink::~JournaldSink()
 
 void JournaldSink::SetLogOptions(const IDobbyRdkLoggingPlugin::LoggingOptions& options)
 {
+    std::lock_guard<std::mutex> locker(mLock);
     mLoggingOptions = options;
 }
 
@@ -138,7 +139,7 @@ void JournaldSink::process(const std::shared_ptr<AICommon::IPollLoop> &pollLoop,
                 }
 
                 // Something went wrong whilst reading
-                AI_LOG_SYS_ERROR(errno, "Read from container tty failed");
+                AI_LOG_SYS_ERROR(errno, "Read from container %s tty failed", mContainerId.c_str());
                 return;
             }
 

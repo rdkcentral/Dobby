@@ -28,6 +28,14 @@
 
 #include <Logging.h>
 
+/**
+ * @brief Create relay between two UNIX datagram sockets
+ *
+ * All messages sent to the source socket are forwarded to the
+ * destination socket. Used to relay messages to the host syslog/journald
+ * and ensure the messages are tagged with the dobby daemon PID for the
+ * RDK log collection scripts
+ */
 DobbyLogRelay::DobbyLogRelay(const std::string &sourceSocketPath,
                              const std::string &destinationSocketPath)
     : mSourceSocketPath(sourceSocketPath),
@@ -36,12 +44,14 @@ DobbyLogRelay::DobbyLogRelay(const std::string &sourceSocketPath,
 {
     AI_LOG_FN_ENTRY();
 
+    // Create the socket we're listening on
     mSourceSocketFd = createDgramSocket(mSourceSocketPath);
     if (mSourceSocketFd < 0)
     {
         AI_LOG_ERROR("Failed to create socket at %s", sourceSocketPath.c_str());
     }
 
+    // If the socket we're forwarding to exists
     if (access(mDestinationSocketPath.c_str(), F_OK) < 0)
     {
         AI_LOG_ERROR("Socket %s does not exist, cannot create relay", mDestinationSocketPath.c_str());
@@ -85,33 +95,79 @@ DobbyLogRelay::~DobbyLogRelay()
     AI_LOG_FN_EXIT();
 }
 
-int DobbyLogRelay::getSourceFd()
+/**
+ * @brief Adds the log relay to a given poll loop so that the process() method is called
+ * when the source socket receives data
+ *
+ * @param[in]   pollLoop    The poll loop to add ourselves to
+ */
+void DobbyLogRelay::addToPollLoop(const std::shared_ptr<AICommon::IPollLoop> &pollLoop)
 {
-    return mSourceSocketFd;
+    pollLoop->addSource(shared_from_this(), mSourceSocketFd, EPOLLIN);
 }
 
+/**
+ * @brief Called on the poll loop. Forwards the data from the source to the destination
+ * socket
+ *
+ * @param[in]   pollLoop    The pollLoop instance that the process method was called from
+ * @param[in]   events      The epoll event that occured
+ */
 void DobbyLogRelay::process(const std::shared_ptr<AICommon::IPollLoop> &pollLoop, uint32_t events)
 {
+    // Got some data
     if (events & EPOLLIN)
     {
         ssize_t ret;
         memset(mBuf, 0, sizeof(mBuf));
 
-        ret = TEMP_FAILURE_RETRY(read(mSourceSocketFd, mBuf, sizeof(mBuf)));
+        struct sockaddr_storage src_addr;
+
+        struct iovec iov[1];
+        iov[0].iov_base=mBuf;
+        iov[0].iov_len=sizeof(mBuf);
+
+        struct msghdr message = {
+            .msg_name=&src_addr,
+            .msg_namelen=sizeof(src_addr),
+            .msg_iov=iov,
+            .msg_iovlen=1,
+            .msg_control=0,
+            .msg_controllen=0,
+        };
+
+        // This is effectively a UDP message, so we have to read the whole datagram in one chunk
+        // The first byte returned by read will always be the start of the datagram. We've set
+        // a relatively large buffer size (32K) to try and avoid truncation
+        ret = TEMP_FAILURE_RETRY(recvmsg(mSourceSocketFd, &message, 0));
         if (ret < 0)
         {
-            AI_LOG_SYS_ERROR(errno, "Errror during read");
+            AI_LOG_SYS_ERROR(errno, "Errror reading from socket @ %s", mSourceSocketPath.c_str());
+        }
+        else if (message.msg_flags & MSG_TRUNC)
+        {
+            // Log a warning if we know message data has been truncated to avoid weird surprises
+            // TODO:: We could use MSG_PEEK to work out the size of the datagram and realloc a big enough buffer
+            // (with some kind of hard limit to prevent resource exhaustion), but that will also double the number
+            // of syscalls we have to make.
+            AI_LOG_WARN("Message received on %s has been truncated", mSourceSocketPath.c_str());
         }
 
-        if (sendto(mDestinationSocketFd, mBuf, sizeof(mBuf), 0, (struct sockaddr *)&mDestinationSocketAddress, sizeof(mDestinationSocketAddress)) < 0)
+        if (sendto(mDestinationSocketFd, mBuf, ret, 0, (struct sockaddr *)&mDestinationSocketAddress, sizeof(mDestinationSocketAddress)) < 0)
         {
-            AI_LOG_SYS_ERROR(errno, "sento failed");
+            AI_LOG_SYS_ERROR(errno, "Failed to send message to socket @ '%s'", mDestinationSocketAddress.sun_path);
         }
     }
 
     return;
 }
 
+/**
+ * @brief Create a SOCK_DGRAM AF_UNIX socket at the given path. Removes the socket
+ * at the given path if it exists.
+ *
+ * @param[in]   path    The path the socket should be created at
+ */
 int DobbyLogRelay::createDgramSocket(const std::string &path)
 {
     AI_LOG_FN_ENTRY();
@@ -133,7 +189,11 @@ int DobbyLogRelay::createDgramSocket(const std::string &path)
         return -1;
     }
 
-    chmod(path.c_str(), S_IRWXU | S_IRWXG | S_IRWXO);
+    // Make sure socket can be accessed inside container
+    if (chmod(path.c_str(), 0666) < 0)
+    {
+        AI_LOG_SYS_ERROR(errno, "Failed to set permissions on socket @ '%s'", address.sun_path);
+    }
 
     AI_LOG_FN_EXIT();
     return sockFd;

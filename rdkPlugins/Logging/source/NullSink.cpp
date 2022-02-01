@@ -58,6 +58,7 @@ NullSink::~NullSink()
 
 void NullSink::SetLogOptions(const IDobbyRdkLoggingPlugin::LoggingOptions &options)
 {
+    std::lock_guard<std::mutex> locker(mLock);
     mLoggingOptions = options;
 }
 
@@ -103,7 +104,7 @@ void NullSink::process(const std::shared_ptr<AICommon::IPollLoop> &pollLoop, uin
                 }
 
                 // Something went wrong whilst reading
-                AI_LOG_SYS_ERROR(errno, "Read from container tty failed");
+                AI_LOG_SYS_ERROR(errno, "Read from container %s tty failed", mContainerId.c_str());
                 return;
             }
 

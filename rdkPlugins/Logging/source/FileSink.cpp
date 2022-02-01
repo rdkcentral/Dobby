@@ -54,7 +54,26 @@ FileSink::FileSink(const std::string &containerId, std::shared_ptr<rt_dobby_sche
         AI_LOG_SYS_ERROR(errno, "Failed to open /dev/null");
     }
 
-    mOutputFileFd = openFile();
+    if (mContainerConfig->rdk_plugins->logging->data->file_options)
+    {
+        mOutputFilePath = mContainerConfig->rdk_plugins->logging->data->file_options->path;
+        if (mContainerConfig->rdk_plugins->logging->data->file_options->limit_present)
+        {
+            mFileSizeLimit = mContainerConfig->rdk_plugins->logging->data->file_options->limit;
+            // Set to -1 in config for "unlimited"
+            if (mFileSizeLimit < 0)
+            {
+                mFileSizeLimit = SSIZE_MAX;
+            }
+        }
+        else
+        {
+            AI_LOG_INFO("No file size limit size for container log - setting to unlimited");
+            mFileSizeLimit = SSIZE_MAX;
+        }
+    }
+
+    mOutputFileFd = openFile(mOutputFilePath);
     if (mOutputFileFd < 0)
     {
         // Couldn't open our output file, send to /dev/null to avoid blocking
@@ -90,6 +109,7 @@ FileSink::~FileSink()
  */
 void FileSink::SetLogOptions(const IDobbyRdkLoggingPlugin::LoggingOptions &options)
 {
+    std::lock_guard<std::mutex> locker(mLock);
     mLoggingOptions = options;
 }
 
@@ -103,7 +123,6 @@ void FileSink::SetLogOptions(const IDobbyRdkLoggingPlugin::LoggingOptions &optio
  */
 void FileSink::DumpLog(const int bufferFd)
 {
-    // Take the lock
     std::lock_guard<std::mutex> locker(mLock);
 
     memset(mBuf, 0, sizeof(mBuf));
@@ -172,7 +191,7 @@ void FileSink::process(const std::shared_ptr<AICommon::IPollLoop> &pollLoop, uin
                 }
 
                 // Something went wrong whilst reading
-                AI_LOG_SYS_ERROR(errno, "Read from container tty failed");
+                AI_LOG_SYS_ERROR(errno, "Read from container %s tty failed", mContainerId.c_str());
                 return;
             }
 
@@ -182,7 +201,7 @@ void FileSink::process(const std::shared_ptr<AICommon::IPollLoop> &pollLoop, uin
                 // Write to the output file
                 if (write(mOutputFileFd, mBuf, ret) < 0)
                 {
-                    AI_LOG_SYS_ERROR(errno, "Write failed");
+                    AI_LOG_SYS_ERROR(errno, "Write to %s failed", mOutputFilePath.c_str());
                 }
             }
             else
@@ -223,28 +242,18 @@ void FileSink::process(const std::shared_ptr<AICommon::IPollLoop> &pollLoop, uin
     }
 }
 
-int FileSink::openFile()
+/**
+ * @brief Opens the log file at a given path. Will create a new file
+ * when called, and subsequent writes will append to the file
+ *
+ * @param[in]   pathName    Where to create the file
+ *
+ * @return Opened file descriptor
+ */
+int FileSink::openFile(const std::string& pathName)
 {
     const mode_t mode = 0644;
     int flags = O_CREAT | O_TRUNC | O_APPEND | O_WRONLY | O_CLOEXEC;
-
-    // Read the options from the config if possible
-    std::string pathName;
-    if (mContainerConfig->rdk_plugins->logging->data->file_options)
-    {
-        pathName = mContainerConfig->rdk_plugins->logging->data->file_options->path;
-        if (mContainerConfig->rdk_plugins->logging->data->file_options->limit_present)
-        {
-            mFileSizeLimit = mContainerConfig->rdk_plugins->logging->data->file_options->limit;
-        }
-    }
-
-    // if limit is -1 it means unlimited, but to make life easier just set it
-    // to the max value
-    if (mFileSizeLimit < 0)
-    {
-        mFileSizeLimit = SSIZE_MAX;
-    }
 
     int openedFd = -1;
     if (pathName.empty())

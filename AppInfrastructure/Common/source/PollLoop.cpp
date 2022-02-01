@@ -374,6 +374,16 @@ void PollLoop::delSource(const std::shared_ptr<IPollSource>& source)
     return;
 }
 
+// -----------------------------------------------------------------------------
+/**
+ * @brief Removes all sources
+ *
+ * It's important to note that even after sources has been removed and this
+ * function returns, it's possible for the source's process() method to be called.
+ * This is because the poll loop thread locks the shared_ptrs while processing
+ * the events.
+ *
+ */
 void PollLoop::delAllSources()
 {
     AI_LOG_FN_ENTRY();
