@@ -161,6 +161,13 @@ void FileSink::DumpLog(const int bufferFd)
             write(mDevNullFd, mBuf, ret);
         }
     }
+
+#if (AI_BUILD_TYPE == AI_DEBUG)
+    // Separate sections of log file for reabability
+    // (useful if we're writing lots of buffer dumps)
+    std::string marker = "---------------------------------------------\n";
+    write(mOutputFileFd, marker.c_str(), marker.length());
+#endif
 }
 
 /**
