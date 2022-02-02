@@ -75,7 +75,7 @@ public:
     void runCommand(int argc, char* const *argv) override;
 
 public:
-    void process(const std::shared_ptr<AICommon::IPollLoop>& pollLoop, uint32_t events) override;
+    void process(const std::shared_ptr<AICommon::IPollLoop>& pollLoop, epoll_event event) override;
 
 public:
     std::shared_ptr<const IReadLineContext> getContext() const override;

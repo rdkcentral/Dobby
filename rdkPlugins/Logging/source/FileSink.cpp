@@ -41,7 +41,6 @@
 FileSink::FileSink(const std::string &containerId, std::shared_ptr<rt_dobby_schema> &containerConfig)
     : mContainerConfig(containerConfig),
       mContainerId(containerId),
-      mLoggingOptions{},
       mLimitHit(false),
       mBuf{}
 {
@@ -105,15 +104,6 @@ FileSink::~FileSink()
 }
 
 /**
- * @brief Sets the log options used by the process() method
- */
-void FileSink::SetLogOptions(const IDobbyRdkLoggingPlugin::LoggingOptions &options)
-{
-    std::lock_guard<std::mutex> locker(mLock);
-    mLoggingOptions = options;
-}
-
-/**
  * @brief Reads all the available data from the provided fd and writes it to the output
  * file. Does not attempt to seek the file descriptor back to the start
  *
@@ -123,9 +113,9 @@ void FileSink::SetLogOptions(const IDobbyRdkLoggingPlugin::LoggingOptions &optio
  */
 void FileSink::DumpLog(const int bufferFd)
 {
-    std::lock_guard<std::mutex> locker(mLock);
-
     memset(mBuf, 0, sizeof(mBuf));
+
+    std::lock_guard<std::mutex> locker(mLock);
 
     ssize_t ret;
     ssize_t offset = 0;
@@ -165,8 +155,11 @@ void FileSink::DumpLog(const int bufferFd)
 #if (AI_BUILD_TYPE == AI_DEBUG)
     // Separate sections of log file for reabability
     // (useful if we're writing lots of buffer dumps)
-    std::string marker = "---------------------------------------------\n";
-    write(mOutputFileFd, marker.c_str(), marker.length());
+    if (!mLimitHit)
+    {
+        std::string marker = "---------------------------------------------\n";
+        write(mOutputFileFd, marker.c_str(), marker.length());
+    }
 #endif
 }
 
@@ -175,11 +168,11 @@ void FileSink::DumpLog(const int bufferFd)
  *
  * Reads the contents of the ptty and logs to a file
  */
-void FileSink::process(const std::shared_ptr<AICommon::IPollLoop> &pollLoop, uint32_t events)
+void FileSink::process(const std::shared_ptr<AICommon::IPollLoop> &pollLoop, epoll_event event)
 {
     std::lock_guard<std::mutex> locker(mLock);
 
-    if (events & EPOLLIN)
+    if (event.events & EPOLLIN)
     {
         ssize_t ret;
         ssize_t offset = 0;
@@ -188,7 +181,7 @@ void FileSink::process(const std::shared_ptr<AICommon::IPollLoop> &pollLoop, uin
 
         while (true)
         {
-            ret = TEMP_FAILURE_RETRY(read(mLoggingOptions.pttyFd, mBuf, sizeof(mBuf)));
+            ret = TEMP_FAILURE_RETRY(read(event.data.fd, mBuf, sizeof(mBuf)));
             if (ret <= 0)
             {
                 // We've reached the end of the data we can read so we're done here
@@ -226,27 +219,19 @@ void FileSink::process(const std::shared_ptr<AICommon::IPollLoop> &pollLoop, uin
 
         return;
     }
-
-    if (events & EPOLLHUP)
+    else if (event.events & EPOLLHUP)
     {
-        AI_LOG_DEBUG("EPOLLHUP! Removing ourself from the event loop!");
+        pollLoop->delSource(shared_from_this(), event.data.fd);
 
-        // Remove ourselves from the event loop
-        pollLoop->delSource(shared_from_this());
-
-        // Clean up
-        if (close(mLoggingOptions.pttyFd) != 0)
+        // Clean up - close the ptty fd
+        if (close(event.data.fd) != 0)
         {
-            AI_LOG_SYS_ERROR(errno, "Failed to close container ptty fd %d", mLoggingOptions.pttyFd);
+            AI_LOG_SYS_ERROR(errno, "Failed to close container ptty fd %d", event.data.fd);
         }
-
-        if (close(mLoggingOptions.connectionFd) != 0)
-        {
-            AI_LOG_SYS_ERROR(errno, "Failed to close container connection %d", mLoggingOptions.connectionFd);
-        }
-
-        return;
     }
+
+    // Don't handle any other events
+    return;
 }
 
 /**
@@ -257,7 +242,7 @@ void FileSink::process(const std::shared_ptr<AICommon::IPollLoop> &pollLoop, uin
  *
  * @return Opened file descriptor
  */
-int FileSink::openFile(const std::string& pathName)
+int FileSink::openFile(const std::string &pathName)
 {
     const mode_t mode = 0644;
     int flags = O_CREAT | O_TRUNC | O_APPEND | O_WRONLY | O_CLOEXEC;

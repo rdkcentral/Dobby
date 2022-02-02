@@ -60,8 +60,7 @@ public:
     std::vector<std::string> getDependencies() const override;
 
 public:
-    void RegisterPollSources(LoggingOptions &loggingOptions,
-                             std::shared_ptr<AICommon::IPollLoop> pollLoop) override;
+    void RegisterPollSources(int fd, std::shared_ptr<AICommon::IPollLoop> pollLoop) override;
 
     void DumpToLog(const int bufferFd) override;
 

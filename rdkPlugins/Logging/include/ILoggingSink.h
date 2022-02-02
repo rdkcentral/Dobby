@@ -30,6 +30,4 @@ class ILoggingSink : public AICommon::IPollSource,
 
 public:
     virtual void DumpLog(const int bufferFd) = 0;
-
-    virtual void SetLogOptions(const IDobbyRdkLoggingPlugin::LoggingOptions& options) = 0;
 };

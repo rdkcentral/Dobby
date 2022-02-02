@@ -267,7 +267,7 @@ void DobbyLogger::connectionMonitorThread(const int socketFd)
         int containerStdioFd = receiveFdFromSocket(connection);
         if (containerStdioFd < 0)
         {
-            AI_LOG_INFO("Couldn't extract FD from message - closing connection");
+            AI_LOG_INFO("Couldn't extract container tty FD from message");
             close(connection);
             continue;
         }
@@ -290,14 +290,15 @@ void DobbyLogger::connectionMonitorThread(const int socketFd)
             }
         }
 
+        // Done with the connection now, we can close it
+        if (close(connection) < 0)
+        {
+            AI_LOG_SYS_WARN(errno, "Failed to close connection");
+        }
+
         std::lock_guard<std::mutex> locker(mLock);
 
-        IDobbyRdkLoggingPlugin::LoggingOptions info{
-            -1, // Unknown at this point as container isn't running
-            connection,
-            containerStdioFd};
-
-        mTempConnections.insert(std::make_pair(conCredentials.pid, info));
+        mTempFds.insert(std::make_pair(conCredentials.pid, containerStdioFd));
         AI_LOG_INFO("New logging socket connection from PID %d", conCredentials.pid);
     }
 
@@ -323,19 +324,17 @@ bool DobbyLogger::StartContainerLogging(std::string containerId,
 {
     AI_LOG_FN_ENTRY();
 
-    std::lock_guard<std::mutex> locker(mLock);
-
     AI_LOG_INFO("Configuring logging for container '%s' (pid: %d)", containerId.c_str(), containerPid);
 
+    std::lock_guard<std::mutex> locker(mLock);
+
     // Is the console socket connected?
-    auto it = mTempConnections.find(runtimePid);
-    if (it == mTempConnections.end())
+    auto it = mTempFds.find(runtimePid);
+    if (it == mTempFds.end())
     {
         AI_LOG_WARN("Cannot configure logging for container %s - not connected to socket", containerId.c_str());
         return false;
     }
-
-    it->second.containerPid = containerPid;
 
     if (!loggingPlugin)
     {
@@ -346,9 +345,7 @@ bool DobbyLogger::StartContainerLogging(std::string containerId,
     // Logging plugin should now register poll sources on the epoll loop
     loggingPlugin->RegisterPollSources(it->second, mPollLoop);
 
-    // Thread is up and running, don't need to track the connection any more
-    // as thread can detect when the container closes and clean up
-    mTempConnections.erase(it);
+    mTempFds.erase(it);
 
     AI_LOG_FN_EXIT();
     return true;

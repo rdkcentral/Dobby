@@ -26,6 +26,7 @@
 #include <sys/stat.h>
 #include <sys/socket.h>
 #include <sys/un.h>
+#include <algorithm>
 
 #include <Logging.h>
 
@@ -56,19 +57,13 @@ NullSink::~NullSink()
     }
 }
 
-void NullSink::SetLogOptions(const IDobbyRdkLoggingPlugin::LoggingOptions &options)
-{
-    std::lock_guard<std::mutex> locker(mLock);
-    mLoggingOptions = options;
-}
-
 void NullSink::DumpLog(const int bufferFd)
 {
+    memset(mBuf, 0, sizeof(mBuf));
+
     std::lock_guard<std::mutex> locker(mLock);
 
     ssize_t ret;
-    memset(mBuf, 0, sizeof(mBuf));
-
     while (true)
     {
         ret = read(bufferFd, mBuf, sizeof(mBuf));
@@ -81,19 +76,19 @@ void NullSink::DumpLog(const int bufferFd)
     }
 }
 
-void NullSink::process(const std::shared_ptr<AICommon::IPollLoop> &pollLoop, uint32_t events)
+void NullSink::process(const std::shared_ptr<AICommon::IPollLoop> &pollLoop, epoll_event event)
 {
     std::lock_guard<std::mutex> locker(mLock);
 
     // Got some data, yay
-    if (events & EPOLLIN)
+    if (event.events & EPOLLIN)
     {
         ssize_t ret;
         memset(mBuf, 0, sizeof(mBuf));
 
         while (true)
         {
-            ret = TEMP_FAILURE_RETRY(read(mLoggingOptions.pttyFd, mBuf, sizeof(mBuf)));
+            ret = TEMP_FAILURE_RETRY(read(event.data.fd, mBuf, sizeof(mBuf)));
 
             if (ret < 0)
             {
@@ -116,27 +111,15 @@ void NullSink::process(const std::shared_ptr<AICommon::IPollLoop> &pollLoop, uin
 
         return;
     }
-
-    // Container shutdown
-    if (events & EPOLLHUP)
+    else if (event.events & EPOLLHUP)
     {
-        AI_LOG_INFO("EPOLLHUP! Removing ourselves from the event loop!");
+        pollLoop->delSource(shared_from_this(), event.data.fd);
 
-        // Remove ourselves from the event loop
-        pollLoop->delSource(shared_from_this());
-
-        // Clean up
-        if (close(mLoggingOptions.pttyFd) != 0)
+        // Clean up - close the ptty fd
+        if (close(event.data.fd) != 0)
         {
-            AI_LOG_SYS_ERROR(errno, "Failed to close container ptty fd");
+            AI_LOG_SYS_ERROR(errno, "Failed to close container ptty fd %d", event.data.fd);
         }
-
-        if (close(mLoggingOptions.connectionFd) != 0)
-        {
-            AI_LOG_SYS_ERROR(errno, "Failed to close container connection");
-        }
-
-        return;
     }
 
     // Don't handle any other events
