@@ -69,7 +69,8 @@ private:
     const std::string mSyslogSocketPath;
     const std::string mJournaldSocketPath;
 
-    std::map<pid_t, IDobbyRdkLoggingPlugin::LoggingOptions> mTempConnections;
+    // Map of container PID -> tty file descriptor
+    std::map<pid_t, int> mTempFds;
 
     std::shared_ptr<AICommon::PollLoop> mPollLoop;
 

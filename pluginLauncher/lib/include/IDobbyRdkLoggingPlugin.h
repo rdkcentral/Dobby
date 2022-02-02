@@ -50,18 +50,7 @@ public:
     virtual ~IDobbyRdkLoggingPlugin() = default;
 
 public:
-    struct LoggingOptions
-    {
-        // Actual pid of the running container
-        pid_t containerPid;
-        // fd of the open connection so we can close it when the container exits
-        int connectionFd;
-        // fd of the container pseudo-terminal master fd
-        int pttyFd;
-    };
-
-    virtual void RegisterPollSources(LoggingOptions& loggingOptions,
-                                    std::shared_ptr<AICommon::IPollLoop> pollLoop) = 0;
+    virtual void RegisterPollSources(int fd, std::shared_ptr<AICommon::IPollLoop> pollLoop) = 0;
 
     virtual void DumpToLog(const int bufferFd) = 0;
 };

@@ -37,7 +37,7 @@ public:
     ~DobbyLogRelay();
 
 public:
-    void process(const std::shared_ptr<AICommon::IPollLoop> &pollLoop, uint32_t events) override;
+    void process(const std::shared_ptr<AICommon::IPollLoop> &pollLoop, epoll_event event) override;
     void addToPollLoop(const std::shared_ptr<AICommon::IPollLoop> &pollLoop);
 
 private:

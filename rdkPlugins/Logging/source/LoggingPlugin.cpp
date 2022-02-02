@@ -129,11 +129,10 @@ std::vector<std::string> LoggingPlugin::getDependencies() const
  * @brief Adds the necessary poll source(s) to the provided pollLoop instance
  * based on the logging sink specified in the container config
  *
- * @param[in]   loggingOptions  Info about the container such as the fd to read from
+ * @param[in]   fd              The file descriptor we need to read from (i.e. the container tty)
  * @param[in]   pollLoop        The poll loop the sources should be added to
  */
-void LoggingPlugin::RegisterPollSources(LoggingOptions &loggingOptions,
-                                        std::shared_ptr<AICommon::IPollLoop> pollLoop)
+void LoggingPlugin::RegisterPollSources(int fd, std::shared_ptr<AICommon::IPollLoop> pollLoop)
 {
     AI_LOG_FN_ENTRY();
 
@@ -149,16 +148,13 @@ void LoggingPlugin::RegisterPollSources(LoggingOptions &loggingOptions,
         }
     }
 
-    // Configure the sink to read from the container ptty
-    mSink->SetLogOptions(loggingOptions);
-
     if (!mPollLoop)
     {
         mPollLoop = pollLoop;
     }
 
     // Register the poll source
-    if (!mPollLoop->addSource(mSink, loggingOptions.pttyFd, EPOLLIN))
+    if (!mPollLoop->addSource(mSink, fd, EPOLLIN))
     {
         AI_LOG_ERROR("Failed to add logging poll source for container %s", mUtils->getContainerId().c_str());
     }

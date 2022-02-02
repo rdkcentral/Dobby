@@ -328,9 +328,11 @@ bool PollLoop::modSource(const std::shared_ptr<IPollSource>& source, uint32_t ev
  * the events.
  *
  * @param[in]  source   The source object to remove from the poll loop.
+ * @param[in]  fd       (Optional) If the same source has been registered for multiple
+ *                      fds, only remove the source for this specific fd
  *
  */
-void PollLoop::delSource(const std::shared_ptr<IPollSource>& source)
+void PollLoop::delSource(const std::shared_ptr<IPollSource>& source, int fd /*= -1*/)
 {
     AI_LOG_FN_ENTRY();
 
@@ -341,7 +343,7 @@ void PollLoop::delSource(const std::shared_ptr<IPollSource>& source)
     std::list<PollSourceWrapper>::iterator it = mSources.begin();
     for (; it != mSources.end(); ++it)
     {
-        if (it->source.lock() == source)
+        if (it->source.lock() == source && (it->fd == fd || fd < 0))
         {
             // decrement the list of deferred sources if set
             if (it->events & EPOLLDEFERRED)
@@ -657,8 +659,8 @@ void PollLoop::run(const std::string& name, int priority)
 
 
     // Map of all the sources that we're triggered in one epoll cycle
-    std::map<std::shared_ptr<IPollSource>, uint32_t> triggered;
-    std::map<std::shared_ptr<IPollSource>, uint32_t>::iterator trigItor;
+    std::map<std::shared_ptr<IPollSource>, epoll_event> triggered;
+    std::map<std::shared_ptr<IPollSource>, epoll_event>::iterator trigItor;
 
     std::list<PollSourceWrapper>::const_iterator srcItor;
 
@@ -715,7 +717,10 @@ void PollLoop::run(const std::string& name, int priority)
                         std::shared_ptr<IPollSource> source = srcItor->source.lock();
                         if (source)
                         {
-                            triggered[source] |= EPOLLDEFERRED;
+                            triggered[source] = {
+                                .events = EPOLLDEFERRED,
+                                .data = event->data
+                            };
                         }
                     }
                 }
@@ -740,7 +745,10 @@ void PollLoop::run(const std::string& name, int priority)
                             std::shared_ptr<IPollSource> source = srcItor->source.lock();
                             if (source)
                             {
-                                triggered[source] |= event->events;
+                                triggered[source] = {
+                                    .events = event->events,
+                                    .data = event->data
+                                };
                             }
                             else
                             {

@@ -113,10 +113,10 @@ void DobbyLogRelay::addToPollLoop(const std::shared_ptr<AICommon::IPollLoop> &po
  * @param[in]   pollLoop    The pollLoop instance that the process method was called from
  * @param[in]   events      The epoll event that occured
  */
-void DobbyLogRelay::process(const std::shared_ptr<AICommon::IPollLoop> &pollLoop, uint32_t events)
+void DobbyLogRelay::process(const std::shared_ptr<AICommon::IPollLoop> &pollLoop, epoll_event event)
 {
     // Got some data
-    if (events & EPOLLIN)
+    if (event.events & EPOLLIN)
     {
         ssize_t ret;
         memset(mBuf, 0, sizeof(mBuf));
@@ -173,7 +173,10 @@ int DobbyLogRelay::createDgramSocket(const std::string &path)
     AI_LOG_FN_ENTRY();
 
     // Remove the socket if it exists already...
-    unlink(path.c_str());
+    if (unlink(path.c_str()) > 0)
+    {
+        AI_LOG_DEBUG("Removed existing socket @ '%s'", path.c_str());
+    }
 
     // Create a socket
     int sockFd;
