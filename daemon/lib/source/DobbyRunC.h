@@ -63,6 +63,14 @@ public:
         Stopped
     };
 
+    struct ContainerListItem
+    {
+        ContainerId id;
+        pid_t pid;
+        std::string bundlePath;
+        ContainerStatus status;
+    };
+
 public:
     std::pair<pid_t, pid_t> create(const ContainerId &id,
                                    const std::shared_ptr<const DobbyBundle> &bundle,
@@ -80,7 +88,7 @@ public:
                                  const std::string &command) const;
 
     ContainerStatus state(const ContainerId &id) const;
-    std::map<ContainerId, ContainerStatus> list() const;
+    std::list<ContainerListItem> list() const;
 
 public:
     pid_t run(const ContainerId &id,
