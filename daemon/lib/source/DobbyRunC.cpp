@@ -781,23 +781,6 @@ bool DobbyRunC::destroy(const ContainerId& id, const std::shared_ptr<const IDobb
         }
     }
 
-    std::string containerDir = mWorkingDir + "/" + id.str();
-
-    // forcefully delete the container directory if the delete command is unable
-    // to do it properly
-    if (AICommon::exists(containerDir))
-    {
-        AI_LOG_ERROR("container directory not deleted - remove forcefully [%s]",
-                     containerDir.c_str());
-
-        AICommon::deleteDirectory(containerDir);
-        if (AICommon::exists(containerDir))
-        {
-            AI_LOG_ERROR("container directory still exist - we may be unable to"
-                         " launch app %s until next reboot", id.c_str());
-        }
-    }
-
     AI_LOG_FN_EXIT();
 
     // get the return code, 0 for success, 1 for failure
@@ -944,7 +927,7 @@ DobbyRunC::ContainerStatus DobbyRunC::state(const ContainerId& id) const
  *
  *  @return A map of current container ids and their status.
  */
-std::map<ContainerId, DobbyRunC::ContainerStatus> DobbyRunC::list() const
+std::list<DobbyRunC::ContainerListItem> DobbyRunC::list() const
 {
     AI_LOG_FN_ENTRY();
 
@@ -960,7 +943,7 @@ std::map<ContainerId, DobbyRunC::ContainerStatus> DobbyRunC::list() const
     if (pid <= 0)
     {
         AI_LOG_ERROR_EXIT("failed to execute runc tool");
-        return std::map<ContainerId, DobbyRunC::ContainerStatus>();
+        return {};
     }
 
     // block waiting for the forked process to complete
@@ -968,12 +951,12 @@ std::map<ContainerId, DobbyRunC::ContainerStatus> DobbyRunC::list() const
     if (TEMP_FAILURE_RETRY(waitpid(pid, &status, 0)) < 0)
     {
         AI_LOG_SYS_ERROR_EXIT(errno, "waitpid failed");
-        return std::map<ContainerId, DobbyRunC::ContainerStatus>();
+        return {};
     }
     if (!WIFEXITED(status))
     {
         AI_LOG_ERROR_EXIT("runc didn't exit?  status=0x%08x", status);
-        return std::map<ContainerId, DobbyRunC::ContainerStatus>();
+        return {};
     }
 
     // check succeeded
@@ -981,7 +964,7 @@ std::map<ContainerId, DobbyRunC::ContainerStatus> DobbyRunC::list() const
     {
         AI_LOG_WARN("\"runc list\" failed with status %u", WEXITSTATUS(status));
         AI_LOG_FN_EXIT();
-        return std::map<ContainerId, DobbyRunC::ContainerStatus>();
+        return {};
     }
 
 
@@ -991,7 +974,7 @@ std::map<ContainerId, DobbyRunC::ContainerStatus> DobbyRunC::list() const
     {
         AI_LOG_WARN("failed to get any reply from \"runc list\" call");
         AI_LOG_FN_EXIT();
-        return std::map<ContainerId, DobbyRunC::ContainerStatus>();
+        return {};
     }
 
 
@@ -1006,7 +989,7 @@ std::map<ContainerId, DobbyRunC::ContainerStatus> DobbyRunC::list() const
         AI_LOG_WARN("failed to parse json output from \"runc list\" call - %s",
                     errors.c_str());
         AI_LOG_FN_EXIT();
-        return std::map<ContainerId, DobbyRunC::ContainerStatus>();
+        return {};
     }
 
     // a null json type is returned if no containers are running, this is not
@@ -1014,17 +997,17 @@ std::map<ContainerId, DobbyRunC::ContainerStatus> DobbyRunC::list() const
     if (root.isNull())
     {
         AI_LOG_FN_EXIT();
-        return std::map<ContainerId, DobbyRunC::ContainerStatus>();
+        return {};
     }
 
     // if not null then check we got an array type
     if (!root.isArray())
     {
         AI_LOG_ERROR_EXIT("invalid json array type");
-        return std::map<ContainerId, DobbyRunC::ContainerStatus>();
+        return {};
     }
 
-    std::map<ContainerId, DobbyRunC::ContainerStatus> containers;
+    std::list<ContainerListItem> containers;
 
     // iterate through the containers
     for (const Json::Value &entry : root)
@@ -1049,7 +1032,28 @@ std::map<ContainerId, DobbyRunC::ContainerStatus> DobbyRunC::list() const
             continue;
         }
 
-        containers[id_] = getContainerStatusFromJson(entry);
+        const Json::Value &pid = entry["pid"];
+        if (!pid.isInt())
+        {
+             AI_LOG_WARN("container list contains invalid object value");
+            continue;
+        }
+
+        const Json::Value &bundle = entry["bundle"];
+        if (!bundle.isString())
+        {
+             AI_LOG_WARN("container list contains invalid object value");
+            continue;
+        }
+
+        ContainerListItem container {
+            .id = id_,
+            .pid = pid.asInt(),
+            .bundlePath = bundle.asString(),
+            .status = getContainerStatusFromJson(entry),
+        };
+
+        containers.emplace_back(container);
     }
 
     AI_LOG_FN_EXIT();
@@ -1308,4 +1312,3 @@ pid_t DobbyRunC::readPidFile(const std::string pidFilePath) const
 
     return containerPid;
 }
-
