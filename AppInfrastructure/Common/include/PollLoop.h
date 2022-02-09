@@ -69,7 +69,8 @@ public:
 
     virtual bool addSource(const std::shared_ptr<IPollSource>& source, int fd, uint32_t events) override;
     virtual bool modSource(const std::shared_ptr<IPollSource>& source, uint32_t events) override;
-    virtual void delSource(const std::shared_ptr<IPollSource>& source) override;
+    virtual void delSource(const std::shared_ptr<IPollSource>& source, int fd = -1) override;
+    virtual void delAllSources() override;
 
     virtual std::thread::id threadId() const override;
     virtual pid_t gettid() const override;
