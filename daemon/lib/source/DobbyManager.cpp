@@ -111,6 +111,11 @@ DobbyManager::~DobbyManager()
     // TODO: clean-up all containers
 
     stopRuncMonitorThread();
+
+    if (mCleanupTaskTimerId > 0)
+    {
+        mUtilities->cancelTimer(mCleanupTaskTimerId);
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -1190,6 +1195,14 @@ bool DobbyManager::stopContainer(int32_t cd, bool withPrejudice)
     // this is an explicit stop request by the user so clear the 'restartOnCrash'
     // flag so the container doesn't auto-respawn
     container->clearRestartOnCrash();
+
+    if (container->state == DobbyContainer::State::Unknown)
+    {
+        // Container is in an unknown (i.e. bad) state. Don't attempt to stop it
+        // (should be cleaned up automatically by background cleanup task)
+        AI_LOG_WARN("Container %s is in an unknown state - cannot stop", id.c_str());
+        return false;
+    }
 
     // check the state, if we're in the Starting phase then pre-start hasn't run
     // and we just need to set a flag to indicate the pre-start hooks should
@@ -2414,6 +2427,7 @@ bool DobbyManager::invalidContainerCleanupTask()
     if (stuckCount == 0)
     {
         // No more stuck containers, our job here is done
+        mCleanupTaskTimerId = -1;
         return false;
     }
 
