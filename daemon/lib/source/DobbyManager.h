@@ -199,6 +199,8 @@ private:
     void stopRuncMonitorThread();
     void runcMonitorThread();
 
+    bool invalidContainerCleanupTask();
+
 private:
     const std::shared_ptr<IDobbyEnv> mEnvironment;
     const std::shared_ptr<IDobbyUtils> mUtilities;
@@ -212,6 +214,7 @@ private:
 private:
     std::thread mRuncMonitorThread;
     std::atomic<bool> mRuncMonitorTerminate;
+    int mCleanupTaskTimerId;
 
 #if defined(LEGACY_COMPONENTS)
 private:
