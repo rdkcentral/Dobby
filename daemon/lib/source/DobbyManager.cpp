@@ -300,6 +300,7 @@ void DobbyManager::cleanupContainers()
     AI_LOG_INFO("%d old containers found - attempting to clean up", count);
 
     // Clean up time
+    int stuckContainerCount = 0;
     const std::list<DobbyRunC::ContainerListItem> containers = mRunc->list();
     for (const auto &container : containers)
     {
@@ -384,6 +385,7 @@ void DobbyManager::cleanupContainers()
         if (stuckContainer)
         {
             AI_LOG_FATAL("Failed to clean up container '%s'. We may be unable to launch app until next reboot!", id.c_str());
+            stuckContainerCount++;
             // Track the container so we can't start a container with the same name again
             std::unique_ptr<DobbyContainer> dobbyContainer(new DobbyContainer(nullptr, nullptr, nullptr));
             dobbyContainer->state = DobbyContainer::State::Unknown;
@@ -391,6 +393,15 @@ void DobbyManager::cleanupContainers()
             dobbyContainer->containerPid = container.pid;
             mContainers.emplace(id, std::move(dobbyContainer));
         }
+    }
+
+    if (stuckContainerCount > 0)
+    {
+        AI_LOG_INFO("%d containers are stuck and can't be destroyed. Starting regular cleanup job", stuckContainerCount);
+        // Try to clean up the container later so the user can restart the app again
+        mCleanupTaskTimerId = mUtilities->startTimer(std::chrono::seconds(10),
+                                false,
+                                std::bind(&DobbyManager::invalidContainerCleanupTask, this));
     }
 
     AI_LOG_FN_EXIT();
@@ -2389,4 +2400,80 @@ void DobbyManager::runcMonitorThread()
     AI_LOG_INFO("stopped SIGCHLD monitor thread");
 
     AI_LOG_FN_EXIT();
+}
+
+/**
+ * @brief Task that will try and cleanup invalid/unknown state containers
+ * periodically - if the container can be killed then kill it and release the id
+ * back to the pool so it can be restarted
+ *
+ */
+bool DobbyManager::invalidContainerCleanupTask()
+{
+    AI_LOG_FN_ENTRY();
+
+    std::lock_guard<std::mutex> locker(mLock);
+
+    // Find out how many containers are in an unknown state
+    const int stuckCount = std::count_if(mContainers.begin(), mContainers.end(), [](const std::pair<const ContainerId, std::unique_ptr<DobbyContainer>>& c)
+    {
+        return c.second->state == DobbyContainer::State::Unknown;
+    });
+    if (stuckCount == 0)
+    {
+        // No more stuck containers, our job here is done
+        return false;
+    }
+
+    auto it = mContainers.begin();
+    std::shared_ptr<DobbyDevNullStream> devNull = std::make_shared<DobbyDevNullStream>();
+    while (it != mContainers.end())
+    {
+        // Only care about containers in an unknown state
+        if (it->second->state == DobbyContainer::State::Unknown)
+        {
+            // Check if container PID is still valid
+            if (kill(it->second->containerPid, 0) != 0 && errno == ESRCH)
+            {
+                // Pid no longer exists, attempt to destroy container
+                if (mRunc->destroy(it->first, devNull))
+                {
+                    // Container destroyed successfully, stop tracking it
+                    AI_LOG_INFO("Previously stuck container %d has  been destroyed - releasing id back to the pool", it->second->descriptor);
+                    it = mContainers.erase(it);
+                }
+            }
+            else
+            {
+                // Pid is still valid. Attempt to send SIGKILL
+                mRunc->killCont(it->first, SIGKILL, true);
+
+                // Did we actually kill it? Give it some time, then check the status
+                std::this_thread::sleep_for(std::chrono::milliseconds(200));
+                DobbyRunC::ContainerStatus state = mRunc->state(it->first);
+
+                if (state != DobbyRunC::ContainerStatus::Running)
+                {
+                    // We killed it! Destroy it and remove from our list
+                    if (mRunc->destroy(it->first, devNull))
+                    {
+                        // Container destroyed successfully, stop tracking it
+                        AI_LOG_INFO("Previously stuck container %d has been destroyed - releasing id back to the pool", it->second->descriptor);
+                        it = mContainers.erase(it);
+                    }
+                }
+                else
+                {
+                    ++it;
+                }
+            }
+        }
+        else
+        {
+            ++it;
+        }
+    }
+
+    AI_LOG_FN_EXIT();
+    return true;
 }
