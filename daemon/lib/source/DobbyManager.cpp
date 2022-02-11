@@ -60,6 +60,10 @@
 #include <chrono>
 #include <thread>
 
+#if defined(USE_SYSTEMD)
+    #include <systemd/sd-daemon.h>
+#endif
+
 // The following are supported by all sky kernels, but some toolchains (ST)
 // aren't built against the correct kernel headers, hence need to define these
 #ifndef PR_SET_CHILD_SUBREAPER
@@ -303,6 +307,12 @@ void DobbyManager::cleanupContainers()
     const std::list<DobbyRunC::ContainerListItem> containers = mRunc->list();
     for (const auto &container : containers)
     {
+#if defined(USE_SYSTEMD)
+        // Wag the watchdog each time we go round here, since we haven't started the watchdog wagging thread
+        // yet and if we have many containers this could take some time...
+        sd_notify(0, "WATCHDOG=1");
+#endif
+
         // If true, indicates we can't clean up the container - it's stuck in some way
         bool stuckContainer = false;
 
