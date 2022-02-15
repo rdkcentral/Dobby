@@ -350,6 +350,7 @@ void DobbyManager::cleanupContainers()
                 {
                     // Managed to kill the container, mark it as stopped so we destroy it next
                     status = DobbyRunC::ContainerStatus::Stopped;
+                    // Quit the retry loop
                     break;
                 }
 
@@ -380,11 +381,6 @@ void DobbyManager::cleanupContainers()
             {
                 AI_LOG_WARN("Could not destroy container %s with error %s", id.c_str(), buffer->getBuffer().data());
                 stuckContainer = true;
-            }
-            else
-            {
-                // Cleaned up successfully
-                break;
             }
         }
 
