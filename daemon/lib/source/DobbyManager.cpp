@@ -95,6 +95,7 @@ DobbyManager::DobbyManager(const std::shared_ptr<IDobbyEnv> &env,
     , mRuncMonitorTerminate(false)
 #if defined(LEGACY_COMPONENTS)
     , mLegacyPlugins(new DobbyLegacyPluginManager(env, utils))
+    , mCleanupTaskTimerId(0)
 #endif // defined(LEGACY_COMPONENTS)
 {
     AI_LOG_FN_ENTRY();

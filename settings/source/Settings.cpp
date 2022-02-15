@@ -272,6 +272,13 @@ Settings::Settings(const Json::Value& settings)
                 AI_LOG_ERROR("Invalid logRelay type in settingsFile, should be object");
             }
         }
+        else
+        {
+            // Default initailise the struct
+            mLogRelaySettings = {};
+            mLogRelaySettings.syslogEnabled = false;
+            mLogRelaySettings.journaldEnabled = false;
+        }
     }
 
 }
