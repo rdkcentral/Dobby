@@ -93,6 +93,7 @@ DobbyManager::DobbyManager(const std::shared_ptr<IDobbyEnv> &env,
     , mLogger(std::make_unique<DobbyLogger>(settings))
     , mRunc(std::make_unique<DobbyRunC>(utils, settings))
     , mRuncMonitorTerminate(false)
+    , mCleanupTaskTimerId(0)
 #if defined(LEGACY_COMPONENTS)
     , mLegacyPlugins(new DobbyLegacyPluginManager(env, utils))
 #endif // defined(LEGACY_COMPONENTS)
