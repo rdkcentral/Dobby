@@ -57,6 +57,12 @@
 #include <sys/resource.h>
 #include <fstream>
 #include <unordered_map>
+#include <chrono>
+#include <thread>
+
+#if defined(USE_SYSTEMD)
+    #include <systemd/sd-daemon.h>
+#endif
 
 // The following are supported by all sky kernels, but some toolchains (ST)
 // aren't built against the correct kernel headers, hence need to define these
@@ -87,6 +93,7 @@ DobbyManager::DobbyManager(const std::shared_ptr<IDobbyEnv> &env,
     , mLogger(std::make_unique<DobbyLogger>(settings))
     , mRunc(std::make_unique<DobbyRunC>(utils, settings))
     , mRuncMonitorTerminate(false)
+    , mCleanupTaskTimerId(0)
 #if defined(LEGACY_COMPONENTS)
     , mLegacyPlugins(new DobbyLegacyPluginManager(env, utils))
 #endif // defined(LEGACY_COMPONENTS)
@@ -115,6 +122,11 @@ DobbyManager::~DobbyManager()
     // the logging plugin whilst the thread is logging data, which leads
     // to undefined behaviour
     mLogger->ShutdownLoggers();
+
+    if (mCleanupTaskTimerId > 0)
+    {
+        mUtilities->cancelTimer(mCleanupTaskTimerId);
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -261,6 +273,9 @@ void DobbyManager::cleanupContainers()
     AI_LOG_FN_ENTRY();
 
     // Do a manual check for leftover containers ourselves to improve startup performance
+    // For consistency, we should really call out to crun list here, but in some scenarios
+    // that can fail. Since we're only interested in finding out if the container is running
+    // or stopped, do it ourselves
     const std::string workDir = mRunc->getWorkingDir();
     DIR *d = opendir(workDir.c_str());
     if (!d)
@@ -292,39 +307,113 @@ void DobbyManager::cleanupContainers()
         return;
     }
 
-    AI_LOG_INFO("%d old containers found - attenpting to clean up", count);
+    AI_LOG_INFO("%d old containers found - attempting to clean up", count);
 
-    // Now do a full callout to crun so that we can find what state the containers
-    // are in
-    const std::map<ContainerId, DobbyRunC::ContainerStatus> containers = mRunc->list();
+    // Clean up time
+    int stuckContainerCount = 0;
+    const std::list<DobbyRunC::ContainerListItem> containers = mRunc->list();
     for (const auto &container : containers)
     {
-        const ContainerId &id = container.first;
-        const DobbyRunC::ContainerStatus &status = container.second;
+#if defined(USE_SYSTEMD)
+        // Wag the watchdog each time we go round here, since we haven't started the watchdog wagging thread
+        // yet and if we have many containers this could take some time...
+        sd_notify(0, "WATCHDOG=1");
+#endif
 
-        AI_LOG_WARN("found old container '%s' in state %d, attempting to clean it up",
-                    id.c_str(), int(status));
+        // If true, indicates we can't clean up the container - it's stuck in some way
+        bool stuckContainer = false;
 
-        switch (status)
+        const ContainerId &id = container.id;
+        DobbyRunC::ContainerStatus status = container.status;
+
+        AI_LOG_WARN("found old container '%s' with pid %d in state %d, cleaning it up",
+                    id.c_str(), container.pid, int(status));
+
+        if (status == DobbyRunC::ContainerStatus::Paused ||
+            status == DobbyRunC::ContainerStatus::Pausing ||
+            status == DobbyRunC::ContainerStatus::Running)
         {
-            case DobbyRunC::ContainerStatus::Paused:
-            case DobbyRunC::ContainerStatus::Pausing:
-            case DobbyRunC::ContainerStatus::Running:
-                AI_LOG_INFO("attempting to kill old container '%s'", id.c_str());
-                mRunc->killCont(id, SIGKILL, true);
-                // fall through
+            /*
+            There have been scenarios where SIGKILL doesn't work. Retry killing the container a
+            few times. If the container is still running, then we can't attempt to destroy
+            it (destroy will just hang forever)
 
-            case DobbyRunC::ContainerStatus::Created:
-            case DobbyRunC::ContainerStatus::Stopped:
-            case DobbyRunC::ContainerStatus::Unknown:
-                // Don't bother capturing hook logs here
-                std::shared_ptr<DobbyDevNullStream> nullstream = std::make_shared<DobbyDevNullStream>();
-                AI_LOG_INFO("attempting to destroy old container '%s'", id.c_str());
-                // Force delete by default as we have no idea what condition the container is in
-                // and it may not respond to a normal delete
-                mRunc->destroy(id, nullstream, true);
-                break;
+            Seems to occur when a process gets stuck in an uninterruptible sleep
+            */
+            const int maxRetry = 3;
+            int retryCount = 1;
+            auto retryTime = std::chrono::milliseconds(50);
+
+            while (retryCount <= maxRetry)
+            {
+                AI_LOG_INFO("attempting to kill old container '%s' (attempt %d/%d)", id.c_str(), retryCount, maxRetry);
+                mRunc->killCont(id, SIGKILL, true);
+
+                // Did we actually kill it? Give it some time, then check the status
+                std::this_thread::sleep_for(retryTime * retryCount);
+                DobbyRunC::ContainerStatus state = mRunc->state(id);
+
+                if (state != DobbyRunC::ContainerStatus::Running)
+                {
+                    // Managed to kill the container, mark it as stopped so we destroy it next
+                    status = DobbyRunC::ContainerStatus::Stopped;
+                    // Quit the retry loop
+                    break;
+                }
+
+                if (retryCount < maxRetry)
+                {
+                    AI_LOG_WARN("Failed to kill container '%s' (attempt %d/%d)", id.c_str(), retryCount, maxRetry);
+                }
+                else
+                {
+                    // We can't kill the container. This will leave dobby in a potentially bad state since there is a container
+                    // running that is stuck somewhere between life and death. However this is better than the whole daemon
+                    // locking up completely (and being killed by watchdog repeatedly)
+                    stuckContainer = true;
+                }
+                retryCount++;
+            }
         }
+
+        if (status == DobbyRunC::ContainerStatus::Created ||
+            status == DobbyRunC::ContainerStatus::Stopped ||
+            status == DobbyRunC::ContainerStatus::Unknown)
+        {
+            std::shared_ptr<DobbyBufferStream> buffer = std::make_shared<DobbyBufferStream>();
+            AI_LOG_INFO("attempting to destroy old container '%s'", id.c_str());
+            // Dobby will try a normal delete, then a force delete
+            // Force delete may hang on old crun versions if process in uninterruptible sleep: https://github.com/containers/crun/issues/868
+            if (!mRunc->destroy(id, buffer))
+            {
+                AI_LOG_WARN("Could not destroy container %s with error %s", id.c_str(), buffer->getBuffer().data());
+                stuckContainer = true;
+            }
+        }
+
+        // If the container is stuck (i.e. we can't kill or destroy it), then
+        // add it in the Unknown state so we can't attempt to start a container with
+        // the same ID again
+        if (stuckContainer)
+        {
+            AI_LOG_FATAL("Failed to clean up container '%s'. We may be unable to launch app until next reboot!", id.c_str());
+            stuckContainerCount++;
+            // Track the container so we can't start a container with the same name again
+            std::unique_ptr<DobbyContainer> dobbyContainer(new DobbyContainer(nullptr, nullptr, nullptr));
+            dobbyContainer->state = DobbyContainer::State::Unknown;
+            // Unfortunately we'll never actually receive the signal if/when this container does die since we're no longer it's parent
+            dobbyContainer->containerPid = container.pid;
+            mContainers.emplace(id, std::move(dobbyContainer));
+        }
+    }
+
+    if (stuckContainerCount > 0)
+    {
+        AI_LOG_INFO("%d containers are stuck and can't be destroyed. Starting regular cleanup job", stuckContainerCount);
+        // Try to clean up the container later so the user can restart the app again
+        mCleanupTaskTimerId = mUtilities->startTimer(std::chrono::seconds(10),
+                                false,
+                                std::bind(&DobbyManager::invalidContainerCleanupTask, this));
     }
 
     AI_LOG_FN_EXIT();
@@ -1121,6 +1210,14 @@ bool DobbyManager::stopContainer(int32_t cd, bool withPrejudice)
     // flag so the container doesn't auto-respawn
     container->clearRestartOnCrash();
 
+    if (container->state == DobbyContainer::State::Unknown)
+    {
+        // Container is in an unknown (i.e. bad) state. Don't attempt to stop it
+        // (should be cleaned up automatically by background cleanup task)
+        AI_LOG_WARN("Container %s is in an unknown state - cannot stop", id.c_str());
+        return false;
+    }
+
     // check the state, if we're in the Starting phase then pre-start hasn't run
     // and we just need to set a flag to indicate the pre-start hooks should
     // fail, this is the quickest way to terminate a container in this state
@@ -1452,6 +1549,8 @@ int32_t DobbyManager::stateOfContainer(int32_t cd) const
                 return CONTAINER_STATE_PAUSED;
             case DobbyContainer::State::Stopping:
                 return CONTAINER_STATE_STOPPING;
+            default:
+                return CONTAINER_STATE_INVALID;
         }
     }
 
@@ -1540,6 +1639,9 @@ std::string DobbyManager::statsOfContainer(int32_t cd) const
                 break;
             case DobbyContainer::State::Paused:
                 jsonStats["state"] = "paused";
+                break;
+            case DobbyContainer::State::Unknown:
+                jsonStats["state"] = "unknown";
                 break;
         }
 
@@ -2024,7 +2126,7 @@ void DobbyManager::onChildExit()
 {
     AI_LOG_FN_ENTRY();
 
-    AI_LOG_INFO("detected child terminated signal");
+    AI_LOG_DEBUG("detected child terminated signal");
 
     // take the lock as we're being called from the signal monitor thread
     std::lock_guard<std::mutex> locker(mLock);
@@ -2036,6 +2138,14 @@ void DobbyManager::onChildExit()
     {
         const std::unique_ptr<DobbyContainer> &container = it->second;
         const pid_t containerPid = container->containerPid;
+
+        // If container has invalid pid or is in an unknown state, nothing we can do
+        // so move on
+        if (containerPid <= 0 || container->state == DobbyContainer::State::Unknown)
+        {
+            ++it;
+            continue;
+        }
 
         // check if the runc process has exited
         int status = 0;
@@ -2310,4 +2420,81 @@ void DobbyManager::runcMonitorThread()
     AI_LOG_INFO("stopped SIGCHLD monitor thread");
 
     AI_LOG_FN_EXIT();
+}
+
+/**
+ * @brief Task that will try and cleanup invalid/unknown state containers
+ * periodically - if the container can be killed then kill it and release the id
+ * back to the pool so it can be restarted
+ *
+ */
+bool DobbyManager::invalidContainerCleanupTask()
+{
+    AI_LOG_FN_ENTRY();
+
+    std::lock_guard<std::mutex> locker(mLock);
+
+    // Find out how many containers are in an unknown state
+    const int stuckCount = std::count_if(mContainers.begin(), mContainers.end(), [](const std::pair<const ContainerId, std::unique_ptr<DobbyContainer>>& c)
+    {
+        return c.second->state == DobbyContainer::State::Unknown;
+    });
+    if (stuckCount == 0)
+    {
+        // No more stuck containers, our job here is done
+        mCleanupTaskTimerId = -1;
+        return false;
+    }
+
+    auto it = mContainers.begin();
+    std::shared_ptr<DobbyDevNullStream> devNull = std::make_shared<DobbyDevNullStream>();
+    while (it != mContainers.end())
+    {
+        // Only care about containers in an unknown state
+        if (it->second->state == DobbyContainer::State::Unknown)
+        {
+            // Check if container PID is still valid
+            if (kill(it->second->containerPid, 0) != 0 && errno == ESRCH)
+            {
+                // Pid no longer exists, attempt to destroy container
+                if (mRunc->destroy(it->first, devNull))
+                {
+                    // Container destroyed successfully, stop tracking it
+                    AI_LOG_INFO("Previously stuck container %d has  been destroyed - releasing id back to the pool", it->second->descriptor);
+                    it = mContainers.erase(it);
+                }
+            }
+            else
+            {
+                // Pid is still valid. Attempt to send SIGKILL
+                mRunc->killCont(it->first, SIGKILL, true);
+
+                // Did we actually kill it? Give it some time, then check the status
+                std::this_thread::sleep_for(std::chrono::milliseconds(200));
+                DobbyRunC::ContainerStatus state = mRunc->state(it->first);
+
+                if (state != DobbyRunC::ContainerStatus::Running)
+                {
+                    // We killed it! Destroy it and remove from our list
+                    if (mRunc->destroy(it->first, devNull))
+                    {
+                        // Container destroyed successfully, stop tracking it
+                        AI_LOG_INFO("Previously stuck container %d has been destroyed - releasing id back to the pool", it->second->descriptor);
+                        it = mContainers.erase(it);
+                    }
+                }
+                else
+                {
+                    ++it;
+                }
+            }
+        }
+        else
+        {
+            ++it;
+        }
+    }
+
+    AI_LOG_FN_EXIT();
+    return true;
 }
