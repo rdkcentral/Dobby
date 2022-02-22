@@ -261,8 +261,9 @@ void DobbyManager::setupWorkspace(const std::shared_ptr<IDobbyEnv> &env)
 /**
  *  @brief Gets a list of running containers and tries to kill and delete them.
  *
- *  This is used at start-up so we know we have no containers left over from
- *  a previous run (ie. we've crashed) or the service has been stopped.
+ *  Designed as a crash-recovery mechanism as we should clean up all our containers
+ *  if the daemon shut down gracefully
+ *
  *
  */
 void DobbyManager::cleanupContainers()
@@ -306,7 +307,13 @@ void DobbyManager::cleanupContainers()
 
     AI_LOG_INFO("%d old containers found - attempting to clean up", count);
 
-    // Clean up time
+    /* We've got some old containers, try to clean them up
+
+    There are a few important caveats here since we are likely recovering from a crash situation at this point.
+    The main consideration is that we can't guarantee the container bundle will actually still exist on disk. We'll
+    attempt to run the postHalt and postStop plugins, but they might throw errors if they try to do
+    anything with the rootfs. */
+
     int stuckContainerCount = 0;
     const std::list<DobbyRunC::ContainerListItem> containers = mRunc->list();
     for (const auto &container : containers)
@@ -377,6 +384,30 @@ void DobbyManager::cleanupContainers()
             status == DobbyRunC::ContainerStatus::Stopped ||
             status == DobbyRunC::ContainerStatus::Unknown)
         {
+            // Attempt to run the postHalt hook to clean up anything done by the container plugins
+            // Since the bundle may not exist, load the config file from the crun copy
+
+            // First got to construct the plugin manager instance for this container
+            char configPath[PATH_MAX];
+            snprintf(configPath, sizeof(configPath), "%s/%s/config.json", mRunc->getWorkingDir().c_str(), id.c_str());
+
+            parser_error err;
+            auto containerConfig = std::shared_ptr<rt_dobby_schema>(rt_dobby_schema_parse_file(configPath, nullptr, &err), free_rt_dobby_schema);
+            if (containerConfig.get() == nullptr || err)
+            {
+                AI_LOG_WARN("Couldn't load container confirm from %s, cannot run postHalt hook for %s", configPath, id.c_str());
+            }
+            else
+            {
+                auto rdkPluginUtils = std::make_shared<DobbyRdkPluginUtils>(containerConfig, id.str());
+                // TODO:: Rootfs path might not be accurate here since we've assumed it's called rootfs (or might not exist at all!)
+                auto rdkPluginManager = std::make_shared<DobbyRdkPluginManager>(containerConfig, container.bundlePath + "rootfs", PLUGIN_PATH, rdkPluginUtils);
+                if (!rdkPluginManager->runPlugins(IDobbyRdkPlugin::HintFlags::PostHaltFlag, 4000))
+                {
+                    AI_LOG_ERROR("Failure in postHalt hook");
+                }
+            }
+
             std::shared_ptr<DobbyBufferStream> buffer = std::make_shared<DobbyBufferStream>();
             AI_LOG_INFO("attempting to destroy old container '%s'", id.c_str());
             // Dobby will try a normal delete, then a force delete
