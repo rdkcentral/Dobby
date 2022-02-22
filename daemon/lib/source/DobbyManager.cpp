@@ -389,7 +389,7 @@ void DobbyManager::cleanupContainers()
 
             // First got to construct the plugin manager instance for this container
             char configPath[PATH_MAX];
-            snprintf(configPath, sizeof(configPath), "%s/%s/config.json", mRunc->getWorkingDir().c_str(), id.c_str());
+            snprintf(configPath, sizeof(configPath), "%s/%s/config.json", workDir.c_str(), id.c_str());
 
             parser_error err;
             auto containerConfig = std::shared_ptr<rt_dobby_schema>(rt_dobby_schema_parse_file(configPath, nullptr, &err), free_rt_dobby_schema);
@@ -400,14 +400,33 @@ void DobbyManager::cleanupContainers()
             else
             {
                 auto rdkPluginUtils = std::make_shared<DobbyRdkPluginUtils>(containerConfig, id.str());
+
+                // Work out the rootfs path (if it exists)
+                std::string rootfsDirPath;
+                if (containerConfig->root->path[0] == '/')
+                {
+                    rootfsDirPath = std::string(containerConfig->root->path) + "/";
+                }
+                else
+                {
+                    // relative path to rootfs
+                    rootfsDirPath = std::string(container.bundlePath) + "/" + containerConfig->root->path + "/";
+                }
+
+                if (access(rootfsDirPath.c_str(), R_OK) != 0)
+                {
+                    AI_LOG_WARN("Cannot access container rootfs @ '%s' - postHalt hooks may fail", rootfsDirPath.c_str());
+                }
+
                 // TODO:: Rootfs path might not be accurate here since we've assumed it's called rootfs (or might not exist at all!)
-                auto rdkPluginManager = std::make_shared<DobbyRdkPluginManager>(containerConfig, container.bundlePath + "rootfs", PLUGIN_PATH, rdkPluginUtils);
+                auto rdkPluginManager = std::make_shared<DobbyRdkPluginManager>(containerConfig, rootfsDirPath.c_str(), PLUGIN_PATH, rdkPluginUtils);
                 if (!rdkPluginManager->runPlugins(IDobbyRdkPlugin::HintFlags::PostHaltFlag, 4000))
                 {
                     AI_LOG_ERROR("Failure in postHalt hook");
                 }
             }
 
+            // Now attempt to actually delete the container
             std::shared_ptr<DobbyBufferStream> buffer = std::make_shared<DobbyBufferStream>();
             AI_LOG_INFO("attempting to destroy old container '%s'", id.c_str());
             // Dobby will try a normal delete, then a force delete
@@ -427,9 +446,9 @@ void DobbyManager::cleanupContainers()
             AI_LOG_FATAL("Failed to clean up container '%s'. We may be unable to launch app until next reboot!", id.c_str());
             stuckContainerCount++;
             // Track the container so we can't start a container with the same name again
+            // A background thread will handle cleaning it up if/when it eventually dies
             std::unique_ptr<DobbyContainer> dobbyContainer(new DobbyContainer(nullptr, nullptr, nullptr));
             dobbyContainer->state = DobbyContainer::State::Unknown;
-            // Unfortunately we'll never actually receive the signal if/when this container does die since we're no longer it's parent
             dobbyContainer->containerPid = container.pid;
             mContainers.emplace(id, std::move(dobbyContainer));
         }
