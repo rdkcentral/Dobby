@@ -36,8 +36,10 @@
 #include <iostream>
 #include <map>
 
-DobbyRdkPluginUtils::DobbyRdkPluginUtils(const std::shared_ptr<rt_dobby_schema> &cfg)
+DobbyRdkPluginUtils::DobbyRdkPluginUtils(const std::shared_ptr<rt_dobby_schema> &cfg,
+                                        const std::string& containerId)
     : mConf(cfg)
+    , mContainerId(containerId)
 {
     AI_LOG_FN_ENTRY();
 
@@ -45,19 +47,11 @@ DobbyRdkPluginUtils::DobbyRdkPluginUtils(const std::shared_ptr<rt_dobby_schema> 
 }
 
 DobbyRdkPluginUtils::DobbyRdkPluginUtils(const std::shared_ptr<rt_dobby_schema> &cfg,
-                                         const std::shared_ptr<IDobbyStartState> &startState)
+                                         const std::shared_ptr<IDobbyStartState> &startState,
+                                         const std::string& containerId)
     : mConf(cfg)
     , mStartState(startState)
-{
-    AI_LOG_FN_ENTRY();
-
-    AI_LOG_FN_EXIT();
-}
-
-DobbyRdkPluginUtils::DobbyRdkPluginUtils(const std::shared_ptr<rt_dobby_schema> &cfg,
-                                         const std::shared_ptr<const rt_state_schema> &state)
-    : mConf(cfg)
-    , mState(state)
+    , mContainerId(containerId)
 {
     AI_LOG_FN_ENTRY();
 
@@ -66,10 +60,24 @@ DobbyRdkPluginUtils::DobbyRdkPluginUtils(const std::shared_ptr<rt_dobby_schema> 
 
 DobbyRdkPluginUtils::DobbyRdkPluginUtils(const std::shared_ptr<rt_dobby_schema> &cfg,
                                          const std::shared_ptr<const rt_state_schema> &state,
-                                         const std::shared_ptr<IDobbyStartState> &startState)
+                                         const std::string& containerId)
+    : mConf(cfg)
+    , mState(state)
+    , mContainerId(containerId)
+{
+    AI_LOG_FN_ENTRY();
+
+    AI_LOG_FN_EXIT();
+}
+
+DobbyRdkPluginUtils::DobbyRdkPluginUtils(const std::shared_ptr<rt_dobby_schema> &cfg,
+                                         const std::shared_ptr<const rt_state_schema> &state,
+                                         const std::shared_ptr<IDobbyStartState> &startState,
+                                         const std::string& containerId)
     : mConf(cfg)
     , mState(state)
     , mStartState(startState)
+    , mContainerId(containerId)
 {
     AI_LOG_FN_ENTRY();
 
@@ -116,28 +124,11 @@ pid_t DobbyRdkPluginUtils::getContainerPid() const
 /**
  *  @brief Gets the container ID
  *
- *  Since Dobby sets the container hostname to match the container ID, we can
- *  use the hostname. Ideally we'd use the state from stdin, but that's only
- *  available during OCI hooks.
- *
  *  @return Container ID as string
  */
 std::string DobbyRdkPluginUtils::getContainerId() const
 {
-    // If we can retrieve the ID from the state, then use it
-    if (mState && mState->id)
-    {
-        return std::string(mState->id);
-    }
-
-    // Fall back to hostname for non-OCI hooks
-    if (!mConf)
-    {
-        AI_LOG_ERROR_EXIT("Failed to load config");
-        return "";
-    }
-
-    return std::string(mConf->hostname);
+    return mContainerId;
 }
 
 // -------------------------------------------------------------------------

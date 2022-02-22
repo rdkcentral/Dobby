@@ -114,8 +114,11 @@ DobbyManager::DobbyManager(const std::shared_ptr<IDobbyEnv> &env,
 DobbyManager::~DobbyManager()
 {
     // TODO: clean-up all containers
-
     stopRuncMonitorThread();
+
+    // We stop monitoring for container termination before cleaning up
+    // so we can force container cleanup to be synchronous and deterministic
+    cleanupContainersShutdown();
 
     if (mCleanupTaskTimerId > 0)
     {
@@ -408,6 +411,35 @@ void DobbyManager::cleanupContainers()
         mCleanupTaskTimerId = mUtilities->startTimer(std::chrono::seconds(10),
                                 false,
                                 std::bind(&DobbyManager::invalidContainerCleanupTask, this));
+    }
+
+    AI_LOG_FN_EXIT();
+}
+
+void DobbyManager::cleanupContainersShutdown()
+{
+    AI_LOG_FN_ENTRY();
+
+    AI_LOG_INFO("Dobby shutting down - stopping %lu containers", mContainers.size());
+
+    auto it = mContainers.begin();
+    while (it != mContainers.end())
+    {
+        if (it->second->state == DobbyContainer::State::Running)
+        {
+            AI_LOG_INFO("Stopping container %s", it->first.c_str());
+            if (!stopContainer(it->second->descriptor, false))
+            {
+                AI_LOG_ERROR("Failed to stop container %s. Will attempt to clean up at daemon restart", it->first.c_str());
+            }
+            else
+            {
+                // This would normally be done async by the runc monitor thread, but we're
+                // shutting down so we want to run synchronously
+                handleContainerTerminate(it->first, it->second, 0);
+                it = mContainers.erase(it);
+            }
+        }
     }
 
     AI_LOG_FN_EXIT();
@@ -767,7 +799,7 @@ int32_t DobbyManager::startContainerFromSpec(const ContainerId &id,
         const std::string rootfsPath = rootfs->path();
 
         std::shared_ptr<rt_dobby_schema> containerConfig(config->config());
-        auto rdkPluginUtils = std::make_shared<DobbyRdkPluginUtils>(config->config(), startState);
+        auto rdkPluginUtils = std::make_shared<DobbyRdkPluginUtils>(config->config(), startState, id.str());
         auto rdkPluginManager = std::make_shared<DobbyRdkPluginManager>(containerConfig, rootfsPath, PLUGIN_PATH, rdkPluginUtils);
 
         std::vector<std::string> loadedPlugins = rdkPluginManager->listLoadedPlugins();
@@ -941,7 +973,7 @@ int32_t DobbyManager::startContainerFromBundle(const ContainerId &id,
         const std::string rootfsPath = rootfs->path();
 
         std::shared_ptr<rt_dobby_schema> containerConfig(config->config());
-        auto rdkPluginUtils = std::make_shared<DobbyRdkPluginUtils>(config->config(), startState);
+        auto rdkPluginUtils = std::make_shared<DobbyRdkPluginUtils>(config->config(), startState, id.str());
         auto rdkPluginManager = std::make_shared<DobbyRdkPluginManager>(containerConfig, rootfsPath, PLUGIN_PATH, rdkPluginUtils);
 
         std::vector<std::string> loadedPlugins = rdkPluginManager->listLoadedPlugins();
@@ -2103,6 +2135,94 @@ bool DobbyManager::onPreDestructionHook(const ContainerId &id,
 }
 #endif //defined(LEGACY_COMPONENTS)
 
+void DobbyManager::handleContainerTerminate(const ContainerId &id, const std::unique_ptr<DobbyContainer>& container, const int status)
+{
+    AI_LOG_FN_ENTRY();
+
+    // this function is called when the runc process dies, what this
+    // boils down to is that if we're in the Running state it
+    // means that the preStart hook has been called but postStop hasn't
+    // therefore we should call the postStop here as well as the
+    // preDestruction hook
+    if (container->state == DobbyContainer::State::Running)
+    {
+#if defined(LEGACY_COMPONENTS)
+        // this will internally change the state to 'stopping'
+        onPostStopHook(id, container);
+#endif // defined(LEGACY_COMPONENTS)
+
+        // change the container state to 'stopping'
+        container->state = DobbyContainer::State::Stopping;
+    }
+
+    // signal the higher layers that a container has died
+    if (mContainerStoppedCb)
+    {
+        mContainerStoppedCb(container->descriptor, id, status);
+    }
+
+    // check if the container has the respawn flag, if so attempt to
+    // restart the container now, this skips the preDestruction /
+    // postConstruction hooks
+    if (!container->shouldRestart(status) || !restartContainer(id, container))
+    {
+#if defined(LEGACY_COMPONENTS)
+        // either the respawn flag isn't set, or we failed to restart
+        // the container, so call any pre-destruction hooks before
+        // tearing down the roots and bundle directories
+        onPreDestructionHook(id, container);
+#endif // defined(LEGACY_COMPONENTS)
+
+        // Also run any postHalt hooks in RDK plugins
+        if (container->config->rdkPlugins().size() > 0)
+        {
+            onPostHaltHook(container);
+        }
+
+        // Dump the logs from the postStop hook
+        std::shared_ptr<DobbyBufferStream> bufferStream =
+            std::make_shared<DobbyBufferStream>();
+
+        // ask the runc tool to clean up anything it may have left over
+        // for it's own use
+        if (!mRunc->destroy(id, bufferStream))
+        {
+            AI_LOG_ERROR("failed to destroy '%s'", id.c_str());
+        }
+
+        if (container->rdkPluginManager)
+        {
+            auto loggingPlugin = container->rdkPluginManager->getContainerLogger();
+            // No point trying to stop logging if there was never a
+            // logging plugin to run in the first place
+            if (loggingPlugin)
+            {
+                // If main container logging thread is still running,
+                // wait for it to finish before we dump the hook output
+                // to the log
+                mLogger->DumpBuffer(bufferStream->getMemFd(), container->containerPid, loggingPlugin);
+            }
+        }
+
+        // clear the runc pid just in case it accidentally gets re-used
+        container->containerPid = -1;
+
+        // remove any metadata stored for the container
+        mUtilities->clearContainerMetaData(id);
+
+        // If the container was launched from a custom config, delete
+        // the custom config
+        if (!container->customConfigFilePath.empty())
+        {
+            if (remove(container->customConfigFilePath.c_str()) != 0)
+            {
+                AI_LOG_SYS_ERROR(errno, "Failed to remove custom config '%s'",
+                                 container->customConfigFilePath.c_str());
+            }
+        }
+    }
+}
+
 // -----------------------------------------------------------------------------
 /**
  *  @brief Called when we detect a child process has terminated.
@@ -2169,88 +2289,10 @@ void DobbyManager::onChildExit()
             AI_LOG_INFO("runc for container '%s' has quit (pid:%d status:0x%04x)",
                         id.c_str(), containerPid, status);
 
-            // this function is called when the runc process dies, what this
-            // boils down to is that if we're in the Running state it
-            // means that the preStart hook has been called but postStop hasn't
-            // therefore we should call the postStop here as well as the
-            // preDestruction hook
-            if (container->state == DobbyContainer::State::Running)
-            {
-#if defined(LEGACY_COMPONENTS)
-                // this will internally change the state to 'stopping'
-                onPostStopHook(id, container);
-#endif //defined(LEGACY_COMPONENTS)
+            handleContainerTerminate(id, container, status);
 
-                // change the container state to 'stopping'
-                container->state = DobbyContainer::State::Stopping;
-            }
-
-            // signal the higher layers that a container has died
-            if (mContainerStoppedCb)
-            {
-                mContainerStoppedCb(container->descriptor, id, status);
-            }
-
-            // check if the container has the respawn flag, if so attempt to
-            // restart the container now, this skips the preDestruction /
-            // postConstruction hooks
             if (!container->shouldRestart(status) || !restartContainer(id, container))
             {
-#if defined(LEGACY_COMPONENTS)
-                // either the respawn flag isn't set, or we failed to restart
-                // the container, so call any pre-destruction hooks before
-                // tearing down the roots and bundle directories
-                onPreDestructionHook(id, container);
-#endif //defined(LEGACY_COMPONENTS)
-
-                // Also run any postHalt hooks in RDK plugins
-                if (container->config->rdkPlugins().size() > 0)
-                {
-                    onPostHaltHook(container);
-                }
-
-                // Dump the logs from the postStop hook
-                std::shared_ptr<DobbyBufferStream> bufferStream =
-                    std::make_shared<DobbyBufferStream>();
-
-                // ask the runc tool to clean up anything it may have left over
-                // for it's own use
-                if (!mRunc->destroy(id, bufferStream))
-                {
-                    AI_LOG_ERROR("failed to destroy '%s'", id.c_str());
-                }
-
-                if (container->rdkPluginManager)
-                {
-                    auto loggingPlugin = container->rdkPluginManager->getContainerLogger();
-                    // No point trying to stop logging if there was never a
-                    // logging plugin to run in the first place
-                    if (loggingPlugin)
-                    {
-                        // If main container logging thread is still running,
-                        // wait for it to finish before we dump the hook output
-                        // to the log
-                        mLogger->DumpBuffer(bufferStream->getMemFd(), container->containerPid, loggingPlugin);
-                    }
-                }
-
-                // clear the runc pid just in case it accidentally gets re-used
-                container->containerPid = -1;
-
-                // remove any metadata stored for the container
-                mUtilities->clearContainerMetaData(id);
-
-                // If the container was launched from a custom config, delete
-                // the custom config
-                if (!container->customConfigFilePath.empty())
-                {
-                    if (remove(container->customConfigFilePath.c_str()) != 0)
-                    {
-                        AI_LOG_SYS_ERROR(errno, "Failed to remove custom config '%s'",
-                        container->customConfigFilePath.c_str());
-                    }
-                }
-
                 // remove the container, this should free all the resources
                 // associated with it
                 it = mContainers.erase(it);
@@ -2452,7 +2494,7 @@ bool DobbyManager::invalidContainerCleanupTask()
                 if (mRunc->destroy(it->first, devNull))
                 {
                     // Container destroyed successfully, stop tracking it
-                    AI_LOG_INFO("Previously stuck container %d has  been destroyed - releasing id back to the pool", it->second->descriptor);
+                    AI_LOG_INFO("Previously stuck container '%s' has  been destroyed - releasing id back to the pool", it->first.c_str());
                     it = mContainers.erase(it);
                 }
             }

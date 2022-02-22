@@ -73,14 +73,18 @@ typedef struct ContainerNetworkInfo
 class DobbyRdkPluginUtils
 {
 public:
-    DobbyRdkPluginUtils(const std::shared_ptr<rt_dobby_schema> &cfg);
     DobbyRdkPluginUtils(const std::shared_ptr<rt_dobby_schema> &cfg,
-                        const std::shared_ptr<IDobbyStartState> &startState);
+                        const std::string &containerId);
     DobbyRdkPluginUtils(const std::shared_ptr<rt_dobby_schema> &cfg,
-                        const std::shared_ptr<const rt_state_schema> &state);
+                        const std::shared_ptr<IDobbyStartState> &startState,
+                        const std::string &containerId);
     DobbyRdkPluginUtils(const std::shared_ptr<rt_dobby_schema> &cfg,
                         const std::shared_ptr<const rt_state_schema> &state,
-                        const std::shared_ptr<IDobbyStartState> &startState);
+                        const std::string &containerId);
+    DobbyRdkPluginUtils(const std::shared_ptr<rt_dobby_schema> &cfg,
+                        const std::shared_ptr<const rt_state_schema> &state,
+                        const std::shared_ptr<IDobbyStartState> &startState,
+                        const std::string &containerId);
     ~DobbyRdkPluginUtils();
 
     // -------------------------------------------------------------------------
@@ -157,6 +161,8 @@ private:
     std::shared_ptr<rt_dobby_schema> mConf;
     std::shared_ptr<const rt_state_schema> mState;
     std::shared_ptr<IDobbyStartState> mStartState;
+
+    const std::string mContainerId;
 };
 
 #endif // !defined(DOBBYRDKPLUGINUTILS_H)
