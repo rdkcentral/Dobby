@@ -30,6 +30,7 @@
 #include "IDobbyRdkLoggingPlugin.h"
 #include "ContainerId.h"
 #include "DobbyLogger.h"
+#include "DobbyRunC.h"
 #include <IIpcService.h>
 
 #include <pthread.h>
@@ -53,7 +54,6 @@
 
 class IDobbyEnv;
 class IDobbySettings;
-class DobbyRunC;
 class DobbyStartState;
 class DobbyLegacyPluginManager;
 class DobbyConfig;
@@ -92,6 +92,7 @@ private:
     void setupWorkspace(const std::shared_ptr<IDobbyEnv>& env);
 
     void cleanupContainers();
+    bool cleanupContainer(const DobbyRunC::ContainerListItem& container);
     void cleanupContainersShutdown();
 
 public:

@@ -113,11 +113,10 @@ DobbyManager::DobbyManager(const std::shared_ptr<IDobbyEnv> &env,
 
 DobbyManager::~DobbyManager()
 {
-    // TODO: clean-up all containers
+    // Intentially stop monitoring for container termination before cleaning up
+    // so we can force container cleanup to be synchronous and deterministic
     stopRuncMonitorThread();
 
-    // We stop monitoring for container termination before cleaning up
-    // so we can force container cleanup to be synchronous and deterministic
     cleanupContainersShutdown();
 
     if (mCleanupTaskTimerId > 0)
@@ -257,13 +256,136 @@ void DobbyManager::setupWorkspace(const std::shared_ptr<IDobbyEnv> &env)
     AI_LOG_FN_EXIT();
 }
 
+/**
+ * @brief Cleans up a container that is in an unknown state - used at Dobby startup to ensure the box
+ * is in a clean state with no leftover containers
+ *
+ * @param[in]   container   Container info returned by crun list command
+ */
+bool DobbyManager::cleanupContainer(const DobbyRunC::ContainerListItem &container)
+{
+    DobbyRunC::ContainerStatus status = container.status;
+
+    if (status == DobbyRunC::ContainerStatus::Paused ||
+        status == DobbyRunC::ContainerStatus::Pausing ||
+        status == DobbyRunC::ContainerStatus::Running)
+    {
+        /*
+        There have been scenarios where SIGKILL doesn't work. Retry killing the container a
+        few times. If the container is still running, then we can't attempt to destroy
+        it (destroy will just hang forever)
+
+        Seems to occur when a process gets stuck in an uninterruptible sleep
+        */
+        const int maxRetry = 4;
+        int retryCount = 1;
+        auto retryTime = std::chrono::milliseconds(50);
+
+        while (retryCount <= maxRetry)
+        {
+            AI_LOG_INFO("attempting to kill old container '%s' (attempt %d/%d)", container.id.c_str(), retryCount, maxRetry);
+            mRunc->killCont(container.id, SIGKILL, true);
+
+            // Did we actually kill it? Give it some time, then check the status
+            std::this_thread::sleep_for(retryTime * retryCount);
+            DobbyRunC::ContainerStatus state = mRunc->state(container.id);
+
+            if (state != DobbyRunC::ContainerStatus::Running)
+            {
+                // Managed to kill the container, mark it as stopped so we destroy it next
+                AI_LOG_INFO("Successfully killed old container '%s", container.id.c_str());
+                status = DobbyRunC::ContainerStatus::Stopped;
+                // Quit the retry loop
+                break;
+            }
+
+            AI_LOG_WARN("Failed to kill container '%s' (attempt %d/%d)", container.id.c_str(), retryCount, maxRetry);
+
+            if (retryCount >= maxRetry)
+            {
+                // We can't kill the container. This will leave dobby in a potentially bad state since there is a container
+                // running that is stuck somewhere between life and death. However this is better than the whole daemon
+                // locking up completely (and being killed by watchdog repeatedly)
+                return false;
+            }
+
+            retryCount++;
+        }
+    }
+
+    if (status == DobbyRunC::ContainerStatus::Created ||
+        status == DobbyRunC::ContainerStatus::Stopped ||
+        status == DobbyRunC::ContainerStatus::Unknown)
+    {
+        // Attempt to run the postHalt hook to clean up anything done by the container plugins
+        // Since the bundle may not exist, load the config file from the crun copy
+        char configPath[PATH_MAX];
+        snprintf(configPath, sizeof(configPath), "%s/%s/config.json", mRunc->getWorkingDir().c_str(), container.id.c_str());
+
+        parser_error err;
+        auto containerConfig = std::shared_ptr<rt_dobby_schema>(rt_dobby_schema_parse_file(configPath, nullptr, &err), free_rt_dobby_schema);
+        if (containerConfig.get() == nullptr || err)
+        {
+            AI_LOG_WARN("Couldn't load container confirm from %s, cannot run postHalt hook for %s", configPath, container.id.c_str());
+        }
+        else
+        {
+            // Got a good config
+            // Work out the rootfs path (if it exists)
+            std::string rootfsDirPath;
+            if (containerConfig->root->path[0] == '/')
+            {
+                rootfsDirPath = std::string(containerConfig->root->path) + "/";
+            }
+            else
+            {
+                // relative path to rootfs
+                rootfsDirPath = std::string(container.bundlePath) + "/" + containerConfig->root->path + "/";
+            }
+
+            if (access(rootfsDirPath.c_str(), R_OK) != 0)
+            {
+                AI_LOG_WARN("Cannot access container rootfs @ '%s' - postHalt hooks may fail", rootfsDirPath.c_str());
+            }
+
+            auto rdkPluginUtils = std::make_shared<DobbyRdkPluginUtils>(containerConfig, container.id.str());
+            auto rdkPluginManager = std::make_shared<DobbyRdkPluginManager>(containerConfig, rootfsDirPath.c_str(), PLUGIN_PATH, rdkPluginUtils);
+
+            // Attempt to run the postHalt hook for the container
+            if (!rdkPluginManager->runPlugins(IDobbyRdkPlugin::HintFlags::PostHaltFlag, 4000))
+            {
+                AI_LOG_ERROR("Failure in postHalt hook");
+            }
+        }
+
+        // Now attempt to actually delete the container
+        std::shared_ptr<DobbyBufferStream> buffer = std::make_shared<DobbyBufferStream>();
+        AI_LOG_INFO("attempting to destroy old container '%s'", container.id.c_str());
+        // Dobby will try a normal delete, then a force delete
+        // Force delete may hang on old crun versions if process in uninterruptible sleep: https://github.com/containers/crun/issues/868
+        if (!mRunc->destroy(container.id, buffer))
+        {
+            AI_LOG_ERROR_EXIT("Could not destroy container %s with error %s", container.id.c_str(), buffer->getBuffer().data());
+            return false;
+        }
+        else
+        {
+            AI_LOG_INFO("Successfully destroyed old container '%s", container.id.c_str());
+        }
+    }
+
+    return true;
+}
+
 // -----------------------------------------------------------------------------
 /**
  *  @brief Gets a list of running containers and tries to kill and delete them.
  *
+ *  Will run the postHalt hook for the container where possible (some hooks might
+ *  fail as the container bundle cannot be guaranteed to exist at this time)
+ *
  *  Designed as a crash-recovery mechanism as we should clean up all our containers
  *  if the daemon shut down gracefully
- *
  *
  */
 void DobbyManager::cleanupContainers()
@@ -324,140 +446,34 @@ void DobbyManager::cleanupContainers()
         sd_notify(0, "WATCHDOG=1");
 #endif
 
-        // If true, indicates we can't clean up the container - it's stuck in some way
-        bool stuckContainer = false;
-
-        const ContainerId &id = container.id;
-        DobbyRunC::ContainerStatus status = container.status;
-
         AI_LOG_WARN("found old container '%s' with pid %d in state %d, cleaning it up",
-                    id.c_str(), container.pid, int(status));
+                    container.id.c_str(), container.pid, int(container.status));
 
-        if (status == DobbyRunC::ContainerStatus::Paused ||
-            status == DobbyRunC::ContainerStatus::Pausing ||
-            status == DobbyRunC::ContainerStatus::Running)
-        {
-            /*
-            There have been scenarios where SIGKILL doesn't work. Retry killing the container a
-            few times. If the container is still running, then we can't attempt to destroy
-            it (destroy will just hang forever)
-
-            Seems to occur when a process gets stuck in an uninterruptible sleep
-            */
-            const int maxRetry = 3;
-            int retryCount = 1;
-            auto retryTime = std::chrono::milliseconds(50);
-
-            while (retryCount <= maxRetry)
-            {
-                AI_LOG_INFO("attempting to kill old container '%s' (attempt %d/%d)", id.c_str(), retryCount, maxRetry);
-                mRunc->killCont(id, SIGKILL, true);
-
-                // Did we actually kill it? Give it some time, then check the status
-                std::this_thread::sleep_for(retryTime * retryCount);
-                DobbyRunC::ContainerStatus state = mRunc->state(id);
-
-                if (state != DobbyRunC::ContainerStatus::Running)
-                {
-                    // Managed to kill the container, mark it as stopped so we destroy it next
-                    status = DobbyRunC::ContainerStatus::Stopped;
-                    // Quit the retry loop
-                    break;
-                }
-
-                if (retryCount < maxRetry)
-                {
-                    AI_LOG_WARN("Failed to kill container '%s' (attempt %d/%d)", id.c_str(), retryCount, maxRetry);
-                }
-                else
-                {
-                    // We can't kill the container. This will leave dobby in a potentially bad state since there is a container
-                    // running that is stuck somewhere between life and death. However this is better than the whole daemon
-                    // locking up completely (and being killed by watchdog repeatedly)
-                    stuckContainer = true;
-                }
-                retryCount++;
-            }
-        }
-
-        if (status == DobbyRunC::ContainerStatus::Created ||
-            status == DobbyRunC::ContainerStatus::Stopped ||
-            status == DobbyRunC::ContainerStatus::Unknown)
-        {
-            // Attempt to run the postHalt hook to clean up anything done by the container plugins
-            // Since the bundle may not exist, load the config file from the crun copy
-
-            // First got to construct the plugin manager instance for this container
-            char configPath[PATH_MAX];
-            snprintf(configPath, sizeof(configPath), "%s/%s/config.json", workDir.c_str(), id.c_str());
-
-            parser_error err;
-            auto containerConfig = std::shared_ptr<rt_dobby_schema>(rt_dobby_schema_parse_file(configPath, nullptr, &err), free_rt_dobby_schema);
-            if (containerConfig.get() == nullptr || err)
-            {
-                AI_LOG_WARN("Couldn't load container confirm from %s, cannot run postHalt hook for %s", configPath, id.c_str());
-            }
-            else
-            {
-                auto rdkPluginUtils = std::make_shared<DobbyRdkPluginUtils>(containerConfig, id.str());
-
-                // Work out the rootfs path (if it exists)
-                std::string rootfsDirPath;
-                if (containerConfig->root->path[0] == '/')
-                {
-                    rootfsDirPath = std::string(containerConfig->root->path) + "/";
-                }
-                else
-                {
-                    // relative path to rootfs
-                    rootfsDirPath = std::string(container.bundlePath) + "/" + containerConfig->root->path + "/";
-                }
-
-                if (access(rootfsDirPath.c_str(), R_OK) != 0)
-                {
-                    AI_LOG_WARN("Cannot access container rootfs @ '%s' - postHalt hooks may fail", rootfsDirPath.c_str());
-                }
-
-                // TODO:: Rootfs path might not be accurate here since we've assumed it's called rootfs (or might not exist at all!)
-                auto rdkPluginManager = std::make_shared<DobbyRdkPluginManager>(containerConfig, rootfsDirPath.c_str(), PLUGIN_PATH, rdkPluginUtils);
-                if (!rdkPluginManager->runPlugins(IDobbyRdkPlugin::HintFlags::PostHaltFlag, 4000))
-                {
-                    AI_LOG_ERROR("Failure in postHalt hook");
-                }
-            }
-
-            // Now attempt to actually delete the container
-            std::shared_ptr<DobbyBufferStream> buffer = std::make_shared<DobbyBufferStream>();
-            AI_LOG_INFO("attempting to destroy old container '%s'", id.c_str());
-            // Dobby will try a normal delete, then a force delete
-            // Force delete may hang on old crun versions if process in uninterruptible sleep: https://github.com/containers/crun/issues/868
-            if (!mRunc->destroy(id, buffer))
-            {
-                AI_LOG_WARN("Could not destroy container %s with error %s", id.c_str(), buffer->getBuffer().data());
-                stuckContainer = true;
-            }
-        }
+        bool cleanupSuccess = cleanupContainer(container);
 
         // If the container is stuck (i.e. we can't kill or destroy it), then
         // add it in the Unknown state so we can't attempt to start a container with
         // the same ID again
-        if (stuckContainer)
+        if (!cleanupSuccess)
         {
-            AI_LOG_FATAL("Failed to clean up container '%s'. We may be unable to launch app until next reboot!", id.c_str());
-            stuckContainerCount++;
+            AI_LOG_FATAL("Failed to clean up container '%s'. We may be unable to launch app until next reboot!", container.id.c_str());
+
             // Track the container so we can't start a container with the same name again
             // A background thread will handle cleaning it up if/when it eventually dies
+            stuckContainerCount++;
+
             std::unique_ptr<DobbyContainer> dobbyContainer(new DobbyContainer(nullptr, nullptr, nullptr));
             dobbyContainer->state = DobbyContainer::State::Unknown;
             dobbyContainer->containerPid = container.pid;
-            mContainers.emplace(id, std::move(dobbyContainer));
+
+            mContainers.emplace(container.id, std::move(dobbyContainer));
         }
     }
 
     if (stuckContainerCount > 0)
     {
-        AI_LOG_INFO("%d containers are stuck and can't be destroyed. Starting regular cleanup job", stuckContainerCount);
         // Try to clean up the container later so the user can restart the app again
+        AI_LOG_INFO("%d containers are stuck and can't be destroyed. Starting regular cleanup job", stuckContainerCount);
         mCleanupTaskTimerId = mUtilities->startTimer(std::chrono::seconds(10),
                                 false,
                                 std::bind(&DobbyManager::invalidContainerCleanupTask, this));
@@ -466,6 +482,13 @@ void DobbyManager::cleanupContainers()
     AI_LOG_FN_EXIT();
 }
 
+/**
+ * @brief Gracefully stops and cleans up any running containers. Will emit the container stop
+ * event when a container stops.
+ *
+ * Designed to be called when the daemon is going down (e.g. SIGTERM)
+ *
+ */
 void DobbyManager::cleanupContainersShutdown()
 {
     AI_LOG_FN_ENTRY();
@@ -478,6 +501,8 @@ void DobbyManager::cleanupContainersShutdown()
         if (it->second->state == DobbyContainer::State::Running)
         {
             AI_LOG_INFO("Stopping container %s", it->first.c_str());
+            // By calling the "proper" stop method here, any listening services will be
+            // notified of the container stop event
             if (!stopContainer(it->second->descriptor, false))
             {
                 AI_LOG_ERROR("Failed to stop container %s. Will attempt to clean up at daemon restart", it->first.c_str());
@@ -2185,6 +2210,16 @@ bool DobbyManager::onPreDestructionHook(const ContainerId &id,
 }
 #endif //defined(LEGACY_COMPONENTS)
 
+/**
+ * @brief Perform all the necessary cleanup and run plugins required when
+ * a container has terminated.
+ *
+ * Will also delete the container so the ID can be re-used
+ *
+ * @param[in]   id          ID of the container that has terminated
+ * @param[in]   container   Information about the container that has terminated (rootfs, config etc)
+ * @param[in]   status      Exit status of the container runtime
+ */
 void DobbyManager::handleContainerTerminate(const ContainerId &id, const std::unique_ptr<DobbyContainer>& container, const int status)
 {
     AI_LOG_FN_ENTRY();
@@ -2271,6 +2306,8 @@ void DobbyManager::handleContainerTerminate(const ContainerId &id, const std::un
             }
         }
     }
+
+    AI_LOG_FN_EXIT();
 }
 
 // -----------------------------------------------------------------------------
