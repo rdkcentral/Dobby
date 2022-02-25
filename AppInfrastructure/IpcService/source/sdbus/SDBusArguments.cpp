@@ -26,6 +26,7 @@
 
 #include <Logging.h>
 
+#include <system_error>
 #include <systemd/sd-bus.h>
 
 
