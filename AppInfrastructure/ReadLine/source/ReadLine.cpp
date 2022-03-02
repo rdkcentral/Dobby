@@ -451,9 +451,9 @@ void ReadLine::commandExecute(const std::string& cmdStr,
  *
  *
  */
-void ReadLine::process(const std::shared_ptr<AICommon::IPollLoop>& pollLoop, uint32_t events)
+void ReadLine::process(const std::shared_ptr<AICommon::IPollLoop>& pollLoop, epoll_event event)
 {
-    if (events & EPOLLIN)
+    if (event.events & EPOLLIN)
     {
         _rl_callback_read_char();
     }

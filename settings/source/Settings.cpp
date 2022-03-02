@@ -237,6 +237,50 @@ Settings::Settings(const Json::Value& settings)
         }
     }
 
+    // Process log relay
+    {
+        Json::Value logRelaySettings = Json::Path(".logRelay").resolve(settings);
+        if (!logRelaySettings.isNull())
+        {
+            if (logRelaySettings.isObject())
+            {
+                const Json::Value syslogSettings = logRelaySettings["syslog"];
+                const Json::Value journaldSettings = logRelaySettings["journald"];
+
+                if (syslogSettings.isObject())
+                {
+                    mLogRelaySettings.syslogEnabled = syslogSettings["enable"].asBool();
+                    mLogRelaySettings.syslogSocketPath = syslogSettings["socketPath"].asString();
+                }
+                else
+                {
+                    mLogRelaySettings.syslogEnabled = false;
+                }
+
+                if (journaldSettings.isObject())
+                {
+                    mLogRelaySettings.journaldEnabled = journaldSettings["enable"].asBool();
+                    mLogRelaySettings.journaldSocketPath = journaldSettings["socketPath"].asString();
+                }
+                else
+                {
+                    mLogRelaySettings.journaldEnabled = false;
+                }
+            }
+            else
+            {
+                AI_LOG_ERROR("Invalid logRelay type in settingsFile, should be object");
+            }
+        }
+        else
+        {
+            // Default initailise the struct
+            mLogRelaySettings = {};
+            mLogRelaySettings.syslogEnabled = false;
+            mLogRelaySettings.journaldEnabled = false;
+        }
+    }
+
 }
 
 // -----------------------------------------------------------------------------
@@ -355,6 +399,16 @@ in_addr_t Settings::addressRange() const
 std::vector<std::string> Settings::defaultPlugins() const
 {
     return mDefaultPlugins;
+}
+
+ // -----------------------------------------------------------------------------
+ /**
+ *  @brief
+ *
+ */
+IDobbySettings::LogRelaySettings Settings::logRelaySettings() const
+{
+    return mLogRelaySettings;
 }
 
 // -----------------------------------------------------------------------------

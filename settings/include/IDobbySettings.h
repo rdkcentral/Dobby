@@ -188,6 +188,19 @@ public:
      *
      */
     virtual std::vector<std::string> defaultPlugins() const = 0;
+
+
+    struct LogRelaySettings
+    {
+        bool syslogEnabled;
+        bool journaldEnabled;
+
+        std::string syslogSocketPath;
+        std::string journaldSocketPath;
+    };
+
+    virtual LogRelaySettings logRelaySettings() const = 0;
+
 };
 
 #endif // !defined(IDOBBYSETTINGS_H)
