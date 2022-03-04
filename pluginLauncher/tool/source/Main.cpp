@@ -226,15 +226,7 @@ bool runPlugins(const IDobbyRdkPlugin::HintFlags &hookPoint, std::shared_ptr<rt_
     AI_LOG_DEBUG("Loading plugins from %s", PLUGIN_PATH);
 
     std::shared_ptr<DobbyRdkPluginUtils> rdkPluginUtils;
-    if (state)
-    {
-        rdkPluginUtils = std::make_shared<DobbyRdkPluginUtils>(containerConfig, state);
-    }
-    else
-    {
-        AI_LOG_WARN("Failed to get container state from stdin");
-        rdkPluginUtils = std::make_shared<DobbyRdkPluginUtils>(containerConfig);
-    }
+    rdkPluginUtils = std::make_shared<DobbyRdkPluginUtils>(containerConfig, state, state->id);
 
     DobbyRdkPluginManager pluginManager(containerConfig, rootfsPath, PLUGIN_PATH, rdkPluginUtils);
 
@@ -478,7 +470,7 @@ int main(int argc, char *argv[])
     else
     {
         AI_LOG_WARN("Failed to get container state from stdin");
-        gContainerId = std::string(containerConfig->hostname);
+        return false;
     }
 
     AI_LOG_MILESTONE("Running hook %s for container '%s'", gHookName.c_str(), gContainerId.c_str());
