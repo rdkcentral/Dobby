@@ -25,6 +25,7 @@
 
 #include <Logging.h>
 
+#include <algorithm>
 #include <fcntl.h>
 #include <unistd.h>
 
