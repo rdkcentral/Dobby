@@ -33,6 +33,7 @@
 #include <sys/timerfd.h>
 #include <sys/epoll.h>
 
+#include <algorithm>
 #include <thread>
 #include <mutex>
 #include <list>
@@ -417,6 +418,37 @@ void PollLoop::delAllSources()
     }
 
     AI_LOG_FN_EXIT();
+}
+
+// -----------------------------------------------------------------------------
+/**
+ * @brief Returns true if the specified source is currently installed in the
+ * pollLoop
+ *
+ * @param[in]  source   The source object to search for in the pollLoop
+ *
+ * @return True if source installed
+ *
+ */
+bool PollLoop::hasSource(const std::shared_ptr<IPollSource>& source)
+{
+    AI_LOG_FN_ENTRY();
+
+    std::lock_guard<Spinlock> locker(mLock);
+
+    if (source == nullptr)
+    {
+        return false;
+    }
+
+    auto it = std::find_if(mSources.begin(), mSources.end(), [&source](const auto& pollSource)
+    {
+        return source == pollSource.source.lock();
+    });
+
+    AI_LOG_FN_EXIT();
+
+    return it != mSources.end();
 }
 
 // -----------------------------------------------------------------------------

@@ -61,6 +61,7 @@ public:
     virtual bool modSource(const std::shared_ptr<IPollSource>& source, uint32_t events) = 0;
     virtual void delSource(const std::shared_ptr<IPollSource>& source, int fd = -1) = 0;
     virtual void delAllSources() = 0;
+    virtual bool hasSource(const std::shared_ptr<IPollSource>& source) = 0;
 };
 
 } // namespace AICommon

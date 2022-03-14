@@ -45,6 +45,8 @@ public:
                   const std::shared_ptr<DobbyRdkPluginUtils> &utils,
                   const std::string &rootfsPath);
 
+    ~LoggingPlugin();
+
 public:
     inline std::string name() const override
     {
