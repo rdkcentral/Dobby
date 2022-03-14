@@ -57,6 +57,22 @@ LoggingPlugin::LoggingPlugin(std::shared_ptr<rt_dobby_schema> &containerConfig,
     AI_LOG_FN_EXIT();
 }
 
+LoggingPlugin::~LoggingPlugin()
+{
+    AI_LOG_FN_ENTRY();
+
+    // Make sure we clean up after ourselves
+    if (mSink && mPollLoop)
+    {
+        if (mPollLoop->hasSource(mSink))
+        {
+            mPollLoop->delSource(mSink);
+        }
+    }
+
+    AI_LOG_FN_EXIT();
+}
+
 /**
  * @brief Set the bit flags for which hooks we're going to use
  *

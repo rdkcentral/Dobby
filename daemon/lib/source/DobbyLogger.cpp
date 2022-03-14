@@ -92,8 +92,17 @@ DobbyLogger::~DobbyLogger()
 {
     AI_LOG_FN_ENTRY();
 
-    // Stop the poll loop running
-    mPollLoop->delAllSources();
+    // Container loggers should remove themselves from the poll loop, but it doesn't really
+    // matter since if this class is being destructed the whole daemon is almost certainly
+    // shutting down
+    if (mJournaldRelay)
+    {
+        mJournaldRelay->removeFromPollLoop(mPollLoop);
+    }
+    if (mSyslogRelay)
+    {
+        mSyslogRelay->removeFromPollLoop(mPollLoop);
+    }
     mPollLoop->stop();
 
     //  Close all our open sockets
