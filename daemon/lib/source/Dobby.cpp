@@ -552,7 +552,7 @@ void Dobby::run() const
     ret = sd_notify(0, "STOPPING=1");
     if (ret < 0)
     {
-        AI_LOG_WARN("Failed to notify systemd we're ready");
+        AI_LOG_WARN("Failed to notify systemd we're stopping");
     }
 #endif
 
