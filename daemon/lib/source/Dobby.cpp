@@ -536,8 +536,25 @@ void Dobby::run() const
         AI_LOG_ERROR("failed to emit 'ready' signal");
     }
 
+#if USE_SYSTEMD
+    int ret = sd_notify(0, "READY=1");
+    if (ret < 0)
+    {
+        AI_LOG_WARN("Failed to notify systemd we're ready");
+    }
+#endif
+
     // run the work event loop
     runWorkQueue();
+
+    // Event loop is finished, we're shutting down
+#if USE_SYSTEMD
+    ret = sd_notify(0, "STOPPING=1");
+    if (ret < 0)
+    {
+        AI_LOG_WARN("Failed to notify systemd we're ready");
+    }
+#endif
 
     AI_LOG_FN_EXIT();
 }

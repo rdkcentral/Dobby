@@ -33,12 +33,13 @@
 
 [Unit]
 Description=RDK Dobby (Container) daemon
+Requires=dbus.socket
+After=dbus.socket
 
 [Service]
-Type=dbus
-BusName=@DOBBY_SERVICE@
+Type=notify
 ExecStart=/usr/sbin/DobbyDaemon --nofork --noconsole --journald
-WatchdogSec=10
+WatchdogSec=30
 Restart=on-failure
 
 [Install]
