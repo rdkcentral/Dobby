@@ -184,7 +184,7 @@ void DobbyManager::setupSystem()
     // if we have cgroup RT scheduling enabled in the kernel then also set that
     // to defaults
     std::string cgrpCpuPath = mEnvironment->cgroupMountPath(IDobbyEnv::Cgroup::Cpu);
-    if (!cgrpCpuPath.empty())
+    if (!cgrpCpuPath.empty())   
     {
         cgrpCpuPath += "/cpu.rt_runtime_us";
         if (access(cgrpCpuPath.c_str(), F_OK) == 0)

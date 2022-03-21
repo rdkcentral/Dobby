@@ -407,6 +407,33 @@ void StorageHelper::cleanMountLostAndFound(const std::string& mountPoint,
     AI_LOG_FN_EXIT();
 }
 
+// -----------------------------------------------------------------------------
+/**
+ *  @brief Get the loop device for a given backing file
+ *
+ *  @param[in] backingFile   Path of backing file.
+ *
+ *  @return on success a positive file desccriptor corresponding to a free
+ *  loop device, -1 on error.
+ */
+std::string StorageHelper::getLoopDevice(const std::string &backingFile)
+{
+    AI_LOG_FN_ENTRY();
+    
+    const std::string command = "losetup --associated " + backingFile;
+    std::string loopDevice;
+    int res = exec(command.c_str(), &loopDevice);
+
+    if (res != -1 && !loopDevice.empty())
+    {
+        auto pos = loopDevice.find(':');
+        loopDevice.erase(pos);
+    }
+
+    AI_LOG_FN_EXIT();
+    return loopDevice;
+}
+
 // -------------------------------------------------------------------------
 /**
  *  @brief Removes a directory and all it's contents.
@@ -577,6 +604,42 @@ bool StorageHelper::deleteRecursive(int dirfd, int availDepth)
     return success;
 }
 
+// -----------------------------------------------------------------------------
+/**
+ *  @brief Excute a linux command 
+ *
+ *  @param[in]  cmd          Command to run
+ *  @param[in]  pOutput      Pointer to string to hold result.
+ *
+ *  @return -1 on failure, otherwise succes
+ *
+ */
+
+int StorageHelper::exec(const char* cmd, std::string *pOutput)
+{
+    int result(EXIT_SUCCESS);
+    const uint BufferSize(128);
+    std::array<char, BufferSize> buffer;
+
+    FILE* fp = popen(cmd, "r");
+    if (fp)
+    {
+        while (pOutput != nullptr && !feof(fp))
+        {
+            if (fgets(buffer.data(), BufferSize, fp) != nullptr)
+                *pOutput += buffer.data();
+        }
+
+        result = pclose(fp);
+    }
+    else
+    {
+        result = -1;
+    }
+
+    return result;
+}
+
 // Tests Storage helpers
 #ifdef ENABLE_TESTS
 // cppcheck-suppress unusedFunction
@@ -702,5 +765,3 @@ bool StorageHelper::Test_checkWriteReadMount(const std::string& tmpPath)
     }
 }
 #endif // ENABLE_TESTS
-
-

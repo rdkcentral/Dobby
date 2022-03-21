@@ -1900,6 +1900,7 @@ bool DobbySpecConfig::processMounts(const Json::Value& value,
     // We only need to enable the RDK Storage plugin for loop mounts here
     // Everything else can be handled by OCI
     int numLoopMounts = 0;
+    int numBindLoopMounts = 0;
     Json::Value rdkPluginData;
 
     Json::Value::const_iterator it = value.begin();
@@ -1943,6 +1944,21 @@ bool DobbySpecConfig::processMounts(const Json::Value& value,
             rdkPluginData["loopback"][numLoopMounts] = loopMountData;
             numLoopMounts++;
         }
+        else if (strType == "bind-loop")
+        {
+            AI_LOG_DEBUG("bind-loop %d", numBindLoopMounts);
+            Json::Value bindLoopMountData;
+            if (!processLoopMount(mount, dictionary, bindLoopMountData))
+            {
+                // if failed to parse the loop mount details then also pass
+                // the failure on up the chain
+                return false;
+            }
+
+            // Create an array item for the RDK Storage plugin
+            rdkPluginData["bindloop"][numBindLoopMounts] = bindLoopMountData;
+            numBindLoopMounts++;
+        }
         else
         {
             // just a regular mount so add all the mount options to the OCI
@@ -1978,7 +1994,7 @@ bool DobbySpecConfig::processMounts(const Json::Value& value,
     }
 
     // If we need the storage plugin
-    if (numLoopMounts > 0)
+    if (numLoopMounts > 0 || numBindLoopMounts > 0)
     {
         mRdkPluginsJson[RDK_STORAGE_PLUGIN_NAME]["data"] = rdkPluginData;
         mRdkPluginsJson[RDK_STORAGE_PLUGIN_NAME]["required"] = false;

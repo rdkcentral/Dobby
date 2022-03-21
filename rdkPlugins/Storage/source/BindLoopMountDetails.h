@@ -2,7 +2,7 @@
 * If not stated otherwise in this file or this component's LICENSE file the
 * following copyright and licenses apply:
 *
-* Copyright 2020 Sky UK
+* Copyright 2022 Sky UK
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -17,11 +17,11 @@
 * limitations under the License.
 */
 /*
- * File: LoopMountDetails.h
+ * File: BindLoopMountDetails.h
  *
  */
-#ifndef LOOPMOUNTDETAILS_H
-#define LOOPMOUNTDETAILS_H
+#ifndef BINDLOOPMOUNTDETAILS_H
+#define BindLOOPMOUNTDETAILS_H
 
 #include "MountDetails.h"
 #include "MountCommon.h"
@@ -31,11 +31,14 @@
 #include <sys/types.h>
 #include <string>
 #include <list>
+#include <memory>
+
+class RefCountFile;
 
 
 // -----------------------------------------------------------------------------
 /**
- *  @class LoopMountDetails
+ *  @class BindLoopMountDetails
  *  @brief Class that represents a single loop mount within a container
  *
  *  This class is only intended to be used internally by Storage plugin
@@ -43,19 +46,19 @@
  *
  *  @see Storage
  */
-class LoopMountDetails : public MountDetails
+class BindLoopMountDetails : public MountDetails
 {
 public:
-    LoopMountDetails() = delete;
-    LoopMountDetails(LoopMountDetails&) = delete;
-    LoopMountDetails(LoopMountDetails&&) = delete;
-    ~LoopMountDetails();
+    BindLoopMountDetails() = delete;
+    BindLoopMountDetails(BindLoopMountDetails&) = delete;
+    BindLoopMountDetails(BindLoopMountDetails&&) = delete;
+    ~BindLoopMountDetails();
 
 private:
     friend class Storage;
 
 public:
-    LoopMountDetails(const std::string& rootfsPath,
+    BindLoopMountDetails(const std::string& rootfsPath,
                      const MountProperties& mount,
                      const uid_t& userId,
                      const gid_t& groupId,
@@ -72,10 +75,16 @@ public:
 
     bool cleanupTempDirectory() override;
 
+    void decrementReferenceCount() override;
+
     bool removeNonPersistentImage() override;
 
 private:
-    std::string mMountPointOutsideContainer;
+    std::unique_ptr<RefCountFile> getRefCountFile();
+    void unmountLoopbackDevice();
+
+private:
+    std::string mMountPointInsideContainer;
     std::string mTempMountPointOutsideContainer;
     MountProperties mMount;
     uid_t mUserId;
@@ -84,4 +93,4 @@ private:
     const std::shared_ptr<DobbyRdkPluginUtils> mUtils;
 };
 
-#endif // !defined(LOOPMOUNTDETAILS_H)
+#endif // !defined(BINDLOOPMOUNTDETAILS_H)
