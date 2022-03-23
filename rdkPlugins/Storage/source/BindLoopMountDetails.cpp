@@ -120,8 +120,12 @@ bool BindLoopMountDetails::onPreCreate()
             AI_LOG_ERROR("failed to attach file to loop device");
             return false;
         }
+
+        // Reset the reference count if it isn't 0 (shouldn't happen normally)
+        refCountFile->Reset();
     }
-    else{
+    else
+    {
         AI_LOG_DEBUG("loop device (%s) already attached to %s", loopDevice.c_str(), mMount.fsImagePath.c_str());
     }
 
@@ -385,7 +389,7 @@ bool BindLoopMountDetails::removeNonPersistentImage()
             if (unlink(mMount.fsImagePath.c_str()))
             {
                 AI_LOG_SYS_ERROR(errno, "failed to delete image file @ '%s'",
-                                mMount.fsImagePath.c_str());
+                                 mMount.fsImagePath.c_str());
                 success = false;
             }
             else
@@ -423,7 +427,7 @@ std::unique_ptr<RefCountFile> BindLoopMountDetails::getRefCountFile()
     }
 
     // Create reference count file based on unique inode of data.img file
-    std::string refCountFilePath = std::string("/tmp/") + std::to_string(file_stat.st_ino);
+    std::string refCountFilePath = std::string("/tmp/dobbyLoopDeviceRef_") + std::to_string(file_stat.st_ino);
     auto refCountFile = std::make_unique<RefCountFile>(refCountFilePath);
 
     if (!refCountFile->IsOpen())
@@ -446,7 +450,7 @@ void BindLoopMountDetails::unmountLoopbackDevice()
 {
     AI_LOG_FN_ENTRY();
 
-    std::string loopDevice = StorageHelper::getLoopDevice(mMount.fsImagePath);
+    const std::string loopDevice = StorageHelper::getLoopDevice(mMount.fsImagePath);
     AI_LOG_DEBUG("loop device = %s for %s", loopDevice.c_str(), mMount.fsImagePath.c_str());
 
     if (!loopDevice.empty() && umount2(loopDevice.c_str(), UMOUNT_NOFOLLOW) != 0)

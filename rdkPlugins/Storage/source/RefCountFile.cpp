@@ -24,7 +24,7 @@
 #include <stdio.h>
 #include <unistd.h>
 
-RefCountFile::RefCountFile(std::string file): mFilePath(std::move(file)), mFd(0), mOpen(false)
+RefCountFile::RefCountFile(std::string file): mFilePath(std::move(file)), mFd(-1), mOpen(false)
 {
     AI_LOG_FN_ENTRY();
 
@@ -62,10 +62,28 @@ void RefCountFile::Close()
 {
     AI_LOG_FN_ENTRY();
 
-    if (mFd)
+    if (mFd >= 0)
     {
         close(mFd);
-        mFd = 0;
+        mFd = -1;
+    }
+
+    AI_LOG_FN_EXIT();
+}
+
+// -----------------------------------------------------------------------------
+/**
+ *  @brief Reset the reference count in the file if it is not 0.
+ *
+ */
+void RefCountFile::Reset()
+{
+    AI_LOG_FN_ENTRY();
+
+    int ref = Read();
+    if (ref != 0)
+    {
+        Write(0);
     }
 
     AI_LOG_FN_EXIT();
@@ -81,11 +99,15 @@ int RefCountFile::Increment()
     AI_LOG_FN_ENTRY();
 
     int ref = Read();
-    ref = Write(++ref);
-    AI_LOG_DEBUG("ref count: %d", ref);
 
-    return ref;
+    if (ref >= 0)
+    {
+        ref = Write(++ref);
+        AI_LOG_DEBUG("ref count: %d", ref);
+    }
+
     AI_LOG_FN_EXIT();
+    return ref;
 }
 
 // -----------------------------------------------------------------------------
@@ -98,11 +120,13 @@ int RefCountFile::Decrement()
     AI_LOG_FN_ENTRY();
 
     int ref = Read();
-    if (ref > 0) {
+
+    if (ref > 0)
+    {
         ref = Write(--ref);
+        AI_LOG_DEBUG("ref count: %d", ref);
     }
-    AI_LOG_DEBUG("ref count: %d", ref);
-    
+
     // If reference count is 0, delete the file
     if (ref == 0)
     {
@@ -110,8 +134,8 @@ int RefCountFile::Decrement()
         unlink(mFilePath.c_str());
     }
 
-    return ref;
     AI_LOG_FN_EXIT();
+    return ref;
 }
 
 // -----------------------------------------------------------------------------
@@ -123,13 +147,27 @@ int RefCountFile::Decrement()
 int RefCountFile::Read()
 {
     AI_LOG_FN_ENTRY();
-    int ref(0);
+    int ref(-1);
 
-    lseek(mFd, 0, SEEK_SET);
-    read(mFd, &ref, sizeof(ref));
+    const off_t pos = lseek(mFd, 0, SEEK_SET);
+    if (pos < 0)
+    {
+        AI_LOG_SYS_ERROR(errno, "Failed to seek to beginning of file");
+        return ref;
+    }
+    
+    const ssize_t rd = TEMP_FAILURE_RETRY(read(mFd, &ref, sizeof(ref)));
+    if (rd < 0)
+    {
+        AI_LOG_SYS_ERROR(errno, "Failed to read from file");
+    }
+    else if (rd == 0)
+    {
+        ref = 0;
+    }
 
-    return ref;
     AI_LOG_FN_EXIT();
+    return ref;
 }
 
 // -----------------------------------------------------------------------------
@@ -141,10 +179,25 @@ int RefCountFile::Read()
 int RefCountFile::Write(int ref)
 {
     AI_LOG_FN_ENTRY();
+    int ret(-1);
 
-    lseek(mFd, 0, SEEK_SET);
-    write(mFd, &ref, sizeof(ref));
+    const off_t pos = lseek(mFd, 0, SEEK_SET);
+    if (pos < 0)
+    {
+        AI_LOG_SYS_ERROR(errno, "Failed to seek to beginning of file");
+        return ret;
+    }
 
-    return ref;
+    const ssize_t rd = TEMP_FAILURE_RETRY(write(mFd, &ref, sizeof(ref)));
+    if (rd < 0)
+    {
+        AI_LOG_SYS_ERROR(errno, "Failed to write to file");
+    }
+    else
+    {
+        ret = ref;
+    }
+
     AI_LOG_FN_EXIT();
+    return ret;
 }

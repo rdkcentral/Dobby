@@ -21,7 +21,7 @@
  *
  */
 #ifndef BINDLOOPMOUNTDETAILS_H
-#define BindLOOPMOUNTDETAILS_H
+#define BINDLOOPMOUNTDETAILS_H
 
 #include "MountDetails.h"
 #include "MountCommon.h"

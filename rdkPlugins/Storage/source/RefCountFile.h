@@ -20,8 +20,8 @@
  * File: RefCountFile.h
  *
  */
-#ifndef DEVELOP_REFCOUNTFILE_H
-#define DEVELOP_REFCOUNTFILE_H
+#ifndef REFCOUNTFILE_H
+#define REFCOUNTFILE_H
 
 #include <Logging.h>
 #include <sys/file.h>
@@ -46,31 +46,38 @@ public:
     bool IsOpen() const
     {
         AI_LOG_FN_ENTRY();
-        return mOpen;
+
         AI_LOG_FN_EXIT();
+        return mOpen;
     }
 
     const std::string& GetFilePath() const
     {
         AI_LOG_FN_ENTRY();
-        return mFilePath;
+        
         AI_LOG_FN_EXIT();
+        return mFilePath;
     }
     
     inline void Lock()
     {
         AI_LOG_FN_ENTRY();
-        flock(mFd, LOCK_EX);
+
+        flock(mFd, LOCK_EX);  // lock file exclusively
+
         AI_LOG_FN_EXIT();
     }
 
     inline void Unlock()
     {
         AI_LOG_FN_ENTRY();
-        flock(mFd, LOCK_UN);
+
+        flock(mFd, LOCK_UN);  // unlock file
+
         AI_LOG_FN_EXIT();
     }
 
+    void Reset();
     int Increment();
     int Decrement();
 
@@ -86,4 +93,4 @@ private:
 };
 
 
-#endif //DEVELOP_REFCOUNTFILE_H
+#endif //REFCOUNTFILE_H
