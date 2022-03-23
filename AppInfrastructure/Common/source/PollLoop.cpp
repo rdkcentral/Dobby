@@ -377,48 +377,6 @@ void PollLoop::delSource(const std::shared_ptr<IPollSource>& source, int fd /*= 
     return;
 }
 
-// -----------------------------------------------------------------------------
-/**
- * @brief Removes all sources
- *
- * It's important to note that even after sources has been removed and this
- * function returns, it's possible for the source's process() method to be called.
- * This is because the poll loop thread locks the shared_ptrs while processing
- * the events.
- *
- */
-void PollLoop::delAllSources()
-{
-    AI_LOG_FN_ENTRY();
-
-    std::lock_guard<Spinlock> locker(mLock);
-    auto it = mSources.begin();
-
-    while (it != mSources.end())
-    {
-        if (it->events & EPOLLDEFERRED)
-        {
-            if (--mDeferredSources == 0)
-            {
-                disableDeferredTimer();
-            }
-        }
-
-        // remove from epoll
-        if (mEPollFd >= 0)
-        {
-            if (epoll_ctl(mEPollFd, EPOLL_CTL_DEL, it->fd, NULL) < 0)
-            {
-                AI_LOG_SYS_ERROR_EXIT(errno, "failed to delete source from epoll");
-            }
-        }
-
-        // erase from the list of sources and exit
-        it = mSources.erase(it);
-    }
-
-    AI_LOG_FN_EXIT();
-}
 
 // -----------------------------------------------------------------------------
 /**
