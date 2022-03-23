@@ -135,11 +135,9 @@ install(
 
 
 if (USE_SYSTEMD)
-        configure_file(dobby.service.in dobby.service @ONLY)
-
         # Install a systemd launch service config and enables it by default
         install(
-                FILES       ${CMAKE_CURRENT_BINARY_DIR}/dobby.service
+                FILES       dobby.service
                 DESTINATION /lib/systemd/system/ )
 endif()
 
