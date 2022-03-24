@@ -56,7 +56,7 @@ public:
     static void cleanMountLostAndFound(const std::string& mountPoint,
                                         const std::string& logTag);
     static std::string getLoopDevice(const std::string &backingFile);
-    static int exec(const char* cmd, std::string *pOutput = nullptr);
+    static int getMountOptions(const std::list<std::string> &mountOptions);
 
     // -------------------------------------------------------------------------
     /**

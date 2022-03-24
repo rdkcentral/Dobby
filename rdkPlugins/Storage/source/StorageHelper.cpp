@@ -26,6 +26,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <list>
+#include <map>
 #include <sys/mount.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -441,11 +442,7 @@ std::string StorageHelper::getLoopDevice(const std::string &backingFile)
         name += "/loop/backing_file";
 
         int fd = openat(dirFd, name.c_str(), O_RDONLY | O_CLOEXEC);
-        if (fd < 0)
-        {
-            AI_LOG_SYS_ERROR(errno, "failed to open file @ '/sys/block/%s'", name.c_str());
-        }
-        else
+        if (fd >= 0)
         {
             char buffer[512] = {0};
             int len = read(fd, buffer, sizeof(buffer));
@@ -638,42 +635,6 @@ bool StorageHelper::deleteRecursive(int dirfd, int availDepth)
     closedir(dir);
 
     return success;
-}
-
-// -----------------------------------------------------------------------------
-/**
- *  @brief Excute a linux command 
- *
- *  @param[in]  cmd          Command to run
- *  @param[in]  pOutput      Pointer to string to hold result.
- *
- *  @return -1 on failure, otherwise succes
- *
- */
-
-int StorageHelper::exec(const char* cmd, std::string *pOutput)
-{
-    int result(EXIT_SUCCESS);
-    const uint BufferSize(128);
-    std::array<char, BufferSize> buffer;
-
-    FILE* fp = popen(cmd, "r");
-    if (fp)
-    {
-        while (pOutput != nullptr && !feof(fp))
-        {
-            if (fgets(buffer.data(), BufferSize, fp) != nullptr)
-                *pOutput += buffer.data();
-        }
-
-        result = pclose(fp);
-    }
-    else
-    {
-        result = -1;
-    }
-
-    return result;
 }
 
 // Tests Storage helpers

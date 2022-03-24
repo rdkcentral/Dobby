@@ -107,8 +107,8 @@ bool BindLoopMountDetails::onPreCreate()
     }
     RefCountFileLock lock(refCountFile);
 
-    // step 2 - if loop device doesn't exist, try and open the source file and
-    // attach to a space loop device 
+    // step 2 - check if loop device already exists, otherwise open the source file
+    // and attach to a space loop device 
     std::string loopDevice = StorageHelper::getLoopDevice(mMount.fsImagePath);
     int loopDevFd(0);
 
@@ -121,7 +121,7 @@ bool BindLoopMountDetails::onPreCreate()
             return false;
         }
 
-        // Reset the reference count if it isn't 0 (shouldn't happen normally)
+        // Reset the reference count if it isn't 0 (shouldn't happen)
         refCountFile->Reset();
     }
     else
@@ -147,7 +147,6 @@ bool BindLoopMountDetails::onPreCreate()
     return success;
 }
 
-
 // -----------------------------------------------------------------------------
 /**
  *  @brief Performs the loop mount, this should be called prior to the container
@@ -163,7 +162,6 @@ bool BindLoopMountDetails::doLoopMount(const std::string& loopDevice)
 
     bool status = false;
 
-    // step 1 - create directories within the rootfs
     if (!DobbyRdkPluginUtils::mkdirRecursive(mTempMountPointOutsideContainer, 0755))
     {
         // logging already provided by mkdirRecursive
@@ -175,9 +173,21 @@ bool BindLoopMountDetails::doLoopMount(const std::string& loopDevice)
         return false;
     }
 
-    // step 2 - mount loop device to temporary location
+    // step 2 - create the mount options data string, which is just the
+    // options separated by a comma (,)
+    std::string mountData;
+    std::list<std::string>::const_iterator it = mMount.mountOptions.begin();
+    for (; it != mMount.mountOptions.end(); ++it)
+    {
+        if (it != mMount.mountOptions.begin())
+            mountData += ",";
+
+        mountData += *it;
+    }
+
+    // step 3 - mount loop device to temporary location
     if (mount(loopDevice.c_str(), mTempMountPointOutsideContainer.c_str(),
-              mMount.fsImageType.c_str(), mMount.mountFlags, "") != 0)
+              mMount.fsImageType.c_str(), mMount.mountFlags, mountData.data()) != 0)
     {
         AI_LOG_SYS_ERROR(errno, "failed to mount '%s' @ '%s'",
                         loopDevice.c_str(), mTempMountPointOutsideContainer.c_str());
@@ -217,11 +227,11 @@ bool BindLoopMountDetails::setPermissions()
     if (mUserId != 0 && mGroupId != 0)
     {
         // proper value of mUserId and mGroupId
-        if (chown(mMountPointInsideContainer.c_str(), mUserId, mGroupId) != 0)
+        if (chown(mTempMountPointOutsideContainer.c_str(), mUserId, mGroupId) != 0)
         {
             AI_LOG_SYS_ERROR_EXIT(errno, "failed to chown '%s' to %u:%u",
-                                  mMountPointInsideContainer.c_str(),
-                                  mUserId, mGroupId);
+                                mTempMountPointOutsideContainer.c_str(),
+                                mUserId, mGroupId);
         }
         else
         {
@@ -234,10 +244,10 @@ bool BindLoopMountDetails::setPermissions()
 
         // config.json has not set mUserId/mGroupId so give access to everyone
         // so the container could use this mount point
-        if (chmod(mMountPointInsideContainer.c_str(), 0777) != 0)
+        if (chmod(mTempMountPointOutsideContainer.c_str(), 0777) != 0)
         {
             AI_LOG_SYS_ERROR_EXIT(errno, "failed to set dir '%s' perms to 0%03o",
-                                  mMountPointInsideContainer.c_str(), 0777);
+                                mTempMountPointOutsideContainer.c_str(), 0777);
         }
         else
         {
@@ -261,20 +271,9 @@ bool BindLoopMountDetails::remountTempDirectory()
 
     bool success = false;
 
-    // options separated by a comma (,)
-    std::string mountData;
-    std::list<std::string>::const_iterator it = mMount.mountOptions.begin();
-    for (; it != mMount.mountOptions.end(); ++it)
-    {
-        if (it != mMount.mountOptions.begin())
-            mountData += ",";
-
-        mountData += *it;
-    }
-
     if (mount(mTempMountPointOutsideContainer.c_str(),
-              mMountPointInsideContainer.c_str(),
-              "", MS_BIND, mountData.c_str()) != 0)
+                mMountPointInsideContainer.c_str(),
+                "", MS_BIND, nullptr) != 0)
     {
         AI_LOG_SYS_ERROR(errno, "failed to bind mount '%s' -> '%s'",
                             mTempMountPointOutsideContainer.c_str(),
@@ -302,8 +301,6 @@ bool BindLoopMountDetails::cleanupTempDirectory()
 
     bool success = false;
 
-    // now that the namespaces have forked off, unmount this from outside of the
-    // container namespace won't affect it's mounting inside the container.
     if (umount2(mTempMountPointOutsideContainer.c_str(), UMOUNT_NOFOLLOW) != 0)
     {
         AI_LOG_SYS_ERROR(errno, "failed to unmount '%s'",
@@ -312,7 +309,7 @@ bool BindLoopMountDetails::cleanupTempDirectory()
     else
     {
         AI_LOG_DEBUG("unmounted temp loop mount @ '%s', now deleting mount point",
-                     mTempMountPointOutsideContainer.c_str());
+                    mTempMountPointOutsideContainer.c_str());
 
         // can now delete the temporary mount point
         if (rmdir(mTempMountPointOutsideContainer.c_str()) != 0)
@@ -364,15 +361,6 @@ bool BindLoopMountDetails::removeNonPersistentImage()
 
     bool success = true;
 
-    // There could be situation where container was created but not started, as
-    // the cleanup is done after container start it would mean that we could
-    // left temp directories mounted. As postStop is done always we need to
-    // check if we have already cleaned up, and if not then clean temp.
-    if (access(mTempMountPointOutsideContainer.c_str(), F_OK) != -1)
-    {
-        success = cleanupTempDirectory();
-    }
-
     auto refCountFile = getRefCountFile();
 
     if (refCountFile)
@@ -389,7 +377,7 @@ bool BindLoopMountDetails::removeNonPersistentImage()
             if (unlink(mMount.fsImagePath.c_str()))
             {
                 AI_LOG_SYS_ERROR(errno, "failed to delete image file @ '%s'",
-                                 mMount.fsImagePath.c_str());
+                                mMount.fsImagePath.c_str());
                 success = false;
             }
             else
@@ -457,7 +445,7 @@ void BindLoopMountDetails::unmountLoopbackDevice()
     {
         AI_LOG_SYS_ERROR(errno, "failed to unmount '%s'",
                          loopDevice.c_str());
-    }   
+    }
 
     AI_LOG_FN_EXIT();
 }
