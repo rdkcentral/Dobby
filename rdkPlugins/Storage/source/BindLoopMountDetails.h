@@ -75,13 +75,10 @@ public:
 
     bool cleanupTempDirectory() override;
 
-    void decrementReferenceCount() override;
-
     bool removeNonPersistentImage() override;
 
 private:
     std::unique_ptr<RefCountFile> getRefCountFile();
-    void unmountLoopbackDevice();
 
 private:
     std::string mMountPointInsideContainer;

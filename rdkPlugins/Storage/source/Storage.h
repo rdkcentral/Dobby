@@ -80,10 +80,6 @@ public:
     // persistent option is selected
     bool postStop() override;
 
-    // In this hook there should be deletion of img file when non-
-    // persistent option is selected
-    bool postHalt() override;
-
 public:
     std::vector<std::string> getDependencies() const override;
 
@@ -95,6 +91,8 @@ private:
     template<typename T>
     MountProperties CreateMountProperties(T *pMount)
     {
+        AI_LOG_FN_ENTRY();
+
         MountProperties mount;
         mount.fsImagePath = std::string(pMount->source);
         mount.destination = std::string(pMount->destination);
@@ -154,6 +152,7 @@ private:
             mount.imgManagement = true;
         }
 
+        AI_LOG_FN_EXIT();
         return mount;
     }
 

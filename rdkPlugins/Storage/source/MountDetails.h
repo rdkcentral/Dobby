@@ -52,8 +52,6 @@ public:
 
     virtual bool cleanupTempDirectory() = 0;
 
-    virtual void decrementReferenceCount() {}
-
     virtual bool removeNonPersistentImage() = 0;
 };
 

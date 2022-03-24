@@ -81,6 +81,7 @@ bool LoopMountDetails::onPreCreate()
     // is also enabled (the default is true)
     if (mMount.imgManagement)
     {
+        AI_LOG_DEBUG("imgManagement = true");
         if (!StorageHelper::createFileIfNeeded(mMount.fsImagePath,
                                                mMount.imgSize,
                                                mUserId,

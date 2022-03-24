@@ -65,8 +65,7 @@ unsigned Storage::hookHints() const
         IDobbyRdkPlugin::HintFlags::StartContainerFlag |
 #endif //#ifdef ENABLE_TESTS
         IDobbyRdkPlugin::HintFlags::PostStartFlag |
-        IDobbyRdkPlugin::HintFlags::PostStopFlag|
-        IDobbyRdkPlugin::HintFlags::PostHaltFlag);
+        IDobbyRdkPlugin::HintFlags::PostStopFlag);
 }
 
 // Begin Hook Methods
@@ -200,25 +199,6 @@ bool Storage::postStop()
             // This is probably to late to fail but do it either way
             return false;
         }
-    }
-
-    AI_LOG_FN_EXIT();
-    return true;
-}
-
-/**
- * @brief OCI Hook - Run in host namespace. Confusing name - is run when a container is DELETED
- */
-bool Storage::postHalt()
-{
-    AI_LOG_FN_ENTRY();
-
-    // here should be deleting the data.img file when non persistent option selected
-
-    std::vector<std::unique_ptr<MountDetails>> mountDetails = getMountDetails();
-    for(auto it = mountDetails.begin(); it != mountDetails.end(); it++)
-    {
-        (*it)->decrementReferenceCount();
     }
 
     AI_LOG_FN_EXIT();

@@ -329,28 +329,6 @@ bool BindLoopMountDetails::cleanupTempDirectory()
 
 // -----------------------------------------------------------------------------
 /**
- *  @brief Decrement the reference count for data.img file.
- */
-void BindLoopMountDetails::decrementReferenceCount()
-{
-    AI_LOG_FN_ENTRY();
-
-    std::unique_ptr<RefCountFile> refCountFile = getRefCountFile();
-
-    if (refCountFile)
-    {
-        RefCountFileLock lock(refCountFile);
-
-        if (refCountFile->Decrement() == 0) {
-            unmountLoopbackDevice();
-        }
-    }
-    
-    AI_LOG_FN_EXIT();
-}
-
-// -----------------------------------------------------------------------------
-/**
  *  @brief Checks if image should be non persistent and if so remove it.
  *
  *  @return true on success, false on failure.
@@ -366,11 +344,7 @@ bool BindLoopMountDetails::removeNonPersistentImage()
     if (refCountFile)
     {
         RefCountFileLock lock(refCountFile);
-        // If reference count is zero, unmount the loopback device
-        if (refCountFile->Decrement() == 0)
-        {
-            unmountLoopbackDevice();
-        }
+        refCountFile->Decrement();
 
         if (!mMount.persistent)
         {
@@ -427,25 +401,4 @@ std::unique_ptr<RefCountFile> BindLoopMountDetails::getRefCountFile()
 
     AI_LOG_FN_EXIT();
     return refCountFile;
-}
-
-// -----------------------------------------------------------------------------
-/**
- *  @brief Unmount the loop back device
- *
- */
-void BindLoopMountDetails::unmountLoopbackDevice()
-{
-    AI_LOG_FN_ENTRY();
-
-    const std::string loopDevice = StorageHelper::getLoopDevice(mMount.fsImagePath);
-    AI_LOG_DEBUG("loop device = %s for %s", loopDevice.c_str(), mMount.fsImagePath.c_str());
-
-    if (!loopDevice.empty() && umount2(loopDevice.c_str(), UMOUNT_NOFOLLOW) != 0)
-    {
-        AI_LOG_SYS_ERROR(errno, "failed to unmount '%s'",
-                         loopDevice.c_str());
-    }
-
-    AI_LOG_FN_EXIT();
 }
