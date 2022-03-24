@@ -106,6 +106,17 @@ void DobbyLogRelay::addToPollLoop(const std::shared_ptr<AICommon::IPollLoop> &po
     pollLoop->addSource(shared_from_this(), mSourceSocketFd, EPOLLIN);
 }
 
+
+/**
+ * @brief Removes the log relay to a given poll loop
+ *
+ * @param[in]   pollLoop    The poll loop to add ourselves to
+ */
+void DobbyLogRelay::removeFromPollLoop(const std::shared_ptr<AICommon::IPollLoop> &pollLoop)
+{
+    pollLoop->delSource(shared_from_this(), mSourceSocketFd);
+}
+
 /**
  * @brief Called on the poll loop. Forwards the data from the source to the destination
  * socket

@@ -33,6 +33,7 @@
 #include <sys/timerfd.h>
 #include <sys/epoll.h>
 
+#include <algorithm>
 #include <thread>
 #include <mutex>
 #include <list>
@@ -376,47 +377,36 @@ void PollLoop::delSource(const std::shared_ptr<IPollSource>& source, int fd /*= 
     return;
 }
 
+
 // -----------------------------------------------------------------------------
 /**
- * @brief Removes all sources
+ * @brief Returns true if the specified source is currently installed in the
+ * pollLoop
  *
- * It's important to note that even after sources has been removed and this
- * function returns, it's possible for the source's process() method to be called.
- * This is because the poll loop thread locks the shared_ptrs while processing
- * the events.
+ * @param[in]  source   The source object to search for in the pollLoop
+ *
+ * @return True if source installed
  *
  */
-void PollLoop::delAllSources()
+bool PollLoop::hasSource(const std::shared_ptr<IPollSource>& source)
 {
     AI_LOG_FN_ENTRY();
 
     std::lock_guard<Spinlock> locker(mLock);
-    auto it = mSources.begin();
 
-    while (it != mSources.end())
+    if (source == nullptr)
     {
-        if (it->events & EPOLLDEFERRED)
-        {
-            if (--mDeferredSources == 0)
-            {
-                disableDeferredTimer();
-            }
-        }
-
-        // remove from epoll
-        if (mEPollFd >= 0)
-        {
-            if (epoll_ctl(mEPollFd, EPOLL_CTL_DEL, it->fd, NULL) < 0)
-            {
-                AI_LOG_SYS_ERROR_EXIT(errno, "failed to delete source from epoll");
-            }
-        }
-
-        // erase from the list of sources and exit
-        it = mSources.erase(it);
+        return false;
     }
 
+    auto it = std::find_if(mSources.begin(), mSources.end(), [&source](const auto& pollSource)
+    {
+        return source == pollSource.source.lock();
+    });
+
     AI_LOG_FN_EXIT();
+
+    return it != mSources.end();
 }
 
 // -----------------------------------------------------------------------------
