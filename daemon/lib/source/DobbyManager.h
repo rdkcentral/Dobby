@@ -148,18 +148,14 @@ private:
                         const std::unique_ptr<DobbyContainer> &container,
                         const std::list<int> &files);
 
-    std::string createCustomConfig(const std::unique_ptr<DobbyContainer> &container,
-                                   const std::shared_ptr<DobbyConfig> &config,
-                                   const std::string &command,
-                                   const std::string &displaySocket,
-                                   const std::vector<std::string> &envVars);
+    bool customiseConfig(const std::shared_ptr<DobbyConfig> &config,
+                        const std::string &command,
+                        const std::string &displaySocket,
+                        const std::vector<std::string> &envVars);
 
     bool createAndStartContainer(const ContainerId& id,
                                  const std::unique_ptr<DobbyContainer>& container,
-                                 const std::list<int>& files,
-                                 const std::string& command = "",
-                                 const std::string& displaySocket = "",
-                                 const std::vector<std::string>& envVars = std::vector<std::string>());
+                                 const std::list<int>& files);
 
     bool restartContainer(const ContainerId& id,
                           const std::unique_ptr<DobbyContainer>& container);
