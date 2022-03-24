@@ -627,28 +627,30 @@ bool DobbyManager::createAndStart(const ContainerId &id,
 }
 
 /**
- * @brief Create a custom config.json file with the specified command replacing
- * the original arguments
+ * @brief Updates the container config with custom options provided by the start
+ * command
  *
- * Will write the config into the bundle directory with a suffix of the container
- * descriptor to prevent collisions. Intended to be deleted after container exits
+ * @param[in] command       The custom command to run instead of the args in the
+ *                          config file
+ * @param[in] displaySocket Path to a westeros socket to mount into the container
+ * @param[in] envVars       Custom env vars to add to the container
  *
- * @param[in] container   The object that wraps up the container details.
- * @param[in] command     The custom command to run instead of the args in the
- *                        config file
+ * @return true if modifications were made, false if no changes made
  */
-std::string DobbyManager::createCustomConfig(const std::unique_ptr<DobbyContainer> &container,
-                                             const std::shared_ptr<DobbyConfig> &config,
-                                             const std::string &command,
-                                             const std::string &displaySocket,
-                                             const std::vector<std::string>& envVars)
+bool DobbyManager::customiseConfig(const std::shared_ptr<DobbyConfig> &config,
+                                    const std::string &command,
+                                    const std::string &displaySocket,
+                                    const std::vector<std::string>& envVars)
 {
     AI_LOG_FN_ENTRY();
+
+    bool changesMade = false;
 
     // If we've been given a custom command, replace args[] with the custom command
     if (!command.empty())
     {
        config->changeProcessArgs(command);
+       changesMade = true;
     }
 
     // If we've been given a displaySocket, then add the mount it into the container
@@ -656,6 +658,7 @@ std::string DobbyManager::createCustomConfig(const std::unique_ptr<DobbyContaine
     if (!displaySocket.empty())
     {
         config->addWesterosMount(displaySocket);
+        changesMade = true;
     }
 
     // Add any extra environment variables
@@ -665,21 +668,11 @@ std::string DobbyManager::createCustomConfig(const std::unique_ptr<DobbyContaine
         {
             config->addEnvironmentVar(var);
         }
-    }
-
-    // Write the config to a temp file that is only used for this container launch
-    std::string tmpConfigPath = container->bundle->path() + "/config-" +
-                                std::to_string(container->descriptor) + ".json";
-
-    if (!config->writeConfigJson(tmpConfigPath))
-    {
-        AI_LOG_ERROR_EXIT("Failed to write custom config file to '%s'",
-                     tmpConfigPath.c_str());
-        return "";
+        changesMade = true;
     }
 
     AI_LOG_FN_EXIT();
-    return tmpConfigPath;
+    return changesMade;
 }
 
 // -----------------------------------------------------------------------------
@@ -697,10 +690,7 @@ std::string DobbyManager::createCustomConfig(const std::unique_ptr<DobbyContaine
  */
 bool DobbyManager::createAndStartContainer(const ContainerId &id,
                                            const std::unique_ptr<DobbyContainer> &container,
-                                           const std::list<int> &files,
-                                           const std::string &command,
-                                           const std::string& displaySocket,
-                                           const std::vector<std::string>& envVars)
+                                           const std::list<int> &files)
 {
     AI_LOG_FN_ENTRY();
 
@@ -923,6 +913,9 @@ int32_t DobbyManager::startContainerFromSpec(const ContainerId &id,
     // Don't start if necessary plugins have failed
     if (!pluginFailure)
     {
+        // Customise the config if necessary
+        customiseConfig(config, command, displaySocket, envVars);
+
         if (!config->writeConfigJson(bundle->path() + "/config.json"))
         {
             AI_LOG_ERROR("failed to create config.json file");
@@ -937,7 +930,7 @@ int32_t DobbyManager::startContainerFromSpec(const ContainerId &id,
             }
 
             // try and create and start the container
-            if (createAndStartContainer(id, container, startState->files(), command, displaySocket))
+            if (createAndStartContainer(id, container, startState->files()))
             {
                 // get the descriptor of the container and return that to the
                 // caller (need to do this before we move into the map)
@@ -1123,21 +1116,26 @@ int32_t DobbyManager::startContainerFromBundle(const ContainerId &id,
             }
 
             // Create a custom config file for this container with custom options
-            // Will be deleted when the container is destroyed
-            if (!command.empty() || !displaySocket.empty() || envVars.size() > 0)
+            if (customiseConfig(config, command, displaySocket, envVars))
             {
-                container->customConfigFilePath = createCustomConfig(container, config, command, displaySocket, envVars);
-                AI_LOG_DEBUG("Created custom config for container '%s' at %s", id.c_str(), container->customConfigFilePath.c_str());
+                // Write the config to a temp file that is only used for this container launch
+                // Will be deleted when the container is destroyed
+                std::string tmpConfigPath = container->bundle->path() + "/config-" +
+                                            std::to_string(container->descriptor) + ".json";
 
-                if (container->customConfigFilePath.empty())
+                if (!config->writeConfigJson(tmpConfigPath))
                 {
-                    AI_LOG_ERROR_EXIT("Could not create temporary custom config for container '%s'", id.c_str());
+                    AI_LOG_ERROR_EXIT("Failed to write custom config file to '%s'",
+                                tmpConfigPath.c_str());
                     return false;
                 }
+
+                container->customConfigFilePath = tmpConfigPath;
+                AI_LOG_DEBUG("Created custom config for container '%s' at %s", id.c_str(), container->customConfigFilePath.c_str());
             }
 
             // try and create and start the container
-            if (createAndStartContainer(id, container, startState->files(), command, displaySocket))
+            if (createAndStartContainer(id, container, startState->files()))
             {
                 // get the descriptor of the container and return that to the
                 // caller (need to do this before we move into the map)

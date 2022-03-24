@@ -378,7 +378,7 @@ static void startCommand(const std::shared_ptr<IDobbyProxy> &dobbyProxy,
 
         std::string jsonSpec(buffer, length);
         delete[] buffer;
-        cd = dobbyProxy->startContainerFromSpec(id, jsonSpec, files, command, displaySocketPath);
+        cd = dobbyProxy->startContainerFromSpec(id, jsonSpec, files, command, displaySocketPath, envVars);
 #else
         readLine->printLnError("please provide the path to a bundle directory");
         return;
