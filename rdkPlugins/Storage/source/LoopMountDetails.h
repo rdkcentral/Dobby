@@ -17,7 +17,7 @@
 * limitations under the License.
 */
 /*
- * File: BindLoopMountDetails.h
+ * File: LoopMountDetails.h
  *
  */
 #ifndef LOOPMOUNTDETAILS_H
