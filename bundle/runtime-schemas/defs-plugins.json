@@ -359,43 +359,6 @@
                                     }
                                 }
                             }
-                        },
-                        "bindloop": {
-                            "type": "array",
-                            "items": {
-                                "type": "object",
-                                "required": [
-                                    "destination",
-                                    "flags",
-                                    "source"
-                                ],
-                                "properties": {
-                                    "destination": {
-                                        "type": "string"
-                                    },
-                                    "flags": {
-                                        "$ref": "defs.json#/definitions/int32"
-                                    },
-                                    "fstype": {
-                                        "type": "string"
-                                    },
-                                    "options": {
-                                        "$ref": "defs.json#/definitions/ArrayOfStrings"
-                                    },
-                                    "source": {
-                                        "type": "string"
-                                    },
-                                    "imgsize": {
-                                        "$ref": "defs.json#/definitions/int32"
-                                    },
-                                    "persistent": {
-                                        "type": "boolean"
-                                    },
-                                    "imgmanagement": {
-                                        "type": "boolean"
-                                    }
-                                }
-                            }
                         }
                     }
                 }

@@ -1944,21 +1944,6 @@ bool DobbySpecConfig::processMounts(const Json::Value& value,
             rdkPluginData["loopback"][numLoopMounts] = loopMountData;
             numLoopMounts++;
         }
-        else if (strType == "bind-loop")
-        {
-            AI_LOG_DEBUG("bind-loop %d", numBindLoopMounts);
-            Json::Value bindLoopMountData;
-            if (!processLoopMount(mount, dictionary, bindLoopMountData))
-            {
-                // if failed to parse the loop mount details then also pass
-                // the failure on up the chain
-                return false;
-            }
-
-            // Create an array item for the RDK Storage plugin
-            rdkPluginData["bindloop"][numBindLoopMounts] = bindLoopMountData;
-            numBindLoopMounts++;
-        }
         else
         {
             // just a regular mount so add all the mount options to the OCI

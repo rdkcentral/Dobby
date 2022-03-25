@@ -2,7 +2,7 @@
 * If not stated otherwise in this file or this component's LICENSE file the
 * following copyright and licenses apply:
 *
-* Copyright 2020 Sky UK
+* Copyright 2022 Sky UK
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -17,20 +17,22 @@
 * limitations under the License.
 */
 /*
- * File: LoopMountDetails.h
+ * File: BindLoopMountDetails.h
  *
  */
 #ifndef LOOPMOUNTDETAILS_H
 #define LOOPMOUNTDETAILS_H
 
-#include "MountDetails.h"
-#include "MountCommon.h"
+#include "MountProperties.h"
 
 #include <RdkPluginBase.h>
 
 #include <sys/types.h>
 #include <string>
 #include <list>
+#include <memory>
+
+class RefCountFile;
 
 
 // -----------------------------------------------------------------------------
@@ -43,7 +45,7 @@
  *
  *  @see Storage
  */
-class LoopMountDetails : public MountDetails
+class LoopMountDetails
 {
 public:
     LoopMountDetails() = delete;
@@ -62,20 +64,23 @@ public:
                      const std::shared_ptr<DobbyRdkPluginUtils> &utils);
 
 public:
-    bool doLoopMount(const std::string& loopDevice) override;
+    bool doLoopMount(const std::string& loopDevice);
 
-    bool onPreCreate() override;
+    bool onPreCreate();
 
-    bool setPermissions() override;
+    bool setPermissions();
 
-    bool remountTempDirectory() override;
+    bool remountTempDirectory();
 
-    bool cleanupTempDirectory() override;
+    bool cleanupTempDirectory();
 
-    bool removeNonPersistentImage() override;
+    bool removeNonPersistentImage();
 
 private:
-    std::string mMountPointOutsideContainer;
+    std::unique_ptr<RefCountFile> getRefCountFile();
+
+private:
+    std::string mMountPointInsideContainer;
     std::string mTempMountPointOutsideContainer;
     MountProperties mMount;
     uid_t mUserId;

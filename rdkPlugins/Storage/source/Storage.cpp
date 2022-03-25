@@ -78,7 +78,7 @@ bool Storage::preCreation()
     AI_LOG_FN_ENTRY();
 
     // create loopmount for every point
-    std::vector<std::unique_ptr<MountDetails>> mountDetails = getMountDetails();
+    std::vector<std::unique_ptr<LoopMountDetails>> mountDetails = getLoopMountDetails();
 
     for(auto it = mountDetails.begin(); it != mountDetails.end(); it++)
     {
@@ -102,7 +102,7 @@ bool Storage::createRuntime()
     AI_LOG_FN_ENTRY();
 
     // Set permissions for every loop point directory
-    std::vector<std::unique_ptr<MountDetails>> mountDetails = getMountDetails();
+    std::vector<std::unique_ptr<LoopMountDetails>> mountDetails = getLoopMountDetails();
     for(auto it = mountDetails.begin(); it != mountDetails.end(); it++)
     {
         // Setting permissions for generated directories
@@ -125,7 +125,7 @@ bool Storage::createContainer()
     AI_LOG_FN_ENTRY();
 
     // Mount temp directory in proper place
-    std::vector<std::unique_ptr<MountDetails>> mountDetails = getMountDetails();
+    std::vector<std::unique_ptr<LoopMountDetails>> mountDetails = getLoopMountDetails();
     for(auto it = mountDetails.begin(); it != mountDetails.end(); it++)
     {
         // Remount temp directory into proper place
@@ -163,7 +163,7 @@ bool Storage::postStart()
 {
     AI_LOG_FN_ENTRY();
 
-    std::vector<std::unique_ptr<MountDetails>> mountDetails = getMountDetails();
+    std::vector<std::unique_ptr<LoopMountDetails>> mountDetails = getLoopMountDetails();
     for(auto it = mountDetails.begin(); it != mountDetails.end(); it++)
     {
         // Clean up temp mount points
@@ -189,7 +189,7 @@ bool Storage::postStop()
 
     // here should be deleting the data.img file when non persistent option selected
 
-    std::vector<std::unique_ptr<MountDetails>> mountDetails = getMountDetails();
+    std::vector<std::unique_ptr<LoopMountDetails>> mountDetails = getLoopMountDetails();
     for(auto it = mountDetails.begin(); it != mountDetails.end(); it++)
     {
         // Clean up temp mount points
@@ -238,36 +238,55 @@ std::vector<std::string> Storage::getDependencies() const
  *
  *  @return vector of MountDetails's that were in the config
  */
-std::vector<std::unique_ptr<MountDetails>> Storage::getMountDetails()
+std::vector<std::unique_ptr<LoopMountDetails>> Storage::getLoopMountDetails()
 {
     AI_LOG_FN_ENTRY();
 
     const std::vector<MountProperties> loopMounts = getLoopMounts();
 
-    std::vector<std::unique_ptr<MountDetails>> mountDetails;
+    std::vector<std::unique_ptr<LoopMountDetails>> mountDetails;
     // loop though all the loop mounts for the given container and create individual
     // DobbyLoopMount objects for each
     for (const MountProperties &properties : loopMounts)
     {
-        auto loopMount = CreateMountDetails<LoopMountDetails>(properties);
+        uid_t tmp_uid = 0;
+        gid_t tmp_gid = 0;
+
+        // Firstly get uid/gid from process
+        if(mContainerConfig->process &&
+           mContainerConfig->process->user)
+        {
+            if (mContainerConfig->process->user->uid_present)
+            {
+                tmp_uid = mContainerConfig->process->user->uid;
+            }
+
+            if (mContainerConfig->process->user->gid_present)
+            {
+                tmp_gid = mContainerConfig->process->user->gid;
+            }
+        }
+
+        // Then map it inside container
+        tmp_uid = getMappedId(tmp_uid,
+                                mContainerConfig->linux->uid_mappings,
+                                mContainerConfig->linux->uid_mappings_len);
+
+        tmp_gid = getMappedId(tmp_gid,
+                                mContainerConfig->linux->gid_mappings,
+                                mContainerConfig->linux->gid_mappings_len);
+
+
+        // create the loop mount and make sure it was constructed
+        auto loopMount = std::make_unique<LoopMountDetails>(mRootfsPath,
+                                                            properties,
+                                                            tmp_uid,
+                                                            tmp_gid,
+                                                            mUtils);
 
         if (loopMount)
         {
             mountDetails.emplace_back(std::move(loopMount));
-        }
-    }
-
-    const std::vector<MountProperties> bindLoopmounts = getBindLoopMounts();
-
-    // loop though all the bind loop mounts for the given container and create individual
-    // DobbyLoopMount objects for each
-    for (const MountProperties &properties : bindLoopmounts)
-    {
-        auto bindLoopMount = CreateMountDetails<BindLoopMountDetails>(properties);
-
-        if (bindLoopMount)
-        {
-            mountDetails.emplace_back(std::move(bindLoopMount));
         }
     }
 
@@ -297,41 +316,67 @@ std::vector<MountProperties> Storage::getLoopMounts()
         for (size_t i = 0; i < mContainerConfig->rdk_plugins->storage->data->loopback_len; i++)
         {
             auto loopback = mContainerConfig->rdk_plugins->storage->data->loopback[i];
-            mounts.push_back(CreateMountProperties(loopback));
-        }
-    }
-    else
-    {
-        AI_LOG_ERROR("No storage data in config file");
-    }
 
-    AI_LOG_FN_EXIT();
-    return mounts;
-}
+            MountProperties mount;
+            mount.fsImagePath = std::string(loopback->source);
+            mount.destination = std::string(loopback->destination);
+            mount.mountFlags  = loopback->flags;
 
-// -----------------------------------------------------------------------------
-/**
- *  @brief Reads container config and creates all mount information in LoopMount
- *  type objects.
- *
- *
- *  @return vector of MountProperties that were in the config
- */
-std::vector<MountProperties> Storage::getBindLoopMounts()
-{
-    AI_LOG_FN_ENTRY();
+            // Optional parameters
+            if (loopback->fstype)
+            {
+                mount.fsImageType = std::string(loopback->fstype);
+            }
+            else
+            {
+                // default image type = ext4
+                mount.fsImageType = "ext4";
+            }
 
-    std::vector<MountProperties> mounts;
+            if (loopback->persistent_present)
+            {
+                mount.persistent = loopback->persistent;
+            }
+            else
+            {
+                // default persistent = true
+                mount.persistent = true;
+            }
 
-    // Check if container has mount data
-    if (mContainerConfig->rdk_plugins->storage->data)
-    {
-        // loop though all the mounts for the given container and create individual
-        // LoopMountDetails::LoopMount objects for each
-        for (size_t i = 0; i < mContainerConfig->rdk_plugins->storage->data->bindloop_len; i++)
-        {
-            auto bindLoop = mContainerConfig->rdk_plugins->storage->data->bindloop[i];
-            mounts.push_back(CreateMountProperties(bindLoop));
+            if (loopback->imgsize_present)
+            {
+                mount.imgSize = loopback->imgsize;
+            }
+            else
+            {
+                if (mount.fsImageType.compare("xfs") == 0)
+                {
+                    // default image size = 16 MB
+                    mount.imgSize = 16 * 1024 * 1024;
+                }
+                else
+                {
+                    // default image size = 12 MB
+                    mount.imgSize = 12 * 1024 * 1024;
+                }
+            }
+
+            for (size_t j = 0; j < loopback->options_len; j++)
+            {
+                mount.mountOptions.push_back(std::string(loopback->options[j]));
+            }
+
+            if (loopback->imgmanagement_present)
+            {
+                mount.imgManagement = loopback->imgmanagement;
+            }
+            else
+            {
+                // default imgManagement = true
+                mount.imgManagement = true;
+            }
+
+            mounts.push_back(mount);
         }
     }
     else

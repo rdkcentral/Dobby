@@ -17,11 +17,11 @@
 * limitations under the License.
 */
 /*
- * File: MountCommon.h
+ * File: MountProperties.h
  *
  */
-#ifndef MOUNTCOMMON_H
-#define MOUNTCOMMON_H
+#ifndef MOUNTPROPERTIES_H
+#define MOUNTPROPERTIES_H
 
 #include <sys/types.h>
 #include <string>
@@ -45,4 +45,4 @@ typedef struct _MountProperties
 } MountProperties;
 
 
-#endif // !defined(MOUNTCOMMON_H)
+#endif // !defined(MOUNTPROPERTIES_H)
