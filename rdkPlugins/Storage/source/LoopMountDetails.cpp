@@ -110,7 +110,7 @@ bool LoopMountDetails::onPreCreate()
     // step 2 - check if loop device already exists, otherwise open the source file
     // and attach to a space loop device 
     std::string loopDevice = StorageHelper::getLoopDevice(mMount.fsImagePath);
-    int loopDevFd(0);
+    int loopDevFd(-1);
 
     if (loopDevice.empty())
     {
@@ -134,7 +134,7 @@ bool LoopMountDetails::onPreCreate()
 
     // step 4 - close the loop device, if the mount succeeded then the file
     // will remain associated with the loop device until it's unmounted
-    if (loopDevFd && close(loopDevFd) != 0)
+    if (loopDevFd >= 0 && close(loopDevFd) != 0)
     {
         AI_LOG_SYS_ERROR(errno, "failed to close loop device dir");
         return false;
@@ -382,7 +382,8 @@ std::unique_ptr<RefCountFile> LoopMountDetails::getRefCountFile()
     struct stat file_stat;
     int ret = stat(mMount.fsImagePath.c_str(), &file_stat);
 
-    if (ret < 0) {  
+    if (ret < 0)
+    {  
         AI_LOG_ERROR("failed to get file stat for file '%s'",
                      mMount.fsImagePath.c_str());
         return nullptr;
@@ -402,4 +403,3 @@ std::unique_ptr<RefCountFile> LoopMountDetails::getRefCountFile()
     AI_LOG_FN_EXIT();
     return refCountFile;
 }
-
