@@ -78,10 +78,11 @@ bool Storage::preCreation()
     AI_LOG_FN_ENTRY();
 
     // create loopmount for every point
-    std::vector<std::unique_ptr<LoopMountDetails>> loopDetails = getLoopDetails();
-    for(auto it = loopDetails.begin(); it != loopDetails.end(); it++)
+    std::vector<std::unique_ptr<LoopMountDetails>> mountDetails = getLoopMountDetails();
+
+    for(auto it = mountDetails.begin(); it != mountDetails.end(); it++)
     {
-        // Creating loop mount and attaching it to temp mount inside container
+        // Creating mounts and attaching it to temp mount inside container
         if(!(*it)->onPreCreate())
         {
             AI_LOG_ERROR_EXIT("failed to execute preCreation loop hook");
@@ -101,8 +102,8 @@ bool Storage::createRuntime()
     AI_LOG_FN_ENTRY();
 
     // Set permissions for every loop point directory
-    std::vector<std::unique_ptr<LoopMountDetails>> loopDetails = getLoopDetails();
-    for(auto it = loopDetails.begin(); it != loopDetails.end(); it++)
+    std::vector<std::unique_ptr<LoopMountDetails>> mountDetails = getLoopMountDetails();
+    for(auto it = mountDetails.begin(); it != mountDetails.end(); it++)
     {
         // Setting permissions for generated directories
         if(!(*it)->setPermissions())
@@ -124,8 +125,8 @@ bool Storage::createContainer()
     AI_LOG_FN_ENTRY();
 
     // Mount temp directory in proper place
-    std::vector<std::unique_ptr<LoopMountDetails>> loopDetails = getLoopDetails();
-    for(auto it = loopDetails.begin(); it != loopDetails.end(); it++)
+    std::vector<std::unique_ptr<LoopMountDetails>> mountDetails = getLoopMountDetails();
+    for(auto it = mountDetails.begin(); it != mountDetails.end(); it++)
     {
         // Remount temp directory into proper place
         if(!(*it)->remountTempDirectory())
@@ -162,8 +163,8 @@ bool Storage::postStart()
 {
     AI_LOG_FN_ENTRY();
 
-    std::vector<std::unique_ptr<LoopMountDetails>> loopDetails = getLoopDetails();
-    for(auto it = loopDetails.begin(); it != loopDetails.end(); it++)
+    std::vector<std::unique_ptr<LoopMountDetails>> mountDetails = getLoopMountDetails();
+    for(auto it = mountDetails.begin(); it != mountDetails.end(); it++)
     {
         // Clean up temp mount points
         if(!(*it)->cleanupTempDirectory())
@@ -188,8 +189,8 @@ bool Storage::postStop()
 
     // here should be deleting the data.img file when non persistent option selected
 
-    std::vector<std::unique_ptr<LoopMountDetails>> loopDetails = getLoopDetails();
-    for(auto it = loopDetails.begin(); it != loopDetails.end(); it++)
+    std::vector<std::unique_ptr<LoopMountDetails>> mountDetails = getLoopMountDetails();
+    for(auto it = mountDetails.begin(); it != mountDetails.end(); it++)
     {
         // Clean up temp mount points
         if(!(*it)->removeNonPersistentImage())
@@ -232,21 +233,21 @@ std::vector<std::string> Storage::getDependencies() const
 
 // -----------------------------------------------------------------------------
 /**
- *  @brief Create loop mount details vector from all mounts in config.
+ *  @brief Create mount details vector from all mounts in config.
  *
  *
- *  @return vector of LoopMountDetails's that were in the config
+ *  @return vector of MountDetails's that were in the config
  */
-std::vector<std::unique_ptr<LoopMountDetails>> Storage::getLoopDetails()
+std::vector<std::unique_ptr<LoopMountDetails>> Storage::getLoopMountDetails()
 {
     AI_LOG_FN_ENTRY();
 
-    const std::vector<LoopMountDetails::LoopMount> mounts = getLoopMounts();
+    const std::vector<MountProperties> loopMounts = getLoopMounts();
 
-    std::vector<std::unique_ptr<LoopMountDetails>> loopDetails;
-    // loop though all the mounts for the given container and create individual
+    std::vector<std::unique_ptr<LoopMountDetails>> mountDetails;
+    // loop though all the loop mounts for the given container and create individual
     // DobbyLoopMount objects for each
-    for (const LoopMountDetails::LoopMount &mount : mounts)
+    for (const MountProperties &properties : loopMounts)
     {
         uid_t tmp_uid = 0;
         gid_t tmp_gid = 0;
@@ -277,23 +278,20 @@ std::vector<std::unique_ptr<LoopMountDetails>> Storage::getLoopDetails()
 
 
         // create the loop mount and make sure it was constructed
-        std::unique_ptr<LoopMountDetails> loopMount(
-            std::make_unique<LoopMountDetails>(
-                mRootfsPath,
-                mount,
-                tmp_uid,
-                tmp_gid,
-                mUtils)
-            );
+        auto loopMount = std::make_unique<LoopMountDetails>(mRootfsPath,
+                                                            properties,
+                                                            tmp_uid,
+                                                            tmp_gid,
+                                                            mUtils);
 
         if (loopMount)
         {
-            loopDetails.emplace_back(std::move(loopMount));
+            mountDetails.emplace_back(std::move(loopMount));
         }
     }
 
     AI_LOG_FN_EXIT();
-    return loopDetails;
+    return mountDetails;
 }
 
 // -----------------------------------------------------------------------------
@@ -302,13 +300,13 @@ std::vector<std::unique_ptr<LoopMountDetails>> Storage::getLoopDetails()
  *  type objects.
  *
  *
- *  @return vector of LoopMount's that were in the config
+ *  @return vector of MountProperties that were in the config
  */
-std::vector<LoopMountDetails::LoopMount> Storage::getLoopMounts()
+std::vector<MountProperties> Storage::getLoopMounts()
 {
     AI_LOG_FN_ENTRY();
 
-    std::vector<LoopMountDetails::LoopMount> mounts;
+    std::vector<MountProperties> mounts;
 
     // Check if container has mount data
     if (mContainerConfig->rdk_plugins->storage->data)
@@ -318,8 +316,8 @@ std::vector<LoopMountDetails::LoopMount> Storage::getLoopMounts()
         for (size_t i = 0; i < mContainerConfig->rdk_plugins->storage->data->loopback_len; i++)
         {
             auto loopback = mContainerConfig->rdk_plugins->storage->data->loopback[i];
-            LoopMountDetails::LoopMount mount;
 
+            MountProperties mount;
             mount.fsImagePath = std::string(loopback->source);
             mount.destination = std::string(loopback->destination);
             mount.mountFlags  = loopback->flags;

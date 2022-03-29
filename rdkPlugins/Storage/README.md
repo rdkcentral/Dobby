@@ -23,11 +23,14 @@ space "destination".
     }
 }
 ```
+The Storage plugin will only create one loop device for a given source file. If multiple containers share
+the same source file, then the Storage plugin will bind mount the same loop device into the different containers. Thus, they share the same private storage.
+
 If you already have other RDK plugins in the bundle, then just add the storage plugin. Do not create multiple `rdkPlugin` sections.
 
 ## Options
 ### Creating mount
-For every mount point Storage plugin should create the should be one item in the array of "loopback". The options inside this object goes as follows:
+For every mount point the Storage plugin should create, there should be one item in the array of "loopback". The options inside this object goes as follows:
 
 | Option              | Value                                                                                                                                   |
 | ------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |

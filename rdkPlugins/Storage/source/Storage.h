@@ -23,8 +23,9 @@
 #ifndef STORAGE_H
 #define STORAGE_H
 
-#include <RdkPluginBase.h>
 #include "LoopMountDetails.h"
+
+#include <RdkPluginBase.h>
 
 #include <sys/types.h>
 #include <netinet/in.h>
@@ -81,9 +82,10 @@ public:
 public:
     std::vector<std::string> getDependencies() const override;
 
-    std::vector<LoopMountDetails::LoopMount> getLoopMounts();
-    std::vector<std::unique_ptr<LoopMountDetails>> getLoopDetails();
-
+private:
+    std::vector<MountProperties> getLoopMounts();
+    std::vector<std::unique_ptr<LoopMountDetails>> getLoopMountDetails();
+    
 
 private:
     const std::string mName;

@@ -55,6 +55,8 @@ public:
                                     const std::string& fileSystem);
     static void cleanMountLostAndFound(const std::string& mountPoint,
                                         const std::string& logTag);
+    static std::string getLoopDevice(const std::string &backingFile);
+    static int getMountOptions(const std::list<std::string> &mountOptions);
 
     // -------------------------------------------------------------------------
     /**

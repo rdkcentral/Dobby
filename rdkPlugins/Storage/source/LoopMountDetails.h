@@ -2,7 +2,7 @@
 * If not stated otherwise in this file or this component's LICENSE file the
 * following copyright and licenses apply:
 *
-* Copyright 2020 Sky UK
+* Copyright 2022 Sky UK
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -23,11 +23,16 @@
 #ifndef LOOPMOUNTDETAILS_H
 #define LOOPMOUNTDETAILS_H
 
+#include "MountProperties.h"
+
 #include <RdkPluginBase.h>
 
 #include <sys/types.h>
 #include <string>
 #include <list>
+#include <memory>
+
+class RefCountFile;
 
 
 // -----------------------------------------------------------------------------
@@ -48,33 +53,17 @@ public:
     LoopMountDetails(LoopMountDetails&&) = delete;
     ~LoopMountDetails();
 
-    /**
-     *  @brief Loopmount struct used for Storage plugin
-     */
-    typedef struct _LoopMount
-    {
-        std::string fsImagePath;
-        std::string fsImageType;
-        std::string destination;
-        std::list<std::string> mountOptions;
-        unsigned long mountFlags;
-        bool persistent;
-        int imgSize;
-        bool imgManagement;
-
-    } LoopMount;
-
 private:
     friend class Storage;
 
 public:
     LoopMountDetails(const std::string& rootfsPath,
-                     const LoopMount& mount,
+                     const MountProperties& mount,
                      const uid_t& userId,
                      const gid_t& groupId,
                      const std::shared_ptr<DobbyRdkPluginUtils> &utils);
 
-private:
+public:
     bool doLoopMount(const std::string& loopDevice);
 
     bool onPreCreate();
@@ -87,9 +76,13 @@ private:
 
     bool removeNonPersistentImage();
 
-    std::string mMountPointOutsideContainer;
+private:
+    std::unique_ptr<RefCountFile> getRefCountFile();
+
+private:
+    std::string mMountPointInsideContainer;
     std::string mTempMountPointOutsideContainer;
-    LoopMount mMount;
+    MountProperties mMount;
     uid_t mUserId;
     gid_t mGroupId;
 
