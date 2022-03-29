@@ -33,7 +33,7 @@ RefCountFile::RefCountFile(std::string file): mFilePath(std::move(file)), mFd(-1
                S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP);
     if (mFd < 0)
     {
-        AI_LOG_ERROR("failed to open reference count file '%s'",
+        AI_LOG_ERROR("Failed to open reference count file '%s'",
                      mFilePath.c_str());
     }
     else
@@ -64,8 +64,15 @@ void RefCountFile::Close()
 
     if (mFd >= 0)
     {
-        close(mFd);
-        mFd = -1;
+        if (TEMP_FAILURE_RETRY(close(mFd)) != 0)
+        {
+            AI_LOG_SYS_ERROR(errno, "Failed to close reference count file '%s'",
+                             mFilePath.c_str());
+        }
+        else
+        {
+            mFd = -1;
+        }
     }
 
     AI_LOG_FN_EXIT();
@@ -152,14 +159,16 @@ int RefCountFile::Read()
     const off_t pos = lseek(mFd, 0, SEEK_SET);
     if (pos < 0)
     {
-        AI_LOG_SYS_ERROR(errno, "Failed to seek to beginning of file");
+        AI_LOG_SYS_ERROR(errno, "Failed to seek to beginning of file '%s'",
+                         mFilePath.c_str());
         return ref;
     }
     
     const ssize_t rd = TEMP_FAILURE_RETRY(read(mFd, &ref, sizeof(ref)));
     if (rd < 0)
     {
-        AI_LOG_SYS_ERROR(errno, "Failed to read from file");
+        AI_LOG_SYS_ERROR(errno, "Failed to read from file '%s'",
+                         mFilePath.c_str());
     }
     else if (rd == 0)
     {
