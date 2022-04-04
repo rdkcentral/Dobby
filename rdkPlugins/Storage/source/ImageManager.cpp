@@ -330,7 +330,7 @@ bool ImageManager::createFSImageAt(int dirFd,
 #else
     int imageFd = mkstemp(tempFilename);
     if (imageFd >= 0)
-        fcntl(fd, F_SETFD, (fcntl(fd, F_GETFD) | FD_CLOEXEC));
+        fcntl(imageFd, F_SETFD, (fcntl(imageFd, F_GETFD) | FD_CLOEXEC));
 #endif
     if (imageFd < 0)
     {
