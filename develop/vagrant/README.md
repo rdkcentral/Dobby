@@ -99,8 +99,8 @@ To manually build Thunder, run the following scripts
 
 ```
 cd ~/srcThunder/scripts
-./build_thunder_r2.sh
-./build_rdkservices.sh
+sudo ./build_thunder_r2.sh
+sudo ./build_rdkservices.sh
 ```
 
 All the necessary dependencies should already be installed.
