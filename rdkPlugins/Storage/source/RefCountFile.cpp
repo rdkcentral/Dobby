@@ -23,6 +23,7 @@
 #include "RefCountFile.h"
 #include <stdio.h>
 #include <unistd.h>
+#include <fcntl.h>
 
 RefCountFile::RefCountFile(std::string file): mFilePath(std::move(file)), mFd(-1), mOpen(false)
 {

@@ -205,9 +205,9 @@ extern "C" void __ai_debug_log_sys_printf(int err, int level, const char *file,
     char appendbuf[96];
     const char *append = nullptr;
 
-#if defined(__linux__)
+#ifdef HAVE_GNU_STRERROR_R
     errmsg = strerror_r(err, errbuf, sizeof(errbuf));
-#elif defined(__APPLE__)
+#else
     if (strerror_r(err, errbuf, sizeof(errbuf)) != 0)
         errmsg = "Unknown error";
     else

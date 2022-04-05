@@ -26,6 +26,8 @@
 #include <algorithm>
 #include <fcntl.h>
 #include <unistd.h>
+#include <libgen.h>
+#include <limits.h>
 
 IPAllocator::IPAllocator(const std::shared_ptr<DobbyRdkPluginUtils> &utils)
     : mUtils(utils),
@@ -198,7 +200,9 @@ bool IPAllocator::getNetworkInfo(const std::string &filePath, ContainerNetworkIn
     }
 
     const in_addr_t ip = std::stoi(ipStr);
-    networkInfo.containerId = basename(filePath.c_str());
+    char* filePathCopy = strdup(filePath.c_str());
+    networkInfo.containerId = basename(filePathCopy);
+    free(filePathCopy);
     networkInfo.ipAddressRaw = ip;
 
     // Convert the in_addr_t value to a human readable value (e.g. 100.64.11.x)

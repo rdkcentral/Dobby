@@ -25,6 +25,7 @@
 #include <map>
 #include <sys/stat.h>
 #include <sys/un.h>
+#include <string.h>
 
 #include <Logging.h>
 
@@ -138,14 +139,13 @@ void DobbyLogRelay::process(const std::shared_ptr<AICommon::IPollLoop> &pollLoop
         iov[0].iov_base=mBuf;
         iov[0].iov_len=sizeof(mBuf);
 
-        struct msghdr message = {
-            .msg_name=&src_addr,
-            .msg_namelen=sizeof(src_addr),
-            .msg_iov=iov,
-            .msg_iovlen=1,
-            .msg_control=0,
-            .msg_controllen=0,
-        };
+        struct msghdr message{};
+        message.msg_name=&src_addr;
+        message.msg_namelen=sizeof(src_addr);
+        message.msg_iov=iov;
+        message.msg_iovlen=1;
+        message.msg_control=0;
+        message.msg_controllen=0;
 
         // This is effectively a UDP message, so we have to read the whole datagram in one chunk
         // The first byte returned by read will always be the start of the datagram. We've set

@@ -24,6 +24,31 @@
 #ifndef LOGGING_H
 #define LOGGING_H
 
+#include <unistd.h>
+
+#ifndef TEMP_FAILURE_RETRY
+#define TEMP_FAILURE_RETRY(exp)            \
+  ({                                       \
+    decltype(exp) _rc;                     \
+    do {                                   \
+      _rc = (exp);                         \
+    } while (_rc == -1 && errno == EINTR); \
+    _rc;                                   \
+  })
+#endif
+
+// There's no nice, reliable way to test which version of strerror_r
+// we have at compile time, so if building for a platform that uses the
+// XSI-compliant version (e.g. OS X), define HAVE_GNU_STRERROR_R as 0.
+#ifndef HAVE_GNU_STRERROR_R
+    #if defined(__APPLE__)
+        #define HAVE_GNU_STRERROR_R 0
+    #else
+        #define HAVE_GNU_STRERROR_R 1
+    #endif
+#endif
+
+
 
 /**
  * One of the following should be set by the SI build system, if they aren't

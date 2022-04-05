@@ -36,6 +36,7 @@
 #include <cstdlib>
 #include <cerrno>
 #include <iterator>
+#include <libgen.h>
 
 #include <fcntl.h>
 #include <unistd.h>

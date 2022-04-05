@@ -27,6 +27,13 @@
 #include <stdlib.h>
 #include <string.h>
 #include <limits.h>
+#ifndef LONG_LONG_MAX
+#define LONG_LONG_MAX __LONG_LONG_MAX__
+#endif
+#ifndef ULONG_LONG_MAX
+#define ULONG_LONG_MAX (LONG_LONG_MAX * 2ULL + 1)
+#endif
+
 #include <unistd.h>
 #include <fcntl.h>
 #include <errno.h>
