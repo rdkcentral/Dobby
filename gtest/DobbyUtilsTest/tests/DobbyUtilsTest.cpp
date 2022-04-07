@@ -19,6 +19,7 @@ class DobbyUtilsTest : public ::testing::Test {
                         cout<<"destructor"<<endl;
                  }
 	DobbyUtils test;
+	ContainerId t_id;
 };
 
 TEST_F(DobbyUtilsTest, TestRecursiveMkdirAbsolutePath)
@@ -87,27 +88,16 @@ TEST_F(DobbyUtilsTest, TestreadTextFile){
         test.rmdirRecursive("/tmp/hi");
 }
 
-ContainerId t_id;
-
-TEST_F(DobbyUtilsTest, TestsetStringMetaData){
+TEST_F(DobbyUtilsTest, TestContainerMetaData){
         t_id.create("a123");
-        test.setStringMetaData(t_id,"ipaddr","127.0.0.1");
-}
+        
+	test.setStringMetaData(t_id,"ipaddr","127.0.0.1");
+	EXPECT_EQ(test.getStringMetaData(t_id,"ipaddr",""),"127.0.0.1");
 
-TEST_F(DobbyUtilsTest, TestgetStringMetaData){
-        EXPECT_EQ(test.getStringMetaData(t_id,"ipaddr",""),"127.0.0.1");
-}
-
-TEST_F(DobbyUtilsTest, TestsetIntegerMetaData){
         test.setIntegerMetaData(t_id,"port",9998);
-}
-
-TEST_F(DobbyUtilsTest, TestgetIntegerMetaData){
 	EXPECT_EQ(test.getIntegerMetaData(t_id,"port",0),9998);
-}
-
-TEST_F(DobbyUtilsTest, TestclearContainerMetaData){
-        test.clearContainerMetaData(t_id);
+	
+	test.clearContainerMetaData(t_id);
 	EXPECT_EQ(test.getStringMetaData(t_id,"ipaddr",""),"");
         EXPECT_EQ(test.getStringMetaData(t_id,"port",""),"");
 }
