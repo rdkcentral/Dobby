@@ -1,37 +1,53 @@
-#include <iostream>
+/*
+* If not stated otherwise in this file or this component's LICENSE file the
+* following copyright and licenses apply:
+*
+* Copyright 2020 Sky UK
+*
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+* http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*/
+
 #include <gtest/gtest.h>
 #include "ContainerId.h"
 using namespace std;
 
 class ContainerIdTest : public ::testing::Test {
          protected:
-                 void SetUp() override {
-                        cout<<"constructor"<<endl;
+                 void SetUp() override 
+		 {
                  }
-                 void TearDown() override {
-                        cout<<"destructor"<<endl;
+                 void TearDown() override 
+		 {
                  }
 	ContainerId tid,rid;
 };
 
-TEST_F(ContainerIdTest,CheckNumeric){
+TEST_F(ContainerIdTest,CheckNumeric)
+{
         rid = tid.create("123");
         EXPECT_EQ(rid.str(),"");
 }
 
-TEST_F(ContainerIdTest,CheckDoubleDot){
+TEST_F(ContainerIdTest,CheckDoubleDot)
+{
         rid = tid.create("a..123");
         EXPECT_EQ(rid.str(),"");
 }
 
-TEST_F(ContainerIdTest,CheckAlphanumeric){
+TEST_F(ContainerIdTest,CheckAlphanumeric)
+{
         rid = tid.create("a.123");
         EXPECT_EQ(rid.str(),"a.123");
 }
 
-int main(int argc, char* argv[])
-{
-        ::testing::InitGoogleTest(&argc, argv);
-        return RUN_ALL_TESTS();
-}
 
