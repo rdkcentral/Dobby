@@ -29,3 +29,9 @@ TEST_F(ContainerIdTest,CheckAlphanumeric){
         EXPECT_EQ(rid.str(),"a.123");
 }
 
+int main(int argc, char* argv[])
+{
+        ::testing::InitGoogleTest(&argc, argv);
+        return RUN_ALL_TESTS();
+}
+
