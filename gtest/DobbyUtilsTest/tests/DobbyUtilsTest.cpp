@@ -1,22 +1,37 @@
-#include<gtest/gtest.h>
+/*
+* If not stated otherwise in this file or this component's LICENSE file the
+* following copyright and licenses apply:
+*
+* Copyright 2020 Sky UK
+*
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+* http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*/
+
+#include <gtest/gtest.h>
+#include <fcntl.h>
 #include "DobbyTimer.h"
 #include "ContainerId.h"
 #include "Logging.h"
-#include <fstream>
-#include <fcntl.h>
-#include <dirent.h>
 #define private public
 #include "DobbyUtils.h"
 
-using namespace std;
-
-class DobbyUtilsTest : public ::testing::Test {
+class DobbyUtilsTest : public ::testing::Test 
+{
          protected:
-                 void SetUp() override {
-                        cout<<"constructor"<<endl;
+                 void SetUp() override 
+		 {
                  }
                  void TearDown() override {
-                        cout<<"destructor"<<endl;
                  }
 	DobbyUtils test;
 	ContainerId t_id;
@@ -24,7 +39,7 @@ class DobbyUtilsTest : public ::testing::Test {
 
 TEST_F(DobbyUtilsTest, TestRecursiveMkdirAbsolutePath)
 {
-        const string path = "/tmp/hello/some/long/path";
+        std::string path = "/tmp/hello/some/long/path";
 
         //printf("temp path = '%s'\n", path.c_str());
 
@@ -52,43 +67,46 @@ TEST_F(DobbyUtilsTest, TestCleanMountLostAndFound)
 
 TEST_F(DobbyUtilsTest, TestAttachFileToLoopDevice)
 {
-         std::string loopDevPath;
+        std::string loopDevPath;
 
-         int loopDevFd = test.openLoopDevice(&loopDevPath);
-	 //printf("%d\n",loopDevFd);
+        int loopDevFd = test.openLoopDevice(&loopDevPath);
+	//printf("%d\n",loopDevFd);
 
-         if (loopDevFd < 0)
-         {
-             printf("failed to open loop device\n");
-             EXPECT_FALSE(true);
-         }
-         else
-         {
-             printf("Opened loop mount =%s\n", loopDevPath.c_str());
-         }
+        if (loopDevFd < 0)
+        {
+            printf("failed to open loop device\n");
+            EXPECT_FALSE(true);
+        }
+        else
+        {
+            printf("Opened loop mount =%s\n", loopDevPath.c_str());
+        }
 
-         int fileFd = open("/tmp/test1", O_CREAT | O_RDWR);
+        int fileFd = open("/tmp/test1", O_CREAT | O_RDWR);
 
-         EXPECT_TRUE(test.attachFileToLoopDevice(loopDevFd,fileFd));
+        EXPECT_TRUE(test.attachFileToLoopDevice(loopDevFd,fileFd));
 
-         if (close(loopDevFd) != 0)
-         {
-             printf("failed to close file\n");
-             EXPECT_FALSE(true);
-         }
+        if (close(loopDevFd) != 0)
+        {
+            printf("failed to close file\n");
+            EXPECT_FALSE(true);
+        }
         test.rmdirRecursive("/tmp/test1");
 }
 
-TEST_F(DobbyUtilsTest, TestwriteTextFile){
+TEST_F(DobbyUtilsTest, TestwriteTextFile)
+{
         test.writeTextFile("/tmp/hi","Hello World",O_CREAT,0644);
 }
 
-TEST_F(DobbyUtilsTest, TestreadTextFile){
+TEST_F(DobbyUtilsTest, TestreadTextFile)
+{
         EXPECT_EQ(test.readTextFile("/tmp/hi",4096),"Hello World");
         test.rmdirRecursive("/tmp/hi");
 }
 
-TEST_F(DobbyUtilsTest, TestContainerMetaData){
+TEST_F(DobbyUtilsTest, TestContainerMetaData)
+{
         t_id.create("a123");
         
 	test.setStringMetaData(t_id,"ipaddr","127.0.0.1");
