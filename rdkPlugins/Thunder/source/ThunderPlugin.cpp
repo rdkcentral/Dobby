@@ -112,27 +112,41 @@ unsigned ThunderPlugin::hookHints() const
  */
 bool ThunderPlugin::postInstallation()
 {
-    // Set up the /etc/hosts and /etc/service files
-    std::string hostFilePath = mRootfsPath + "/etc/hosts";
-    if (!mUtils->writeTextFile(hostFilePath, "100.64.11.1\tthunder\t\n",
-                               O_CREAT | O_APPEND | O_WRONLY, 0644))
+    // This all assumes we're in NAT network mode. If in Open network,
+    // don't do this...
+    if (isNatNetworkMode())
     {
-        AI_LOG_ERROR("Failed to update hosts file with Thunder IP address");
+        // We can get network info - must be running in NAT network mode
+        // Set up the /etc/hosts and /etc/service files
+        std::string hostFilePath = mRootfsPath + "/etc/hosts";
+        if (!mUtils->writeTextFile(hostFilePath, "100.64.11.1\tthunder\t\n",
+                                    O_CREAT | O_APPEND | O_WRONLY, 0644))
+        {
+            AI_LOG_ERROR("Failed to update hosts file with Thunder IP address");
+        }
+
+        char buf[64];
+        snprintf(buf, sizeof(buf), "thunder\t%hu/tcp\t\t# Thunder Services\n", mThunderPort);
+
+        std::string servicesFilePath = mRootfsPath + "/etc/services";
+        if (!mUtils->writeTextFile(servicesFilePath, buf, O_CREAT | O_APPEND | O_WRONLY, 0644))
+        {
+            AI_LOG_ERROR("Failed to update services file with Thunder details");
+        }
+
+        // Set the THUNDER_ACCESS envvar to the Dobby bridge IP address
+        bzero(buf, sizeof(buf));
+        snprintf(buf, sizeof(buf), "THUNDER_ACCESS=100.64.11.1:%hu", mThunderPort);
+        mUtils->addEnvironmentVar(buf);
     }
-
-    char buf[64];
-    snprintf(buf, sizeof(buf), "thunder\t%hu/tcp\t\t# Thunder Services\n", mThunderPort);
-
-    std::string servicesFilePath = mRootfsPath + "/etc/services";
-    if (!mUtils->writeTextFile(servicesFilePath, buf, O_CREAT | O_APPEND | O_WRONLY, 0644))
+    else
     {
-        AI_LOG_ERROR("Failed to update services file with Thunder details");
+        // Set the THUNDER_ACCESS envvar to host localhost
+        char buf[64];
+        bzero(buf, sizeof(buf));
+        snprintf(buf, sizeof(buf), "THUNDER_ACCESS=127.0.0.1:%hu", mThunderPort);
+        mUtils->addEnvironmentVar(buf);
     }
-
-    // Set the THUNDER_ACCESS envvar to the Dobby bridge IP address
-    bzero(buf, sizeof(buf));
-    snprintf(buf, sizeof(buf), "THUNDER_ACCESS=100.64.11.1:%hu", mThunderPort);
-    mUtils->addEnvironmentVar(buf);
 
     // Check if app is trusted - do in PostInstallation so we don't add duplicate
     // mounts
@@ -245,6 +259,12 @@ bool ThunderPlugin::createRuntime()
 {
     AI_LOG_FN_ENTRY();
 
+    if (!isNatNetworkMode())
+    {
+        AI_LOG_DEBUG("Not running in NAT network mode - no firewall rules to add");
+        return true;
+    }
+
     // construct the ruleset
     Netfilter::RuleSet ruleSet = constructRules();
     if (ruleSet.empty())
@@ -274,6 +294,12 @@ bool ThunderPlugin::createRuntime()
 bool ThunderPlugin::postHalt()
 {
     AI_LOG_FN_ENTRY();
+
+    if (!isNatNetworkMode())
+    {
+        AI_LOG_DEBUG("Not running in NAT network mode - no firewall rules to remove");
+        return true;
+    }
 
     // construct the same ruleset as in createRuntime() to delete the rules
     Netfilter::RuleSet ruleSet = constructRules();
@@ -490,4 +516,15 @@ std::string ThunderPlugin::constructACCEPTRule(const std::string &containerIp,
     AI_LOG_DEBUG("Constructed rule: %s", buf);
     AI_LOG_FN_EXIT();
     return std::string(buf);
+}
+
+bool ThunderPlugin::isNatNetworkMode() const
+{
+    if (mContainerConfig->rdk_plugins->networking == nullptr || mContainerConfig->rdk_plugins->networking->data == nullptr)
+    {
+        AI_LOG_WARN("Cannot find Networking plugin - container requires network access to reach Thunder");
+        return false;
+    }
+
+    return std::string(mContainerConfig->rdk_plugins->networking->data->type) == "nat";
 }
