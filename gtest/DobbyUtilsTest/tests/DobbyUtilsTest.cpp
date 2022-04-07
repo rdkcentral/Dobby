@@ -31,7 +31,8 @@ class DobbyUtilsTest : public ::testing::Test
                  void SetUp() override 
 		 {
                  }
-                 void TearDown() override {
+                 void TearDown() override 
+		 {
                  }
 	DobbyUtils test;
 	ContainerId t_id;
