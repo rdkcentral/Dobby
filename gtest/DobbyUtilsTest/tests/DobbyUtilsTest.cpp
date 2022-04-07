@@ -99,5 +99,5 @@ TEST_F(DobbyUtilsTest, TestContainerMetaData){
 	
 	test.clearContainerMetaData(t_id);
 	EXPECT_EQ(test.getStringMetaData(t_id,"ipaddr",""),"");
-        EXPECT_EQ(test.getStringMetaData(t_id,"port",""),"");
+        EXPECT_EQ(test.getIntegerMetaData(t_id,"port",0),0);
 }
