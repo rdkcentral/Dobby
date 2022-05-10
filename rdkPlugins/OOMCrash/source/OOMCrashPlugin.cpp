@@ -1,0 +1,183 @@
+/*
+* If not stated otherwise in this file or this component's LICENSE file the
+* following copyright and licenses apply:
+*
+* Copyright 2020 Sky UK
+*
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+* http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*/
+
+#include "OOMCrashPlugin.h"
+/**
+ * Need to do this at the start of every plugin to make sure the correct
+ * C methods are visible to allow PluginLauncher to find the plugin
+ */
+REGISTER_RDK_PLUGIN(OOMCrashPlugin);
+
+/**
+ * @brief Constructor - called when plugin is loaded by PluginLauncher
+ *
+ * Do not change the parameters for this constructor - must match C methods
+ * created by REGISTER_RDK_PLUGIN macro
+ *
+ * Note plugin name is not case sensitive
+ */
+OOMCrashPlugin::OOMCrashPlugin(std::shared_ptr<rt_dobby_schema> &containerConfig,
+                             const std::shared_ptr<DobbyRdkPluginUtils> &utils,
+                             const std::string &rootfsPath)
+    : mName("OOMCrashPlugin"),
+      mContainerConfig(containerConfig),
+      mRootfsPath(rootfsPath),
+      mUtils(utils)
+{
+    AI_LOG_FN_ENTRY();
+
+    AI_LOG_FN_EXIT();
+}
+
+/**
+ * @brief Set the bit flags for which hooks we're going to use
+ *
+ * This plugin uses all the hooks so set all the flags
+ */
+unsigned OOMCrashPlugin::hookHints() const
+{
+    return (
+        IDobbyRdkPlugin::HintFlags::PostInstallationFlag |
+	IDobbyRdkPlugin::HintFlags::PostHaltFlag);
+}
+
+/**
+ *  * @brief Dobby Hook - run in host namespace *once* when container bundle is downloaded
+ *   */
+bool OOMCrashPlugin::postInstallation()
+{
+    AI_LOG_INFO("Hello world, this is the %s hook", __func__);
+
+    if (!mContainerConfig)
+    {
+        AI_LOG_WARN("Container config is null");
+	return false;
+    }
+
+    const std::string source = "/opt/dobby_container_crashes";
+    const std::string dest = "/opt/dobby_container_crashes";
+    
+    if (!mUtils->addMount(source, dest, "bind", {"bind", "nodev","nosuid", "noexec" }))
+    {
+        AI_LOG_WARN("failed to add mount %s", source.c_str());
+	return false;
+    }
+    
+    AI_LOG_INFO("This hook is running for container with hostname %s", mUtils->getContainerId().c_str());
+    return true;
+}
+
+/**
+ * @brief Dobby Hook - Run in host namespace when container terminates
+ */
+bool OOMCrashPlugin::postHalt()
+{
+    AI_LOG_INFO("Hello world, this is the %s hook", __func__);
+
+    if (!mContainerConfig)
+    {
+        AI_LOG_WARN("Container config is null");
+        return false;
+    }
+    
+    //struct stat buffer;
+    //if(stat("/opt/dobby_container_crashes/EXIT_FAILURE", &buffer)==0)
+    if(mUtils->getExitStatus() == 0)
+        checkForOOM(mUtils->getContainerId());
+    
+    AI_LOG_INFO("This hook is running for container with hostname %s", mUtils->getContainerId().c_str());
+    return true;
+}
+
+// End hook methods
+
+/**
+ * @brief Should return the names of the plugins this plugin depends on.
+ *
+ * This can be used to determine the order in which the plugins should be
+ * processed when running hooks.
+ *
+ * @return Names of the plugins this plugin depends on.
+ */
+
+std::vector<std::string> OOMCrashPlugin::getDependencies() const
+{
+    std::vector<std::string> dependencies;
+    const rt_defs_plugins_oom_crash* pluginConfig = mContainerConfig->rdk_plugins->oomcrash;
+
+    for (size_t i = 0; i < pluginConfig->depends_on_len; i++)
+    {
+        dependencies.push_back(pluginConfig->depends_on[i]);
+    }
+
+    return dependencies;
+}
+
+
+bool OOMCrashPlugin::readCgroup(const std::string containerId, unsigned long *val)
+{
+    //static const std::string base = "/sys/fs/cgroup/memory/";
+    std::string path = "/sys/fs/cgroup/memory/" + containerId + "/memory.failcnt";
+
+    FILE *fp = fopen(path.c_str(), "r");
+    if (!fp)
+    {
+	if (errno != ENOENT)
+	    AI_LOG_ERROR("failed to open '%s' (%d - %s)", path.c_str(), errno, strerror(errno));
+
+	return false;
+    }
+
+    char* line = nullptr;
+    size_t len = 0;
+    ssize_t rd;
+
+    if ((rd = getline(&line, &len, fp)) < 0)
+    {
+        if (line)
+	    free(line);
+	fclose(fp);
+	AI_LOG_ERROR("failed to read cgroup file line (%d - %s)", errno, strerror(errno));
+	return false;
+    }
+
+    *val = strtoul(line, nullptr, 0);
+    fclose(fp);
+    free(line);
+
+    return true;
+}
+
+void OOMCrashPlugin::checkForOOM(const std::string containerId)
+{
+    unsigned long failCnt;
+    
+    if (readCgroup(containerId, &failCnt) && (failCnt > 0))
+    {
+	AI_LOG_ERROR("memory allocation failure detected in %s container, likely OOM (failcnt = %lu)", containerId.c_str(), failCnt);
+	char memoryExceedFile[150];
+	if (mkdir("/opt/dobby_container_crashes", 0755))
+	{
+	    snprintf(memoryExceedFile,sizeof(memoryExceedFile), "/opt/dobby_container_crashes/oom_crashed_%s_%s", containerId.c_str(),__TIME__);
+	    std::string touchFile="touch ";
+	    touchFile.append(memoryExceedFile);
+	    system(touchFile.c_str());
+	}
+    }
+}

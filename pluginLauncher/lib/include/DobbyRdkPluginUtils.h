@@ -70,7 +70,7 @@ typedef struct ContainerNetworkInfo
  *  @brief Class for useful utility methods for plugins such as adding mounts
  *  and environment variables.
  */
-class DobbyRdkPluginUtils
+class DobbyRdkPluginUtils 
 {
 public:
     DobbyRdkPluginUtils(const std::shared_ptr<rt_dobby_schema> &cfg,
@@ -128,6 +128,8 @@ public:
 
     pid_t getContainerPid() const;
     std::string getContainerId() const;
+    void setExitStatus(int status);
+    int getExitStatus();
     bool getContainerNetworkInfo(ContainerNetworkInfo &networkInfo);
 
     bool writeTextFile(const std::string &path,
@@ -151,6 +153,9 @@ public:
     std::list<int> files() const;
 
     std::list<int> files(const std::string& pluginName) const;
+
+    int exitStatus;
+
 
 private:
     std::string ipAddressToString(const in_addr_t &ipAddress);
