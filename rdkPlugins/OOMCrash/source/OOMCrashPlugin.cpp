@@ -62,8 +62,6 @@ unsigned OOMCrashPlugin::hookHints() const
  *   */
 bool OOMCrashPlugin::postInstallation()
 {
-    AI_LOG_INFO("Hello world, this is the %s hook", __func__);
-
     if (!mContainerConfig)
     {
         AI_LOG_WARN("Container config is null");
@@ -88,8 +86,6 @@ bool OOMCrashPlugin::postInstallation()
  */
 bool OOMCrashPlugin::postHalt()
 {
-    AI_LOG_INFO("Hello world, this is the %s hook", __func__);
-
     if (!mContainerConfig)
     {
         AI_LOG_WARN("Container config is null");
@@ -98,8 +94,8 @@ bool OOMCrashPlugin::postHalt()
     
     //struct stat buffer;
     //if(stat("/opt/dobby_container_crashes/EXIT_FAILURE", &buffer)==0)
-    if(mUtils->getExitStatus() == 0)
-        checkForOOM(mUtils->getContainerId());
+    if(mUtils->exitStatus == 0)
+        checkForOOM();
     
     AI_LOG_INFO("This hook is running for container with hostname %s", mUtils->getContainerId().c_str());
     return true;
@@ -129,11 +125,15 @@ std::vector<std::string> OOMCrashPlugin::getDependencies() const
     return dependencies;
 }
 
+/**
+ * @brief Read cgroup file.
+ *
+ * @return true on success.
+ */
 
-bool OOMCrashPlugin::readCgroup(const std::string containerId, unsigned long *val)
+bool OOMCrashPlugin::readCgroup(unsigned long *val)
 {
-    //static const std::string base = "/sys/fs/cgroup/memory/";
-    std::string path = "/sys/fs/cgroup/memory/" + containerId + "/memory.failcnt";
+    std::string path = "/sys/fs/cgroup/memory/" + mUtils->getContainerId() + "/memory.failcnt";
 
     FILE *fp = fopen(path.c_str(), "r");
     if (!fp)
@@ -151,33 +151,52 @@ bool OOMCrashPlugin::readCgroup(const std::string containerId, unsigned long *va
     if ((rd = getline(&line, &len, fp)) < 0)
     {
         if (line)
-	    free(line);
-	fclose(fp);
-	AI_LOG_ERROR("failed to read cgroup file line (%d - %s)", errno, strerror(errno));
-	return false;
+	        free(line);
+	    fclose(fp);
+	    AI_LOG_ERROR("failed to read cgroup file line (%d - %s)", errno, strerror(errno));
+	    return false;
     }
 
     *val = strtoul(line, nullptr, 0);
+
     fclose(fp);
     free(line);
 
     return true;
 }
 
-void OOMCrashPlugin::checkForOOM(const std::string containerId)
+/**
+ * @brief Check for Out of Memory.
+ *
+ * @return void.
+ */
+
+void OOMCrashPlugin::checkForOOM()
 {
     unsigned long failCnt;
     
-    if (readCgroup(containerId, &failCnt) && (failCnt > 0))
+    if (readCgroup(&failCnt) && (failCnt > 0))
     {
-	AI_LOG_ERROR("memory allocation failure detected in %s container, likely OOM (failcnt = %lu)", containerId.c_str(), failCnt);
-	char memoryExceedFile[150];
+	    AI_LOG_ERROR("memory allocation failure detected in %s container, likely OOM (failcnt = %lu)", mUtils->getContainerId().c_str(), failCnt);
+	    createFileForOOM();
+    }
+}
+
+/**
+ * @brief Create file if Out of Memory detected.
+ *
+ * @return void.
+ */
+
+void OOMCrashPlugin::createFileForOOM()
+{
+    char memoryExceedFile[150];
 	if (mkdir("/opt/dobby_container_crashes", 0755))
 	{
-	    snprintf(memoryExceedFile,sizeof(memoryExceedFile), "/opt/dobby_container_crashes/oom_crashed_%s_%s", containerId.c_str(),__TIME__);
-	    std::string touchFile="touch ";
+	    snprintf(memoryExceedFile,sizeof(memoryExceedFile), "/opt/dobby_container_crashes/oom_crashed_%s_%s", mUtils->getContainerId().c_str(),__TIME__);
+	    std::string touchFile = "touch ";
 	    touchFile.append(memoryExceedFile);
 	    system(touchFile.c_str());
+        AI_LOG_INFO("%s file created",memoryExceedFile);
 	}
-    }
 }

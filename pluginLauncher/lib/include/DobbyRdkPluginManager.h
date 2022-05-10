@@ -61,10 +61,7 @@ public:
 
     // This is public as RDKPluginManager isn't responsible for handling logging
     std::shared_ptr<IDobbyRdkLoggingPlugin> getContainerLogger() const;
-
-    //void DobbyRdkPluginManager::setExitStatus(int status)
-    const std::shared_ptr<DobbyRdkPluginUtils> mUtils;
-
+    void setExitStatus(int status) const;
 
 private:
     bool loadPlugins();
@@ -92,7 +89,7 @@ private:
     const std::string mRootfsPath;
     const std::string mPluginPath;
     std::unique_ptr<DobbyRdkPluginDependencySolver> mDependencySolver;
-
+    const std::shared_ptr<DobbyRdkPluginUtils> mUtils;
 };
 
 #endif // !defined(DOBBYRDKPLUGINMANAGER_H)

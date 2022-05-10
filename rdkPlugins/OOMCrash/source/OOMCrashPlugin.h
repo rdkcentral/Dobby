@@ -57,7 +57,6 @@ public:
     // Override to return the appropriate hints for what we implement
     unsigned hookHints() const override;
 
-    // This test hook implements everything
 public:
     bool postInstallation() override;
     bool postHalt() override;
@@ -66,9 +65,10 @@ public:
     std::vector<std::string> getDependencies() const override;
 
 private:
-    void checkForOOM(std::string containerId);
-    bool readCgroup(const std::string containerId, unsigned long *val);
-
+    bool readCgroup(unsigned long *val);
+    void checkForOOM();
+    void createFileForOOM();
+    
     const std::string mName;
     std::shared_ptr<rt_dobby_schema> mContainerConfig;
     const std::string mRootfsPath;

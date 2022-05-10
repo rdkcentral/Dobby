@@ -133,16 +133,6 @@ std::string DobbyRdkPluginUtils::getContainerId() const
     return mContainerId;
 }
 
-void DobbyRdkPluginUtils::setExitStatus(int status)
-{
-    AI_LOG_INFO("STATUS=%d",status);
-    DobbyRdkPluginUtils::exitStatus = status;
-}
-
-int DobbyRdkPluginUtils::getExitStatus()
-{
-    return DobbyRdkPluginUtils::exitStatus;
-}
 // -------------------------------------------------------------------------
 /**
  *  @brief Gets network info about the container (veth/IP)

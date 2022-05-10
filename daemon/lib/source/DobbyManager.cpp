@@ -2259,8 +2259,8 @@ void DobbyManager::handleContainerTerminate(const ContainerId &id, const std::un
         // Also run any postHalt hooks in RDK plugins
         if (container->config->rdkPlugins().size() > 0)
         {
-            AI_LOG_INFO("Karthi DobbyManager Exit status = %d",status);
-            container->rdkPluginManager->mUtils->setExitStatus(status);
+            AI_LOG_INFO("Exit status = %d",status);
+            container->rdkPluginManager->setExitStatus(status);
             onPostHaltHook(container);
         }
 

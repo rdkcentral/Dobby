@@ -128,8 +128,6 @@ public:
 
     pid_t getContainerPid() const;
     std::string getContainerId() const;
-    void setExitStatus(int status);
-    int getExitStatus();
     bool getContainerNetworkInfo(ContainerNetworkInfo &networkInfo);
 
     bool writeTextFile(const std::string &path,

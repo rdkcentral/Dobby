@@ -499,6 +499,20 @@ std::shared_ptr<IDobbyRdkLoggingPlugin> DobbyRdkPluginManager::getContainerLogge
 
 // -----------------------------------------------------------------------------
 /**
+ *  @brief Set the exit status of the container
+ *
+ *  @param[in]  status        The exit status of the container.
+ *
+ *  @return void
+ */
+void DobbyRdkPluginManager::setExitStatus(int status) const
+{
+    AI_LOG_INFO("STATUS=%d",status);
+    mUtils->exitStatus = status;
+}
+
+// -----------------------------------------------------------------------------
+/**
  *  @brief Get the plugin with the name, or nullptr if no plugin
  *
  *  @param[in]  name        The name of the plugin.
