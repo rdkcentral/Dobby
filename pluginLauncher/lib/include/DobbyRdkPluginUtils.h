@@ -154,7 +154,6 @@ public:
 
     int exitStatus;
 
-
 private:
     std::string ipAddressToString(const in_addr_t &ipAddress);
 
