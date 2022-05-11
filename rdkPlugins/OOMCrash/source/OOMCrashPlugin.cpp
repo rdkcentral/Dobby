@@ -68,8 +68,8 @@ bool OOMCrashPlugin::postInstallation()
 	return false;
     }
 
-    const std::string source = "/opt/dobby_container_crashes";
-    const std::string dest = "/opt/dobby_container_crashes";
+    const std::string source = mContainerConfig->rdk_plugins->oomcrash->data->path;
+    const std::string dest = mContainerConfig->rdk_plugins->oomcrash->data->path;
     
     if (!mUtils->addMount(source, dest, "bind", {"bind", "nodev","nosuid", "noexec" }))
     {
@@ -92,8 +92,6 @@ bool OOMCrashPlugin::postHalt()
         return false;
     }
     
-    //struct stat buffer;
-    //if(stat("/opt/dobby_container_crashes/EXIT_FAILURE", &buffer)==0)
     if(mUtils->exitStatus == 0)
         checkForOOM();
     
@@ -197,6 +195,6 @@ void OOMCrashPlugin::createFileForOOM()
 	    std::string touchFile = "touch ";
 	    touchFile.append(memoryExceedFile);
 	    system(touchFile.c_str());
-        AI_LOG_INFO("%s file created",memoryExceedFile);
+            AI_LOG_INFO("%s file created",memoryExceedFile);
 	}
 }
