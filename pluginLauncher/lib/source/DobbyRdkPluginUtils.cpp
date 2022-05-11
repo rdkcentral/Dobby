@@ -84,8 +84,6 @@ DobbyRdkPluginUtils::DobbyRdkPluginUtils(const std::shared_ptr<rt_dobby_schema> 
     AI_LOG_FN_EXIT();
 }
 
-
-
 DobbyRdkPluginUtils::~DobbyRdkPluginUtils()
 {
     AI_LOG_FN_ENTRY();
