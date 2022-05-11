@@ -75,8 +75,8 @@ bool DynamicMountDetails::onCreateContainer()
     }
     else
     {
-        AI_LOG_ERROR("failed to stat host file for dynamic mount for '%s' in storage plugin",
-                     mMountProperties.source.c_str());
+        // No mount source so ignore
+        success = true;
     }
     
     AI_LOG_FN_EXIT();
@@ -100,6 +100,8 @@ bool DynamicMountDetails::changeOwnership()
     std::string username = mMountProperties.owner.substr(0, pos);
     std::string groupName = mMountProperties.owner.substr(pos + 1);
 
+    AI_LOG_DEBUG("username: %s, group: %s", username.c_str(), groupName.c_str());
+
     struct passwd* pwd;
     pwd = getpwnam(username.c_str());
     if (pwd == NULL)
@@ -118,10 +120,12 @@ bool DynamicMountDetails::changeOwnership()
 
     uid_t uid = pwd->pw_uid;
     gid_t gid = grp->gr_gid;
+
+    AI_LOG_DEBUG("uid: %d, gid: %d", uid, gid);
     
     if (chown(mMountProperties.source.c_str(), uid, gid) != 0)
     {
-        AI_LOG_ERROR("failed to change ownership for '%s'", mMountProperties.source.c_str());
+        AI_LOG_ERROR("failed to change ownership for '%s' - %d", mMountProperties.source.c_str(), errno);
         return false;
     }
 
