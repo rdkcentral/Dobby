@@ -2221,7 +2221,6 @@ bool DobbyManager::onPreDestructionHook(const ContainerId &id,
 void DobbyManager::handleContainerTerminate(const ContainerId &id, const std::unique_ptr<DobbyContainer>& container, const int status)
 {
     AI_LOG_FN_ENTRY();
-	    
     // this function is called when the runc process dies, what this
     // boils down to is that if we're in the Running state it
     // means that the preStart hook has been called but postStop hasn't
@@ -2349,7 +2348,6 @@ void DobbyManager::onChildExit()
 
         // check if the runc process has exited
         int status = 0;
-
         int rc = waitpid(containerPid, &status, WNOHANG);
         if (rc < 0)
         {
@@ -2376,7 +2374,6 @@ void DobbyManager::onChildExit()
 
             AI_LOG_INFO("runc for container '%s' has quit (pid:%d status:0x%04x)",
                         id.c_str(), containerPid, status);
-            
             handleContainerTerminate(id, container, status);
 
             if (!container->shouldRestart(status) || !restartContainer(id, container))
