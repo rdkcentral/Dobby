@@ -70,7 +70,7 @@ typedef struct ContainerNetworkInfo
  *  @brief Class for useful utility methods for plugins such as adding mounts
  *  and environment variables.
  */
-class DobbyRdkPluginUtils 
+class DobbyRdkPluginUtils
 {
 public:
     DobbyRdkPluginUtils(const std::shared_ptr<rt_dobby_schema> &cfg,
