@@ -17,11 +17,11 @@
 * limitations under the License.
 */
 /*
- * File: OOMCrashPlugin.h
+ * File: OOMCrash.h
  *
  */
-#ifndef OOMCRASHPLUGIN_H
-#define OOMCRASHPLUGIN_H
+#ifndef OOMCRASH_H
+#define OOMCRASH_H
 
 #include <RdkPluginBase.h>
 
@@ -34,17 +34,14 @@
 #include <memory>
 
 /**
- * @brief Simple Dobby RDK Plugin
+ * @brief Dobby RDK OOMCrash Plugin
  *
- * Implements all hook points to print a simple statement showing the hook has been
- * called successfully.
- *
- * Can be used as a reference implementation for future plugins
+ * Creates a file when OOM detected
  */
-class OOMCrashPlugin : public RdkPluginBase
+class OOMCrash : public RdkPluginBase
 {
 public:
-    OOMCrashPlugin(std::shared_ptr<rt_dobby_schema>& containerConfig,
+    OOMCrash(std::shared_ptr<rt_dobby_schema>& containerConfig,
                   const std::shared_ptr<DobbyRdkPluginUtils> &utils,
                   const std::string &rootfsPath);
 
@@ -76,4 +73,4 @@ private:
 };
 
 
-#endif // !defined(OOMCRASHRDKPLUGIN_H)
+#endif // !defined(OOMCRASH_H)
