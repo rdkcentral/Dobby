@@ -22,7 +22,7 @@
  * Need to do this at the start of every plugin to make sure the correct
  * C methods are visible to allow PluginLauncher to find the plugin
  */
-REGISTER_RDK_PLUGIN(OOMCrashPlugin);
+REGISTER_RDK_PLUGIN(OOMCrash);
 
 /**
  * @brief Constructor - called when plugin is loaded by PluginLauncher
@@ -32,10 +32,10 @@ REGISTER_RDK_PLUGIN(OOMCrashPlugin);
  *
  * Note plugin name is not case sensitive
  */
-OOMCrashPlugin::OOMCrashPlugin(std::shared_ptr<rt_dobby_schema> &containerConfig,
+OOMCrash::OOMCrash(std::shared_ptr<rt_dobby_schema> &containerConfig,
                              const std::shared_ptr<DobbyRdkPluginUtils> &utils,
                              const std::string &rootfsPath)
-    : mName("OOMCrashPlugin"),
+    : mName("OOMCrash"),
       mContainerConfig(containerConfig),
       mRootfsPath(rootfsPath),
       mUtils(utils)
@@ -50,7 +50,7 @@ OOMCrashPlugin::OOMCrashPlugin(std::shared_ptr<rt_dobby_schema> &containerConfig
  *
  * This plugin uses all the hooks so set all the flags
  */
-unsigned OOMCrashPlugin::hookHints() const
+unsigned OOMCrash::hookHints() const
 {
     return (
         IDobbyRdkPlugin::HintFlags::PostInstallationFlag |
@@ -60,7 +60,7 @@ unsigned OOMCrashPlugin::hookHints() const
 /**
  *  * @brief Dobby Hook - run in host namespace *once* when container bundle is downloaded
  *   */
-bool OOMCrashPlugin::postInstallation()
+bool OOMCrash::postInstallation()
 {
     if (!mContainerConfig)
     {
@@ -84,7 +84,7 @@ bool OOMCrashPlugin::postInstallation()
 /**
  * @brief Dobby Hook - Run in host namespace when container terminates
  */
-bool OOMCrashPlugin::postHalt()
+bool OOMCrash::postHalt()
 {
     if (!mContainerConfig)
     {
@@ -110,7 +110,7 @@ bool OOMCrashPlugin::postHalt()
  * @return Names of the plugins this plugin depends on.
  */
 
-std::vector<std::string> OOMCrashPlugin::getDependencies() const
+std::vector<std::string> OOMCrash::getDependencies() const
 {
     std::vector<std::string> dependencies;
     const rt_defs_plugins_oom_crash* pluginConfig = mContainerConfig->rdk_plugins->oomcrash;
@@ -129,7 +129,7 @@ std::vector<std::string> OOMCrashPlugin::getDependencies() const
  * @return true on success.
  */
 
-bool OOMCrashPlugin::readCgroup(unsigned long *val)
+bool OOMCrash::readCgroup(unsigned long *val)
 {
     std::string path = "/sys/fs/cgroup/memory/" + mUtils->getContainerId() + "/memory.failcnt";
 
@@ -169,7 +169,7 @@ bool OOMCrashPlugin::readCgroup(unsigned long *val)
  * @return void.
  */
 
-void OOMCrashPlugin::checkForOOM()
+void OOMCrash::checkForOOM()
 {
     unsigned long failCnt;
     
@@ -186,7 +186,7 @@ void OOMCrashPlugin::checkForOOM()
  * @return void.
  */
 
-void OOMCrashPlugin::createFileForOOM()
+void OOMCrash::createFileForOOM()
 {
     char memoryExceedFile[150];
 	if (mkdir("/opt/dobby_container_crashes", 0755))
