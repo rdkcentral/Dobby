@@ -29,9 +29,9 @@
 
 
 /**
-*  @brief MountProperties struct used for Storage plugin
+*  @brief LoopMountProperties struct used for Storage plugin
 */
-typedef struct _MountProperties
+typedef struct _LoopMountProperties
 {
     std::string fsImagePath;
     std::string fsImageType;
@@ -42,7 +42,19 @@ typedef struct _MountProperties
     int imgSize;
     bool imgManagement;
 
-} MountProperties;
+} LoopMountProperties;
 
+/**
+*  @brief DynamicMountProperties struct used for Storage plugin
+*/
+typedef struct _DynamicMountProperties
+{
+    std::string source;
+    std::string destination;
+    std::string owner;
+    std::list<std::string> mountOptions;
+    unsigned long mountFlags;
+
+} DynamicMountProperties;
 
 #endif // !defined(MOUNTPROPERTIES_H)

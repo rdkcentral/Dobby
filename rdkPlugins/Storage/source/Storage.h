@@ -24,6 +24,7 @@
 #define STORAGE_H
 
 #include "LoopMountDetails.h"
+#include "DynamicMountDetails.h"
 
 #include <RdkPluginBase.h>
 
@@ -61,7 +62,7 @@ public:
     // temp mount point (within container rootfs)
     bool preCreation() override;
 
-    // This hook changes privlidges of the mounted directorires
+    // This hook changes privileges of the mounted directories
     bool createRuntime() override;
 
     // This hook mounts temp directory to the proper one
@@ -83,16 +84,18 @@ public:
     std::vector<std::string> getDependencies() const override;
 
 private:
-    std::vector<MountProperties> getLoopMounts();
-    std::vector<std::unique_ptr<LoopMountDetails>> getLoopMountDetails();
-    
+    std::vector<LoopMountProperties> getLoopMounts() const;
+    std::vector<std::unique_ptr<LoopMountDetails>> getLoopMountDetails() const;
+    std::vector<DynamicMountProperties> getDynamicMounts() const;
+    std::vector<std::unique_ptr<DynamicMountDetails>> getDynamicMountDetails() const;
 
 private:
     const std::string mName;
     std::shared_ptr<rt_dobby_schema> mContainerConfig;
     const std::string mRootfsPath;
     const std::shared_ptr<DobbyRdkPluginUtils> mUtils;
-    uint32_t getMappedId(uint32_t id, rt_defs_id_mapping **mapping, size_t mapping_len);
+
+    uint32_t getMappedId(uint32_t id, rt_defs_id_mapping **mapping, size_t mapping_len) const;
 };
 
 #endif // !defined(STORAGE_H)
