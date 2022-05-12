@@ -92,7 +92,7 @@ bool OOMCrash::postHalt()
         return false;
     }
     
-    if(mUtils->exitStatus == 0)
+    if(mUtils->exitStatus != 0)
         checkForOOM();
     
     AI_LOG_INFO("This hook is running for container with hostname %s", mUtils->getContainerId().c_str());
