@@ -17,7 +17,7 @@
 * limitations under the License.
 */
 /*
- * File: OOMCrash.h
+ * File: OOMCrashPlugin.h
  *
  */
 #ifndef OOMCRASH_H
