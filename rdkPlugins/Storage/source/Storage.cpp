@@ -89,7 +89,6 @@ bool Storage::preCreation()
             return false;
         }
     }
-
     AI_LOG_FN_EXIT();
     return true;
 }
@@ -461,7 +460,6 @@ std::vector<DynamicMountProperties> Storage::getDynamicMounts() const
             DynamicMountProperties mount;
             mount.source = std::string(dynamic->source);
             mount.destination = std::string(dynamic->destination);
-            mount.owner = std::string(dynamic->owner);
             mount.mountFlags  = dynamic->flags;
 
             for (size_t j = 0; j < dynamic->options_len; j++)

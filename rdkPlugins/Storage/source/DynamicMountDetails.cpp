@@ -85,55 +85,6 @@ bool DynamicMountDetails::onCreateContainer()
 
 // -----------------------------------------------------------------------------
 /**
- *  @brief Change ownership of mount according to "owner" json configuration
- *
- *  @return true on success, false on failure.
- */
-bool DynamicMountDetails::changeOwnership()
-{
-    size_t pos = mMountProperties.owner.find(':');
-    if (pos == std::string::npos) {
-        AI_LOG_ERROR("failed to find colon delimiter in '%s'", mMountProperties.owner.c_str());
-        return false;
-    }
-    
-    std::string username = mMountProperties.owner.substr(0, pos);
-    std::string groupName = mMountProperties.owner.substr(pos + 1);
-
-    AI_LOG_DEBUG("username: %s, group: %s", username.c_str(), groupName.c_str());
-
-    struct passwd* pwd;
-    pwd = getpwnam(username.c_str());
-    if (pwd == NULL)
-    {
-        AI_LOG_ERROR("failed to get passwd for '%s'", username.c_str());
-        return false;
-    }
-    
-    struct group* grp;
-    grp = getgrnam(groupName.c_str());
-    if (grp == NULL)
-    {
-        AI_LOG_ERROR("failed to get group for '%s'", groupName.c_str());
-        return false;
-    }
-
-    uid_t uid = pwd->pw_uid;
-    gid_t gid = grp->gr_gid;
-
-    AI_LOG_DEBUG("uid: %d, gid: %d", uid, gid);
-    
-    if (chown(mMountProperties.source.c_str(), uid, gid) != 0)
-    {
-        AI_LOG_ERROR("failed to change ownership for '%s' - %d", mMountProperties.source.c_str(), errno);
-        return false;
-    }
-
-    return true;
-}
-
-// -----------------------------------------------------------------------------
-/**
  *  @brief Add mount between source and destination.
  *
  *  @return true on success, false on failure.
@@ -167,13 +118,6 @@ bool DynamicMountDetails::addMount()
                      mMountProperties.source.c_str());
         return false;
     }
-    
-    if (!changeOwnership())
-    {
-        AI_LOG_ERROR("failed to add dynamic mount '%s' in storage plugin",
-                     mMountProperties.source.c_str());
-        return false;
-    }
-   
+
     return true;
 }
