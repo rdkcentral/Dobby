@@ -175,7 +175,7 @@ void OOMCrash::checkForOOM()
     
     if (readCgroup(&failCnt) && (failCnt > 0))
     {
-	    AI_LOG_ERROR("memory allocation failure detected in %s container, likely OOM (failcnt = %lu)", mUtils->getContainerId().c_str(), failCnt);
+	    AI_LOG_WARN("memory allocation failure detected in %s container, likely OOM (failcnt = %lu)", mUtils->getContainerId().c_str(), failCnt);
 	    createFileForOOM();
     }
 }
