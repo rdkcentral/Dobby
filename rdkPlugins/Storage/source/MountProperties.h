@@ -51,7 +51,6 @@ typedef struct _DynamicMountProperties
 {
     std::string source;
     std::string destination;
-    std::string owner;
     std::list<std::string> mountOptions;
     unsigned long mountFlags;
 

@@ -35,8 +35,6 @@
 #include <pwd.h>
 #include <grp.h>
 
-constexpr char MOUNT_TYPE[] = "bind";
-
 // Dynamic mount details constructor
 DynamicMountDetails::DynamicMountDetails(const std::string& rootfsPath,
                                          const DynamicMountProperties& mountProperties,
@@ -59,7 +57,7 @@ DynamicMountDetails::~DynamicMountDetails()
 
 // -----------------------------------------------------------------------------
 /**
- *  @brief Checks whether source exists and creates bind mount if found
+ *  @brief Adds bind mount only if source exists on the host
  *
  *  @return true on success, false on failure.
  */
