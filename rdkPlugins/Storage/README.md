@@ -26,8 +26,8 @@ space "destination".
 ```
 
 ### Dynamic Mounts
-Add the following section to your OCI runtime configuration `config.json` file to create dynamic mount. It will mount file from "source" field into container
-space "destination" and set the file ownership through "owner" in the example format given.
+Add the following section to your OCI runtime configuration `config.json` file to create dynamic mount. 
+It will mount "source" into container "destination" only if the source exists on the host.
 
 ```json
 {
@@ -43,7 +43,6 @@ space "destination" and set the file ownership through "owner" in the example fo
                             "ro",
                             "nodev"
                         ],
-                        "owner": "user:group",
                         "source": "/tmp/test"
                     }
                 ]
@@ -99,7 +98,6 @@ For every dynamic mount point the Storage plugin should create, there should be 
 | `flags`             | Mount flags, see linux documentation or "sys/mount.h" for details                                                                       |
 |---------------------| ----------------Below this point there are optionals things, with default value in square brackets "[]"---------------------------------|
 | `options`           | Mount options, this corresponds to mount "data" field. []                                                                               |
-| `owner`             | Owner to assign to mount inside the container, e.g. "username:group" []                                                                 |
 
 #### Example
 ```json
@@ -108,8 +106,7 @@ For every dynamic mount point the Storage plugin should create, there should be 
         {
             "destination": "/tmp/test",
             "flags": 2,
-            "source": "/tmp/test",
-            "owner": "root:root"
+            "source": "/tmp/test"
         }
     ]
 }
