@@ -72,7 +72,7 @@ bool OOMCrash::postInstallation()
     
     if (!mUtils->addMount(path, path, "bind", {"bind", "nodev","nosuid", "noexec" }))
     {
-        AI_LOG_WARN("failed to add mount %s", source.c_str());
+        AI_LOG_WARN("failed to add mount %s", path.c_str());
         return false;
     }
     
@@ -139,7 +139,7 @@ bool OOMCrash::readCgroup(unsigned long *val)
     if (!fp)
     {
         if (errno != ENOENT)
-        AI_LOG_ERROR("failed to open '%s' (%d - %s)", path.c_str(), errno, strerror(errno));
+            AI_LOG_ERROR("failed to open '%s' (%d - %s)", path.c_str(), errno, strerror(errno));
 
         return false;
     }
@@ -197,13 +197,15 @@ bool OOMCrash::checkForOOM()
 bool OOMCrash::createFileForOOM()
 {
     char memoryExceedFile[150];
-    char path[50] = mContainerConfig->rdk_plugins->oomcrash->data->path;
-    if (mkdir(path, 0755))
+    const std::string path = mContainerConfig->rdk_plugins->oomcrash->data->path;
+    if (mkdir(path.c_str(), 0755))
     {
-        snprintf(memoryExceedFile,sizeof(memoryExceedFile), "%s/oom_crashed_%s_%s", path, mUtils->getContainerId().c_str(), __TIME__);
+        snprintf(memoryExceedFile,sizeof(memoryExceedFile), "%s/oom_crashed_%s_%s", path.c_str(), mUtils->getContainerId().c_str(), __TIME__);
         fp = fopen(memoryExceedFile,"w+");
-        if(fp == NULL){
-            AI_LOG_WARN("%s file not created",memoryExceedFile);
+        if (!fp)
+        {
+            if (errno != ENOENT)
+                AI_LOG_ERROR("failed to open '%s' (%d - %s)", path.c_str(), errno, strerror(errno));
             return false;
         }
         AI_LOG_INFO("%s file created",memoryExceedFile);
