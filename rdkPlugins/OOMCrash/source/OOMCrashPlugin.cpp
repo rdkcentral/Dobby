@@ -65,7 +65,7 @@ bool OOMCrash::postInstallation()
     if (!mContainerConfig)
     {
         AI_LOG_WARN("Container config is null");
-	return false;
+        return false;
     }
 
     const std::string source = mContainerConfig->rdk_plugins->oomcrash->data->path;
@@ -74,7 +74,7 @@ bool OOMCrash::postInstallation()
     if (!mUtils->addMount(source, dest, "bind", {"bind", "nodev","nosuid", "noexec" }))
     {
         AI_LOG_WARN("failed to add mount %s", source.c_str());
-	return false;
+        return false;
     }
     
     AI_LOG_INFO("This hook is running for container with hostname %s", mUtils->getContainerId().c_str());
