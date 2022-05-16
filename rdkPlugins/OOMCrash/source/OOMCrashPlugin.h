@@ -63,8 +63,8 @@ public:
 
 private:
     bool readCgroup(unsigned long *val);
-    void checkForOOM();
-    void createFileForOOM();
+    bool checkForOOM();
+    bool createFileForOOM();
     
     const std::string mName;
     std::shared_ptr<rt_dobby_schema> mContainerConfig;
