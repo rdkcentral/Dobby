@@ -32,6 +32,8 @@
 #include <unistd.h>
 #include <string>
 #include <memory>
+#include <sstream>
+#include <iomanip>
 
 /**
  * @brief Dobby RDK OOMCrash Plugin
