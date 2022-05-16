@@ -8,8 +8,8 @@ Add the following section to your OCI runtime configuration `config.json` file t
 ```json
 {
     "rdkPlugins": {
-        "minidump": {
-            "required": false,
+        "oomcrash": {
+            "required": true,
             "data": {
                 "path": "/opt/dobby_container_crashes"
             }
