@@ -70,12 +70,14 @@ bool OOMCrash::postInstallation()
 
     const std::string path = mContainerConfig->rdk_plugins->oomcrash->data->path;
     
-    if (!mUtils->addMount(path, path, "bind", {"bind", "nodev","nosuid", "noexec" }))
+    if (mkdir(path.c_str(), 0755))
     {
-        AI_LOG_WARN("failed to add mount %s", path.c_str());
-        return false;
+        if (!mUtils->addMount(path, path, "bind", {"bind", "nodev","nosuid", "noexec" }))
+        {
+            AI_LOG_WARN("failed to add mount %s", path.c_str());
+            return false;
+        }
     }
-    
     AI_LOG_INFO("OOMCrash postInstallation hook is running for container with hostname %s", mUtils->getContainerId().c_str());
     return true;
 }
@@ -126,9 +128,9 @@ std::vector<std::string> OOMCrash::getDependencies() const
 /**
  * @brief Read cgroup file.
  *
- *  @param[in]  val      the value of failcnt.
+ *  @param[out]  val      gives the number of times that the cgroup limit was exceeded.
  *
- * @return true on success.
+ * @return true on successfully reading from the file.
  */
 
 bool OOMCrash::readCgroup(unsigned long *val)
@@ -196,19 +198,25 @@ bool OOMCrash::checkForOOM()
 
 bool OOMCrash::createFileForOOM()
 {
-    char memoryExceedFile[150];
-    const std::string path = mContainerConfig->rdk_plugins->oomcrash->data->path;
-    if (mkdir(path.c_str(), 0755))
+    std::string memoryExceedFile;
+    std::string path = mContainerConfig->rdk_plugins->oomcrash->data->path;
+    
+    std::time_t currentTime = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+    std::stringstream timeString;
+    timeString << std::put_time(std::localtime(&currentTime), "%FT%T");
+    
+    struct stat buffer;
+    if(stat(path.c_str(),&buffer)==0)
     {
-        snprintf(memoryExceedFile,sizeof(memoryExceedFile), "%s/oom_crashed_%s_%s", path.c_str(), mUtils->getContainerId().c_str(), __TIME__);
-        fp = fopen(memoryExceedFile,"w+");
+        memoryExceedFile = path + "/oom_crashed_" + mUtils->getContainerId() + "_" + timeString.str() + ".txt";
+        fp = fopen(memoryExceedFile.c_str(), "w+");
         if (!fp)
         {
             if (errno != ENOENT)
                 AI_LOG_ERROR("failed to open '%s' (%d - %s)", path.c_str(), errno, strerror(errno));
             return false;
         }
-        AI_LOG_INFO("%s file created",memoryExceedFile);
+        AI_LOG_INFO("%s file created",memoryExceedFile.c_str());
         fclose(fp);
     }
     return true;
