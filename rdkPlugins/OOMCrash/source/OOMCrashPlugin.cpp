@@ -197,10 +197,10 @@ bool OOMCrash::checkForOOM()
 bool OOMCrash::createFileForOOM()
 {
     char memoryExceedFile[150];
-    const std::string path = mContainerConfig->rdk_plugins->oomcrash->data->path;
+    char path[50] = mContainerConfig->rdk_plugins->oomcrash->data->path;
     if (mkdir(path, 0755))
     {
-        snprintf(memoryExceedFile,sizeof(memoryExceedFile), "/opt/dobby_container_crashes/oom_crashed_%s_%s", mUtils->getContainerId().c_str(),__TIME__);
+        snprintf(memoryExceedFile,sizeof(memoryExceedFile), "%s/oom_crashed_%s_%s", path, mUtils->getContainerId().c_str(), __TIME__);
         fp = fopen(memoryExceedFile,"w+");
         if(fp == NULL){
             AI_LOG_WARN("%s file not created",memoryExceedFile);
