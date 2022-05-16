@@ -75,6 +75,7 @@ bool DynamicMountDetails::onCreateContainer()
     {
         // No mount source so ignore
         success = true;
+        AI_LOG_INFO("Source file [%s] does not exist, dynamic mount skipped", mMountProperties.source.c_str());
     }
     
     AI_LOG_FN_EXIT();
