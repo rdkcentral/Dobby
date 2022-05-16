@@ -88,8 +88,8 @@ private:
     std::shared_ptr<rt_dobby_schema> mContainerConfig;
     const std::string mRootfsPath;
     const std::string mPluginPath;
-    std::unique_ptr<DobbyRdkPluginDependencySolver> mDependencySolver;
     const std::shared_ptr<DobbyRdkPluginUtils> mUtils;
+    std::unique_ptr<DobbyRdkPluginDependencySolver> mDependencySolver;
 };
 
 #endif // !defined(DOBBYRDKPLUGINMANAGER_H)
