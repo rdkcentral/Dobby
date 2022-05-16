@@ -209,7 +209,7 @@ bool OOMCrash::createFileForOOM()
     if(stat(path.c_str(),&buffer)==0)
     {
         memoryExceedFile = path + "/oom_crashed_" + mUtils->getContainerId() + "_" + timeString.str() + ".txt";
-        fp = fopen(memoryExceedFile.c_str(), "w+");
+        FILE *fp = fopen(memoryExceedFile.c_str(), "w+");
         if (!fp)
         {
             if (errno != ENOENT)
