@@ -68,16 +68,15 @@ bool OOMCrash::postInstallation()
         return false;
     }
 
-    const std::string source = mContainerConfig->rdk_plugins->oomcrash->data->path;
-    const std::string dest = mContainerConfig->rdk_plugins->oomcrash->data->path;
+    const std::string path = mContainerConfig->rdk_plugins->oomcrash->data->path;
     
-    if (!mUtils->addMount(source, dest, "bind", {"bind", "nodev","nosuid", "noexec" }))
+    if (!mUtils->addMount(path, path, "bind", {"bind", "nodev","nosuid", "noexec" }))
     {
         AI_LOG_WARN("failed to add mount %s", source.c_str());
         return false;
     }
     
-    AI_LOG_INFO("This hook is running for container with hostname %s", mUtils->getContainerId().c_str());
+    AI_LOG_INFO("OOMCrash postInstallation hook is running for container with hostname %s", mUtils->getContainerId().c_str());
     return true;
 }
 
@@ -92,11 +91,12 @@ bool OOMCrash::postHalt()
         return false;
     }
     
+	bool status;
     if(mUtils->exitStatus != 0)
-        checkForOOM();
+        status = checkForOOM();
     
-    AI_LOG_INFO("This hook is running for container with hostname %s", mUtils->getContainerId().c_str());
-    return true;
+    AI_LOG_INFO("OOMCrash postHalt hook is running for container with hostname %s", mUtils->getContainerId().c_str());
+    return status;
 }
 
 // End hook methods
@@ -125,6 +125,8 @@ std::vector<std::string> OOMCrash::getDependencies() const
 
 /**
  * @brief Read cgroup file.
+ *
+ *  @param[in]  val      the value of failcnt.
  *
  * @return true on success.
  */
@@ -166,35 +168,45 @@ bool OOMCrash::readCgroup(unsigned long *val)
 /**
  * @brief Check for Out of Memory.
  *
- * @return void.
+ * @return false when OOM not detected.
  */
 
-void OOMCrash::checkForOOM()
+bool OOMCrash::checkForOOM()
 {
     unsigned long failCnt;
-    
+	bool status;
     if (readCgroup(&failCnt) && (failCnt > 0))
     {
 	    AI_LOG_WARN("memory allocation failure detected in %s container, likely OOM (failcnt = %lu)", mUtils->getContainerId().c_str(), failCnt);
-	    createFileForOOM();
+	    status = createFileForOOM(); 
     }
+	else
+	{
+		AI_LOG_WARN("No OOM failure detected in %s container", mUtils->getContainerId().c_str());
+		status = false;
+	}
+	return status;
 }
 
 /**
  * @brief Create file if Out of Memory detected.
  *
- * @return void.
+ * @return true when file created.
  */
 
-void OOMCrash::createFileForOOM()
+bool OOMCrash::createFileForOOM()
 {
     char memoryExceedFile[150];
-	if (mkdir("/opt/dobby_container_crashes", 0755))
-	{
+    if (mkdir("/opt/dobby_container_crashes", 0755))
+    {
 	    snprintf(memoryExceedFile,sizeof(memoryExceedFile), "/opt/dobby_container_crashes/oom_crashed_%s_%s", mUtils->getContainerId().c_str(),__TIME__);
-	    std::string touchFile = "touch ";
-	    touchFile.append(memoryExceedFile);
-	    system(touchFile.c_str());
-            AI_LOG_INFO("%s file created",memoryExceedFile);
+	    fp = fopen(memoryExceedFile,"w+");
+	    if(fp == NULL){
+		    AI_LOG_WARN("%s file not created",memoryExceedFile);
+		    return false;
+        }
+        AI_LOG_INFO("%s file created",memoryExceedFile);
+	    fclose(fp);
 	}
+	return true;
 }
