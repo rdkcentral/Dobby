@@ -91,7 +91,7 @@ bool OOMCrash::postHalt()
         return false;
     }
     
-	bool status;
+    bool status;
     if(mUtils->exitStatus != 0)
         status = checkForOOM();
     
@@ -138,10 +138,10 @@ bool OOMCrash::readCgroup(unsigned long *val)
     FILE *fp = fopen(path.c_str(), "r");
     if (!fp)
     {
-	if (errno != ENOENT)
-	    AI_LOG_ERROR("failed to open '%s' (%d - %s)", path.c_str(), errno, strerror(errno));
+        if (errno != ENOENT)
+        AI_LOG_ERROR("failed to open '%s' (%d - %s)", path.c_str(), errno, strerror(errno));
 
-	return false;
+        return false;
     }
 
     char* line = nullptr;
@@ -151,10 +151,10 @@ bool OOMCrash::readCgroup(unsigned long *val)
     if ((rd = getline(&line, &len, fp)) < 0)
     {
         if (line)
-	        free(line);
-	    fclose(fp);
-	    AI_LOG_ERROR("failed to read cgroup file line (%d - %s)", errno, strerror(errno));
-	    return false;
+            free(line);
+        fclose(fp);
+        AI_LOG_ERROR("failed to read cgroup file line (%d - %s)", errno, strerror(errno));
+        return false;
     }
 
     *val = strtoul(line, nullptr, 0);
@@ -174,18 +174,18 @@ bool OOMCrash::readCgroup(unsigned long *val)
 bool OOMCrash::checkForOOM()
 {
     unsigned long failCnt;
-	bool status;
+    bool status;
     if (readCgroup(&failCnt) && (failCnt > 0))
     {
-	    AI_LOG_WARN("memory allocation failure detected in %s container, likely OOM (failcnt = %lu)", mUtils->getContainerId().c_str(), failCnt);
-	    status = createFileForOOM(); 
+        AI_LOG_WARN("memory allocation failure detected in %s container, likely OOM (failcnt = %lu)", mUtils->getContainerId().c_str(), failCnt);
+        status = createFileForOOM(); 
     }
-	else
-	{
-		AI_LOG_WARN("No OOM failure detected in %s container", mUtils->getContainerId().c_str());
-		status = false;
-	}
-	return status;
+    else
+    {
+        AI_LOG_WARN("No OOM failure detected in %s container", mUtils->getContainerId().c_str());
+        status = false;
+    }
+    return status;
 }
 
 /**
@@ -197,16 +197,17 @@ bool OOMCrash::checkForOOM()
 bool OOMCrash::createFileForOOM()
 {
     char memoryExceedFile[150];
-    if (mkdir("/opt/dobby_container_crashes", 0755))
+    const std::string path = mContainerConfig->rdk_plugins->oomcrash->data->path;
+    if (mkdir(path, 0755))
     {
-	    snprintf(memoryExceedFile,sizeof(memoryExceedFile), "/opt/dobby_container_crashes/oom_crashed_%s_%s", mUtils->getContainerId().c_str(),__TIME__);
-	    fp = fopen(memoryExceedFile,"w+");
-	    if(fp == NULL){
-		    AI_LOG_WARN("%s file not created",memoryExceedFile);
-		    return false;
+        snprintf(memoryExceedFile,sizeof(memoryExceedFile), "/opt/dobby_container_crashes/oom_crashed_%s_%s", mUtils->getContainerId().c_str(),__TIME__);
+        fp = fopen(memoryExceedFile,"w+");
+        if(fp == NULL){
+            AI_LOG_WARN("%s file not created",memoryExceedFile);
+            return false;
         }
         AI_LOG_INFO("%s file created",memoryExceedFile);
-	    fclose(fp);
-	}
-	return true;
+        fclose(fp);
+    }
+    return true;
 }
