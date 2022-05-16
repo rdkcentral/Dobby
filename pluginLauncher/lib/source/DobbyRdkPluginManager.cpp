@@ -507,7 +507,6 @@ std::shared_ptr<IDobbyRdkLoggingPlugin> DobbyRdkPluginManager::getContainerLogge
  */
 void DobbyRdkPluginManager::setExitStatus(int status) const
 {
-    AI_LOG_INFO("STATUS=%d",status);
     mUtils->exitStatus = status;
 }
 
