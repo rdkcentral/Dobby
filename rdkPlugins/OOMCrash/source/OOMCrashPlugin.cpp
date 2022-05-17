@@ -70,13 +70,16 @@ bool OOMCrash::postInstallation()
 
     const std::string path = mContainerConfig->rdk_plugins->oomcrash->data->path;
     
-    if (mkdir(path.c_str(), 0755))
+    if (mkdir(path.c_str(), 0755) && errno != EEXIST)
     {
-        if (!mUtils->addMount(path, path, "bind", {"bind", "nodev","nosuid", "noexec" }))
-        {
-            AI_LOG_WARN("failed to add mount %s", path.c_str());
-            return false;
-        }
+        AI_LOG_ERROR("failed to create directory '%s' (%d - %s)", path.c_str(), errno, strerror(errno));
+        return false;
+    }
+    
+    if (!mUtils->addMount(path, path, "bind", {"bind", "nodev","nosuid", "noexec" }))
+    {
+        AI_LOG_WARN("failed to add mount %s", path.c_str());
+        return false;
     }
     AI_LOG_INFO("OOMCrash postInstallation hook is running for container with hostname %s", mUtils->getContainerId().c_str());
     return true;
@@ -185,7 +188,7 @@ bool OOMCrash::checkForOOM()
     else
     {
         AI_LOG_WARN("No OOM failure detected in %s container", mUtils->getContainerId().c_str());
-        status = false;
+        status = true;
     }
     return status;
 }
