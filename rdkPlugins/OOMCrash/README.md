@@ -27,3 +27,4 @@ The options inside this object goes as follows:
 | ------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
 | `path`              | Directory (host namespace) to which oom crash file should be created                                                                    |
 
+Note : The same `path` will be created inside the container namespace and will be mounted together.
