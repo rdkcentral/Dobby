@@ -48,7 +48,7 @@ OOMCrash::OOMCrash(std::shared_ptr<rt_dobby_schema> &containerConfig,
 /**
  * @brief Set the bit flags for which hooks we're going to use
  *
- * This plugin uses all the hooks so set all the flags
+ * This plugin uses the postInstallation and postHalt hooks, so set those flags
  */
 unsigned OOMCrash::hookHints() const
 {
@@ -168,7 +168,7 @@ bool OOMCrash::readCgroup(unsigned long *val)
 }
 
 /**
- * @brief Check for Out of Memory.
+ * @brief Check for Out of Memory by reading cgroup file.
  *
  * @return false when OOM not detected.
  */
@@ -218,6 +218,12 @@ bool OOMCrash::createFileForOOM()
         }
         AI_LOG_INFO("%s file created",memoryExceedFile.c_str());
         fclose(fp);
+    }
+    else
+    {
+        if (errno == ENOENT)
+            AI_LOG_ERROR("Path '%s' does not exist (%d - %s)", path.c_str(), errno, strerror(errno));
+        return false;  
     }
     return true;
 }
