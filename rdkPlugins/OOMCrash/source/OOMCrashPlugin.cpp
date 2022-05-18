@@ -96,7 +96,7 @@ bool OOMCrash::postHalt()
         return false;
     }
     
-    bool status;
+    bool status = true;
     if(mUtils->exitStatus != 0)
         status = checkForOOM();
     
