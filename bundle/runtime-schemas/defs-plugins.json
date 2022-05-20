@@ -581,6 +581,32 @@
                 }
             }
         },
+        "OOMCrash": {
+            "type": "object",
+            "required": [
+                "required",
+                "data"
+            ],
+            "properties": {
+                "required": {
+                    "type": "boolean"
+                },
+                "dependsOn": {
+                    "$ref": "defs.json#/definitions/ArrayOfStrings"
+                },
+                "data": {
+                    "type": "object",
+                    "required": [
+                        "path"
+                    ],
+                    "properties": {
+                        "path": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "LegacyPlugins": {
             "type": "object",
             "properties": {
@@ -633,6 +659,9 @@
                 },
                 "testrdkplugin": {
                     "$ref": "#/definitions/TestRdkPlugin"
+                },
+                "oomcrash": {
+                    "$ref": "#/definitions/OOMCrash"
                 },
                 "devicemapper": {
                     "$ref": "#/definitions/DeviceMapper"
