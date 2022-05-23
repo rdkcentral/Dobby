@@ -69,14 +69,19 @@ bool OOMCrash::postInstallation()
     }
 
     const std::string path = mContainerConfig->rdk_plugins->oomcrash->data->path;
-    
-    if (mkdir(path.c_str(), 0755) && errno != EEXIST)
+    if (mkdir(mRootfsPath + path.c_str(), 0744) && errno != EEXIST)
+    {
+        AI_LOG_ERROR("failed to create directory '%s' (%d - %s)", (mRootfsPath + path).c_str(), errno, strerror(errno));
+        return false;
+    }
+
+    if (mkdir(path.c_str(), 0744) && errno != EEXIST)
     {
         AI_LOG_ERROR("failed to create directory '%s' (%d - %s)", path.c_str(), errno, strerror(errno));
         return false;
     }
-    
-    if (!mUtils->addMount(path, path, "bind", {"bind", "nodev","nosuid", "noexec" }))
+
+    if (!mUtils->addMount(path, path, "bind", {"bind", "ro", "nodev","nosuid", "noexec" }))
     {
         AI_LOG_WARN("failed to add mount %s", path.c_str());
         return false;
