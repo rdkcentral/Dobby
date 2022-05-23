@@ -188,6 +188,14 @@ std::vector<Netfilter::RuleSet> constructBridgeRules(const std::shared_ptr<Netfi
         }
     };
 
+    if (ipVersion == AF_INET6)
+    {
+        Netfilter::RuleSet::iterator appendFilterRules = appendRuleSet.find(Netfilter::TableType::Filter);
+        // add DobbyInputChain rule to accept Network Discovery Protocol messages, otherwise
+        // the Neigh table (which is equivalent of IPv4 ARP table) will not be able to update
+        appendFilterRules->second.emplace_front("DobbyInputChain -p ICMPv6 -j ACCEPT");
+    }
+
     // add addresses to rules depending on ipVersion
     std::string bridgeAddressRange;
     if (ipVersion == AF_INET)
