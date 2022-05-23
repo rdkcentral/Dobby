@@ -69,13 +69,13 @@ bool OOMCrash::postInstallation()
     }
 
     const std::string path = mContainerConfig->rdk_plugins->oomcrash->data->path;
-    if (mkdir(mRootfsPath + path.c_str(), 0744) && errno != EEXIST)
+    if (!mUtils->mkdirRecursive(mRootfsPath + path.c_str(), 0744) && errno != EEXIST)
     {
         AI_LOG_ERROR("failed to create directory '%s' (%d - %s)", (mRootfsPath + path).c_str(), errno, strerror(errno));
         return false;
     }
 
-    if (mkdir(path.c_str(), 0744) && errno != EEXIST)
+    if (!mUtils->mkdirRecursive(path.c_str(), 0744) && errno != EEXIST)
     {
         AI_LOG_ERROR("failed to create directory '%s' (%d - %s)", path.c_str(), errno, strerror(errno));
         return false;
