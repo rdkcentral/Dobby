@@ -43,7 +43,7 @@
 
 // Loop mount details class
 LoopMountDetails::LoopMountDetails(const std::string& rootfsPath,
-                                   const MountProperties& mount,
+                                   const LoopMountProperties& mount,
                                    const uid_t& userId,
                                    const gid_t& groupId,
                                    const std::shared_ptr<DobbyRdkPluginUtils> &utils)

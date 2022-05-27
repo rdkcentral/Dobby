@@ -17,11 +17,11 @@
 * limitations under the License.
 */
 /*
- * File: LoopMountDetails.h
+ * File: DynamicMountDetails.h
  *
  */
-#ifndef LOOPMOUNTDETAILS_H
-#define LOOPMOUNTDETAILS_H
+#ifndef DYNAMICMOUNTDETAILS_H
+#define DYNAMICMOUNTDETAILS_H
 
 #include "MountProperties.h"
 
@@ -32,61 +32,45 @@
 #include <list>
 #include <memory>
 
-class RefCountFile;
-
 
 // -----------------------------------------------------------------------------
 /**
- *  @class LoopMountDetails
- *  @brief Class that represents a single loop mount within a container
+ *  @class DynamicMountDetails
+ *  @brief Class that represents a single mount within a container when the
+ * source exists on the host.
  *
  *  This class is only intended to be used internally by Storage plugin
  *  do not use from external code.
  *
  *  @see Storage
  */
-class LoopMountDetails
+class DynamicMountDetails
 {
 public:
-    LoopMountDetails() = delete;
-    LoopMountDetails(LoopMountDetails&) = delete;
-    LoopMountDetails(LoopMountDetails&&) = delete;
-    ~LoopMountDetails();
+    DynamicMountDetails() = delete;
+    DynamicMountDetails(DynamicMountDetails&) = delete;
+    DynamicMountDetails(DynamicMountDetails&&) = delete;
+    ~DynamicMountDetails();
 
 private:
     friend class Storage;
 
 public:
-    LoopMountDetails(const std::string& rootfsPath,
-                     const LoopMountProperties& mount,
-                     const uid_t& userId,
-                     const gid_t& groupId,
-                     const std::shared_ptr<DobbyRdkPluginUtils> &utils);
+    DynamicMountDetails(const std::string& rootfsPath,
+                        const DynamicMountProperties& mount,
+                        const std::shared_ptr<DobbyRdkPluginUtils> &utils);
 
 public:
-    bool doLoopMount(const std::string& loopDevice);
-
-    bool onPreCreate();
-
-    bool setPermissions();
-
-    bool remountTempDirectory();
-
-    bool cleanupTempDirectory();
-
-    bool removeNonPersistentImage();
+    bool onCreateContainer();
+    bool changeOwnership();
 
 private:
-    std::unique_ptr<RefCountFile> getRefCountFile();
+    bool addMount();
 
-private:
-    std::string mMountPointInsideContainer;
-    std::string mTempMountPointOutsideContainer;
-    LoopMountProperties mMount;
-    uid_t mUserId;
-    gid_t mGroupId;
+    const std::string mRootfsPath;
+    DynamicMountProperties mMountProperties;
 
     const std::shared_ptr<DobbyRdkPluginUtils> mUtils;
 };
 
-#endif // !defined(LOOPMOUNTDETAILS_H)
+#endif // !defined(DYNAMICMOUNTDETAILS_H)
