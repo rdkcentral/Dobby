@@ -359,6 +359,31 @@
                                     }
                                 }
                             }
+                        },
+                        "dynamic": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "required": [
+                                    "destination",
+                                    "flags",
+                                    "source"
+                                ],
+                                "properties": {
+                                    "destination": {
+                                        "type": "string"
+                                    },
+                                    "flags": {
+                                        "$ref": "defs.json#/definitions/int32"
+                                    },
+                                    "options": {
+                                        "$ref": "defs.json#/definitions/ArrayOfStrings"
+                                    },
+                                    "source": {
+                                        "type": "string"
+                                    }
+                                }
+                            }
                         }
                     }
                 }

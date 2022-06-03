@@ -114,7 +114,7 @@ Only usable with network types 'open' and 'nat'.
 ##### Example
 ```json
 "data": {
-    "dnsmasq": "true"
+    "dnsmasq": true
 }
 ```
 
