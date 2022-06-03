@@ -356,12 +356,38 @@ void Dobby::logJournaldPrinter(int level, const char *file, const char *func,
             return;
     }
 
+    std::string logLevel;
+     switch (level)
+    {
+        case AI_DEBUG_LEVEL_FATAL:
+            logLevel = "FTL: ";
+            break;
+        case AI_DEBUG_LEVEL_ERROR:
+            logLevel = "ERR: ";
+            break;
+        case AI_DEBUG_LEVEL_WARNING:
+            logLevel = "WRN: ";
+            break;
+        case AI_DEBUG_LEVEL_MILESTONE:
+            logLevel = "MIL: ";
+            break;
+        case AI_DEBUG_LEVEL_INFO:
+            logLevel = "NFO: ";
+            break;
+        case AI_DEBUG_LEVEL_DEBUG:
+            logLevel = "DBG: ";
+            break;
+        default:
+            logLevel = ": ";
+            break;
+    }
+
     sd_journal_send("SYSLOG_IDENTIFIER=DobbyDaemon",
                     "PRIORITY=%i", priority,
                     "CODE_FILE=%s", file,
                     "CODE_LINE=%i", line,
                     "CODE_FUNC=%s", func,
-                    "MESSAGE=%s", message,
+                    "MESSAGE=%s%s", logLevel.c_str(), message,
                     nullptr);
 }
 #endif // !defined(RDK)
