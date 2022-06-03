@@ -25,15 +25,7 @@
 
 #include <RdkPluginBase.h>
 
-#include <sys/types.h>
 #include <sys/stat.h>
-#include <netinet/in.h>
-
-#include <unistd.h>
-#include <string>
-#include <memory>
-#include <sstream>
-#include <iomanip>
 
 /**
  * @brief Dobby RDK OOMCrash Plugin
@@ -66,7 +58,7 @@ public:
 private:
     bool readCgroup(unsigned long *val);
     bool checkForOOM();
-    bool createFileForOOM();
+    void createFileForOOM();
     
     const std::string mName;
     std::shared_ptr<rt_dobby_schema> mContainerConfig;
