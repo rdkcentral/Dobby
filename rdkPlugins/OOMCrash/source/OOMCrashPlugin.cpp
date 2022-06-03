@@ -69,13 +69,13 @@ bool OOMCrash::postInstallation()
     }
 
     const std::string path = mContainerConfig->rdk_plugins->oomcrash->data->path;
-    if (!mUtils->mkdirRecursive(mRootfsPath + path.c_str(), 0744) && errno != EEXIST)
+    if (!mUtils->mkdirRecursive(mRootfsPath + path.c_str(), 0755) && errno != EEXIST)
     {
         AI_LOG_ERROR("failed to create directory '%s' (%d - %s)", (mRootfsPath + path).c_str(), errno, strerror(errno));
         return false;
     }
 
-    if (!mUtils->mkdirRecursive(path.c_str(), 0744) && errno != EEXIST)
+    if (!mUtils->mkdirRecursive(path.c_str(), 0755) && errno != EEXIST)
     {
         AI_LOG_ERROR("failed to create directory '%s' (%d - %s)", path.c_str(), errno, strerror(errno));
         return false;
@@ -102,11 +102,25 @@ bool OOMCrash::postHalt()
     }
     
     bool status = true;
-    if(mUtils->exitStatus != 0)
+    if (mUtils->exitStatus != 0)
         status = checkForOOM();
     
+    // Remove the crashFile if container exits normally or if no OOM detected
+    if (mUtils->exitStatus == 0 || status == false)
+    {
+	struct stat buffer;
+	std::string path = mContainerConfig->rdk_plugins->oomcrash->data->path;
+	std::string crashFile = path + "/oom_crashed_" + mUtils->getContainerId() + ".txt";
+	
+	if (stat(crashFile.c_str(), &buffer) == 0)
+	{
+		remove(crashFile.c_str());
+		AI_LOG_INFO("%s file removed", crashFile.c_str());
+	}
+    }
+    
     AI_LOG_INFO("OOMCrash postHalt hook is running for container with hostname %s", mUtils->getContainerId().c_str());
-    return status;
+    return true;
 }
 
 // End hook methods
@@ -193,7 +207,7 @@ bool OOMCrash::checkForOOM()
     else
     {
         AI_LOG_WARN("No OOM failure detected in %s container", mUtils->getContainerId().c_str());
-        status = true;
+        status = false;
     }
     return status;
 }
@@ -209,14 +223,10 @@ bool OOMCrash::createFileForOOM()
     std::string memoryExceedFile;
     std::string path = mContainerConfig->rdk_plugins->oomcrash->data->path;
     
-    std::time_t currentTime = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
-    std::stringstream timeString;
-    timeString << std::put_time(std::localtime(&currentTime), "%FT%T");
-    
     struct stat buffer;
-    if(stat(path.c_str(),&buffer)==0)
+    if (stat(path.c_str(), &buffer)==0)
     {
-        memoryExceedFile = path + "/oom_crashed_" + mUtils->getContainerId() + "_" + timeString.str() + ".txt";
+        memoryExceedFile = path + "/oom_crashed_" + mUtils->getContainerId() + ".txt";
         FILE *fp = fopen(memoryExceedFile.c_str(), "w+");
         if (!fp)
         {
