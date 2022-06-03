@@ -69,6 +69,7 @@ Vagrant.configure("2") do |config|
         mkdir -p ~/.ssh
         chmod 700 ~/.ssh
         ssh-keyscan -Ht rsa github.com >> ~/.ssh/known_hosts
+        ssh-keyscan -Ht ecdsa github.com >> ~/.ssh/known_hosts
     SHELL
 
     ##################################################
@@ -76,9 +77,8 @@ Vagrant.configure("2") do |config|
     # Prepare to install dependencies
     #
     config.vm.provision "shell", inline: <<-SHELL
-        sudo add-apt-repository ppa:deadsnakes/ppa
         apt update -y && apt upgrade -y
-        apt install figlet
+        apt install -y figlet
     SHELL
 
     ##################################################
@@ -101,7 +101,7 @@ Vagrant.configure("2") do |config|
 
     ##################################################
     #
-    # Clone and build CRUN
+    # Clone and build CRUN (could install from apt, but this ensures we have the latest version)
     #
     config.vm.provision "shell", privileged: false, inline: <<-SHELL
         figlet CRUN  # ASCII banner
@@ -116,13 +116,13 @@ Vagrant.configure("2") do |config|
 
     ##################################################
     #
-    # Clone and build SMCROUTE
+    # Clone and build SMCROUTE (used for testing Dobby multicast support)
     #
     config.vm.provision "shell", privileged: false, inline: <<-SHELL
         figlet SMCROUTE  # ASCII banner
         mkdir ~/smcroute
         cd ~/smcroute
-        git clone --depth 1 --branch 2.5.2 https://github.com/troglobit/smcroute.git .
+        git clone --depth 1 --branch 2.5.5 https://github.com/troglobit/smcroute.git .
         ./autogen.sh
         ./configure
         sudo make install -j$(nproc)
@@ -133,7 +133,7 @@ Vagrant.configure("2") do |config|
 
     ##################################################
     #
-    # Clone and build latest libnl 3.5
+    # Clone and build latest libnl 3.5 (used by dobby networking plugin)
     #
     config.vm.provision "shell", privileged: false, inline: <<-SHELL
         figlet libnl  # ASCII banner
@@ -196,7 +196,8 @@ Vagrant.configure("2") do |config|
 
     ##################################################
     #
-    # Install Thunder R2 & rdkservices + deps
+    # Close Thunder R2 & rdkservices + deps but don't build (build takes a long time and
+    # not always required. Can be built on-demand if needed)
     #
     config.vm.provision "file", source: "./Thunder", destination: "~/srcThunder/scripts"
     config.vm.provision "shell", privileged: false, inline: <<-SHELL
@@ -209,5 +210,18 @@ Vagrant.configure("2") do |config|
         git clone -b R2 https://github.com/rdkcentral/ThunderInterfaces.git
         git clone -b R2 https://github.com/rdkcentral/ThunderClientLibraries.git
         git clone https://github.com/rdkcentral/rdkservices.git
+        echo "****************************************************************************"
+        echo "***               Thunder repos cloned to ~/srcThunder                   ***"
+        echo "*** Run 'sudo ~/srcThunder/scripts/build_thunder_r2.sh' to build Thunder ***"
+        echo "****************************************************************************"
+    SHELL
+
+    config.vm.provision "shell", privileged: false, inline: <<-SHELL
+        figlet DONE
+        echo "**************************************************************************"
+        echo "***                     Vagrant provision complete!"                   ***
+        echo "***               Run 'vagrant ssh' to SSH to your new VM"             ***
+        echo "***            Dobby has been cloned and built @ ~/srcDobby"           ***
+        echo "**************************************************************************"
     SHELL
 end

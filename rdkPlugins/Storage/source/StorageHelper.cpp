@@ -26,6 +26,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <list>
+#include <map>
 #include <sys/mount.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -407,6 +408,65 @@ void StorageHelper::cleanMountLostAndFound(const std::string& mountPoint,
     AI_LOG_FN_EXIT();
 }
 
+// -----------------------------------------------------------------------------
+/**
+ *  @brief Get the loop device for a given backing file
+ *
+ *  @param[in] backingFile   Path of backing file.
+ *
+ *  @return on success a string containing the name of the loop device,
+ *  empty string on error.
+ */
+std::string StorageHelper::getLoopDevice(const std::string &backingFile)
+{
+    AI_LOG_FN_ENTRY();
+    
+    std::string loopDevice;
+    int dirFd = open("/sys/block", O_CLOEXEC | O_DIRECTORY);
+    if (dirFd < 0)
+    {
+        AI_LOG_SYS_ERROR(errno, "failed to open directory @ '/sys/block'");
+        return loopDevice;
+    }
+
+    DIR *sysBlockDir = fdopendir(dirFd);
+
+    // Loop through all block devices starting with 'loop'
+    struct dirent *entry = nullptr;
+    while (loopDevice.empty() && (entry = readdir(sysBlockDir)) != nullptr)
+    {
+        if (strncmp(entry->d_name, "loop", 4) != 0)
+            continue;
+
+        std::string name(entry->d_name);
+        name += "/loop/backing_file";
+
+        int fd = openat(dirFd, name.c_str(), O_RDONLY | O_CLOEXEC);
+        if (fd >= 0)
+        {
+            char buffer[512] = {0};
+            int len = read(fd, buffer, sizeof(buffer));
+            if (len < 0)
+            {
+                AI_LOG_SYS_ERROR(errno, "failed to read file @ '/sys/block/%s'", name.c_str());
+            }
+            else
+            {
+                if (strncmp(backingFile.c_str(), buffer, backingFile.length()) == 0)
+                {
+                    loopDevice = std::string("/dev/") + entry->d_name;
+                }
+            }
+            close(fd);
+        }
+    }
+
+    closedir(sysBlockDir);
+
+    AI_LOG_FN_EXIT();
+    return loopDevice;
+}
+
 // -------------------------------------------------------------------------
 /**
  *  @brief Removes a directory and all it's contents.
@@ -702,5 +762,3 @@ bool StorageHelper::Test_checkWriteReadMount(const std::string& tmpPath)
     }
 }
 #endif // ENABLE_TESTS
-
-

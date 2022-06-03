@@ -56,7 +56,8 @@ public:
 public:
     const std::vector<std::string> listLoadedPlugins() const;
     const std::vector<std::string> listLoadedLoggers() const;
-    bool runPlugins(const IDobbyRdkPlugin::HintFlags &hookPoint) const;
+    bool runPlugins(const IDobbyRdkPlugin::HintFlags &hookPoint,
+                    const uint timeoutMs = 0) const;
 
     // This is public as RDKPluginManager isn't responsible for handling logging
     std::shared_ptr<IDobbyRdkLoggingPlugin> getContainerLogger() const;
@@ -66,6 +67,10 @@ private:
     bool preprocessPlugins();
     bool executeHook(const std::string &pluginName,
                      const IDobbyRdkPlugin::HintFlags hook) const;
+    bool executeHookTimeout(const std::string &pluginName,
+                            const IDobbyRdkPlugin::HintFlags hook,
+                            const uint timeoutMs) const;
+    std::string HookPointToString(const IDobbyRdkPlugin::HintFlags &hookPoint) const;
 
     bool implementsHook(const std::string &pluginName,
                         const IDobbyRdkPlugin::HintFlags hook) const;

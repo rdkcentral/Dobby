@@ -39,15 +39,28 @@
 #include <memory>
 #include <list>
 #include <mutex>
+#include <arpa/inet.h>
+
 
 // TODO:: This would be better stored in the dobby workspace dir rather than /tmp,
 // but we don't programatically know the workspace dir in this code.
-#define ADDRESS_FILE_PREFIX       "/tmp/dobbyAddress_"
+#define ADDRESS_FILE_DIR          "/tmp/dobby/plugin/networking/"
 
 typedef struct ContainerNetworkInfo
 {
     std::string vethName;
     std::string ipAddress;
+    in_addr_t ipAddressRaw;
+    std::string containerId;
+
+    bool operator==(const ContainerNetworkInfo &rhs) const
+    {
+        if (containerId.empty() || rhs.containerId.empty())
+        {
+            return ipAddressRaw == rhs.ipAddressRaw;
+        }
+        return containerId == rhs.containerId;
+    }
 } ContainerNetworkInfo;
 
 // -----------------------------------------------------------------------------
@@ -60,14 +73,18 @@ typedef struct ContainerNetworkInfo
 class DobbyRdkPluginUtils
 {
 public:
-    DobbyRdkPluginUtils(const std::shared_ptr<rt_dobby_schema> &cfg);
     DobbyRdkPluginUtils(const std::shared_ptr<rt_dobby_schema> &cfg,
-                        const std::shared_ptr<IDobbyStartState> &startState);
+                        const std::string &containerId);
     DobbyRdkPluginUtils(const std::shared_ptr<rt_dobby_schema> &cfg,
-                        const std::shared_ptr<const rt_state_schema> &state);
+                        const std::shared_ptr<IDobbyStartState> &startState,
+                        const std::string &containerId);
     DobbyRdkPluginUtils(const std::shared_ptr<rt_dobby_schema> &cfg,
                         const std::shared_ptr<const rt_state_schema> &state,
-                        const std::shared_ptr<IDobbyStartState> &startState);
+                        const std::string &containerId);
+    DobbyRdkPluginUtils(const std::shared_ptr<rt_dobby_schema> &cfg,
+                        const std::shared_ptr<const rt_state_schema> &state,
+                        const std::shared_ptr<IDobbyStartState> &startState,
+                        const std::string &containerId);
     ~DobbyRdkPluginUtils();
 
     // -------------------------------------------------------------------------
@@ -136,11 +153,16 @@ public:
     std::list<int> files(const std::string& pluginName) const;
 
 private:
+    std::string ipAddressToString(const in_addr_t &ipAddress);
+
+private:
     mutable std::mutex mLock;
 
     std::shared_ptr<rt_dobby_schema> mConf;
     std::shared_ptr<const rt_state_schema> mState;
     std::shared_ptr<IDobbyStartState> mStartState;
+
+    const std::string mContainerId;
 };
 
 #endif // !defined(DOBBYRDKPLUGINUTILS_H)

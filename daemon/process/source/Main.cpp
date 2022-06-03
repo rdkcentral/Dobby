@@ -510,10 +510,6 @@ int main(int argc, char * argv[])
     __ai_debug_log_level = gLogLevel;
 
 
-    // Create object storing Dobby settings
-    const std::shared_ptr<Settings> settings = createSettings();
-
-
     AI_LOG_MILESTONE("starting Dobby daemon");
 
     // Daemonise ourselves to run in the background
@@ -532,6 +528,9 @@ int main(int argc, char * argv[])
         logTargets &= ~Dobby::Console;
         Dobby::setupLogging(logTargets);
     }
+
+    // Create object storing Dobby settings
+    const std::shared_ptr<Settings> settings = createSettings();
 
 
     // Setup signals, this MUST be done in the main thread before any other

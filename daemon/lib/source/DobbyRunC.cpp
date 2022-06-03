@@ -173,20 +173,132 @@ std::pair<pid_t, pid_t> DobbyRunC::create(const ContainerId &id,
 
     runtimeArgs.push_back(id.c_str());
 
+    // additional security in case worker stucks
+    int status;
+    pid_t exited_pid;
+    pid_t worker_pid;
+    pid_t timeout_pid;
+
     // run the following command "runc create --bundle <dir> <id>"
-    pid_t pid = forkExecRunC(runtimeArgs,
-                             { },
-                             files,
-                             console, console);
-    if (pid <= 0)
+    worker_pid = forkExecRunC(runtimeArgs,
+                            { },
+                            files,
+                            console, console);
+    if (worker_pid <= 0)
     {
         AI_LOG_ERROR_EXIT("failed to execute runc tool");
         return {-1,-1};
     }
 
-    // block waiting for the forked process to complete
-    int status;
-    if (TEMP_FAILURE_RETRY(waitpid(pid, &status, 0)) < 0)
+    timeout_pid = fork();
+    if (timeout_pid == 0) {
+        // Wait 5.5 second
+        struct timespec timeout_val, remaining;
+        timeout_val.tv_nsec = 500000000L;
+        timeout_val.tv_sec = 5;
+
+        // In case signal comes during wait
+        while(nanosleep(&timeout_val, &remaining) && errno==EINTR){
+            timeout_val=remaining;
+        }
+
+        _exit(0);
+    }
+
+    // Wait for either worker or timeout to finish
+    do
+    {
+        exited_pid = TEMP_FAILURE_RETRY(wait(&status));
+        if (exited_pid >= 0 && 
+            exited_pid != timeout_pid &&
+            exited_pid != worker_pid)
+        {
+            AI_LOG_DEBUG("Found non-waited process with pid %d", exited_pid);
+        }
+    } while (exited_pid >= 0 && 
+            exited_pid != timeout_pid &&
+            exited_pid != worker_pid);
+
+    if (exited_pid == timeout_pid)
+    {
+        // Timeout occured
+        // Check if we can kill worker_pid (if it ended already
+        // then we will be unable to kill)
+        if (kill(worker_pid, 0) == -1)
+        {
+            // Cannot kill process, probably already dead
+            // treat it as if it would return proper waitpid
+            AI_LOG_DEBUG("Cannot kill after timeout");
+            exited_pid = waitpid(worker_pid, &status, WNOHANG);
+        }
+        else
+        {
+            // Worker is stuck, we need to kill whole group
+            // in case any child process was stuck too
+            AI_LOG_DEBUG("Can kill after timeout");
+            killpg(worker_pid, SIGKILL);
+            // Collect the worker process
+            waitpid(worker_pid, &status, 0);
+            // Collect child of worker if any
+            wait(nullptr); 
+        }
+
+    }
+    else if (exited_pid == worker_pid)
+    {
+        // Worker finished
+        kill(timeout_pid, SIGKILL);
+        // Collect the timeout process
+        wait(nullptr); 
+    }
+
+
+    // Now as we had finished both forks we can safely exit if necessary
+    if (exited_pid == timeout_pid)
+    {
+        AI_LOG_WARN("Timeout occured - container creation has hung. Cleaning up");
+
+        // We need to clean up after failed container creation, as we
+        // don't know when in creation process it failed do full step
+        // by step procedure
+
+        // First kill container so it is in stopped state
+        if (!killCont(id, SIGKILL))
+        {
+            // Even though the container couldn't be killed it can still
+            // exists so we still need to destroy it so no return here
+            AI_LOG_WARN("failed to kill (non-running) container for '%s'",
+                        id.c_str());
+        }
+        else
+        {
+            // We are not sure if process started, so check if we can get
+            // container pid, read the file
+            pid_t containerPid = readPidFile(pidFilePath);
+            if (containerPid > 0)
+            {
+                // wait for the half-started container to terminate
+                if (waitpid(containerPid, nullptr, 0) < 0)
+                {
+                    AI_LOG_SYS_ERROR(errno, "error waiting for (non-running) container '%s' to terminate",
+                                    id.c_str());
+                }
+            }
+        }
+
+        // Don't bother capturing hook logs here
+        std::shared_ptr<DobbyDevNullStream> nullstream = std::make_shared<DobbyDevNullStream>();
+        AI_LOG_INFO("attempting to destroy (non-running) container '%s'", id.c_str());
+        // Force delete by default as we have no idea what condition the container is in
+        // and it may not respond to a normal delete
+        if (!destroy(id, nullstream, true))
+        {
+            AI_LOG_ERROR("failed to destroy '%s'", id.c_str());
+        }
+
+        return {-1,-1};
+    }
+    else if (exited_pid < 0)
     {
         AI_LOG_SYS_ERROR_EXIT(errno, "waitpid failed");
         return {-1,-1};
@@ -204,24 +316,15 @@ std::pair<pid_t, pid_t> DobbyRunC::create(const ContainerId &id,
 
     // now need to read the pid file it created so we know were to find the
     // container
-    const size_t maxLength = 64;
-    std::string pidFileContents = mUtilities->readTextFile(pidFilePath, maxLength);
-    if (pidFileContents.empty())
+    pid_t containerPid = readPidFile(pidFilePath);
+    if (containerPid < 0)
     {
-        AI_LOG_ERROR_EXIT("failed to read pid file contents");
-        return {-1,-1};
-    }
-
-    char *endptr;
-    pid_t containerPid = static_cast<pid_t>(strtol(pidFileContents.c_str(), &endptr, 0));
-    if (endptr == pidFileContents.c_str())
-    {
-        AI_LOG_ERROR_EXIT("failed to to convert '%s' to a pid", pidFileContents.c_str());
+        AI_LOG_ERROR_EXIT("Wrong container pid, read from file failed");
         return {-1,-1};
     }
 
     AI_LOG_FN_EXIT();
-    return std::make_pair(pid, containerPid);
+    return std::make_pair(worker_pid, containerPid);
 }
 
 // -----------------------------------------------------------------------------
@@ -289,7 +392,7 @@ bool DobbyRunC::start(const ContainerId& id, const std::shared_ptr<const IDobbyS
  *
  *  @return true or false based on the return code of the runc tool.
  */
-bool DobbyRunC::kill(const ContainerId& id, int signal, bool all) const
+bool DobbyRunC::killCont(const ContainerId& id, int signal, bool all) const
 {
     AI_LOG_FN_ENTRY();
 
@@ -378,7 +481,7 @@ bool DobbyRunC::kill(const ContainerId& id, int signal, bool all) const
             AI_LOG_DEBUG("SIGTERM kill wasn't kill container (probably masked), "
                         "retrying kill with SIGKILL");
             // retry kill with SIGKILL now, its result will be proper result now
-            returnValue = DobbyRunC::kill(id, SIGKILL, all);
+            returnValue = DobbyRunC::killCont(id, SIGKILL, all);
         }
     }
 
@@ -678,23 +781,6 @@ bool DobbyRunC::destroy(const ContainerId& id, const std::shared_ptr<const IDobb
         }
     }
 
-    std::string containerDir = mWorkingDir + "/" + id.str();
-
-    // forcefully delete the container directory if the delete command is unable
-    // to do it properly
-    if (AICommon::exists(containerDir))
-    {
-        AI_LOG_ERROR("container directory not deleted - remove forcefully [%s]",
-                     containerDir.c_str());
-
-        AICommon::deleteDirectory(containerDir);
-        if (AICommon::exists(containerDir))
-        {
-            AI_LOG_ERROR("container directory still exist - we may be unable to"
-                         " launch app %s until next reboot", id.c_str());
-        }
-    }
-
     AI_LOG_FN_EXIT();
 
     // get the return code, 0 for success, 1 for failure
@@ -841,7 +927,7 @@ DobbyRunC::ContainerStatus DobbyRunC::state(const ContainerId& id) const
  *
  *  @return A map of current container ids and their status.
  */
-std::map<ContainerId, DobbyRunC::ContainerStatus> DobbyRunC::list() const
+std::list<DobbyRunC::ContainerListItem> DobbyRunC::list() const
 {
     AI_LOG_FN_ENTRY();
 
@@ -857,7 +943,7 @@ std::map<ContainerId, DobbyRunC::ContainerStatus> DobbyRunC::list() const
     if (pid <= 0)
     {
         AI_LOG_ERROR_EXIT("failed to execute runc tool");
-        return std::map<ContainerId, DobbyRunC::ContainerStatus>();
+        return {};
     }
 
     // block waiting for the forked process to complete
@@ -865,12 +951,12 @@ std::map<ContainerId, DobbyRunC::ContainerStatus> DobbyRunC::list() const
     if (TEMP_FAILURE_RETRY(waitpid(pid, &status, 0)) < 0)
     {
         AI_LOG_SYS_ERROR_EXIT(errno, "waitpid failed");
-        return std::map<ContainerId, DobbyRunC::ContainerStatus>();
+        return {};
     }
     if (!WIFEXITED(status))
     {
         AI_LOG_ERROR_EXIT("runc didn't exit?  status=0x%08x", status);
-        return std::map<ContainerId, DobbyRunC::ContainerStatus>();
+        return {};
     }
 
     // check succeeded
@@ -878,7 +964,7 @@ std::map<ContainerId, DobbyRunC::ContainerStatus> DobbyRunC::list() const
     {
         AI_LOG_WARN("\"runc list\" failed with status %u", WEXITSTATUS(status));
         AI_LOG_FN_EXIT();
-        return std::map<ContainerId, DobbyRunC::ContainerStatus>();
+        return {};
     }
 
 
@@ -888,7 +974,7 @@ std::map<ContainerId, DobbyRunC::ContainerStatus> DobbyRunC::list() const
     {
         AI_LOG_WARN("failed to get any reply from \"runc list\" call");
         AI_LOG_FN_EXIT();
-        return std::map<ContainerId, DobbyRunC::ContainerStatus>();
+        return {};
     }
 
 
@@ -903,7 +989,7 @@ std::map<ContainerId, DobbyRunC::ContainerStatus> DobbyRunC::list() const
         AI_LOG_WARN("failed to parse json output from \"runc list\" call - %s",
                     errors.c_str());
         AI_LOG_FN_EXIT();
-        return std::map<ContainerId, DobbyRunC::ContainerStatus>();
+        return {};
     }
 
     // a null json type is returned if no containers are running, this is not
@@ -911,17 +997,17 @@ std::map<ContainerId, DobbyRunC::ContainerStatus> DobbyRunC::list() const
     if (root.isNull())
     {
         AI_LOG_FN_EXIT();
-        return std::map<ContainerId, DobbyRunC::ContainerStatus>();
+        return {};
     }
 
     // if not null then check we got an array type
     if (!root.isArray())
     {
         AI_LOG_ERROR_EXIT("invalid json array type");
-        return std::map<ContainerId, DobbyRunC::ContainerStatus>();
+        return {};
     }
 
-    std::map<ContainerId, DobbyRunC::ContainerStatus> containers;
+    std::list<ContainerListItem> containers;
 
     // iterate through the containers
     for (const Json::Value &entry : root)
@@ -946,7 +1032,28 @@ std::map<ContainerId, DobbyRunC::ContainerStatus> DobbyRunC::list() const
             continue;
         }
 
-        containers[id_] = getContainerStatusFromJson(entry);
+        const Json::Value &pid = entry["pid"];
+        if (!pid.isInt())
+        {
+             AI_LOG_WARN("container list contains invalid object value");
+            continue;
+        }
+
+        const Json::Value &bundle = entry["bundle"];
+        if (!bundle.isString())
+        {
+             AI_LOG_WARN("container list contains invalid object value");
+            continue;
+        }
+
+        ContainerListItem container {
+            .id = id_,
+            .pid = pid.asInt(),
+            .bundlePath = bundle.asString(),
+            .status = getContainerStatusFromJson(entry),
+        };
+
+        containers.emplace_back(container);
     }
 
     AI_LOG_FN_EXIT();
@@ -1147,8 +1254,8 @@ pid_t DobbyRunC::forkExecRunC(const std::vector<const char*>& args,
             _exit(EXIT_FAILURE);
 
         // Create a new SID for the child process
-        //if (setsid() < 0)
-        //    _exit(EXIT_FAILURE);
+        if (setsid() < 0)
+            _exit(EXIT_FAILURE);
 
         // Change the current working directory
         if ((chdir("/")) < 0)
@@ -1177,4 +1284,31 @@ pid_t DobbyRunC::forkExecRunC(const std::vector<const char*>& args,
     return pid;
 }
 
+// -----------------------------------------------------------------------------
+/**
+ *  @brief Reads file with pid of the container and converts it into pid_t
+ *  type variable.
+ *
+ *  @return container pid, -1 if failed
+ *
+ */
+pid_t DobbyRunC::readPidFile(const std::string pidFilePath) const
+{
+    const size_t maxLength = 64;
+    std::string pidFileContents = mUtilities->readTextFile(pidFilePath, maxLength);
+    if (pidFileContents.empty())
+    {
+        AI_LOG_INFO("failed to read pid file contents");
+        return -1;
+    }
 
+    char *endptr;
+    pid_t containerPid = static_cast<pid_t>(strtol(pidFileContents.c_str(), &endptr, 0));
+    if (endptr == pidFileContents.c_str())
+    {
+        AI_LOG_INFO("failed to to convert '%s' to a pid", pidFileContents.c_str());
+        return -1;
+    }
+
+    return containerPid;
+}

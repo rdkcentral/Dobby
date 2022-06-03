@@ -29,7 +29,6 @@
 #include "DobbyUtils.h"
 #include "DobbyIPCUtils.h"
 #include "DobbyWorkQueue.h"
-#include "DobbyState.h"
 
 #if defined(LEGACY_COMPONENTS)
 #  include "DobbyTemplate.h"
@@ -87,7 +86,6 @@ Dobby::Dobby(const std::string& dbusAddress,
     , mUtilities(std::make_shared<DobbyUtils>())
     , mIPCUtilities(std::make_shared<DobbyIPCUtils>(dbusAddress, ipcService))
     , mWorkQueue(new DobbyWorkQueue)
-    , mPluginWorkQueue(new DobbyWorkQueue)
     , mIpcService(ipcService)
     , mService(DOBBY_SERVICE)
     , mObjectPath(DOBBY_OBJECT)
@@ -162,7 +160,6 @@ Dobby::~Dobby()
 
     // shutdown the work queue
     mWorkQueue.reset();
-    mPluginWorkQueue.reset();
 
     AI_LOG_FN_EXIT();
 }
@@ -544,29 +541,6 @@ void Dobby::runWorkQueue() const
 
 // -----------------------------------------------------------------------------
 /**
- *  @brief Runs the Dobby work queue to handle API calls specific to plugin use
- */
-void Dobby::runPluginWorkQueue() const
-{
-    while (!mShutdown)
-    {
-        // run the event loop for 500ms, this is so we can poll on the SIGTERM
-        // signal monitor
-        mPluginWorkQueue->runFor(std::chrono::milliseconds(500));
-
-        // check for SIGTERM
-        if (mSigTerm != 0)
-        {
-            AI_LOG_INFO("detected SIGTERM, terminating daemon");
-            break;
-        }
-    }
-
-    return;
-}
-
-// -----------------------------------------------------------------------------
-/**
  *  @brief Issues a 'ready' signal over dbus and then blocks until either
  *  a shutdown request is received or SIGTERM
  *
@@ -588,15 +562,25 @@ void Dobby::run() const
         AI_LOG_ERROR("failed to emit 'ready' signal");
     }
 
-    // start thread for running the plugin work event loop
-    // we have a separate work event loop for the plugin dbus API so that we can
-    // call plugin methods from OCI hooks which are executing whilst a container
-    // launch method is still being processed, i.e. waiting for crun to finish
-    std::thread pluginWorker(&Dobby::runPluginWorkQueue, this);
-    pluginWorker.detach();
+#if USE_SYSTEMD
+    int ret = sd_notify(0, "READY=1");
+    if (ret < 0)
+    {
+        AI_LOG_WARN("Failed to notify systemd we're ready");
+    }
+#endif
 
     // run the work event loop
     runWorkQueue();
+
+    // Event loop is finished, we're shutting down
+#if USE_SYSTEMD
+    ret = sd_notify(0, "STOPPING=1");
+    if (ret < 0)
+    {
+        AI_LOG_WARN("Failed to notify systemd we're stopping");
+    }
+#endif
 
     AI_LOG_FN_EXIT();
 }
@@ -674,12 +658,6 @@ void Dobby::initIpcMethods()
         {   DOBBY_DEBUG_INTERFACE,       DOBBY_DEBUG_START_INPROCESS_TRACING,       &Dobby::startInProcessTracing  },
         {   DOBBY_DEBUG_INTERFACE,       DOBBY_DEBUG_STOP_INPROCESS_TRACING,        &Dobby::stopInProcessTracing   },
 #endif // defined(AI_ENABLE_TRACING)
-
-        {   DOBBY_RDKPLUGIN_INTERFACE,   DOBBY_RDKPLUGIN_GET_BRIDGE_CONNECTIONS,    &Dobby::getBridgeConnections   },
-        {   DOBBY_RDKPLUGIN_INTERFACE,   DOBBY_RDKPLUGIN_GET_ADDRESS,               &Dobby::getIpAddress           },
-        {   DOBBY_RDKPLUGIN_INTERFACE,   DOBBY_RDKPLUGIN_FREE_ADDRESS,              &Dobby::freeIpAddress          },
-        {   DOBBY_RDKPLUGIN_INTERFACE,   DOBBY_RDKPLUGIN_GET_EXT_IFACES,            &Dobby::getExtIfaces           },
-
     };
 
     // ... register them all
@@ -713,7 +691,9 @@ void Dobby::ping(std::shared_ptr<AI_IPC::IAsyncReplySender> replySender)
     AI_LOG_FN_ENTRY();
 
     // Not expecting any arguments
-    AI_LOG_INFO(DOBBY_ADMIN_METHOD_PING "()");
+    // Drop Ping() log messages down to debug so we can run Dobby at INFO level
+    // logging without spamming the log
+    AI_LOG_DEBUG(DOBBY_ADMIN_METHOD_PING "()");
 
     // Send an empty pong reply back
     AI_IPC::VariantList results;
@@ -759,7 +739,6 @@ void Dobby::shutdown(std::shared_ptr<AI_IPC::IAsyncReplySender> replySender)
 
     mShutdown = true;
     mWorkQueue->exit();
-    mPluginWorkQueue->exit();
 
     // Send an empty reply back
     AI_IPC::VariantList results;
@@ -1754,192 +1733,6 @@ void Dobby::getOCIConfig(std::shared_ptr<AI_IPC::IAsyncReplySender> replySender)
 }
 #endif // (AI_BUILD_TYPE == AI_DEBUG)
 
-
-// -----------------------------------------------------------------------------
-/**
- *  @brief Gets the number of connections open on the network bridge
- *
- */
-void Dobby::getBridgeConnections(std::shared_ptr<AI_IPC::IAsyncReplySender> replySender)
-{
-    AI_LOG_FN_ENTRY();
-
-    // Not expecting any arguments
-    AI_LOG_INFO(DOBBY_RDKPLUGIN_GET_BRIDGE_CONNECTIONS "()");
-
-    // Get bridge device connection count
-    auto doGetBridgeConnectionsLambda =
-        [manager = mManager, replySender]()
-        {
-            // Try and get bridge device connection count
-            int32_t connections = static_cast<int32_t>(manager->getBridgeConnections());
-
-            // Fire off the reply
-            replySender->sendReply({ connections });
-        };
-
-    // Queue the work, if successful then we're done
-    if (mPluginWorkQueue->postWork(std::move(doGetBridgeConnectionsLambda)))
-    {
-        AI_LOG_FN_EXIT();
-        return;
-    }
-
-    // Fire off an error reply
-    AI_IPC::VariantList results = { -1 };
-    if (!replySender->sendReply(results))
-    {
-        AI_LOG_ERROR("failed to send reply");
-    }
-
-    AI_LOG_FN_EXIT();
-}
-
-
-// -----------------------------------------------------------------------------
-/**
- *  @brief Gets the ip address from the address pool and assigns the given veth
- *  name to the address.
- *
- */
-void Dobby::getIpAddress(std::shared_ptr<AI_IPC::IAsyncReplySender> replySender)
-{
-    AI_LOG_FN_ENTRY();
-
-    // Expecting a single arg:  (string vethName)
-    std::string vethName;
-    if (!AI_IPC::parseVariantList
-        <std::string>
-        (replySender->getMethodCallArguments(), &vethName))
-    {
-        AI_LOG_ERROR("error getting the args");
-    }
-    else
-    {
-        AI_LOG_INFO(DOBBY_RDKPLUGIN_GET_ADDRESS "('%s', ...)", vethName.c_str());
-
-        // Get an ip address from the pool
-        auto doGetIpAddressLambda =
-            [manager = mManager, veth = std::move(vethName), replySender]()
-            {
-                // Try and get ip address
-                uint32_t result = manager->getIpAddress(veth);
-
-                // Fire off the reply
-                replySender->sendReply({ result });
-            };
-
-        // Queue the work, if successful then we're done
-        if (mPluginWorkQueue->postWork(std::move(doGetIpAddressLambda)))
-        {
-            AI_LOG_FN_EXIT();
-            return;
-        }
-    }
-
-    // Fire back an error reply
-    if (!replySender->sendReply({ false }))
-    {
-        AI_LOG_ERROR("failed to send reply");
-    }
-
-    AI_LOG_FN_EXIT();
-}
-
-
-// -----------------------------------------------------------------------------
-/**
- *  @brief Frees the given ip address back to the address pool.
- *
- */
-void Dobby::freeIpAddress(std::shared_ptr<AI_IPC::IAsyncReplySender> replySender)
-{
-    AI_LOG_FN_ENTRY();
-
-    // Expecting a single arg:  (uint32_t address)
-    uint32_t address;
-    if (!AI_IPC::parseVariantList
-            <uint32_t>
-            (replySender->getMethodCallArguments(), &address))
-    {
-        AI_LOG_ERROR("error getting the args");
-    }
-    else
-    {
-        AI_LOG_INFO(DOBBY_RDKPLUGIN_FREE_ADDRESS "('%d')", address);
-
-        // Return the ip address to the address pool
-        auto doFreeIpAddressLambda =
-            [manager = mManager, address, replySender]()
-            {
-                // Try and free ip address
-                bool success = manager->freeIpAddress(address);
-
-                // Fire off the reply
-                replySender->sendReply({ success });
-            };
-
-        // Queue the work, if successful then we're done
-        if (mPluginWorkQueue->postWork(std::move(doFreeIpAddressLambda)))
-        {
-            AI_LOG_FN_EXIT();
-            return;
-        }
-    }
-
-    // Fire off an error reply
-    if (!replySender->sendReply({ false }))
-    {
-        AI_LOG_ERROR("failed to send reply");
-    }
-
-    AI_LOG_FN_EXIT();
-}
-
-
-// -----------------------------------------------------------------------------
-/**
- *  @brief Gets the external interfaces assigned in Dobby settings.
- *
- *
- *
- */
-void Dobby::getExtIfaces(std::shared_ptr<AI_IPC::IAsyncReplySender> replySender)
-{
-    AI_LOG_FN_ENTRY();
-
-    // Not expecting any arguments
-    AI_LOG_INFO(DOBBY_RDKPLUGIN_GET_EXT_IFACES "()");
-
-    // Get external interfaces from Dobby settings
-    auto doGetExtIfacesLambda =
-        [manager = mManager, replySender]()
-        {
-            // Try and get external interfaces
-            std::vector<std::string> extIfaces = manager->getExtIfaces();
-
-            // Fire off the reply
-            replySender->sendReply({ extIfaces });
-        };
-
-    // Queue the work, if successful then we're done
-    if (mPluginWorkQueue->postWork(std::move(doGetExtIfacesLambda)))
-    {
-        AI_LOG_FN_EXIT();
-        return;
-    }
-
-    // Fire off an error reply
-    AI_IPC::VariantList results = { std::vector<std::string>() };
-    if (!replySender->sendReply(results))
-    {
-        AI_LOG_ERROR("failed to send reply");
-    }
-
-    AI_LOG_FN_EXIT();
-}
-
-
 #if defined(AI_ENABLE_TRACING)
 // -----------------------------------------------------------------------------
 /**
@@ -2079,6 +1872,57 @@ void Dobby::onContainerStopped(int32_t cd, const ContainerId& id, int status)
 }
 
 #if defined(RDK) && defined(USE_SYSTEMD)
+#define WATCHDOG_TIMEOUT_SEC 10L
+#define WATCHDOG_UPDATE_SEC  (WATCHDOG_TIMEOUT_SEC/2)
+#define HIGH_USAGE_TIME_SEC  120L
+
+// -----------------------------------------------------------------------------
+/**
+ *  @brief This function should be run as a thread for wagging watchdog
+ *
+ *  As on some platforms we expirienced heavy load from unidentified source
+ *  Dobby got shut down by the watchdog. It is hard to pinpoint which process
+ *  is taking those resources, but it looks like this happens during boot-up.
+ *  This function if run as a separate thread will work around the problem by
+ *  creating high priority watchdog wagger for the time period where the
+ *  issue exists. During this time there will be 2 concurrent wagging procedures,
+ *  but this doesn't harm.
+ *  We should delete this code when we find out the real offender.
+ *
+ */
+void wagWatchdogHeavyLoad()
+{
+    struct timespec wag_period, remaining;
+    int ping_count;
+
+    // set the lowest priority of real time policy
+    struct sched_param sp;
+    sp.sched_priority = sched_get_priority_min(SCHED_RR);
+    int ret;
+
+    ret = sched_setscheduler(0, SCHED_RR, &sp);
+    if (ret == -1) {
+        AI_LOG_ERROR("Couldn't schedule real time priority for wagWatchdogHeavyLoad");
+        return;
+    }
+
+    pthread_setname_np(pthread_self(), "DOBBY_WATCHDOG");
+
+    for (ping_count = HIGH_USAGE_TIME_SEC/WATCHDOG_UPDATE_SEC; ping_count > 0; ping_count--)
+    {
+        wag_period.tv_sec = WATCHDOG_UPDATE_SEC;
+        wag_period.tv_nsec = 0L;
+
+        // wait for desired time
+        while(nanosleep(&wag_period, &remaining) && errno==EINTR){
+            wag_period=remaining;
+        }
+
+        // We probably shouldn't log fails inside here, as logger could be blocked.
+        sd_notify(0, "WATCHDOG=1");
+    }
+}
+
 // -----------------------------------------------------------------------------
 /**
  *  @brief Starts a timer to ping ourselves over dbus to send a watchdog
@@ -2116,6 +1960,10 @@ void Dobby::initWatchdog()
         mUtilities->startTimer(std::chrono::microseconds(usecTimeout),
                                 false,
                                 std::bind(&Dobby::onWatchdogTimer, this));
+
+    // Run heavy load wagger thread
+    std::thread wagger(wagWatchdogHeavyLoad);
+    wagger.detach();
 
     AI_LOG_FN_EXIT();
 }

@@ -26,6 +26,8 @@
 #include "IDobbyRdkPlugin.h"
 #include "DobbyRdkPluginUtils.h"
 
+#include "IPollLoop.h"
+
 #include "rt_dobby_schema.h"
 
 #include <Logging.h>
@@ -48,20 +50,9 @@ public:
     virtual ~IDobbyRdkLoggingPlugin() = default;
 
 public:
-    struct ContainerInfo
-    {
-        // Actual pid of the running container
-        pid_t containerPid;
-        // fd of the open connection so we can close it when the container exits
-        int connectionFd;
-        // fd of the container pseudo-terminal master fd
-        int pttyFd;
-    };
+    virtual void RegisterPollSources(int fd, std::shared_ptr<AICommon::IPollLoop> pollLoop) = 0;
 
-    virtual void LoggingLoop(ContainerInfo containerInfo,
-                             const bool isBuffer,
-                             const bool createNew,
-                             const std::atomic_bool& cancellationToken) = 0;
+    virtual void DumpToLog(const int bufferFd) = 0;
 };
 
 // -----------------------------------------------------------------------------

@@ -37,8 +37,6 @@
 #include <string>
 #include <memory>
 
-class ThunderSecurityAgent;
-
 // -----------------------------------------------------------------------------
 /**
  *  @class ThunderPlugin
@@ -95,6 +93,7 @@ private:
     std::string constructACCEPTRule(const std::string &containerIp,
                                     const std::string &vethName,
                                     in_port_t port) const;
+    bool isNatNetworkMode() const;
 
 private:
     const std::string mName;

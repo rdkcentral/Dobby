@@ -63,6 +63,14 @@ public:
         Stopped
     };
 
+    struct ContainerListItem
+    {
+        ContainerId id;
+        pid_t pid;
+        std::string bundlePath;
+        ContainerStatus status;
+    };
+
 public:
     std::pair<pid_t, pid_t> create(const ContainerId &id,
                                    const std::shared_ptr<const DobbyBundle> &bundle,
@@ -72,7 +80,7 @@ public:
 
     bool destroy(const ContainerId &id, const std::shared_ptr<const IDobbyStream> &console, bool force = false) const;
     bool start(const ContainerId &id, const std::shared_ptr<const IDobbyStream> &console) const;
-    bool kill(const ContainerId &id, int signal, bool all = false) const;
+    bool killCont(const ContainerId &id, int signal, bool all = false) const;
     bool pause(const ContainerId &id) const;
     bool resume(const ContainerId &id) const;
     std::pair<pid_t, pid_t> exec(const ContainerId &id,
@@ -80,7 +88,7 @@ public:
                                  const std::string &command) const;
 
     ContainerStatus state(const ContainerId &id) const;
-    std::map<ContainerId, ContainerStatus> list() const;
+    std::list<ContainerListItem> list() const;
 
 public:
     pid_t run(const ContainerId &id,
@@ -97,6 +105,8 @@ private:
                        const std::list<int> &files = std::list<int>(),
                        const std::shared_ptr<const IDobbyStream> &stdoutStream = nullptr,
                        const std::shared_ptr<const IDobbyStream> &stderrStream = nullptr) const;
+
+    pid_t readPidFile(const std::string pidFilePath) const;
 
     ContainerStatus getContainerStatusFromJson(const Json::Value &state) const;
 

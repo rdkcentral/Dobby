@@ -33,6 +33,7 @@
 #include <sys/timerfd.h>
 #include <sys/epoll.h>
 
+#include <algorithm>
 #include <thread>
 #include <mutex>
 #include <list>
@@ -328,9 +329,11 @@ bool PollLoop::modSource(const std::shared_ptr<IPollSource>& source, uint32_t ev
  * the events.
  *
  * @param[in]  source   The source object to remove from the poll loop.
+ * @param[in]  fd       (Optional) If the same source has been registered for multiple
+ *                      fds, only remove the source for this specific fd
  *
  */
-void PollLoop::delSource(const std::shared_ptr<IPollSource>& source)
+void PollLoop::delSource(const std::shared_ptr<IPollSource>& source, int fd /*= -1*/)
 {
     AI_LOG_FN_ENTRY();
 
@@ -341,7 +344,7 @@ void PollLoop::delSource(const std::shared_ptr<IPollSource>& source)
     std::list<PollSourceWrapper>::iterator it = mSources.begin();
     for (; it != mSources.end(); ++it)
     {
-        if (it->source.lock() == source)
+        if (it->source.lock() == source && (it->fd == fd || fd < 0))
         {
             // decrement the list of deferred sources if set
             if (it->events & EPOLLDEFERRED)
@@ -374,6 +377,37 @@ void PollLoop::delSource(const std::shared_ptr<IPollSource>& source)
     return;
 }
 
+
+// -----------------------------------------------------------------------------
+/**
+ * @brief Returns true if the specified source is currently installed in the
+ * pollLoop
+ *
+ * @param[in]  source   The source object to search for in the pollLoop
+ *
+ * @return True if source installed
+ *
+ */
+bool PollLoop::hasSource(const std::shared_ptr<IPollSource>& source)
+{
+    AI_LOG_FN_ENTRY();
+
+    std::lock_guard<Spinlock> locker(mLock);
+
+    if (source == nullptr)
+    {
+        return false;
+    }
+
+    auto it = std::find_if(mSources.begin(), mSources.end(), [&source](const auto& pollSource)
+    {
+        return source == pollSource.source.lock();
+    });
+
+    AI_LOG_FN_EXIT();
+
+    return it != mSources.end();
+}
 
 // -----------------------------------------------------------------------------
 /**
@@ -615,8 +649,8 @@ void PollLoop::run(const std::string& name, int priority)
 
 
     // Map of all the sources that we're triggered in one epoll cycle
-    std::map<std::shared_ptr<IPollSource>, uint32_t> triggered;
-    std::map<std::shared_ptr<IPollSource>, uint32_t>::iterator trigItor;
+    std::map<std::shared_ptr<IPollSource>, epoll_event> triggered;
+    std::map<std::shared_ptr<IPollSource>, epoll_event>::iterator trigItor;
 
     std::list<PollSourceWrapper>::const_iterator srcItor;
 
@@ -673,7 +707,10 @@ void PollLoop::run(const std::string& name, int priority)
                         std::shared_ptr<IPollSource> source = srcItor->source.lock();
                         if (source)
                         {
-                            triggered[source] |= EPOLLDEFERRED;
+                            triggered[source] = {
+                                .events = EPOLLDEFERRED,
+                                .data = event->data
+                            };
                         }
                     }
                 }
@@ -698,7 +735,10 @@ void PollLoop::run(const std::string& name, int priority)
                             std::shared_ptr<IPollSource> source = srcItor->source.lock();
                             if (source)
                             {
-                                triggered[source] |= event->events;
+                                triggered[source] = {
+                                    .events = event->events,
+                                    .data = event->data
+                                };
                             }
                             else
                             {

@@ -2,7 +2,7 @@
 * If not stated otherwise in this file or this component's LICENSE file the
 * following copyright and licenses apply:
 *
-* Copyright 2020 Sky UK
+* Copyright 2022 Sky UK
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -20,8 +20,10 @@
 #include "LoopMountDetails.h"
 #include "StorageHelper.h"
 #include "DobbyRdkPluginUtils.h"
+#include "RefCountFile.h"
+#include "RefCountFileLock.h"
 
-
+#include <fstream>
 #include <stdio.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -41,7 +43,7 @@
 
 // Loop mount details class
 LoopMountDetails::LoopMountDetails(const std::string& rootfsPath,
-                                   const LoopMount& mount,
+                                   const LoopMountProperties& mount,
                                    const uid_t& userId,
                                    const gid_t& groupId,
                                    const std::shared_ptr<DobbyRdkPluginUtils> &utils)
@@ -52,8 +54,8 @@ LoopMountDetails::LoopMountDetails(const std::string& rootfsPath,
 {
     AI_LOG_FN_ENTRY();
 
-    mMountPointOutsideContainer = rootfsPath + mount.destination;
-    mTempMountPointOutsideContainer = mMountPointOutsideContainer + ".temp";
+    mMountPointInsideContainer = rootfsPath + mount.destination;
+    mTempMountPointOutsideContainer = mMountPointInsideContainer + ".temp";
 
     AI_LOG_FN_EXIT();
 }
@@ -97,13 +99,34 @@ bool LoopMountDetails::onPreCreate()
         return false;
     }
 
-    // step 2 - try and open the source file and attach to a space loop device
-    std::string loopDevice;
-    int loopDevFd = StorageHelper::attachLoopDevice(mMount.fsImagePath, &loopDevice);
-    if ((loopDevFd < 0) || (loopDevice.empty()))
+    // Open reference count file and lock it
+    auto refCountFile = getRefCountFile();
+    if (!refCountFile)
     {
-        AI_LOG_ERROR("failed to attach file to loop device");
         return false;
+    }
+    RefCountFileLock lock(refCountFile);
+
+    // step 2 - check if loop device already exists, otherwise open the source file
+    // and attach to a space loop device 
+    std::string loopDevice = StorageHelper::getLoopDevice(mMount.fsImagePath);
+    int loopDevFd(-1);
+
+    if (loopDevice.empty())
+    {
+        loopDevFd = StorageHelper::attachLoopDevice(mMount.fsImagePath, &loopDevice);
+        if ((loopDevFd < 0) || (loopDevice.empty()))
+        {
+            AI_LOG_ERROR("failed to attach file to loop device");
+            return false;
+        }
+
+        // Reset the reference count if it isn't 0 (shouldn't happen)
+        refCountFile->Reset();
+    }
+    else
+    {
+        AI_LOG_DEBUG("loop device (%s) already attached to %s", loopDevice.c_str(), mMount.fsImagePath.c_str());
     }
 
     // step 3 - do the loop mount in a temporary location within the rootfs
@@ -111,16 +134,18 @@ bool LoopMountDetails::onPreCreate()
 
     // step 4 - close the loop device, if the mount succeeded then the file
     // will remain associated with the loop device until it's unmounted
-    if (close(loopDevFd) != 0)
+    if (loopDevFd >= 0 && close(loopDevFd) != 0)
     {
         AI_LOG_SYS_ERROR(errno, "failed to close loop device dir");
         return false;
     }
 
+    // Increment reference count for loop device
+    refCountFile->Increment();
+
     AI_LOG_FN_EXIT();
     return success;
 }
-
 
 // -----------------------------------------------------------------------------
 /**
@@ -137,13 +162,12 @@ bool LoopMountDetails::doLoopMount(const std::string& loopDevice)
 
     bool status = false;
 
-    // step 1 - create directories within the rootfs
     if (!DobbyRdkPluginUtils::mkdirRecursive(mTempMountPointOutsideContainer, 0755))
     {
         // logging already provided by mkdirRecursive
         return false;
     }
-    else if (!DobbyRdkPluginUtils::mkdirRecursive(mMountPointOutsideContainer, 0755))
+    else if (!DobbyRdkPluginUtils::mkdirRecursive(mMountPointInsideContainer, 0755))
     {
         // logging already provided by mkdirRecursive
         return false;
@@ -163,7 +187,7 @@ bool LoopMountDetails::doLoopMount(const std::string& loopDevice)
 
     // step 3 - mount loop device to temporary location
     if (mount(loopDevice.c_str(), mTempMountPointOutsideContainer.c_str(),
-            mMount.fsImageType.c_str(), mMount.mountFlags, mountData.data()) != 0)
+              mMount.fsImageType.c_str(), mMount.mountFlags, mountData.data()) != 0)
     {
         AI_LOG_SYS_ERROR(errno, "failed to mount '%s' @ '%s'",
                         loopDevice.c_str(), mTempMountPointOutsideContainer.c_str());
@@ -248,12 +272,12 @@ bool LoopMountDetails::remountTempDirectory()
     bool success = false;
 
     if (mount(mTempMountPointOutsideContainer.c_str(),
-                mMountPointOutsideContainer.c_str(),
+                mMountPointInsideContainer.c_str(),
                 "", MS_BIND, nullptr) != 0)
     {
         AI_LOG_SYS_ERROR(errno, "failed to bind mount '%s' -> '%s'",
                             mTempMountPointOutsideContainer.c_str(),
-                            mMountPointOutsideContainer.c_str());
+                            mMountPointInsideContainer.c_str());
     }
     else
     {
@@ -277,8 +301,6 @@ bool LoopMountDetails::cleanupTempDirectory()
 
     bool success = false;
 
-    // now that the namespaces have forked off, unmount this from outside of the
-    // container namespace won't affect it's mounting inside the container.
     if (umount2(mTempMountPointOutsideContainer.c_str(), UMOUNT_NOFOLLOW) != 0)
     {
         AI_LOG_SYS_ERROR(errno, "failed to unmount '%s'",
@@ -317,29 +339,67 @@ bool LoopMountDetails::removeNonPersistentImage()
 
     bool success = true;
 
-    // There could be situation where container was created but not started, as
-    // the cleanup is done after container start it would mean that we could
-    // left temp directories mounted. As postStop is done always we need to
-    // check if we have already cleaned up, and if not then clean temp.
-    if (access(mTempMountPointOutsideContainer.c_str(), F_OK) != -1)
+    auto refCountFile = getRefCountFile();
+
+    if (refCountFile)
     {
-        success = cleanupTempDirectory();
+        RefCountFileLock lock(refCountFile);
+        refCountFile->Decrement();
+
+        if (!mMount.persistent)
+        {
+            if (unlink(mMount.fsImagePath.c_str()))
+            {
+                AI_LOG_SYS_ERROR(errno, "failed to delete image file @ '%s'",
+                                mMount.fsImagePath.c_str());
+                success = false;
+            }
+            else
+            {
+                AI_LOG_DEBUG("Unlinked successfully @ '%s'", mMount.fsImagePath.c_str());
+            }
+        }
+    }
+    else
+    {
+        success = false;
+    }
+    
+    AI_LOG_FN_EXIT();
+    return success;
+}
+
+// -----------------------------------------------------------------------------
+/**
+ *  @brief Open the reference count file for the data.img file.
+ *
+ *  @return unique_ptr to reference count file, nullptr on failure.
+ */
+std::unique_ptr<RefCountFile> LoopMountDetails::getRefCountFile()
+{
+    AI_LOG_FN_ENTRY();
+
+    struct stat file_stat;
+    int ret = stat(mMount.fsImagePath.c_str(), &file_stat);
+
+    if (ret < 0)
+    {  
+        AI_LOG_ERROR("failed to get file stat for file '%s'",
+                     mMount.fsImagePath.c_str());
+        return nullptr;
     }
 
-    if (!mMount.persistent)
+    // Create reference count file based on unique inode of data.img file
+    std::string refCountFilePath = std::string("/tmp/dobbyLoopDeviceRef_") + std::to_string(file_stat.st_ino);
+    auto refCountFile = std::make_unique<RefCountFile>(refCountFilePath);
+
+    if (!refCountFile->IsOpen())
     {
-        if (unlink(mMount.fsImagePath.c_str()))
-        {
-            AI_LOG_SYS_ERROR(errno, "failed to delete image file @ '%s'",
-                             mMount.fsImagePath.c_str());
-            success = false;
-        }
-        else
-        {
-            AI_LOG_DEBUG("Unlinked successfully @ '%s'", mMount.fsImagePath.c_str());
-        }
+        AI_LOG_ERROR("failed to open reference count file '%s'",
+                     refCountFile->GetFilePath().c_str());
+        return nullptr;
     }
 
     AI_LOG_FN_EXIT();
-    return success;
+    return refCountFile;
 }

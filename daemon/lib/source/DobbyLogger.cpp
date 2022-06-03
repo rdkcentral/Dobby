@@ -26,10 +26,13 @@
 #include <termios.h>
 #include <future>
 #include <chrono>
+#include <fcntl.h>
 
 DobbyLogger::DobbyLogger(const std::shared_ptr<const IDobbySettings> &settings)
     : mSocketPath(settings->consoleSocketPath()),
-      mCancellationToken(ATOMIC_VAR_INIT(false))
+      mSyslogSocketPath(settings->logRelaySettings().syslogSocketPath),
+      mJournaldSocketPath(settings->logRelaySettings().journaldSocketPath),
+      mPollLoop(std::make_shared<AICommon::PollLoop>("DobbyLogger"))
 {
     AI_LOG_FN_ENTRY();
 
@@ -44,6 +47,40 @@ DobbyLogger::DobbyLogger(const std::shared_ptr<const IDobbySettings> &settings)
         AI_LOG_ERROR("Failed to create logging socket");
     }
 
+    // Determine if we should enable the log relay
+    auto logRelaySettings = settings->logRelaySettings();
+
+    if (logRelaySettings.syslogEnabled)
+    {
+        if (!mSyslogSocketPath.empty())
+        {
+            // Set up syslog relay
+            mSyslogRelay = std::make_unique<DobbyLogRelay>(mSyslogSocketPath, "/dev/log");
+            mSyslogRelay->addToPollLoop(mPollLoop);
+        }
+        else
+        {
+            AI_LOG_WARN("Syslog relay enabled but no socket path set in settings");
+        }
+    }
+
+    if (logRelaySettings.journaldEnabled)
+    {
+        if (!mJournaldSocketPath.empty())
+        {
+            // Set up journald relay
+            mJournaldRelay = std::make_unique<DobbyLogRelay>(mJournaldSocketPath, "/run/systemd/journal/socket");
+            mJournaldRelay->addToPollLoop(mPollLoop);
+        }
+        else
+        {
+            AI_LOG_WARN("Journald relay enabled but no socket path set in settings");
+        }
+    }
+
+    // Start poll loop
+    mPollLoop->start();
+
     // Monitor that socket for new connections
     std::thread socketConnectionMonitor(&DobbyLogger::connectionMonitorThread, this, mSocketFd);
     socketConnectionMonitor.detach();
@@ -55,11 +92,26 @@ DobbyLogger::~DobbyLogger()
 {
     AI_LOG_FN_ENTRY();
 
-    // Clean up when we're done
-    if (unlink(mSocketPath.c_str()))
+    // Container loggers should remove themselves from the poll loop, but it doesn't really
+    // matter since if this class is being destructed the whole daemon is almost certainly
+    // shutting down
+    if (mJournaldRelay)
     {
-        AI_LOG_SYS_ERROR(errno, "Failed to remove socket at '%s'", mSocketPath.c_str());
+        mJournaldRelay->removeFromPollLoop(mPollLoop);
     }
+    if (mSyslogRelay)
+    {
+        mSyslogRelay->removeFromPollLoop(mPollLoop);
+    }
+    mPollLoop->stop();
+
+    //  Close all our open sockets
+    if (shutdown(mSocketFd, SHUT_RDWR) < 0)
+    {
+        AI_LOG_SYS_WARN(errno, "Failed to shutdown socket %s", mSocketPath.c_str());
+    }
+
+    closeAndDeleteSocket(mSocketFd, mSocketPath);
 
     AI_LOG_FN_EXIT();
 }
@@ -166,6 +218,11 @@ int DobbyLogger::receiveFdFromSocket(const int connectionFd)
     // Get the fd sent by crun
     int stdioFd;
     memcpy(&stdioFd, CMSG_DATA(cmsg), sizeof(stdioFd));
+
+    // Put the fd into non-blocking mode
+    int flags = fcntl(stdioFd, F_GETFL, 0);
+    fcntl(stdioFd, F_SETFL, flags | O_NONBLOCK);
+
     return stdioFd;
 }
 
@@ -179,7 +236,7 @@ void DobbyLogger::connectionMonitorThread(const int socketFd)
 {
     AI_LOG_FN_ENTRY();
 
-    pthread_setname_np(pthread_self(), "DOBBY_LOGGER_CONNECTION_MONITOR");
+    pthread_setname_np(pthread_self(), "DOBBY_LOG_MON");
 
     AI_LOG_INFO("Dobby Logger socket monitoring thread started");
 
@@ -195,17 +252,16 @@ void DobbyLogger::connectionMonitorThread(const int socketFd)
         int connection = TEMP_FAILURE_RETRY(accept(socketFd, NULL, NULL));
         if (connection < 0)
         {
-            // If we're shutting down, this is expected
-            if (mCancellationToken)
+            // If the socket we were listening on is no longer valid,
+            // stop the thread (Dobby daemon is probably shutting down)
+            if (fcntl(socketFd, F_GETFD) == -1)
             {
                 return;
             }
-            else
-            {
-                AI_LOG_SYS_ERROR(errno, "Error accepting connection");
-                break;
-            }
 
+            // TODO:: Spurious log message when daemon shutting down
+            AI_LOG_SYS_ERROR(errno, "Error accepting connection");
+            break;
         }
 
         struct ucred conCredentials = {};
@@ -220,7 +276,7 @@ void DobbyLogger::connectionMonitorThread(const int socketFd)
         int containerStdioFd = receiveFdFromSocket(connection);
         if (containerStdioFd < 0)
         {
-            AI_LOG_INFO("Couldn't extract FD from message - closing connection");
+            AI_LOG_INFO("Couldn't extract container tty FD from message");
             close(connection);
             continue;
         }
@@ -243,115 +299,19 @@ void DobbyLogger::connectionMonitorThread(const int socketFd)
             }
         }
 
+        // Done with the connection now, we can close it
+        if (close(connection) < 0)
+        {
+            AI_LOG_SYS_WARN(errno, "Failed to close connection");
+        }
+
         std::lock_guard<std::mutex> locker(mLock);
 
-        IDobbyRdkLoggingPlugin::ContainerInfo info{
-            -1, // Unknown at this point as container isn't running
-            connection,
-            containerStdioFd};
-
-        mTempConnections.insert(std::make_pair(conCredentials.pid, info));
+        mTempFds.insert(std::make_pair(conCredentials.pid, containerStdioFd));
         AI_LOG_INFO("New logging socket connection from PID %d", conCredentials.pid);
     }
 
     AI_LOG_FN_EXIT();
-}
-
-/**
- * @brief Stops all logging threads
- */
-void DobbyLogger::ShutdownLoggers()
-{
-    AI_LOG_FN_ENTRY();
-
-    AI_LOG_INFO("Currently %lu logging threads running. Sending cancellation request", mFutures.size());
-
-    mCancellationToken = true;
-
-    // Close the Pty socket
-    if (shutdown(mSocketFd, SHUT_RDWR) < 0)
-    {
-        AI_LOG_SYS_WARN(errno, "Failed to shutdown socket %d", mSocketFd);
-    }
-
-    if (close(mSocketFd) < 0)
-    {
-        AI_LOG_SYS_WARN(errno, "Failed to close socket %d", mSocketFd);
-    }
-
-
-    // Go through and wait for all futures to end
-    for(const auto& future : mFutures)
-    {
-        if (!future.second.valid())
-        {
-            AI_LOG_INFO("Invalid future");
-            continue;
-        }
-
-        AI_LOG_INFO("Logging thread for PID %d is running, waiting for it to finish...", future.first);
-        std::chrono::seconds duration(1);
-        auto status = future.second.wait_for(duration);
-
-        if (status == std::future_status::ready)
-        {
-            AI_LOG_INFO("Logging thread finished");
-        }
-        else
-        {
-            AI_LOG_WARN("Logging thread did not complete in allocated time");
-        }
-    }
-
-    mFutures.clear();
-
-    return;
-}
-
-/**
- * @brief If the logging thread for the container with PID containerPid is
- * still running, wait for up to 2 seconds for it to finish flushing it's
- * logs to prevent Dobby from freeing resources before the logging has finished
- *
- * @param[id] containerPid  PID of the container to check the logging thread for
- */
-void DobbyLogger::WaitForLoggingToFinish(pid_t containerPid)
-{
-    std::lock_guard<std::mutex> locker(mLock);
-
-    // Find the running thread
-    auto it = mFutures.find(containerPid);
-
-    if (it == mFutures.end())
-    {
-        AI_LOG_WARN("Cannot find logging thread for container %d", containerPid);
-        return;
-    }
-
-    std::future<void> ft = std::move(it->second);
-
-    if (!ft.valid())
-    {
-        AI_LOG_ERROR("Logging thread found but future is invalid. Weird.");
-        return;
-    }
-
-    // Wait for up to 2 seconds for the logging thread to finish
-    AI_LOG_INFO("Logging thread for PID %d is running, waiting for it to finish...", containerPid);
-    std::chrono::seconds duration(2);
-    auto status = ft.wait_for(duration);
-
-    if (status == std::future_status::ready)
-    {
-        AI_LOG_INFO("Logging thread finished");
-    }
-    else
-    {
-        AI_LOG_WARN("Logging thread did not complete in allocated time");
-    }
-
-    // Delete the future from the map
-    mFutures.erase(it);
 }
 
 /**
@@ -363,31 +323,27 @@ void DobbyLogger::WaitForLoggingToFinish(pid_t containerPid)
  * @param[in] runtimePid    PID of the OCI runtime that connected to the socket
  * @param[in] containerPid  PID of the running container
  * @param[in] loggingPlugin Plugin that will process the container logs
- * @param[in] createNewLog  If true, create a new, empty logfile if applicable
  *
  * @return True if thread started successfully
  */
 bool DobbyLogger::StartContainerLogging(std::string containerId,
                                         pid_t runtimePid,
                                         pid_t containerPid,
-                                        std::shared_ptr<IDobbyRdkLoggingPlugin> loggingPlugin,
-                                        const bool createNewLog)
+                                        std::shared_ptr<IDobbyRdkLoggingPlugin> loggingPlugin)
 {
     AI_LOG_FN_ENTRY();
 
-    std::lock_guard<std::mutex> locker(mLock);
-
     AI_LOG_INFO("Configuring logging for container '%s' (pid: %d)", containerId.c_str(), containerPid);
 
+    std::lock_guard<std::mutex> locker(mLock);
+
     // Is the console socket connected?
-    auto it = mTempConnections.find(runtimePid);
-    if (it == mTempConnections.end())
+    auto it = mTempFds.find(runtimePid);
+    if (it == mTempFds.end())
     {
         AI_LOG_WARN("Cannot configure logging for container %s - not connected to socket", containerId.c_str());
         return false;
     }
-
-    it->second.containerPid = containerPid;
 
     if (!loggingPlugin)
     {
@@ -395,26 +351,10 @@ bool DobbyLogger::StartContainerLogging(std::string containerId,
         return false;
     }
 
-    // Create a task to run the logging thread
-    std::packaged_task<void(IDobbyRdkLoggingPlugin::ContainerInfo, bool, bool, std::atomic_bool&)> loggingTask(std::bind(
-        &IDobbyRdkLoggingPlugin::LoggingLoop,
-        loggingPlugin,
-        std::placeholders::_1,
-        std::placeholders::_2,
-        std::placeholders::_3,
-        std::placeholders::_4));
+    // Logging plugin should now register poll sources on the epoll loop
+    loggingPlugin->RegisterPollSources(it->second, mPollLoop);
 
-    std::future<void> result = loggingTask.get_future();
-    // Actually start the thread
-    std::thread thread = std::thread(std::move(loggingTask), it->second, false, createNewLog, std::ref(mCancellationToken));
-    // Thread is long running and we shouldn't block - detach it
-    thread.detach();
-
-    mFutures.insert(std::make_pair(containerPid, std::move(result)));
-
-    // Thread is up and running, don't need to track the connection any more
-    // as thread can detect when the container closes and clean up
-    mTempConnections.erase(it);
+    mTempFds.erase(it);
 
     AI_LOG_FN_EXIT();
     return true;
@@ -434,8 +374,7 @@ bool DobbyLogger::StartContainerLogging(std::string containerId,
  */
 bool DobbyLogger::DumpBuffer(int bufferMemFd,
                              pid_t containerPid,
-                             std::shared_ptr<IDobbyRdkLoggingPlugin> loggingPlugin,
-                             const bool createNewLog)
+                             std::shared_ptr<IDobbyRdkLoggingPlugin> loggingPlugin)
 {
     AI_LOG_FN_ENTRY();
 
@@ -448,11 +387,6 @@ bool DobbyLogger::DumpBuffer(int bufferMemFd,
         return false;
     }
 
-    IDobbyRdkLoggingPlugin::ContainerInfo info{
-        containerPid,
-        -1, // No open connection that will need closing
-        bufferMemFd};
-
     // Actually do the logging
     if (!loggingPlugin)
     {
@@ -460,8 +394,26 @@ bool DobbyLogger::DumpBuffer(int bufferMemFd,
         return false;
     }
 
-    loggingPlugin->LoggingLoop(info, true, createNewLog, false);
+    loggingPlugin->DumpToLog(bufferMemFd);
 
     AI_LOG_FN_EXIT();
     return true;
+}
+
+/**
+ * @brief Closes and deletes a socket at a given fd/path
+ */
+void DobbyLogger::closeAndDeleteSocket(const int fd, const std::string &path)
+{
+    if (close(fd) < 0)
+    {
+        AI_LOG_SYS_WARN(errno, "Failed to close socket %d", fd);
+    }
+
+    if (unlink(path.c_str()))
+    {
+        AI_LOG_SYS_ERROR(errno, "Failed to remove socket at '%s'", path.c_str());
+    }
+
+    return;
 }

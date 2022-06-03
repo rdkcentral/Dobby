@@ -36,8 +36,10 @@
 #include <iostream>
 #include <map>
 
-DobbyRdkPluginUtils::DobbyRdkPluginUtils(const std::shared_ptr<rt_dobby_schema> &cfg)
+DobbyRdkPluginUtils::DobbyRdkPluginUtils(const std::shared_ptr<rt_dobby_schema> &cfg,
+                                        const std::string& containerId)
     : mConf(cfg)
+    , mContainerId(containerId)
 {
     AI_LOG_FN_ENTRY();
 
@@ -45,19 +47,11 @@ DobbyRdkPluginUtils::DobbyRdkPluginUtils(const std::shared_ptr<rt_dobby_schema> 
 }
 
 DobbyRdkPluginUtils::DobbyRdkPluginUtils(const std::shared_ptr<rt_dobby_schema> &cfg,
-                                         const std::shared_ptr<IDobbyStartState> &startState)
+                                         const std::shared_ptr<IDobbyStartState> &startState,
+                                         const std::string& containerId)
     : mConf(cfg)
     , mStartState(startState)
-{
-    AI_LOG_FN_ENTRY();
-
-    AI_LOG_FN_EXIT();
-}
-
-DobbyRdkPluginUtils::DobbyRdkPluginUtils(const std::shared_ptr<rt_dobby_schema> &cfg,
-                                         const std::shared_ptr<const rt_state_schema> &state)
-    : mConf(cfg)
-    , mState(state)
+    , mContainerId(containerId)
 {
     AI_LOG_FN_ENTRY();
 
@@ -66,10 +60,24 @@ DobbyRdkPluginUtils::DobbyRdkPluginUtils(const std::shared_ptr<rt_dobby_schema> 
 
 DobbyRdkPluginUtils::DobbyRdkPluginUtils(const std::shared_ptr<rt_dobby_schema> &cfg,
                                          const std::shared_ptr<const rt_state_schema> &state,
-                                         const std::shared_ptr<IDobbyStartState> &startState)
+                                         const std::string& containerId)
+    : mConf(cfg)
+    , mState(state)
+    , mContainerId(containerId)
+{
+    AI_LOG_FN_ENTRY();
+
+    AI_LOG_FN_EXIT();
+}
+
+DobbyRdkPluginUtils::DobbyRdkPluginUtils(const std::shared_ptr<rt_dobby_schema> &cfg,
+                                         const std::shared_ptr<const rt_state_schema> &state,
+                                         const std::shared_ptr<IDobbyStartState> &startState,
+                                         const std::string& containerId)
     : mConf(cfg)
     , mState(state)
     , mStartState(startState)
+    , mContainerId(containerId)
 {
     AI_LOG_FN_ENTRY();
 
@@ -116,21 +124,11 @@ pid_t DobbyRdkPluginUtils::getContainerPid() const
 /**
  *  @brief Gets the container ID
  *
- *  Since Dobby sets the container hostname to match the container ID, we can
- *  use the hostname. Ideally we'd use the state from stdin, but that's only
- *  available during OCI hooks.
- *
  *  @return Container ID as string
  */
 std::string DobbyRdkPluginUtils::getContainerId() const
 {
-    if (!mConf)
-    {
-        AI_LOG_ERROR_EXIT("Failed to load config");
-        return "";
-    }
-
-    return std::string(mConf->hostname);
+    return mContainerId;
 }
 
 // -------------------------------------------------------------------------
@@ -146,44 +144,35 @@ std::string DobbyRdkPluginUtils::getContainerId() const
  */
 bool DobbyRdkPluginUtils::getContainerNetworkInfo(ContainerNetworkInfo &networkInfo)
 {
-    // Attempt to find the file
-    const std::string containerId = getContainerId();
-    if (containerId.empty())
-    {
-        AI_LOG_ERROR_EXIT("Could not get container network info - could not get ID");
-        return false;
-    }
-
-    const std::string fileName = ADDRESS_FILE_PREFIX + getContainerId();
-
-    struct stat buffer;
-    if (stat(fileName.c_str(), &buffer) != 0)
-    {
-        AI_LOG_WARN("Could not get container network info - file %s does not exist. Has the network plugin run yet?", fileName.c_str());
-        return false;
-    }
-
     // Parse the file
-    const std::string addressFileStr = readTextFile(fileName);
+    networkInfo.containerId = getContainerId();
+    std::string filePath = ADDRESS_FILE_DIR + networkInfo.containerId;
+
+    const std::string addressFileStr = readTextFile(filePath);
     if (addressFileStr.empty())
     {
-        AI_LOG_ERROR_EXIT("failed to get IP address and veth name assigned to"
-                          "container from %s",
-                          fileName.c_str());
+        AI_LOG_ERROR_EXIT("failed to get IP address and veth name assigned to container from %s",
+                          filePath.c_str());
         return false;
     }
 
-    const std::string ip = addressFileStr.substr(0, addressFileStr.find("/"));
+    // file contains IP address in in_addr_t form
+    const std::string ipStr = addressFileStr.substr(0, addressFileStr.find("/"));
 
     // check if string contains a veth name after the ip address
-    if (addressFileStr.length() <= ip.length() + 1)
+    if (addressFileStr.length() <= ipStr.length() + 1)
     {
-        AI_LOG_ERROR("failed to get veth name from %s", fileName.c_str());
+        AI_LOG_ERROR("failed to get veth name from %s", filePath.c_str());
         return false;
     }
 
-    networkInfo.ipAddress = ip;
-    networkInfo.vethName = addressFileStr.substr(ip.length() + 1, addressFileStr.length());
+    const in_addr_t ip = std::stoi(ipStr);
+    networkInfo.ipAddressRaw = ip;
+
+    // Convert the in_addr_t value to a human readable value (e.g. 100.64.11.x)
+    networkInfo.ipAddress = ipAddressToString(htonl(ip));
+    networkInfo.vethName = addressFileStr.substr(ipStr.length() + 1, addressFileStr.length());
+
     return true;
 }
 
@@ -676,3 +665,15 @@ std::list<int> DobbyRdkPluginUtils::files(const std::string& pluginName) const
     return fileList;
 }
 
+
+
+std::string DobbyRdkPluginUtils::ipAddressToString(const in_addr_t &ipAddress)
+{
+    char str[INET_ADDRSTRLEN];
+    in_addr_t tmp = ipAddress;
+
+    inet_ntop(AF_INET, &tmp, str, sizeof(str));
+
+    AI_LOG_DEBUG("Converted IP %u -> %s", ipAddress, str);
+    return std::string(str);
+}

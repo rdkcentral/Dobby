@@ -21,7 +21,8 @@
 #include "Netlink.h"
 #include "BridgeInterface.h"
 #include "TapInterface.h"
-
+#include "NetworkingHelper.h"
+#include "IPAllocator.h"
 #include "Netfilter.h"
 
 #include <Logging.h>
@@ -32,8 +33,8 @@
 #include <sys/types.h>
 #include <sys/mount.h>
 #include <sys/wait.h>
+#include <dirent.h>
 
-#define PEER_NAME "eth0" // name of the interface created inside containers
 
 // -----------------------------------------------------------------------------
 /**
@@ -186,6 +187,14 @@ std::vector<Netfilter::RuleSet> constructBridgeRules(const std::shared_ptr<Netfi
             }
         }
     };
+
+    if (ipVersion == AF_INET6)
+    {
+        Netfilter::RuleSet::iterator appendFilterRules = appendRuleSet.find(Netfilter::TableType::Filter);
+        // add DobbyInputChain rule to accept Network Discovery Protocol messages, otherwise
+        // the Neigh table (which is equivalent of IPv4 ARP table) will not be able to update
+        appendFilterRules->second.emplace_front("DobbyInputChain -p ICMPv6 -j ACCEPT");
+    }
 
     // add addresses to rules depending on ipVersion
     std::string bridgeAddressRange;
@@ -396,7 +405,7 @@ bool NetworkSetup::setupBridgeDevice(const std::shared_ptr<DobbyRdkPluginUtils> 
     std::vector<Netfilter::RuleSet> ipv4RuleSets = constructBridgeRules(netfilter, extIfaces, AF_INET);
     if (ipv4RuleSets.empty())
     {
-        AI_LOG_FN_EXIT();
+        AI_LOG_ERROR_EXIT("failed to setup device bridge due to empty IPv4 ruleset");
         return false;
     }
 
@@ -420,7 +429,7 @@ bool NetworkSetup::setupBridgeDevice(const std::shared_ptr<DobbyRdkPluginUtils> 
     std::vector<Netfilter::RuleSet> ipv6RuleSets = constructBridgeRules(netfilter, extIfaces, AF_INET6);
     if (ipv6RuleSets.empty())
     {
-        AI_LOG_FN_EXIT();
+        AI_LOG_ERROR_EXIT("failed to setup device bridge due to empty IPv6 ruleset");
         return false;
     }
 
@@ -513,7 +522,6 @@ bool NetworkSetup::setupBridgeDevice(const std::shared_ptr<DobbyRdkPluginUtils> 
  *  The ip address is stored in the NetworkingHelper object provided in args.
  *
  *  @param[in]  utils           Instance of DobbyRdkPluginUtils.
- *  @param[in]  dobbyProxy      Instance of DobbyRdkPluginProxy.
  *  @param[in]  helper          Instance of NetworkingHelper.
  *  @param[in]  rootfsPath      Path to the rootfs on the host.
  *  @param[in]  vethName        Name of the virtual ethernet device
@@ -521,18 +529,18 @@ bool NetworkSetup::setupBridgeDevice(const std::shared_ptr<DobbyRdkPluginUtils> 
  *  @return true if successful, otherwise false.
  */
 bool saveContainerAddress(const std::shared_ptr<DobbyRdkPluginUtils> &utils,
-                          const std::shared_ptr<DobbyRdkPluginProxy> &dobbyProxy,
                           const std::shared_ptr<NetworkingHelper> &helper,
                           const std::string &rootfsPath,
                           const std::string &vethName)
 {
     AI_LOG_FN_ENTRY();
 
-    // get ip address from daemon
-    const in_addr_t ipAddress = dobbyProxy->getIpAddress(vethName);
+    // Allocate an IP for the container
+    IPAllocator ipAllocator(utils);
+    const in_addr_t ipAddress = ipAllocator.allocateIpAddress(vethName);
     if (!ipAddress)
     {
-        AI_LOG_ERROR_EXIT("failed to get ip address from daemon");
+        AI_LOG_ERROR_EXIT("failed to get ip address");
         return false;
     }
 
@@ -540,19 +548,6 @@ bool saveContainerAddress(const std::shared_ptr<DobbyRdkPluginUtils> &utils,
     if (!helper->storeContainerInterface(ipAddress, vethName))
     {
         AI_LOG_ERROR_EXIT("failed to set ip addresses");
-        return false;
-    }
-
-    // Create a temp file we can mount into the container
-    std::string tmpFilename = ADDRESS_FILE_PREFIX + utils->getContainerId();
-
-    // combine ip address and veth name strings
-    const std::string fileContent(std::string() + helper->ipv4AddrStr() + "/" + vethName);
-
-    // write address and veth name to a file
-    if (!utils->writeTextFile(tmpFilename, fileContent, O_CREAT | O_TRUNC, 0644))
-    {
-        AI_LOG_ERROR_EXIT("failed to write ip address file");
         return false;
     }
 
@@ -589,7 +584,6 @@ bool setupContainerNet(const std::shared_ptr<NetworkingHelper> &helper)
     // step 2 - set the address of the ifaceName interface inside the container
 
     // first add IPv4 address if enabled
-    // nb: htonl used for address to convert to network byte order
     const std::string ifaceName(PEER_NAME);
     if (helper->ipv4())
     {
@@ -697,7 +691,6 @@ bool setupContainerNet(const std::shared_ptr<NetworkingHelper> &helper)
  *
  *  @param[in]  utils           Instance of DobbyRdkPluginUtils.
  *  @param[in]  netfilter       Instance of Netfilter.
- *  @param[in]  dobbyProxy      Instance of DobbyRdkPluginProxy.
  *  @param[in]  helper          Instance of NetworkingHelper.
  *  @param[in]  rootfsPath      Path to the rootfs on the host.
  *  @param[in]  containerId     The id of the container.
@@ -707,7 +700,6 @@ bool setupContainerNet(const std::shared_ptr<NetworkingHelper> &helper)
  */
 bool NetworkSetup::setupVeth(const std::shared_ptr<DobbyRdkPluginUtils> &utils,
                              const std::shared_ptr<Netfilter> &netfilter,
-                             const std::shared_ptr<DobbyRdkPluginProxy> &dobbyProxy,
                              const std::shared_ptr<NetworkingHelper> &helper,
                              const std::string &rootfsPath,
                              const std::string &containerId,
@@ -741,9 +733,8 @@ bool NetworkSetup::setupVeth(const std::shared_ptr<DobbyRdkPluginUtils> &utils,
         return false;
     }
 
-    // step 4 - get and save the ip address for container in DobbyDaemon and an
-    // address file in the container rootfs
-    if (!saveContainerAddress(utils, dobbyProxy, helper, rootfsPath, vethName))
+    // step 4 - get and save the ip address for container
+    if (!saveContainerAddress(utils, helper, rootfsPath, vethName))
     {
         AI_LOG_ERROR_EXIT("failed to get address for container '%s'",
                           containerId.c_str());
@@ -799,11 +790,29 @@ bool NetworkSetup::setupVeth(const std::shared_ptr<DobbyRdkPluginUtils> &utils,
     }
 
     // step 9 - add routing table entry to the container
-    if (!netlink->addRoute(BRIDGE_NAME, helper->ipv6Addr(), 128, IN6ADDR_ANY))
+    // This shouldn't be needed as there is already existing rule for the
+    // bridge itself with lower metric (higher priority) which looks like:
+    // 2080:d0bb:1e::/64 dev dobby0  metric 256 
+    // So this one will take precedence, and will be valid for all
+    // containers
+    /*
+    if (helper->ipv4())
     {
-        AI_LOG_ERROR_EXIT("failed to apply route");
-        return false;
+        if (!netlink->addRoute(BRIDGE_NAME, helper->ipv4Addr(), INADDR_CREATE(255, 255, 255, 255), INADDR_CREATE(0, 0, 0, 0)))
+        {
+            AI_LOG_ERROR_EXIT("failed to apply route");
+            return false;
+        }
     }
+    if (helper->ipv6())
+    {
+        if (!netlink->addRoute(BRIDGE_NAME, helper->ipv6Addr(), 128, IN6ADDR_ANY))
+        {
+            AI_LOG_ERROR_EXIT("failed to apply route");
+            return false;
+        }
+    }
+    */
 
     // step 10 - bring the veth interface outside the container up
     if (!netlink->ifaceUp(vethName))

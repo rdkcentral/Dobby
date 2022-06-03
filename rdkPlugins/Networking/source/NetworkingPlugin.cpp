@@ -22,10 +22,14 @@
 #include "PortForwarding.h"
 #include "MulticastForwarder.h"
 #include "NetworkSetup.h"
+#include "Netlink.h"
+#include "IPAllocator.h"
 
 #include <fcntl.h>
 #include <unistd.h>
-
+#include <dirent.h>
+#include <sys/stat.h>
+#include <algorithm>
 
 REGISTER_RDK_PLUGIN(NetworkingPlugin);
 
@@ -37,8 +41,6 @@ NetworkingPlugin::NetworkingPlugin(std::shared_ptr<rt_dobby_schema> &cfg,
       mContainerConfig(cfg),
       mUtils(utils),
       mRootfsPath(rootfsPath),
-      mIpcService(nullptr),
-      mDobbyProxy(nullptr),
       mNetfilter(std::make_shared<Netfilter>())
 {
     AI_LOG_FN_ENTRY();
@@ -82,12 +84,6 @@ NetworkingPlugin::~NetworkingPlugin()
 {
     AI_LOG_FN_ENTRY();
 
-    // stop the remote service if it was initialised
-    if (mIpcService)
-    {
-        mIpcService->stop();
-    }
-
     AI_LOG_FN_EXIT();
 }
 
@@ -101,6 +97,7 @@ unsigned NetworkingPlugin::hookHints() const
     return (
         IDobbyRdkPlugin::HintFlags::PostInstallationFlag |
         IDobbyRdkPlugin::HintFlags::CreateRuntimeFlag |
+        IDobbyRdkPlugin::HintFlags::PostStopFlag |
         IDobbyRdkPlugin::HintFlags::PostHaltFlag
     );
 }
@@ -159,15 +156,8 @@ bool NetworkingPlugin::createRuntime()
         return true;
     }
 
-    // set up communication interface with DobbyDaemon
-    if (!createRemoteService())
-    {
-        AI_LOG_ERROR_EXIT("failed to create remote service");
-        return false;
-    }
-
-    // get external interfaces from daemon
-    const std::vector<std::string> extIfaces = mDobbyProxy->getExternalInterfaces();
+    // get available external interfaces
+    const std::vector<std::string> extIfaces = GetAvailableExternalInterfaces();
     if (extIfaces.empty())
     {
         AI_LOG_ERROR_EXIT("No network interfaces available");
@@ -175,15 +165,12 @@ bool NetworkingPlugin::createRuntime()
     }
 
     // check if another container has already initialised the bridge device for us
-    int32_t bridgeConnections = mDobbyProxy->getBridgeConnections();
-    if (bridgeConnections < 0)
+    std::shared_ptr<Netlink> netlink = std::make_shared<Netlink>();
+    bool bridgeExists = netlink->ifaceExists(std::string(BRIDGE_NAME));
+
+    if (!bridgeExists)
     {
-        AI_LOG_ERROR_EXIT("failed to get response from daemon");
-        return false;
-    }
-    else if (!bridgeConnections)
-    {
-        AI_LOG_DEBUG("No connections to dobby network bridge found, setting it up");
+        AI_LOG_DEBUG("Dobby network bridge not found, setting it up");
 
         // setup the bridge device
         if (!NetworkSetup::setupBridgeDevice(mUtils, mNetfilter, extIfaces))
@@ -194,8 +181,7 @@ bool NetworkingPlugin::createRuntime()
     }
 
     // setup veth, ip address and iptables rules for container
-    if (!NetworkSetup::setupVeth(mUtils, mNetfilter, mDobbyProxy, mHelper,
-                                 mRootfsPath, mUtils->getContainerId(), mNetworkType))
+    if (!NetworkSetup::setupVeth(mUtils, mNetfilter, mHelper, mRootfsPath, mUtils->getContainerId(), mNetworkType))
     {
         AI_LOG_ERROR_EXIT("failed to setup virtual ethernet device");
         return false;
@@ -260,6 +246,31 @@ bool NetworkingPlugin::createRuntime()
 }
 
 /**
+ * @brief OCI Hook - Run in host namespace
+ */
+bool NetworkingPlugin::postStop()
+{
+    AI_LOG_FN_ENTRY();
+
+    // In some scenarios, the PostHalt hook might not run (e.g. if we're cleaning up
+    // old containers at boot).
+    // Make sure we clean up after ourselves
+    const std::string containerId = mUtils->getContainerId();
+    const std::string addressFilePath = ADDRESS_FILE_DIR + containerId;
+
+    if (access(addressFilePath.c_str(), F_OK) == 0)
+    {
+        IPAllocator ipAllocator(mUtils);
+        ipAllocator.deallocateIpAddress(containerId);
+    }
+
+
+    AI_LOG_FN_EXIT();
+
+    return true;
+}
+
+/**
  * @brief Dobby Hook - Run in host namespace when container terminates
  */
 bool NetworkingPlugin::postHalt()
@@ -281,24 +292,18 @@ bool NetworkingPlugin::postHalt()
         return true;
     }
 
-    // set up communication interface with DobbyDaemon
-    if (!createRemoteService())
-    {
-        AI_LOG_ERROR_EXIT("failed to create remote service");
-        return false;
-    }
-
+    // Get container veth/ip
     ContainerNetworkInfo networkInfo;
-    if (!mUtils->getContainerNetworkInfo(networkInfo))
+    IPAllocator ipAllocator(mUtils);
+    if (!ipAllocator.getContainerNetworkInfo(mUtils->getContainerId(), networkInfo))
     {
         AI_LOG_WARN("Failed to get container network info");
         success = false;
     }
     else
     {
-        in_addr_t ipAddress;
-        inet_pton(AF_INET, networkInfo.ipAddress.c_str(), &ipAddress);
-        mHelper->storeContainerInterface(htonl(ipAddress), networkInfo.vethName);
+        // Update instance of network helper
+        mHelper->storeContainerInterface(networkInfo.ipAddressRaw, networkInfo.vethName);
 
         // delete the veth pair for the container
         if (!NetworkSetup::removeVethPair(mNetfilter, mHelper, networkInfo.vethName, mNetworkType, mUtils->getContainerId()))
@@ -306,27 +311,13 @@ bool NetworkingPlugin::postHalt()
             AI_LOG_WARN("failed to remove veth pair %s", networkInfo.vethName.c_str());
             success = false;
         }
-
-        // return the container's ip address back to the address pool
-        if (!mDobbyProxy->freeIpAddress(ipAddress))
-        {
-            AI_LOG_WARN("failed to return address %s of container %s back to the"
-                        "address pool", mHelper->ipv4AddrStr().c_str(), mUtils->getContainerId().c_str());
-            success = false;
-        }
     }
 
-    // remove the address file from the host
-    const std::string addressFilePath = ADDRESS_FILE_PREFIX + mUtils->getContainerId();
-    if (unlink(addressFilePath.c_str()) == -1)
-    {
-        AI_LOG_WARN("failed to remove address file for container %s at %s",
-                    mUtils->getContainerId().c_str(), addressFilePath.c_str());
-        success = false;
-    }
+    // Release the IP from the pool
+    ipAllocator.deallocateIpAddress(mUtils->getContainerId());
 
-    // get external interfaces from daemon
-    const std::vector<std::string> extIfaces = mDobbyProxy->getExternalInterfaces();
+    // get external interfaces
+    const std::vector<std::string> extIfaces = GetAvailableExternalInterfaces();
     if (extIfaces.empty())
     {
         AI_LOG_WARN("couldn't find external network interfaces in settings,"
@@ -336,7 +327,11 @@ bool NetworkingPlugin::postHalt()
     else
     {
         // if there are no containers using the bridge device left, remove bridge device
-        if (!mDobbyProxy->getBridgeConnections())
+        std::shared_ptr<Netlink> netlink = std::make_shared<Netlink>();
+        auto bridgeConnections = netlink->getAttachedIfaces(BRIDGE_NAME);
+
+        // Ignore the tap0 device as that may or may not be present, doesn't matter for this check
+        if (bridgeConnections.size() == 0 || (bridgeConnections.size() == 1 && strcmp(bridgeConnections.front().name, "dobby_tap0") == 0))
         {
             if (!NetworkSetup::removeBridgeDevice(mNetfilter, extIfaces))
             {
@@ -412,39 +407,114 @@ std::vector<std::string> NetworkingPlugin::getDependencies() const
 // Begin private methods
 
 /**
- * @brief Creates a remote dbus service to communicate with the Dobby daemon
+ *  @brief Gets the external interfaces that are actually available. Looks in the
+ *  settings for the interfaces Dobby should use, then checks if the device
+ *  actually has those interfaces available. Will return empty vector if none of
+ *  the ifaces in the settings file are available
  *
- * @return true if successfully connected, otherwise false
+ *  @return Available external interfaces from the ones defined in dobby
+ *  settings
  */
-bool NetworkingPlugin::createRemoteService()
+std::vector<std::string> NetworkingPlugin::GetAvailableExternalInterfaces() const
 {
-    AI_LOG_FN_ENTRY();
+    std::vector<std::string> externalIfaces = GetExternalInterfacesFromSettings();
 
-    // Append the pid onto the end of the service name so we can run multiple
-    // clients
-    std::string dbusServiceName(DOBBY_SERVICE ".plugin.networking");
-    char strPid[32];
-    sprintf(strPid, ".pid%d", getpid());
-    dbusServiceName += strPid;
-
-    try
+    if (externalIfaces.size() == 0)
     {
-        mIpcService = AI_IPC::createIpcService(DBUS_SYSTEM_ADDRESS, dbusServiceName);
-        if(!mIpcService->start())
+        AI_LOG_WARN("No external network interfaces defined in settings file");
+        return {};
+    }
+
+    // Look in the /sys/class/net for available interfaces
+    struct dirent *dir;
+    DIR *d = opendir("/sys/class/net");
+    if (!d)
+    {
+        AI_LOG_SYS_ERROR(errno, "Could not check for available interfaces");
+        return std::vector<std::string>();
+    }
+
+    std::vector<std::string> availableIfaces = {};
+    while ((dir = readdir(d)) != nullptr)
+    {
+        if (dir->d_name[0] != '.')
         {
-            AI_LOG_ERROR_EXIT("failed to create IPC service");
-            return false;
+            availableIfaces.emplace_back(dir->d_name);
         }
-
-        // create a DobbyRdkPluginProxy remote service that wraps up the dbus API calls to the Dobby daemon
-        mDobbyProxy = std::make_shared<DobbyRdkPluginProxy>(mIpcService, DOBBY_SERVICE, DOBBY_OBJECT);
     }
-    catch (const std::exception& e)
+    closedir(d);
+
+    // We know what interfaces we want, and what we've got. See if we're missing
+    // any
+    auto it = externalIfaces.cbegin();
+    while (it != externalIfaces.cend())
     {
-        AI_LOG_ERROR_EXIT("failed to create IPC service: %s", e.what());
-        return false;
+        if (std::find(availableIfaces.begin(), availableIfaces.end(), it->c_str()) == availableIfaces.end())
+        {
+            AI_LOG_WARN("Interface '%s' from settings file not available", it->c_str());
+            it = externalIfaces.erase(it);
+        }
+        else
+        {
+            ++it;
+        }
     }
 
-    AI_LOG_FN_EXIT();
-    return true;
+    // If no interfaces are available, something is very wrong
+    if (externalIfaces.size() == 0)
+    {
+        AI_LOG_ERROR("None of the external interfaces defined in the settings file are available");
+    }
+
+    return externalIfaces;
+}
+
+/**
+ * @brief Gets the external interfaces defined in the dobby settings file, regardless
+ * of whether they actually exist on the platform or not
+ *
+ * @return All external interfaces from dobby settings file
+ */
+std::vector<std::string> NetworkingPlugin::GetExternalInterfacesFromSettings() const
+{
+    // We don't have jsoncpp here, so use yajl from libocispec
+    std::vector<std::string> ifacesFromSettings = {};
+
+    std::string settingsFile = mUtils->readTextFile("/etc/dobby.json");
+
+    if (settingsFile.empty())
+    {
+        AI_LOG_ERROR("Could not read settings file @ '/etc/dobby.json'");
+        return {};
+    }
+
+    yajl_val tree;
+    char errbuf[1024];
+
+    // Parse the settings file
+    tree = yajl_tree_parse (settingsFile.c_str(), errbuf, sizeof (errbuf));
+    if (!tree || strlen(errbuf) > 0)
+    {
+        yajl_tree_free(tree);
+        AI_LOG_ERROR_EXIT("Failed to parse Dobby settings file, err '%s'", errbuf);
+        return {};
+    }
+
+    // Read the external interfaces array
+    const char* path[] = {"network", "externalInterfaces", (const char *) 0};
+    yajl_val extInterfaces = yajl_tree_get(tree, path, yajl_t_array);
+    if (extInterfaces && YAJL_GET_ARRAY (extInterfaces) && YAJL_GET_ARRAY (extInterfaces)->len > 0)
+    {
+        size_t i;
+        size_t len = YAJL_GET_ARRAY (extInterfaces)->len;
+        yajl_val *values = YAJL_GET_ARRAY (extInterfaces)->values;
+
+        for (i = 0; i < len; i++)
+        {
+            ifacesFromSettings.push_back(YAJL_GET_STRING(values[i]));
+        }
+    }
+
+    yajl_tree_free(tree);
+    return ifacesFromSettings;
 }

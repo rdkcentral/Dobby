@@ -78,17 +78,17 @@ bool Storage::preCreation()
     AI_LOG_FN_ENTRY();
 
     // create loopmount for every point
-    std::vector<std::unique_ptr<LoopMountDetails>> loopDetails = getLoopDetails();
-    for(auto it = loopDetails.begin(); it != loopDetails.end(); it++)
+    std::vector<std::unique_ptr<LoopMountDetails>> mountDetails = getLoopMountDetails();
+
+    for(auto it = mountDetails.begin(); it != mountDetails.end(); it++)
     {
         // Creating loop mount and attaching it to temp mount inside container
         if(!(*it)->onPreCreate())
         {
-            AI_LOG_ERROR_EXIT("failed to execute preCreation loop hook");
+            AI_LOG_ERROR_EXIT("failed to execute preCreation hook for loop mount");
             return false;
         }
     }
-
     AI_LOG_FN_EXIT();
     return true;
 }
@@ -101,8 +101,8 @@ bool Storage::createRuntime()
     AI_LOG_FN_ENTRY();
 
     // Set permissions for every loop point directory
-    std::vector<std::unique_ptr<LoopMountDetails>> loopDetails = getLoopDetails();
-    for(auto it = loopDetails.begin(); it != loopDetails.end(); it++)
+    std::vector<std::unique_ptr<LoopMountDetails>> mountDetails = getLoopMountDetails();
+    for(auto it = mountDetails.begin(); it != mountDetails.end(); it++)
     {
         // Setting permissions for generated directories
         if(!(*it)->setPermissions())
@@ -124,13 +124,26 @@ bool Storage::createContainer()
     AI_LOG_FN_ENTRY();
 
     // Mount temp directory in proper place
-    std::vector<std::unique_ptr<LoopMountDetails>> loopDetails = getLoopDetails();
-    for(auto it = loopDetails.begin(); it != loopDetails.end(); it++)
+    std::vector<std::unique_ptr<LoopMountDetails>> loopMountDetails = getLoopMountDetails();
+    for(auto it = loopMountDetails.begin(); it != loopMountDetails.end(); it++)
     {
         // Remount temp directory into proper place
         if(!(*it)->remountTempDirectory())
         {
             AI_LOG_ERROR_EXIT("failed to execute createRuntime loop hook");
+            return false;
+        }
+    }
+
+    // create dynamic mounts for every point
+    std::vector<std::unique_ptr<DynamicMountDetails>> dynamicMountDetails = getDynamicMountDetails();
+
+    for(auto it = dynamicMountDetails.begin(); it != dynamicMountDetails.end(); it++)
+    {
+        // Creating dynamic mounts inside container where source exists on the host
+        if(!(*it)->onCreateContainer())
+        {
+            AI_LOG_ERROR_EXIT("failed to execute createContainer hook for dynamic mount");
             return false;
         }
     }
@@ -162,8 +175,8 @@ bool Storage::postStart()
 {
     AI_LOG_FN_ENTRY();
 
-    std::vector<std::unique_ptr<LoopMountDetails>> loopDetails = getLoopDetails();
-    for(auto it = loopDetails.begin(); it != loopDetails.end(); it++)
+    std::vector<std::unique_ptr<LoopMountDetails>> mountDetails = getLoopMountDetails();
+    for(auto it = mountDetails.begin(); it != mountDetails.end(); it++)
     {
         // Clean up temp mount points
         if(!(*it)->cleanupTempDirectory())
@@ -188,8 +201,8 @@ bool Storage::postStop()
 
     // here should be deleting the data.img file when non persistent option selected
 
-    std::vector<std::unique_ptr<LoopMountDetails>> loopDetails = getLoopDetails();
-    for(auto it = loopDetails.begin(); it != loopDetails.end(); it++)
+    std::vector<std::unique_ptr<LoopMountDetails>> mountDetails = getLoopMountDetails();
+    for(auto it = mountDetails.begin(); it != mountDetails.end(); it++)
     {
         // Clean up temp mount points
         if(!(*it)->removeNonPersistentImage())
@@ -232,21 +245,21 @@ std::vector<std::string> Storage::getDependencies() const
 
 // -----------------------------------------------------------------------------
 /**
- *  @brief Create loop mount details vector from all mounts in config.
+ *  @brief Create loop mount details vector from all loopback mounts in config.
  *
  *
- *  @return vector of LoopMountDetails's that were in the config
+ *  @return vector of LoopMountDetails that were in the config
  */
-std::vector<std::unique_ptr<LoopMountDetails>> Storage::getLoopDetails()
+std::vector<std::unique_ptr<LoopMountDetails>> Storage::getLoopMountDetails() const
 {
     AI_LOG_FN_ENTRY();
 
-    const std::vector<LoopMountDetails::LoopMount> mounts = getLoopMounts();
+    const std::vector<LoopMountProperties> loopMounts = getLoopMounts();
 
-    std::vector<std::unique_ptr<LoopMountDetails>> loopDetails;
-    // loop though all the mounts for the given container and create individual
-    // DobbyLoopMount objects for each
-    for (const LoopMountDetails::LoopMount &mount : mounts)
+    std::vector<std::unique_ptr<LoopMountDetails>> mountDetails;
+    // loop though all the loop mounts for the given container and create individual
+    // LoopMountDetails objects for each
+    for (const LoopMountProperties &properties : loopMounts)
     {
         uid_t tmp_uid = 0;
         gid_t tmp_gid = 0;
@@ -277,49 +290,46 @@ std::vector<std::unique_ptr<LoopMountDetails>> Storage::getLoopDetails()
 
 
         // create the loop mount and make sure it was constructed
-        std::unique_ptr<LoopMountDetails> loopMount(
-            std::make_unique<LoopMountDetails>(
-                mRootfsPath,
-                mount,
-                tmp_uid,
-                tmp_gid,
-                mUtils)
-            );
+        auto loopMount = std::make_unique<LoopMountDetails>(mRootfsPath,
+                                                            properties,
+                                                            tmp_uid,
+                                                            tmp_gid,
+                                                            mUtils);
 
         if (loopMount)
         {
-            loopDetails.emplace_back(std::move(loopMount));
+            mountDetails.emplace_back(std::move(loopMount));
         }
     }
 
     AI_LOG_FN_EXIT();
-    return loopDetails;
+    return mountDetails;
 }
 
 // -----------------------------------------------------------------------------
 /**
- *  @brief Reads container config and creates all mount information in LoopMount
+ *  @brief Reads container config and creates all loop mounts in LoopMountProperties
  *  type objects.
  *
  *
- *  @return vector of LoopMount's that were in the config
+ *  @return vector of MountProperties that were in the config
  */
-std::vector<LoopMountDetails::LoopMount> Storage::getLoopMounts()
+std::vector<LoopMountProperties> Storage::getLoopMounts() const
 {
     AI_LOG_FN_ENTRY();
 
-    std::vector<LoopMountDetails::LoopMount> mounts;
+    std::vector<LoopMountProperties> mounts;
 
     // Check if container has mount data
     if (mContainerConfig->rdk_plugins->storage->data)
     {
-        // loop though all the mounts for the given container and create individual
+        // loop though all the loopback mounts for the given container and create individual
         // LoopMountDetails::LoopMount objects for each
         for (size_t i = 0; i < mContainerConfig->rdk_plugins->storage->data->loopback_len; i++)
         {
             auto loopback = mContainerConfig->rdk_plugins->storage->data->loopback[i];
-            LoopMountDetails::LoopMount mount;
 
+            LoopMountProperties mount;
             mount.fsImagePath = std::string(loopback->source);
             mount.destination = std::string(loopback->destination);
             mount.mountFlags  = loopback->flags;
@@ -392,6 +402,85 @@ std::vector<LoopMountDetails::LoopMount> Storage::getLoopMounts()
 
 // -----------------------------------------------------------------------------
 /**
+ *  @brief Create dynamic mount details vector from all dynamic mounts in config.
+ *
+ *
+ *  @return vector of DynamicMountDetails that were in the config
+ */
+std::vector<std::unique_ptr<DynamicMountDetails>> Storage::getDynamicMountDetails() const
+{
+    AI_LOG_FN_ENTRY();
+
+    const std::vector<DynamicMountProperties> dynamicMounts = getDynamicMounts();
+
+    std::vector<std::unique_ptr<DynamicMountDetails>> mountDetails;
+    // loop though all the dynamic mounts for the given container and create individual
+    // DynamicMountDetails objects for each
+    for (const DynamicMountProperties &properties : dynamicMounts)
+    {
+        // create the dynamic mount and make sure it was constructed
+        auto dynamicMount = std::make_unique<DynamicMountDetails>(mRootfsPath,
+                                                                  properties,
+                                                                  mUtils);
+
+        if (dynamicMount)
+        {
+            mountDetails.emplace_back(std::move(dynamicMount));
+        }
+    }
+
+    AI_LOG_FN_EXIT();
+
+    return mountDetails;
+}
+
+// -----------------------------------------------------------------------------
+/**
+ *  @brief Reads container config and creates all dynamic mounts in DynamicMountProperties
+ *  type objects.
+ *
+ *
+ *  @return vector of MountProperties that were in the config
+ */
+std::vector<DynamicMountProperties> Storage::getDynamicMounts() const
+{
+    AI_LOG_FN_ENTRY();
+
+    std::vector<DynamicMountProperties> mounts;
+
+    // Check if container has mount data
+    if (mContainerConfig->rdk_plugins->storage->data)
+    {
+        // loop though all the dynamic mounts for the given container and create individual
+        // LoopMountDetails::LoopMount objects for each
+        for (size_t i = 0; i < mContainerConfig->rdk_plugins->storage->data->dynamic_len; i++)
+        {
+            auto dynamic = mContainerConfig->rdk_plugins->storage->data->dynamic[i];
+
+            DynamicMountProperties mount;
+            mount.source = std::string(dynamic->source);
+            mount.destination = std::string(dynamic->destination);
+            mount.mountFlags  = dynamic->flags;
+
+            for (size_t j = 0; j < dynamic->options_len; j++)
+            {
+                mount.mountOptions.push_back(std::string(dynamic->options[j]));
+            }
+
+            mounts.push_back(mount);
+        }
+    }
+    else
+    {
+        AI_LOG_ERROR("No storage data in config file");
+    }
+
+    AI_LOG_FN_EXIT();
+    return mounts;
+}
+
+// -----------------------------------------------------------------------------
+/**
  *  @brief Gets userId or groupId based on mappings
  *
  *  @param[in]  id          Id we want to map
@@ -400,7 +489,7 @@ std::vector<LoopMountDetails::LoopMount> Storage::getLoopMounts()
  *
  *  @return if found mapped id, if not found initial id
  */
-uint32_t Storage::getMappedId(uint32_t id, rt_defs_id_mapping **mapping, size_t mapping_len)
+uint32_t Storage::getMappedId(uint32_t id, rt_defs_id_mapping **mapping, size_t mapping_len) const
 {
     AI_LOG_FN_ENTRY();
 

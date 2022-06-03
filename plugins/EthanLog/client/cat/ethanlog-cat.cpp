@@ -34,6 +34,16 @@
 #include <signal.h>
 #include <poll.h>
 
+#ifndef TEMP_FAILURE_RETRY
+#define TEMP_FAILURE_RETRY(exp)            \
+  ({                                       \
+    decltype(exp) _rc;                     \
+    do {                                   \
+      _rc = (exp);                         \
+    } while (_rc == -1 && errno == EINTR); \
+    _rc;                                   \
+  })
+#endif
 
 /// The log level used for all messages from stdout
 static int gDefaultLogLevel = ETHAN_LOG_INFO;

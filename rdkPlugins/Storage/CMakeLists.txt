@@ -24,9 +24,11 @@ project(StoragePlugin)
 add_library( ${PROJECT_NAME}
         SHARED
         source/Storage.cpp
+        source/RefCountFile.cpp
         source/ImageManager.cpp
         source/StorageHelper.cpp
         source/LoopMountDetails.cpp
+        source/DynamicMountDetails.cpp
         )
 
 target_include_directories(${PROJECT_NAME}

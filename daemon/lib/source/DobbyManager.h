@@ -30,6 +30,7 @@
 #include "IDobbyRdkLoggingPlugin.h"
 #include "ContainerId.h"
 #include "DobbyLogger.h"
+#include "DobbyRunC.h"
 #include <IIpcService.h>
 
 #include <pthread.h>
@@ -53,10 +54,8 @@
 
 class IDobbyEnv;
 class IDobbySettings;
-class DobbyRunC;
 class DobbyStartState;
 class DobbyLegacyPluginManager;
-class DobbyState;
 class DobbyConfig;
 
 class DobbyContainer;
@@ -93,6 +92,8 @@ private:
     void setupWorkspace(const std::shared_ptr<IDobbyEnv>& env);
 
     void cleanupContainers();
+    bool cleanupContainer(const DobbyRunC::ContainerListItem& container);
+    void cleanupContainersShutdown();
 
 public:
 #if defined(LEGACY_COMPONENTS)
@@ -126,11 +127,6 @@ public:
 
     std::string statsOfContainer(int32_t cd) const;
 
-    uint32_t getBridgeConnections();
-    uint32_t getIpAddress(const std::string &vethName);
-    bool freeIpAddress(in_addr_t address);
-    std::vector<std::string> getExtIfaces();
-
 public:
     std::string ociConfigOfContainer(int32_t cd) const;
 
@@ -141,6 +137,7 @@ public:
 #endif //defined(LEGACY_COMPONENTS)
 
 private:
+    void handleContainerTerminate(const ContainerId &id, const std::unique_ptr<DobbyContainer>& container, const int status);
     void onChildExit();
 
 private:
@@ -151,18 +148,14 @@ private:
                         const std::unique_ptr<DobbyContainer> &container,
                         const std::list<int> &files);
 
-    std::string createCustomConfig(const std::unique_ptr<DobbyContainer> &container,
-                                   const std::shared_ptr<DobbyConfig> &config,
-                                   const std::string &command,
-                                   const std::string &displaySocket,
-                                   const std::vector<std::string> &envVars);
+    bool customiseConfig(const std::shared_ptr<DobbyConfig> &config,
+                        const std::string &command,
+                        const std::string &displaySocket,
+                        const std::vector<std::string> &envVars);
 
     bool createAndStartContainer(const ContainerId& id,
                                  const std::unique_ptr<DobbyContainer>& container,
-                                 const std::list<int>& files,
-                                 const std::string& command = "",
-                                 const std::string& displaySocket = "",
-                                 const std::vector<std::string>& envVars = std::vector<std::string>());
+                                 const std::list<int>& files);
 
     bool restartContainer(const ContainerId& id,
                           const std::unique_ptr<DobbyContainer>& container);
@@ -205,6 +198,8 @@ private:
     void stopRuncMonitorThread();
     void runcMonitorThread();
 
+    bool invalidContainerCleanupTask();
+
 private:
     const std::shared_ptr<IDobbyEnv> mEnvironment;
     const std::shared_ptr<IDobbyUtils> mUtilities;
@@ -214,11 +209,11 @@ private:
 private:
     std::unique_ptr<DobbyLogger> mLogger;
     std::unique_ptr<DobbyRunC> mRunc;
-    std::shared_ptr<DobbyState> mState;
 
 private:
     std::thread mRuncMonitorThread;
     std::atomic<bool> mRuncMonitorTerminate;
+    int mCleanupTaskTimerId;
 
 #if defined(LEGACY_COMPONENTS)
 private:

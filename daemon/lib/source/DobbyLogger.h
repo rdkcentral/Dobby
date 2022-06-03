@@ -26,6 +26,8 @@
 #include "IDobbyRdkLoggingPlugin.h"
 #include <IDobbySettings.h>
 #include "DobbyRdkPluginManager.h"
+#include "DobbyLogRelay.h"
+#include "PollLoop.h"
 #include <rt_dobby_schema.h>
 
 #include <pthread.h>
@@ -45,31 +47,36 @@ public:
     bool StartContainerLogging(std::string containerId,
                                pid_t runtimePid,
                                pid_t containerPid,
-                               std::shared_ptr<IDobbyRdkLoggingPlugin> loggingPlugin,
-                               const bool createNewLog);
+                               std::shared_ptr<IDobbyRdkLoggingPlugin> loggingPlugin);
 
     bool DumpBuffer(int bufferMemFd,
                     pid_t containerPid,
-                    std::shared_ptr<IDobbyRdkLoggingPlugin> loggingPlugin,
-                    const bool createNewLog);
-
-    void WaitForLoggingToFinish(pid_t containerPid);
-    void ShutdownLoggers();
+                    std::shared_ptr<IDobbyRdkLoggingPlugin> loggingPlugin);
 
 private:
+    int createDgramSocket(const std::string &path);
     int createUnixSocket(const std::string path);
     int receiveFdFromSocket(const int connectionFd);
     void connectionMonitorThread(const int socketFd);
 
+    void closeAndDeleteSocket(const int fd, const std::string& path);
+
 private:
     std::mutex mLock;
+
     int mSocketFd;
     const std::string mSocketPath;
+    const std::string mSyslogSocketPath;
+    const std::string mJournaldSocketPath;
 
-    std::map<pid_t, IDobbyRdkLoggingPlugin::ContainerInfo> mTempConnections;
-    std::map<pid_t, std::future<void>> mFutures;
+    // Map of container PID -> tty file descriptor
+    std::map<pid_t, int> mTempFds;
 
-    std::atomic_bool mCancellationToken;
+    std::shared_ptr<AICommon::PollLoop> mPollLoop;
+
+    std::shared_ptr<DobbyLogRelay> mSyslogRelay;
+    std::shared_ptr<DobbyLogRelay> mJournaldRelay;
 };
 
 #endif // !defined(DOBBYLOGGER_H)
+
