@@ -152,6 +152,8 @@ public:
 
     std::list<int> files(const std::string& pluginName) const;
 
+    int exitStatus;
+
 private:
     std::string ipAddressToString(const in_addr_t &ipAddress);
 

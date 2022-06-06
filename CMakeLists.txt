@@ -286,6 +286,7 @@ option(PLUGIN_IPC "Include IPC plugin" ON)
 option(PLUGIN_STORAGE "Include Storage plugin" ON)
 option(PLUGIN_MINIDUMP "Include Minidump plugin" ON)
 option(PLUGIN_THUNDER "Include Thunder plugin" ON)
+option(PLUGIN_OOMCRASH "Include OOMCrash plugin" ON)
 
 # Optional RDK plugins
 option(PLUGIN_TESTPLUGIN "Include TestPlugin plugin" OFF)
@@ -352,6 +353,10 @@ endif()
 
 if(PLUGIN_DEVICEMAPPER)
     add_subdirectory(rdkPlugins/DeviceMapper)
+endif()
+
+if(PLUGIN_OOMCRASH)
+	add_subdirectory(rdkPlugins/OOMCrash)
 endif()
 
 # Export targets in Dobby package
