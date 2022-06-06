@@ -104,6 +104,9 @@ bool OOMCrash::postHalt()
     bool status = true;
     if (mUtils->exitStatus != 0)
         status = checkForOOM();
+
+    if (status == true)
+        createFileForOOM();
     
     // Remove the crashFile if container exits normally or if no OOM detected
     if (mUtils->exitStatus == 0 || status == false)
@@ -202,7 +205,7 @@ bool OOMCrash::checkForOOM()
     if (readCgroup(&failCnt) && (failCnt > 0))
     {
         AI_LOG_WARN("memory allocation failure detected in %s container, likely OOM (failcnt = %lu)", mUtils->getContainerId().c_str(), failCnt);
-        status = createFileForOOM(); 
+        status = true; 
     }
     else
     {
@@ -215,10 +218,9 @@ bool OOMCrash::checkForOOM()
 /**
  * @brief Create file if Out of Memory detected.
  *
- * @return true when file created.
  */
 
-bool OOMCrash::createFileForOOM()
+void OOMCrash::createFileForOOM()
 {
     std::string memoryExceedFile;
     std::string path = mContainerConfig->rdk_plugins->oomcrash->data->path;
@@ -232,7 +234,6 @@ bool OOMCrash::createFileForOOM()
         {
             if (errno != ENOENT)
                 AI_LOG_ERROR("failed to open '%s' (%d - %s)", path.c_str(), errno, strerror(errno));
-            return false;
         }
         AI_LOG_INFO("%s file created",memoryExceedFile.c_str());
         fclose(fp);
@@ -241,7 +242,5 @@ bool OOMCrash::createFileForOOM()
     {
         if (errno == ENOENT)
             AI_LOG_ERROR("Path '%s' does not exist (%d - %s)", path.c_str(), errno, strerror(errno));
-        return false;  
     }
-    return true;
 }

@@ -188,6 +188,14 @@ std::vector<Netfilter::RuleSet> constructBridgeRules(const std::shared_ptr<Netfi
         }
     };
 
+    if (ipVersion == AF_INET6)
+    {
+        Netfilter::RuleSet::iterator appendFilterRules = appendRuleSet.find(Netfilter::TableType::Filter);
+        // add DobbyInputChain rule to accept Network Discovery Protocol messages, otherwise
+        // the Neigh table (which is equivalent of IPv4 ARP table) will not be able to update
+        appendFilterRules->second.emplace_front("DobbyInputChain -p ICMPv6 -j ACCEPT");
+    }
+
     // add addresses to rules depending on ipVersion
     std::string bridgeAddressRange;
     if (ipVersion == AF_INET)
@@ -397,7 +405,7 @@ bool NetworkSetup::setupBridgeDevice(const std::shared_ptr<DobbyRdkPluginUtils> 
     std::vector<Netfilter::RuleSet> ipv4RuleSets = constructBridgeRules(netfilter, extIfaces, AF_INET);
     if (ipv4RuleSets.empty())
     {
-        AI_LOG_FN_EXIT();
+        AI_LOG_ERROR_EXIT("failed to setup device bridge due to empty IPv4 ruleset");
         return false;
     }
 
@@ -421,7 +429,7 @@ bool NetworkSetup::setupBridgeDevice(const std::shared_ptr<DobbyRdkPluginUtils> 
     std::vector<Netfilter::RuleSet> ipv6RuleSets = constructBridgeRules(netfilter, extIfaces, AF_INET6);
     if (ipv6RuleSets.empty())
     {
-        AI_LOG_FN_EXIT();
+        AI_LOG_ERROR_EXIT("failed to setup device bridge due to empty IPv6 ruleset");
         return false;
     }
 
@@ -782,11 +790,29 @@ bool NetworkSetup::setupVeth(const std::shared_ptr<DobbyRdkPluginUtils> &utils,
     }
 
     // step 9 - add routing table entry to the container
-    if (!netlink->addRoute(BRIDGE_NAME, helper->ipv6Addr(), 128, IN6ADDR_ANY))
+    // This shouldn't be needed as there is already existing rule for the
+    // bridge itself with lower metric (higher priority) which looks like:
+    // 2080:d0bb:1e::/64 dev dobby0  metric 256 
+    // So this one will take precedence, and will be valid for all
+    // containers
+    /*
+    if (helper->ipv4())
     {
-        AI_LOG_ERROR_EXIT("failed to apply route");
-        return false;
+        if (!netlink->addRoute(BRIDGE_NAME, helper->ipv4Addr(), INADDR_CREATE(255, 255, 255, 255), INADDR_CREATE(0, 0, 0, 0)))
+        {
+            AI_LOG_ERROR_EXIT("failed to apply route");
+            return false;
+        }
     }
+    if (helper->ipv6())
+    {
+        if (!netlink->addRoute(BRIDGE_NAME, helper->ipv6Addr(), 128, IN6ADDR_ANY))
+        {
+            AI_LOG_ERROR_EXIT("failed to apply route");
+            return false;
+        }
+    }
+    */
 
     // step 10 - bring the veth interface outside the container up
     if (!netlink->ifaceUp(vethName))
