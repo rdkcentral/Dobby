@@ -101,25 +101,25 @@ bool OOMCrash::postHalt()
         return false;
     }
     
-    bool status = true;
+    bool oomDetected = false;
     if (mUtils->exitStatus != 0)
-        status = checkForOOM();
+        oomDetected = checkForOOM();
 
-    if (status == true)
+    if (oomDetected == true)
         createFileForOOM();
     
     // Remove the crashFile if container exits normally or if no OOM detected
-    if (mUtils->exitStatus == 0 || status == false)
+    if (mUtils->exitStatus == 0 || oomDetected == false)
     {
-	struct stat buffer;
-	std::string path = mContainerConfig->rdk_plugins->oomcrash->data->path;
-	std::string crashFile = path + "/oom_crashed_" + mUtils->getContainerId() + ".txt";
-	
-	if (stat(crashFile.c_str(), &buffer) == 0)
-	{
-		remove(crashFile.c_str());
-		AI_LOG_INFO("%s file removed", crashFile.c_str());
-	}
+        struct stat buffer;
+        std::string path = mContainerConfig->rdk_plugins->oomcrash->data->path;
+        std::string crashFile = path + "/oom_crashed_" + mUtils->getContainerId() + ".txt";
+
+        if (stat(crashFile.c_str(), &buffer) == 0)
+        {
+            remove(crashFile.c_str());
+            AI_LOG_INFO("%s file removed", crashFile.c_str());
+        }
     }
     
     AI_LOG_INFO("OOMCrash postHalt hook is running for container with hostname %s", mUtils->getContainerId().c_str());
@@ -195,7 +195,7 @@ bool OOMCrash::readCgroup(unsigned long *val)
 /**
  * @brief Check for Out of Memory by reading cgroup file.
  *
- * @return false when OOM not detected.
+ * @return true if OOM detected.
  */
 
 bool OOMCrash::checkForOOM()
@@ -216,7 +216,7 @@ bool OOMCrash::checkForOOM()
 }
 
 /**
- * @brief Create file if Out of Memory detected.
+ * @brief Create OOM crash file named oom_crashed_<container_name>.txt on the configured path.
  *
  */
 
