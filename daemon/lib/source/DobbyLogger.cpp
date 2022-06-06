@@ -128,7 +128,7 @@ int DobbyLogger::createUnixSocket(const std::string path)
 
     // This will probably fail since the socket should be deleted when Dobby
     // exits, but in case of crash clean up before we start
-    unlink(mSocketPath.c_str());
+    unlink(path.c_str());
 
     // Create a file descriptor for the socket
     int sockFd;
@@ -149,6 +149,14 @@ int DobbyLogger::createUnixSocket(const std::string path)
     {
         AI_LOG_SYS_ERROR(errno, "Failed to bind socket");
         return -1;
+    }
+
+    // Change permissions
+    if (chmod(path.c_str(), 0644) != 0)
+    {
+        AI_LOG_SYS_ERROR(errno, "Failed to set permissions for socket");
+        // As previously we didn't change permissions I don't believe
+        // we should fail just because permission change failed
     }
 
     // Put the socket into listening state ready to accept connections
