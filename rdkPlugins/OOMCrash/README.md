@@ -1,7 +1,7 @@
 # Dobby RDK OOMCrash Plugin
 
 ## Quick Start
-The main task of OOMCrash Plugin is to create a OOM crash file on the configured path when a container is crashed due to Out of Memory.
+The main task of OOMCrash Plugin is to create a OOM crash file named `oom_crashed_<container_name>.txt` on the configured path when a container is crashed due to Out of Memory and also delete that file when the container exits normally or if OOM not detected.
 
 Add the following section to your OCI runtime configuration `config.json` file to trigger oomcrash files lookup.
 
