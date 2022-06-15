@@ -116,6 +116,8 @@ public:
 
     bool pauseContainer(int32_t cd);
     bool resumeContainer(int32_t cd);
+    bool checkpointContainer(int32_t cd);
+    bool restoreContainer(const std::string& id);
 
     bool execInContainer(int32_t cd,
                          const std::string& options,

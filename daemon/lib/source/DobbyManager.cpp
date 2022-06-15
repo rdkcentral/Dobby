@@ -1504,6 +1504,115 @@ bool DobbyManager::resumeContainer(int32_t cd)
 
 // -----------------------------------------------------------------------------
 /**
+ *  @brief Dumps a running container
+ *
+ *  @param[in]  cd      The descriptor of the container to checkpoint.
+ *
+ *  @return true if a container with a matching descriptor was found and it was
+ *  dumped.
+ */
+bool DobbyManager::checkpointContainer(int32_t cd)
+{
+    AI_LOG_FN_ENTRY();
+
+    std::lock_guard<std::mutex> locker(mLock);
+
+    // find the container
+    auto it = mContainers.cbegin();
+    for (; it != mContainers.cend(); ++it)
+    {
+        if (it->second && (it->second->descriptor == cd))
+            break;
+    }
+
+    if (it == mContainers.end())
+    {
+        AI_LOG_WARN("failed to find container with descriptor %d", cd);
+        AI_LOG_FN_EXIT();
+        return false;
+    }
+
+    const ContainerId &id = it->first;
+    const std::unique_ptr<DobbyContainer> &container = it->second;
+
+    if (mRunc->checkpoint(id))
+    {
+        // Set the container state to Checkpoint
+        // container->state = DobbyContainer::State::Checkpoint;
+        AI_LOG_FN_EXIT();
+        return true;
+    }
+    AI_LOG_WARN("Failed to Checkpoint container '%s'", id.c_str());
+    AI_LOG_FN_EXIT();
+    return false;
+}
+
+// -----------------------------------------------------------------------------
+/**
+ *  @brief Restores a checkpointed container from existing dump.
+ *
+ *  @param[in]  id      The name of the container to restore.
+ *
+ *  @return true if a container was successfully restored.
+ */
+bool DobbyManager::restoreContainer(const std::string& id)
+{
+    AI_LOG_FN_ENTRY();
+
+    std::lock_guard<std::mutex> locker(mLock);
+    ContainerId containerId = ContainerId::create(id);
+
+//----------  put the container back to list  ----------------------------------
+    const std::string bundlePath("/opt/persistent/rdkservices/Cobalt-0/Container/");
+
+    // Parse the bundle's json config
+    std::shared_ptr<DobbyBundleConfig> config =
+        std::make_shared<DobbyBundleConfig>(mUtilities, mSettings, containerId, bundlePath);
+    if (!config || !config->isValid())
+    {
+        AI_LOG_ERROR_EXIT("failed to create config object from OCI bundle config");
+        return -1;
+    }
+
+    // Populate DobbyBundle object with path to the bundle
+    std::shared_ptr<DobbyBundle> bundle =
+        std::make_shared<DobbyBundle>(mUtilities, mEnvironment, bundlePath);
+    if (!bundle || !bundle->isValid())
+    {
+        AI_LOG_ERROR_EXIT("failed to populate DobbyBundle");
+        return -1;
+    }
+
+    // Populate DobbyRootfs object with rootfs path
+    std::shared_ptr<DobbyRootfs> rootfs =
+        std::make_shared<DobbyRootfs>(mUtilities, bundle, config);
+    if (!rootfs || !rootfs->isValid())
+    {
+        AI_LOG_ERROR_EXIT("failed to create rootfs");
+        return -1;
+    }
+    rootfs->setPersistence(true);
+
+    // Create the container wrapper
+    std::unique_ptr<DobbyContainer> container(new DobbyContainer(bundle, config, rootfs));
+//-------------------------------------------------------------------------------------------
+
+    if (mRunc->restore(id))
+    {
+        // Set the container state to running
+        AI_LOG_INFO("Restored container %s", id.c_str());
+        container->state = DobbyContainer::State::Running;
+        mContainers.emplace(containerId, std::move(container));
+        AI_LOG_FN_EXIT();
+        return true;
+    }
+    AI_LOG_WARN("Failed to restore container '%s'", id.c_str());
+    AI_LOG_FN_EXIT();
+    return false;
+}
+
+// -----------------------------------------------------------------------------
+/**
  *  @brief Executes a command in a running container
  *
  *  @param[in]  cd          The descriptor of the container to execute the command in.
@@ -1645,6 +1754,8 @@ int32_t DobbyManager::stateOfContainer(int32_t cd) const
                 return CONTAINER_STATE_RUNNING;
             case DobbyContainer::State::Paused:
                 return CONTAINER_STATE_PAUSED;
+            case DobbyContainer::State::Checkpoint:
+                return CONTAINER_STATE_CHECKPOINT;
             case DobbyContainer::State::Stopping:
                 return CONTAINER_STATE_STOPPING;
             default:
@@ -2298,6 +2409,7 @@ void DobbyManager::handleContainerTerminate(const ContainerId &id, const std::un
         // the custom config
         if (!container->customConfigFilePath.empty())
         {
+            AI_LOG_INFO("Deleting custom config file path: %s.", container->customConfigFilePath.c_str());
             if (remove(container->customConfigFilePath.c_str()) != 0)
             {
                 AI_LOG_SYS_ERROR(errno, "Failed to remove custom config '%s'",
@@ -2349,11 +2461,13 @@ void DobbyManager::onChildExit()
         // check if the runc process has exited
         int status = 0;
         int rc = waitpid(containerPid, &status, WNOHANG);
+        AI_LOG_INFO("DEDEBUG waitpid for %d returned %d", containerPid, rc);
         if (rc < 0)
         {
             // Sometimes waitpid fails even though container is already dead
             // we can check if it is running by sending "dummy" kill (it will
             // not perform kill, just check if it CAN)
+            AI_LOG_INFO("DEDEBUG will kill %d", containerPid);
             if (kill(containerPid, 0) == -1)
             {
                 // Cannot kill process, probably already dead
@@ -2419,6 +2533,7 @@ void DobbyManager::onChildExit()
             // Exec'd process has exited - remove from the map
             // as erase invalidates iterator we must use its
             // return value instead of simple increment
+            AI_LOG_INFO("DEDEBUG erasing the execit for %d", rc);
             execit = mContainerExecPids.erase(execit);
         }
         else

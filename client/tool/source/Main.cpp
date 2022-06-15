@@ -497,6 +497,82 @@ static void resumeCommand(const std::shared_ptr<IDobbyProxy>& dobbyProxy,
  *
  *
  */
+static void checkpointCommand(const std::shared_ptr<IDobbyProxy>& dobbyProxy,
+                              const std::shared_ptr<const IReadLineContext>& readLine,
+                              const std::vector<std::string>& args)
+{
+    if (args.size() < 1)
+    {
+        readLine->printLnError("must provide at least one arg; <id>");
+        return;
+    }
+
+    std::string id = args[0];
+    if (id.empty())
+    {
+        readLine->printLnError("invalid container id '%s'", id.c_str());
+        return;
+    }
+
+    int32_t cd = getContainerDescriptor(dobbyProxy, id);
+    if (cd < 0)
+    {
+        readLine->printLnError("failed to find container '%s'", id.c_str());
+    }
+    else
+    {
+        if (!dobbyProxy->checkpointContainer(cd))
+        {
+            readLine->printLnError("failed to checkpoint the container");
+        }
+        else
+        {
+            readLine->printLn("checkpoint successful for container '%s'", id.c_str());
+        }
+    }
+}
+
+// -----------------------------------------------------------------------------
+/**
+ * @brief
+ *
+ *
+ *
+ */
+static void restoreCommand(const std::shared_ptr<IDobbyProxy>& dobbyProxy,
+                           const std::shared_ptr<const IReadLineContext>& readLine,
+                           const std::vector<std::string>& args)
+{
+    if (args.size() < 1)
+    {
+        readLine->printLnError("must provide at least one arg; <id>");
+        return;
+    }
+
+    std::string id = args[0];
+    if (id.empty())
+    {
+        readLine->printLnError("invalid container id '%s'", id.c_str());
+        return;
+    }
+
+    if (!dobbyProxy->restoreContainer(id))
+    {
+        readLine->printLnError("failed to restore container '%s'", id.c_str());
+    }
+    else
+    {
+        readLine->printLn("restored container '%s'", id.c_str());
+    }
+}
+
+// -----------------------------------------------------------------------------
+/**
+ * @brief
+ *
+ *
+ *
+ */
 static void execCommand(const std::shared_ptr<IDobbyProxy>& dobbyProxy,
                         const std::shared_ptr<const IReadLineContext>& readLine,
                         const std::vector<std::string>& args)
@@ -1058,6 +1134,18 @@ static void initCommands(const std::shared_ptr<IReadLine>& readLine,
                          std::bind(resumeCommand, dobbyProxy, std::placeholders::_1, std::placeholders::_2),
                          "resume <id>",
                          "Resumes a container with the given id\n",
+                         "\n");
+
+    readLine->addCommand("checkpoint",
+                         std::bind(checkpointCommand, dobbyProxy, std::placeholders::_1, std::placeholders::_2),
+                         "checkpoint <id>",
+                         "Checkpoints a container with the given id\n",
+                         "\n");
+
+    readLine->addCommand("restore",
+                         std::bind(restoreCommand, dobbyProxy, std::placeholders::_1, std::placeholders::_2),
+                         "restore <id>",
+                         "Restores a container with the given id\n",
                          "\n");
 
     readLine->addCommand("exec",

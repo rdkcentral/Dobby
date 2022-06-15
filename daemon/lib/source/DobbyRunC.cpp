@@ -552,7 +552,7 @@ bool DobbyRunC::resume(const ContainerId& id) const
 
     AI_TRACE_EVENT("Dobby", "runc::resume");
 
-    // run the following command "runc pause <id>"
+    // run the following command "runc resume <id>"
     pid_t pid = forkExecRunC( { "resume", id.c_str() }, { } );
     if (pid <= 0)
     {
@@ -577,6 +577,122 @@ bool DobbyRunC::resume(const ContainerId& id) const
 
     // get the return code, 0 for success, 1 for failure
     return (WEXITSTATUS(status) == EXIT_SUCCESS);
+}
+
+// -----------------------------------------------------------------------------
+/**
+ *  @brief Runs the runc command line tool with the 'checkpoint' command
+ *
+ *  This is equivalent to calling the following on the command line:
+ *
+ *      /usr/sbin/runc checkpoint <id>
+ *
+ *  @param[in]  id      The id / name of the container to checkpoint.
+ *
+ *  @return true or false based on the return code of the runc tool.
+ */
+bool DobbyRunC::checkpoint(const ContainerId& id) const
+{
+    AI_LOG_FN_ENTRY();
+
+    AI_TRACE_EVENT("Dobby", "runc::checkpoint");
+
+    std::vector<const char *> args =
+    {
+        "checkpoint",
+        "--shell-job",
+        "--tcp-established",
+        "--image-path=/media/apps/criu/image",
+        "--work-path=/media/apps/criu/work",
+        "--ext-unix-sk"
+    };
+    args.push_back(id.c_str());
+
+    pid_t pid = forkExecRunC( args, { } );
+    if (pid <= 0)
+    {
+        AI_LOG_ERROR_EXIT("failed to execute runc tool");
+        return true;
+    }
+
+    // block waiting for the forked process to complete
+    int status;
+    if (TEMP_FAILURE_RETRY(waitpid(pid, &status, 0)) < 0)
+    {
+        AI_LOG_SYS_ERROR_EXIT(errno, "waitpid failed");
+        return true;
+    }
+    if (!WIFEXITED(status))
+    {
+        AI_LOG_ERROR_EXIT("runc didn't exit?  status=0x%08x", status);
+        return true;
+    }
+
+    AI_LOG_FN_EXIT();
+
+    // get the return code, 0 for success, 1 for failure
+    // return (WEXITSTATUS(status) == EXIT_SUCCESS);
+    return 0;
+}
+
+// -----------------------------------------------------------------------------
+/**
+ *  @brief Runs the runc command line tool with the 'restore' command
+ *
+ *  This is equivalent to calling the following on the command line:
+ *
+ *      /usr/sbin/runc restore <id>
+ *
+ *  @param[in]  id      The name of the container to restore.
+ *
+ *  @return true or false based on the return code of the runc tool.
+ */
+bool DobbyRunC::restore(const std::string& id) const
+{
+    AI_LOG_FN_ENTRY();
+
+    AI_TRACE_EVENT("Dobby", "runc::restore");
+
+    std::vector<const char *> args =
+    {
+        "restore",
+        "--bundle=/opt/persistent/rdkservices/Cobalt-0/Container/",
+        "--console-socket", mConsoleSocket.c_str(),
+        "--pid-file=/opt/persistent/rdkservices/Cobalt-0/Container/container.pid",
+        "--shell-job",
+        "--tcp-established",
+        "--detach",
+        "--image-path=/media/apps/criu/image",
+        "--work-path=/media/apps/criu/work",
+        "--ext-unix-sk"
+    };
+    args.push_back(id.c_str());
+
+    pid_t pid = forkExecRunC( args, { } );
+    if (pid <= 0)
+    {
+        AI_LOG_ERROR_EXIT("failed to execute runc tool");
+        return false;
+    }
+
+    // block waiting for the forked process to complete
+    int status;
+    if (TEMP_FAILURE_RETRY(waitpid(pid, &status, 0)) < 0)
+    {
+        AI_LOG_SYS_ERROR_EXIT(errno, "waitpid failed");
+        return false;
+    }
+    if (!WIFEXITED(status))
+    {
+        AI_LOG_ERROR_EXIT("runc didn't exit?  status=0x%08x", status);
+        return false;
+    }
+
+    AI_LOG_FN_EXIT();
+
+    // get the return code, 0 for success, 1 for failure
+    // return (WEXITSTATUS(status) == EXIT_SUCCESS);
+    return true;
 }
 
 // -----------------------------------------------------------------------------
@@ -1108,6 +1224,11 @@ pid_t DobbyRunC::forkExecRunC(const std::vector<const char*>& args,
     // move it to '/var/run/runc'
     argv.push_back(strdup("--root"));
     argv.push_back(strdup(mWorkingDir.c_str()));
+
+    // struct stat info;
+    // if(stat( mWorkingDir.c_str(), &info ) != 0)
+    //     utils->mkdirRecursive(mWorkingDir, 0775);
+
 
     // On non-production builds store the runc log
 #if (AI_BUILD_TYPE == AI_DEBUG)

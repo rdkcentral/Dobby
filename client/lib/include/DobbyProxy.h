@@ -99,6 +99,10 @@ public:
 
     bool resumeContainer(int32_t cd) const override;
 
+    bool checkpointContainer(int32_t cd) const override;
+
+    bool restoreContainer(const std::string&) const override;
+
     bool execInContainer(int32_t cd,
                          const std::string& options,
                          const std::string& command) const override;

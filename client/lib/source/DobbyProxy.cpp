@@ -748,6 +748,74 @@ bool DobbyProxy::resumeContainer(int32_t cd) const
 
 // -----------------------------------------------------------------------------
 /**
+ *  @brief Checkpoints the container with the descriptor (container integer id)
+ *
+ *  @param[in]  cd              The container descriptor, which is the value
+ *                              returned by startContainer call.
+ *
+ *  @return true on success, false on failure.
+ */
+bool DobbyProxy::checkpointContainer(int32_t cd) const
+{
+    AI_LOG_FN_ENTRY();
+
+    // send off the request
+    const AI_IPC::VariantList params = { cd };
+    AI_IPC::VariantList returns;
+
+    bool result = false;
+
+    if (invokeMethod(DOBBY_CTRL_INTERFACE,
+                     DOBBY_CTRL_METHOD_CHECKPOINT,
+                     params, returns))
+    {
+        if (!AI_IPC::parseVariantList<bool>(returns, &result))
+        {
+            result = false;
+        }
+    }
+
+    AI_LOG_FN_EXIT();
+    return result;
+}
+
+// -----------------------------------------------------------------------------
+/**
+ *  @brief Restores previously checkpointed container with the given id.
+ *
+ *
+ *  @param[in]  id              The string id of the container, this should not
+ *                              have any spaces and only container alphanumeric
+ *                              characters plus '.' and '-'.
+ *
+ *  @return true on success, false on failure.
+ */
+bool DobbyProxy::restoreContainer(const std::string& id) const
+{
+    AI_LOG_FN_ENTRY();
+
+    // send off the request
+    const AI_IPC::VariantList params = { id };
+    AI_IPC::VariantList returns;
+
+    bool result = false;
+
+    if (invokeMethod(DOBBY_CTRL_INTERFACE,
+                     DOBBY_CTRL_METHOD_RESTORE,
+                     params, returns))
+    {
+        if (!AI_IPC::parseVariantList<bool>(returns, &result))
+        {
+            result = false;
+        }
+    }
+
+    AI_LOG_FN_EXIT();
+    return result;
+}
+
+// -----------------------------------------------------------------------------
+/**
  *  @brief Executes a command in the given container.
  *
  *  @param[in]  cd              The container descriptor.

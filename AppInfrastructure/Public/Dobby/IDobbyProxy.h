@@ -141,6 +141,10 @@ public:
 
     virtual bool resumeContainer(int32_t descriptor) const = 0;
 
+    virtual bool checkpointContainer(int32_t descriptor) const = 0;
+
+    virtual bool restoreContainer(const std::string&) const = 0;
+
     virtual bool execInContainer(int32_t cd,
                                  const std::string& options,
                                  const std::string& command) const = 0;

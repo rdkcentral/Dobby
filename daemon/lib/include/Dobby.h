@@ -89,6 +89,8 @@ private:
     DOBBY_DBUS_METHOD(stop);
     DOBBY_DBUS_METHOD(pause);
     DOBBY_DBUS_METHOD(resume);
+    DOBBY_DBUS_METHOD(checkpoint);
+    DOBBY_DBUS_METHOD(restore);
     DOBBY_DBUS_METHOD(exec);
     DOBBY_DBUS_METHOD(list);
     DOBBY_DBUS_METHOD(getState);

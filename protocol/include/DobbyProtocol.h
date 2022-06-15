@@ -52,6 +52,8 @@
 #define DOBBY_CTRL_METHOD_STOP                      "Stop"
 #define DOBBY_CTRL_METHOD_PAUSE                     "Pause"
 #define DOBBY_CTRL_METHOD_RESUME                    "Resume"
+#define DOBBY_CTRL_METHOD_CHECKPOINT                "Checkpoint"
+#define DOBBY_CTRL_METHOD_RESTORE                   "Restore"
 #define DOBBY_CTRL_METHOD_EXEC                      "Exec"
 #define DOBBY_CTRL_METHOD_GETSTATE                  "GetState"
 #define DOBBY_CTRL_METHOD_GETINFO                   "GetInfo"
@@ -71,6 +73,7 @@
 #define CONTAINER_STATE_RUNNING                 2
 #define CONTAINER_STATE_STOPPING                3
 #define CONTAINER_STATE_PAUSED                  4
+#define CONTAINER_STATE_CHECKPOINT              5
 
 #define DOBBY_LOG_NULL                          0
 #define DOBBY_LOG_SYSLOG                        1

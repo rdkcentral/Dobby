@@ -640,6 +640,8 @@ void Dobby::initIpcMethods()
         {   DOBBY_CTRL_INTERFACE,        DOBBY_CTRL_METHOD_STOP,                    &Dobby::stop                   },
         {   DOBBY_CTRL_INTERFACE,        DOBBY_CTRL_METHOD_PAUSE,                   &Dobby::pause                  },
         {   DOBBY_CTRL_INTERFACE,        DOBBY_CTRL_METHOD_RESUME,                  &Dobby::resume                 },
+        {   DOBBY_CTRL_INTERFACE,        DOBBY_CTRL_METHOD_CHECKPOINT,              &Dobby::checkpoint             },
+        {   DOBBY_CTRL_INTERFACE,        DOBBY_CTRL_METHOD_RESTORE,                 &Dobby::restore                },
         {   DOBBY_CTRL_INTERFACE,        DOBBY_CTRL_METHOD_EXEC,                    &Dobby::exec                   },
         {   DOBBY_CTRL_INTERFACE,        DOBBY_CTRL_METHOD_GETSTATE,                &Dobby::getState               },
         {   DOBBY_CTRL_INTERFACE,        DOBBY_CTRL_METHOD_GETINFO,                 &Dobby::getInfo                },
@@ -1297,6 +1299,116 @@ void Dobby::resume(std::shared_ptr<AI_IPC::IAsyncReplySender> replySender)
 
         // Queue the work, if successful then we're done
         if (mWorkQueue->postWork(std::move(doResumeLambda)))
+        {
+            AI_LOG_FN_EXIT();
+            return;
+        }
+    }
+
+    // Fire off the reply
+    AI_IPC::VariantList results = { false };
+    if (!replySender->sendReply(results))
+    {
+        AI_LOG_ERROR("failed to send reply");
+    }
+
+    AI_LOG_FN_EXIT();
+}
+
+
+// -----------------------------------------------------------------------------
+/**
+ *  @brief Checkpoints (dumps) a container
+ *
+ *
+ *
+ *
+ */
+void Dobby::checkpoint(std::shared_ptr<AI_IPC::IAsyncReplySender> replySender)
+{
+    AI_LOG_FN_ENTRY();
+
+    // Expecting one argument:  (int32_t cd)
+    int32_t descriptor;
+    if (!AI_IPC::parseVariantList
+            <int32_t>
+            (replySender->getMethodCallArguments(), &descriptor))
+    {
+        AI_LOG_ERROR("error getting the args");
+    }
+    else
+    {
+        AI_LOG_INFO(DOBBY_CTRL_METHOD_PAUSE "(%d)", descriptor);
+
+        // Try and checkpoint the container on the work queue thread
+        auto doCheckpointLambda =
+            [manager = mManager, descriptor, replySender]()
+            {
+                // Try and checkpoint the container
+                bool result = manager->checkpointContainer(descriptor);
+
+                // Fire off the reply
+                replySender->sendReply({ result });
+            };
+
+        // Queue the work, if successful then we're done
+        if (mWorkQueue->postWork(std::move(doCheckpointLambda)))
+        {
+            AI_LOG_FN_EXIT();
+            return;
+        }
+    }
+
+    // Fire off the reply
+    AI_IPC::VariantList results = { false };
+    if (!replySender->sendReply(results))
+    {
+        AI_LOG_ERROR("failed to send reply");
+    }
+
+    AI_LOG_FN_EXIT();
+}
+
+// -----------------------------------------------------------------------------
+/**
+ *  @brief Restores a checkpointed (dumped) container
+ *
+ *
+ *
+ *
+ */
+void Dobby::restore(std::shared_ptr<AI_IPC::IAsyncReplySender> replySender)
+{
+    AI_LOG_FN_ENTRY();
+
+    // Expecting one argument:  (std::string id)
+    std::string id;
+
+    if (!AI_IPC::parseVariantList
+            <std::string>
+            (replySender->getMethodCallArguments(), &id))
+    {
+        AI_LOG_ERROR("error getting the args");
+    }
+    else
+    {
+        AI_LOG_INFO(DOBBY_CTRL_METHOD_RESTORE "(%s)", id.c_str());
+
+        auto doRestoreLambda =
+            [manager = mManager, id, replySender]()
+            {
+                // Try and restore the container
+                bool result = manager->restoreContainer(id);
+
+                // Fire off the reply
+                if (!replySender->sendReply({ result }))
+                {
+                    AI_LOG_ERROR("failed to send reply");
+                }
+            };
+
+        // Queue the work, if successful then we're done
+        if (mWorkQueue->postWork(std::move(doRestoreLambda)))
         {
             AI_LOG_FN_EXIT();
             return;
