@@ -77,7 +77,7 @@ bool DynamicMountDetails::onCreateContainer()
         success = true;
         AI_LOG_INFO("Source file [%s] does not exist, dynamic mount skipped", mMountProperties.source.c_str());
     }
-    
+
     AI_LOG_FN_EXIT();
     return success;
 }
@@ -89,19 +89,19 @@ bool DynamicMountDetails::onCreateContainer()
  *  @return true on success, false on failure.
  */
 bool DynamicMountDetails::addMount()
-{   
-    // Create comma separated string of mount options 
+{
+    // Create comma separated string of mount options
     std::string mountData;
     std::list<std::string>::const_iterator it = mMountProperties.mountOptions.begin();
     for (; it != mMountProperties.mountOptions.end(); ++it)
     {
         if (it != mMountProperties.mountOptions.begin())
             mountData += ",";
-         mountData += *it;    
+         mountData += *it;
     }
-    
-    std::string targetPath = mRootfsPath + mMountProperties.destination;    
-    
+
+    std::string targetPath = mRootfsPath + mMountProperties.destination;
+
     // Create target file on host within the container rootfs
     std::ofstream targetFile(targetPath);
     targetFile.close();
@@ -109,11 +109,11 @@ bool DynamicMountDetails::addMount()
     // Bind mount source into destination
     if (mount(mMountProperties.source.c_str(),
               targetPath.c_str(),
-              "", 
-              mMountProperties.mountFlags | MS_BIND, 
+              "",
+              mMountProperties.mountFlags | MS_BIND,
               mountData.data()) != 0)
     {
-        AI_LOG_ERROR("failed to add dynamic mount '%s' in storage plugin",
+        AI_LOG_SYS_ERROR(errno, "failed to add dynamic mount '%s' in storage plugin",
                      mMountProperties.source.c_str());
         return false;
     }
