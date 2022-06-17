@@ -647,18 +647,22 @@ bool DobbyRunC::checkpoint(const ContainerId& id) const
  *
  *  @return true or false based on the return code of the runc tool.
  */
-bool DobbyRunC::restore(const std::string& id) const
+bool DobbyRunC::restore(const std::string& id,
+                        const std::shared_ptr<const DobbyBundle>& bundle) const
 {
     AI_LOG_FN_ENTRY();
 
     AI_TRACE_EVENT("Dobby", "runc::restore");
 
+    // create a path to the pid file to write to
+    const std::string pidFilePath(bundle->path() + "/container.pid");
+
     std::vector<const char *> args =
     {
         "restore",
-        "--bundle=/opt/persistent/rdkservices/Cobalt-0/Container/",
+        "--bundle", bundle->path().c_str(),
         "--console-socket", mConsoleSocket.c_str(),
-        "--pid-file=/opt/persistent/rdkservices/Cobalt-0/Container/container.pid",
+        "--pid-file", pidFilePath.c_str(),
         "--shell-job",
         "--tcp-established",
         "--detach",

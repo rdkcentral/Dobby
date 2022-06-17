@@ -1562,9 +1562,9 @@ bool DobbyManager::restoreContainer(const std::string& id)
     std::lock_guard<std::mutex> locker(mLock);
     ContainerId containerId = ContainerId::create(id);
 
-//----------  put the container back to list  ----------------------------------
-    const std::string bundlePath("/opt/persistent/rdkservices/Cobalt-0/Container/");
+    const std::string bundlePath("/opt/persistent/rdkservices/Cobalt-0/Container");
 
+//----------  put the container back to list  ----------------------------------
     // Parse the bundle's json config
     std::shared_ptr<DobbyBundleConfig> config =
         std::make_shared<DobbyBundleConfig>(mUtilities, mSettings, containerId, bundlePath);
@@ -1597,7 +1597,7 @@ bool DobbyManager::restoreContainer(const std::string& id)
     std::unique_ptr<DobbyContainer> container(new DobbyContainer(bundle, config, rootfs));
 //-------------------------------------------------------------------------------------------
 
-    if (mRunc->restore(id))
+    if (mRunc->restore(id, bundle))
     {
         // Set the container state to running
         AI_LOG_INFO("Restored container %s", id.c_str());

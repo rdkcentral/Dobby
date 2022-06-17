@@ -85,7 +85,7 @@ public:
     bool pause(const ContainerId &id) const;
     bool resume(const ContainerId &id) const;
     bool checkpoint(const ContainerId& id) const;
-    bool restore(const std::string &id) const;
+    bool restore(const std::string &id, const std::shared_ptr<const DobbyBundle>& bundle) const;
     std::pair<pid_t, pid_t> exec(const ContainerId &id,
                                  const std::string &options,
                                  const std::string &command) const;
