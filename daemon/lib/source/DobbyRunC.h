@@ -120,6 +120,7 @@ private:
     const std::string mWorkingDir;
     const std::string mLogDir;
     const std::string mLogFilePath;
+    const std::string mCriuImagePath;
     const std::string mConsoleSocket;
 };
 

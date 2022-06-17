@@ -52,6 +52,7 @@ DobbyRunC::DobbyRunC(const std::shared_ptr<IDobbyUtils>& utils,
     , mWorkingDir("/var/run/rdk/crun")
     , mLogDir("/opt/logs")
     , mLogFilePath(mLogDir + "/crun.log")
+    , mCriuImagePath("/media/apps/criu/image")
     , mConsoleSocket(settings->consoleSocketPath())
 {
     // sanity check
@@ -597,13 +598,15 @@ bool DobbyRunC::checkpoint(const ContainerId& id) const
 
     AI_TRACE_EVENT("Dobby", "runc::checkpoint");
 
+    utils->mkdirRecursive(mCriuImagePath, 0775);
+
     std::vector<const char *> args =
     {
         "checkpoint",
         "--shell-job",
         "--tcp-established",
-        "--image-path=/media/apps/criu/image",
-        "--work-path=/media/apps/criu/work",
+        "--image-path", mCriuImagePath.c_str(),
+        "--work-path=", mCriuImagePath.c_str(),
         "--ext-unix-sk"
     };
     args.push_back(id.c_str());
@@ -666,8 +669,8 @@ bool DobbyRunC::restore(const std::string& id,
         "--shell-job",
         "--tcp-established",
         "--detach",
-        "--image-path=/media/apps/criu/image",
-        "--work-path=/media/apps/criu/work",
+        "--image-path", mCriuImagePath.c_str(),
+        "--work-path=", mCriuImagePath.c_str(),
         "--ext-unix-sk"
     };
     args.push_back(id.c_str());
