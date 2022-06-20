@@ -598,7 +598,7 @@ bool DobbyRunC::checkpoint(const ContainerId& id) const
 
     AI_TRACE_EVENT("Dobby", "runc::checkpoint");
 
-    utils->mkdirRecursive(mCriuImagePath, 0775);
+    mUtilities->mkdirRecursive(mCriuImagePath, 0775);
 
     std::vector<const char *> args =
     {
