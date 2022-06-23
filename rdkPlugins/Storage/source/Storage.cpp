@@ -112,6 +112,18 @@ bool Storage::createRuntime()
         }
     }
 
+    // create destination paths for each dynamic mount
+    std::vector<std::unique_ptr<DynamicMountDetails>> dynamicMountDetails = getDynamicMountDetails();
+    for(auto it = dynamicMountDetails.begin(); it != dynamicMountDetails.end(); it++)
+    {
+        // Creating destination paths inside container
+        if(!(*it)->onCreateRuntime())
+        {
+            AI_LOG_ERROR_EXIT("failed to execute createRuntime hook for dynamic mount");
+            return false;
+        }
+    }
+
     AI_LOG_FN_EXIT();
     return true;
 }
@@ -312,7 +324,7 @@ std::vector<std::unique_ptr<LoopMountDetails>> Storage::getLoopMountDetails() co
  *  type objects.
  *
  *
- *  @return vector of MountProperties that were in the config
+ *  @return vector of LoopMountProperties that were in the config
  */
 std::vector<LoopMountProperties> Storage::getLoopMounts() const
 {
@@ -440,7 +452,7 @@ std::vector<std::unique_ptr<DynamicMountDetails>> Storage::getDynamicMountDetail
  *  type objects.
  *
  *
- *  @return vector of MountProperties that were in the config
+ *  @return vector of DynamicMountProperties that were in the config
  */
 std::vector<DynamicMountProperties> Storage::getDynamicMounts() const
 {
@@ -452,7 +464,7 @@ std::vector<DynamicMountProperties> Storage::getDynamicMounts() const
     if (mContainerConfig->rdk_plugins->storage->data)
     {
         // loop though all the dynamic mounts for the given container and create individual
-        // LoopMountDetails::LoopMount objects for each
+        // DynamicMountProperties objects for each
         for (size_t i = 0; i < mContainerConfig->rdk_plugins->storage->data->dynamic_len; i++)
         {
             auto dynamic = mContainerConfig->rdk_plugins->storage->data->dynamic[i];
