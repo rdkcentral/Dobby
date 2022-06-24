@@ -173,12 +173,8 @@ bool DynamicMountDetails::addMount() const
          mountData += *it;
     }
 
-    // Create target file on host within the container rootfs
-    std::string targetPath = mRootfsPath + mMountProperties.destination;
-    std::ofstream targetFile(targetPath);
-    targetFile.close();
-
     // Bind mount source into destination
+    std::string targetPath = mRootfsPath + mMountProperties.destination;
     if (mount(mMountProperties.source.c_str(),
               targetPath.c_str(),
               "",
