@@ -213,13 +213,25 @@ bool Storage::postStop()
 
     // here should be deleting the data.img file when non persistent option selected
 
-    std::vector<std::unique_ptr<LoopMountDetails>> mountDetails = getLoopMountDetails();
-    for(auto it = mountDetails.begin(); it != mountDetails.end(); it++)
+    std::vector<std::unique_ptr<LoopMountDetails>> loopMountDetails = getLoopMountDetails();
+    for(auto it = loopMountDetails.begin(); it != loopMountDetails.end(); it++)
     {
         // Clean up temp mount points
         if(!(*it)->removeNonPersistentImage())
         {
             AI_LOG_ERROR_EXIT("failed to clean up non persistent image");
+            // This is probably to late to fail but do it either way
+            return false;
+        }
+    }
+
+    std::vector<std::unique_ptr<DynamicMountDetails>> dynamicMountDetails = getDynamicMountDetails();
+    for(auto it = dynamicMountDetails.begin(); it != dynamicMountDetails.end(); it++)
+    {
+        // Clean up temp mount points
+        if(!(*it)->onPostStop())
+        {
+            AI_LOG_ERROR_EXIT("failed to remove dynamic mounts");
             // This is probably to late to fail but do it either way
             return false;
         }

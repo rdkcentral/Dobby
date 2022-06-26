@@ -63,6 +63,7 @@ public:
 public:
     bool onCreateRuntime() const;
     bool onCreateContainer() const;
+    bool onPostStop() const;
 
 private:
     bool addMount() const;

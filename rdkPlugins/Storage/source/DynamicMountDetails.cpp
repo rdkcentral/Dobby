@@ -157,6 +157,41 @@ bool DynamicMountDetails::onCreateContainer() const
 
 // -----------------------------------------------------------------------------
 /**
+ *  @brief Unmounts dynamic mounts
+ *
+ *  @return true on success, false on failure.
+ */
+bool DynamicMountDetails::onPostStop() const
+{
+    AI_LOG_FN_ENTRY();
+
+    bool success = false;
+    std::string targetPath = mRootfsPath + mMountProperties.destination;
+    struct stat buffer;
+
+    if (stat(targetPath.c_str(), &buffer) == 0)
+    {
+        if (remove(targetPath.c_str()) == 0)
+        {
+            success = true;
+        }
+        else
+        {
+            AI_LOG_SYS_ERROR(errno, "failed to remove dynamic mount '%s' in storage plugin", targetPath.c_str());
+        }
+    }
+    else
+    {
+        success = true;
+        AI_LOG_INFO("Mount '%s' does not exist, dynamic mount skipped", targetPath.c_str());
+    }
+
+    AI_LOG_FN_EXIT();
+    return success;
+}
+
+// -----------------------------------------------------------------------------
+/**
  *  @brief Add mount between source and destination.
  *
  *  @return true on success, false on failure.
