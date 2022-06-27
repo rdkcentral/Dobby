@@ -61,15 +61,15 @@ public:
                         const std::shared_ptr<DobbyRdkPluginUtils> &utils);
 
 public:
-    bool onCreateContainer();
-    bool changeOwnership();
+    bool onCreateRuntime() const;
+    bool onCreateContainer() const;
+    bool onPostStop() const;
 
 private:
-    bool addMount();
+    bool addMount() const;
 
     const std::string mRootfsPath;
     DynamicMountProperties mMountProperties;
-
     const std::shared_ptr<DobbyRdkPluginUtils> mUtils;
 };
 
