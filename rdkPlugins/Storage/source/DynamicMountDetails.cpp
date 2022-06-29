@@ -57,15 +57,88 @@ DynamicMountDetails::~DynamicMountDetails()
 
 // -----------------------------------------------------------------------------
 /**
+ *  @brief Creates destination path so it exists before mounting
+ *
+ *  @return true on success, false on failure.
+ */
+bool DynamicMountDetails::onCreateRuntime() const
+{
+    AI_LOG_FN_ENTRY();
+
+    bool success = false;
+    std::string targetPath = mRootfsPath + mMountProperties.destination;
+    std::string dirPath;
+
+    struct stat buffer;
+    if (stat(mMountProperties.source.c_str(), &buffer) == 0)
+    {
+        bool isDir = S_ISDIR(buffer.st_mode);
+        // Determine path based on whether source is a directory or file
+        if (isDir)
+        {
+            dirPath = targetPath;
+        }
+        else
+        {
+            // Mounting a file so exclude filename from directory path
+            std::size_t found = targetPath.find_last_of("/");
+            dirPath = targetPath.substr(0, found);
+        }
+
+        // Recursively create destination directory structure
+        if (mUtils->mkdirRecursive(dirPath, 0755) || (errno == EEXIST))
+        {
+            if (isDir)
+            {
+                success = true;
+            }
+            else
+            {
+                // If mounting a file, make sure a file with the same name
+                // exists at the desination path prior to bind mounting.
+                // Otherwise the bind mount may fail if the destination path
+                // filesystem is read-only.
+                // Creating the file first ensures an inode exists for the
+                // bind mount to target.
+                int fd = open(targetPath.c_str(), O_RDONLY | O_CREAT, 0644);
+                if ((fd == 0) || (errno == EEXIST))
+                {
+                    close(fd);
+                    success = true;
+                }
+                else
+                {
+                    AI_LOG_SYS_ERROR(errno, "failed to open or create destination '%s'", targetPath.c_str());
+                }
+            }
+        }
+        else
+        {
+            AI_LOG_SYS_ERROR(errno, "failed to create mount destination path '%s' in storage plugin", targetPath.c_str());
+        }
+    }
+    else
+    {
+        // No mount source so ignore
+        success = true;
+        AI_LOG_INFO("Source '%s' does not exist, dynamic mount directory creation skipped", mMountProperties.source.c_str());
+    }
+
+    AI_LOG_FN_EXIT();
+    return success;
+}
+
+// -----------------------------------------------------------------------------
+/**
  *  @brief Adds bind mount only if source exists on the host
  *
  *  @return true on success, false on failure.
  */
-bool DynamicMountDetails::onCreateContainer()
+bool DynamicMountDetails::onCreateContainer() const
 {
     AI_LOG_FN_ENTRY();
-    bool success = false;
 
+    bool success = false;
     struct stat buffer;
     if (stat(mMountProperties.source.c_str(), &buffer) == 0)
     {
@@ -75,9 +148,44 @@ bool DynamicMountDetails::onCreateContainer()
     {
         // No mount source so ignore
         success = true;
-        AI_LOG_INFO("Source file [%s] does not exist, dynamic mount skipped", mMountProperties.source.c_str());
+        AI_LOG_INFO("Source '%s' does not exist, dynamic mount skipped", mMountProperties.source.c_str());
     }
-    
+
+    AI_LOG_FN_EXIT();
+    return success;
+}
+
+// -----------------------------------------------------------------------------
+/**
+ *  @brief Unmounts dynamic mounts
+ *
+ *  @return true on success, false on failure.
+ */
+bool DynamicMountDetails::onPostStop() const
+{
+    AI_LOG_FN_ENTRY();
+
+    bool success = false;
+    std::string targetPath = mRootfsPath + mMountProperties.destination;
+    struct stat buffer;
+
+    if (stat(targetPath.c_str(), &buffer) == 0)
+    {
+        if (remove(targetPath.c_str()) == 0)
+        {
+            success = true;
+        }
+        else
+        {
+            AI_LOG_SYS_ERROR(errno, "failed to remove dynamic mount '%s' in storage plugin", targetPath.c_str());
+        }
+    }
+    else
+    {
+        success = true;
+        AI_LOG_INFO("Mount '%s' does not exist, dynamic mount skipped", targetPath.c_str());
+    }
+
     AI_LOG_FN_EXIT();
     return success;
 }
@@ -88,33 +196,27 @@ bool DynamicMountDetails::onCreateContainer()
  *
  *  @return true on success, false on failure.
  */
-bool DynamicMountDetails::addMount()
-{   
-    // Create comma separated string of mount options 
+bool DynamicMountDetails::addMount() const
+{
+    // Create comma separated string of mount options
     std::string mountData;
     std::list<std::string>::const_iterator it = mMountProperties.mountOptions.begin();
     for (; it != mMountProperties.mountOptions.end(); ++it)
     {
         if (it != mMountProperties.mountOptions.begin())
             mountData += ",";
-         mountData += *it;    
+         mountData += *it;
     }
-    
-    std::string targetPath = mRootfsPath + mMountProperties.destination;    
-    
-    // Create target file on host within the container rootfs
-    std::ofstream targetFile(targetPath);
-    targetFile.close();
 
     // Bind mount source into destination
+    std::string targetPath = mRootfsPath + mMountProperties.destination;
     if (mount(mMountProperties.source.c_str(),
               targetPath.c_str(),
-              "", 
-              mMountProperties.mountFlags | MS_BIND, 
+              "",
+              mMountProperties.mountFlags | MS_BIND,
               mountData.data()) != 0)
     {
-        AI_LOG_ERROR("failed to add dynamic mount '%s' in storage plugin",
-                     mMountProperties.source.c_str());
+        AI_LOG_SYS_ERROR(errno, "failed to add dynamic mount '%s' in storage plugin", targetPath.c_str());
         return false;
     }
 
