@@ -124,6 +124,19 @@ bool Storage::createRuntime()
         }
     }
 
+        // Change mount ownership for all configured items
+    std::vector<std::unique_ptr<MountOwnerDetails>> mountOwnerDetails = getMountOwnerDetails();
+
+    for(auto it = mountOwnerDetails.begin(); it != mountOwnerDetails.end(); it++)
+    {
+        // Change ownership of mount
+        if(!(*it)->onCreateRuntime())
+        {
+            AI_LOG_ERROR_EXIT("failed to execute createRuntime hook for mount owner");
+            return false;
+        }
+    }
+
     AI_LOG_FN_EXIT();
     return true;
 }
@@ -147,7 +160,7 @@ bool Storage::createContainer()
         }
     }
 
-    // create dynamic mounts for every point
+    // Create dynamic mounts for every point
     std::vector<std::unique_ptr<DynamicMountDetails>> dynamicMountDetails = getDynamicMountDetails();
 
     for(auto it = dynamicMountDetails.begin(); it != dynamicMountDetails.end(); it++)
@@ -501,6 +514,81 @@ std::vector<DynamicMountProperties> Storage::getDynamicMounts() const
 
     AI_LOG_FN_EXIT();
     return mounts;
+}
+
+// -----------------------------------------------------------------------------
+/**
+ *  @brief Create mount owner details vector from all mount owners in config.
+ *
+ *
+ *  @return vector of MountOwnerDetails that were in the config
+ */
+std::vector<std::unique_ptr<MountOwnerDetails>> Storage::getMountOwnerDetails() const
+{
+    AI_LOG_FN_ENTRY();
+
+    const std::vector<MountOwnerProperties> mountOwners = getMountOwners();
+
+    std::vector<std::unique_ptr<MountOwnerDetails>> ownerDetails;
+    // loop though all the mount owners for the given container and create individual
+    // MountOwnerDetails objects for each
+    for (const MountOwnerProperties &properties : mountOwners)
+    {
+        // create the mount owner details and make sure it was constructed
+        auto mountOwner = std::make_unique<MountOwnerDetails>(mRootfsPath,
+                                                              properties,
+                                                              mUtils);
+
+        if (mountOwner)
+        {
+            ownerDetails.emplace_back(std::move(mountOwner));
+        }
+    }
+
+    AI_LOG_FN_EXIT();
+
+    return ownerDetails;
+}
+
+// -----------------------------------------------------------------------------
+/**
+ *  @brief Reads container config and creates all dynamic mounts in DynamicMountProperties
+ *  type objects.
+ *
+ *
+ *  @return vector of DynamicMountProperties that were in the config
+ */
+std::vector<MountOwnerProperties> Storage::getMountOwners() const
+{
+    AI_LOG_FN_ENTRY();
+
+    std::vector<MountOwnerProperties> mountOwners;
+
+    // Check if container has mount data
+    if (mContainerConfig->rdk_plugins->storage->data)
+    {
+        // loop though all the mount owners for the given container and create individual
+        // MountOwnerProperties objects for each
+        for (size_t i = 0; i < mContainerConfig->rdk_plugins->storage->data->mount_owner_len; i++)
+        {
+            auto mountOwner = mContainerConfig->rdk_plugins->storage->data->mount_owner[i];
+
+            MountOwnerProperties mountOwnerProps;
+            mountOwnerProps.source = std::string(mountOwner->source);
+            mountOwnerProps.user = std::string(mountOwner->user);
+            mountOwnerProps.group  = std::string(mountOwner->group);
+            mountOwnerProps.recursive = mountOwner->recursive;
+
+            mountOwners.push_back(mountOwnerProps);
+        }
+    }
+    else
+    {
+        AI_LOG_ERROR("No storage data in config file");
+    }
+
+    AI_LOG_FN_EXIT();
+    return mountOwners;
 }
 
 // -----------------------------------------------------------------------------

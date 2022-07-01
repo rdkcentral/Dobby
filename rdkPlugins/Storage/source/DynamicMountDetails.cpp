@@ -21,19 +21,9 @@
 #include "StorageHelper.h"
 #include "DobbyRdkPluginUtils.h"
 
-#include <fstream>
-#include <stdio.h>
-#include <errno.h>
 #include <fcntl.h>
-#include <unistd.h>
 #include <sys/mount.h>
 #include <sys/stat.h>
-#include <sys/ioctl.h>
-#include <sstream>
-#include <fstream>
-#include <dirent.h>
-#include <pwd.h>
-#include <grp.h>
 
 // Dynamic mount details constructor
 DynamicMountDetails::DynamicMountDetails(const std::string& rootfsPath,
