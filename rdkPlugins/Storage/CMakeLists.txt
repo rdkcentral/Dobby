@@ -29,6 +29,7 @@ add_library( ${PROJECT_NAME}
         source/StorageHelper.cpp
         source/LoopMountDetails.cpp
         source/DynamicMountDetails.cpp
+        source/MountOwnerDetails.cpp
         )
 
 target_include_directories(${PROJECT_NAME}

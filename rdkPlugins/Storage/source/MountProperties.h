@@ -56,4 +56,16 @@ typedef struct _DynamicMountProperties
 
 } DynamicMountProperties;
 
+/**
+*  @brief MountOwnerProperties struct used for Storage plugin
+*/
+typedef struct _MountOwnerProperties
+{
+    std::string source;
+    std::string user;
+    std::string group;
+    bool recursive;
+
+} MountOwnerProperties;
+
 #endif // !defined(MOUNTPROPERTIES_H)

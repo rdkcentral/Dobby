@@ -17,11 +17,11 @@
 * limitations under the License.
 */
 /*
- * File: DynamicMountDetails.h
+ * File: MountOwnerDetails.h
  *
  */
-#ifndef DYNAMICMOUNTDETAILS_H
-#define DYNAMICMOUNTDETAILS_H
+#ifndef MOUNTOWNERDETAILS_H
+#define MOUNTOWNERDETAILS_H
 
 #include "MountProperties.h"
 
@@ -34,42 +34,44 @@
 
 // -----------------------------------------------------------------------------
 /**
- *  @class DynamicMountDetails
- *  @brief Class that represents a single mount within a container when the
- * source exists on the host.
- *
- *  This class is only intended to be used internally by Storage plugin
+ *  @class MountOwnerDetails
+ *  @brief This class is only intended to be used internally by Storage plugin
  *  do not use from external code.
  *
  *  @see Storage
  */
-class DynamicMountDetails
+class MountOwnerDetails
 {
 public:
-    DynamicMountDetails() = delete;
-    DynamicMountDetails(DynamicMountDetails&) = delete;
-    DynamicMountDetails(DynamicMountDetails&&) = delete;
-    ~DynamicMountDetails();
+    MountOwnerDetails() = delete;
+    MountOwnerDetails(MountOwnerDetails&) = delete;
+    MountOwnerDetails(MountOwnerDetails&&) = delete;
+    ~MountOwnerDetails();
 
 private:
     friend class Storage;
 
 public:
-    DynamicMountDetails(const std::string& rootfsPath,
-                        const DynamicMountProperties& mount,
-                        const std::shared_ptr<DobbyRdkPluginUtils> &utils);
+    MountOwnerDetails(const std::string& rootfsPath,
+                      const MountOwnerProperties& mountOwnerProperties,
+                      const uid_t& defaultUserId,
+                      const gid_t& defaultGroupId,
+                      const std::shared_ptr<DobbyRdkPluginUtils> &utils);
 
 public:
     bool onCreateRuntime() const;
-    bool onCreateContainer() const;
-    bool onPostStop() const;
 
 private:
-    bool addMount() const;
+    bool getOwnerIds(uid_t& userId, gid_t& groupId) const;
+    bool processOwners() const;
+    bool changeOwnerRecursive(const std::string& path, uid_t userId, gid_t groupId) const;
+    bool changeOwner(const std::string& path, uid_t userId, gid_t groupId) const;
 
     const std::string mRootfsPath;
-    DynamicMountProperties mMountProperties;
+    MountOwnerProperties mMountOwnerProperties;
+    uid_t mDefaultUserId;
+    gid_t mDefaultGroupId;
     const std::shared_ptr<DobbyRdkPluginUtils> mUtils;
 };
 
-#endif // !defined(DYNAMICMOUNTDETAILS_H)
+#endif // !defined(MOUNTOWNERDETAILS_H)

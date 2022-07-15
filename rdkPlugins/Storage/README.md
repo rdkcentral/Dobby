@@ -24,6 +24,9 @@ space "destination".
     }
 }
 ```
+The Storage plugin will only create one loop device for a given source file. If multiple containers share
+the same source file, then the Storage plugin will bind mount the same loop device into the different containers.
+Thus, they share the same private storage.
 
 ### Dynamic Mounts
 Add the following section to your OCI runtime configuration `config.json` file to create dynamic mount. 
@@ -51,8 +54,29 @@ It will mount "source" into container "destination" only if the source exists on
     }
 }
 ```
-The Storage plugin will only create one loop device for a given source file. If multiple containers share
-the same source file, then the Storage plugin will bind mount the same loop device into the different containers. Thus, they share the same private storage.
+
+### Mount Owners
+Add the following section to your OCI runtime configuration `config.json` file to configure mount ownership.
+
+```json
+{
+    "rdkPlugins": {
+        "storage": {
+            "required": true,
+            "data": {
+                "": [
+                    {
+                        "source": "/tmp/test",
+                        "user": "root",
+                        "group": "root",
+                        "recursive": false
+                    }
+                ]
+            }
+        }
+    }
+}
+```
 
 If you already have other RDK plugins in the bundle, then just add the storage plugin. Do not create multiple `rdkPlugin` sections.
 
@@ -112,3 +136,26 @@ For every dynamic mount point the Storage plugin should create, there should be 
 }
 ```
 
+### Creating mount owners
+For every mount owner point the Storage plugin should create, there should be one item in the array of "mountOwner". The options inside this object goes as follows:
+
+| Option              | Value                                                                                                                                   |
+| ------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| `source`            | Directory or file which is the source of the mount, i.e. on host                                                                        |
+|---------------------| ----------------Below this point there are optionals things, with default value in square brackets "[]"---------------------------------|
+| `user`              | Name of user to change to  (if ommitted, use container default user)                                                                    |
+| `group`             | Name of group to change to  (if ommitted, use container default group)                                                                  |
+| `recursive`         | Whether to change ownership recursively when source is a directory (if ommitted, treated as false, e.g. non-recursive)                  |
+
+#### Example
+```json
+"data": {
+    "mountOwner": [
+        {
+            "source": "/tmp/test"
+        }
+    ]
+}
+```
+
+This will change ownership to the container default user and group, which will be applied non-recusively.
