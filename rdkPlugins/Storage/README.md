@@ -64,7 +64,7 @@ Add the following section to your OCI runtime configuration `config.json` file t
         "storage": {
             "required": true,
             "data": {
-                "": [
+                "mountOwner": [
                     {
                         "source": "/tmp/test",
                         "user": "root",
@@ -137,7 +137,13 @@ For every dynamic mount point the Storage plugin should create, there should be 
 ```
 
 ### Creating mount owners
-For every mount owner point the Storage plugin should create, there should be one item in the array of "mountOwner". The options inside this object goes as follows:
+For every mount owner configured for the Storage plugin, there should be one item in the array of "mountOwner".
+It is important to nite that this changes ownership on the host and "source" path is resolved on the host.
+
+There is precedence for this functionality in the Podman container engine.
+See https://github.com/containers/podman/commit/874f2327e6ca963edda7cc46819d51048d3d19a8
+
+The options inside this object goes as follows:
 
 | Option              | Value                                                                                                                                   |
 | ------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |

@@ -155,6 +155,7 @@ bool MountOwnerDetails::processOwners() const
 {
     AI_LOG_FN_ENTRY();
 
+    bool success = false;
     uid_t userId = 0;
     gid_t groupId = 0;
 
@@ -162,23 +163,23 @@ bool MountOwnerDetails::processOwners() const
     {
         if (mMountOwnerProperties.recursive)
         {
-            if (!changeOwnerRecursive(mMountOwnerProperties.source, userId, groupId))
+            success = changeOwnerRecursive(mMountOwnerProperties.source, userId, groupId);
+            if (!success)
             {
                 AI_LOG_ERROR("Failed to change owner recursively of '%s' to '%d:%d",
                              mMountOwnerProperties.source.c_str(),
                              userId,
                              groupId);
-                return false;
             }
         }
         else
         {
-            changeOwner(mMountOwnerProperties.source, userId, groupId);
+            success = changeOwner(mMountOwnerProperties.source, userId, groupId);
         }
     }
 
     AI_LOG_FN_EXIT();
-    return true;
+    return success;
 }
 
 // -----------------------------------------------------------------------------
@@ -192,11 +193,12 @@ bool MountOwnerDetails::processOwners() const
  */
 bool MountOwnerDetails::changeOwnerRecursive(const std::string& path, uid_t userId, gid_t groupId) const
 {
-    bool success = true;
     DIR* dir = opendir(path.c_str());
     if (!dir) {
-        return success;
+        return false;
     }
+
+    bool success = true;
     struct dirent* entry;
     while ((entry = readdir(dir)) != NULL)
     {
@@ -230,12 +232,12 @@ bool MountOwnerDetails::changeOwner(const std::string& path, uid_t userId, gid_t
 {
     AI_LOG_FN_ENTRY();
 
-    if (chown(path.c_str(), userId, groupId) != 0)
+    bool success = (chown(path.c_str(), userId, groupId) == 0);
+    if (!success)
     {
         AI_LOG_SYS_ERROR(errno, "Failed to change owner of '%s' to '%d:%d", path.c_str(), userId, groupId);
-        return false;
     }
 
     AI_LOG_FN_EXIT();
-    return true;
+    return success;
 }

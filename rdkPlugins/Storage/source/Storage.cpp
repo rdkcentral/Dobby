@@ -536,11 +536,11 @@ std::vector<std::unique_ptr<MountOwnerDetails>> Storage::getMountOwnerDetails() 
 
 // -----------------------------------------------------------------------------
 /**
- *  @brief Reads container config and creates all dynamic mounts in DynamicMountProperties
- *  type objects.
+ *  @brief Reads container config to obtain source path on host, userId, groupId
+ * and recursive options. These will be used later to change ownership of the
+ * source path based on userId and groupId within the host namespace.
  *
- *
- *  @return vector of DynamicMountProperties that were in the config
+ *  @return vector of MountOwnerProperties that were in the config
  */
 std::vector<MountOwnerProperties> Storage::getMountOwners() const
 {
@@ -592,6 +592,9 @@ std::vector<MountOwnerProperties> Storage::getMountOwners() const
  */
 void Storage::setupOwnerIds(uid_t& uid, gid_t& gid) const
 {
+    uid = 0;
+    gid = 0;
+
     // Get uid/gid from process
     if(mContainerConfig->process && mContainerConfig->process->user)
     {
