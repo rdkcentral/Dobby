@@ -384,6 +384,29 @@
                                     }
                                 }
                             }
+                        },
+                        "mountOwner": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "required": [
+                                    "source"
+                                ],
+                                "properties": {
+                                    "source": {
+                                        "type": "string"
+                                    },
+                                    "user": {
+                                        "type": "string"
+                                    },
+                                    "group": {
+                                        "type": "string"
+                                    },
+                                    "recursive": {
+                                        "type": "boolean"
+                                    }
+                                }
+                            }
                         }
                     }
                 }

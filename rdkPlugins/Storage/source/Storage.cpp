@@ -124,6 +124,19 @@ bool Storage::createRuntime()
         }
     }
 
+    // Change mount ownership for all configured items
+    std::vector<std::unique_ptr<MountOwnerDetails>> mountOwnerDetails = getMountOwnerDetails();
+
+    for(auto it = mountOwnerDetails.begin(); it != mountOwnerDetails.end(); it++)
+    {
+        // Change ownership of mount
+        if(!(*it)->onCreateRuntime())
+        {
+            AI_LOG_ERROR_EXIT("failed to execute createRuntime hook for mount owner");
+            return false;
+        }
+    }
+
     AI_LOG_FN_EXIT();
     return true;
 }
@@ -147,7 +160,7 @@ bool Storage::createContainer()
         }
     }
 
-    // create dynamic mounts for every point
+    // Create dynamic mounts for every point
     std::vector<std::unique_ptr<DynamicMountDetails>> dynamicMountDetails = getDynamicMountDetails();
 
     for(auto it = dynamicMountDetails.begin(); it != dynamicMountDetails.end(); it++)
@@ -279,45 +292,22 @@ std::vector<std::unique_ptr<LoopMountDetails>> Storage::getLoopMountDetails() co
     AI_LOG_FN_ENTRY();
 
     const std::vector<LoopMountProperties> loopMounts = getLoopMounts();
-
     std::vector<std::unique_ptr<LoopMountDetails>> mountDetails;
+
     // loop though all the loop mounts for the given container and create individual
     // LoopMountDetails objects for each
     for (const LoopMountProperties &properties : loopMounts)
     {
-        uid_t tmp_uid = 0;
-        gid_t tmp_gid = 0;
-
-        // Firstly get uid/gid from process
-        if(mContainerConfig->process &&
-           mContainerConfig->process->user)
-        {
-            if (mContainerConfig->process->user->uid_present)
-            {
-                tmp_uid = mContainerConfig->process->user->uid;
-            }
-
-            if (mContainerConfig->process->user->gid_present)
-            {
-                tmp_gid = mContainerConfig->process->user->gid;
-            }
-        }
-
-        // Then map it inside container
-        tmp_uid = getMappedId(tmp_uid,
-                                mContainerConfig->linux->uid_mappings,
-                                mContainerConfig->linux->uid_mappings_len);
-
-        tmp_gid = getMappedId(tmp_gid,
-                                mContainerConfig->linux->gid_mappings,
-                                mContainerConfig->linux->gid_mappings_len);
-
+        // Setup the user/group IDs
+        uid_t uid = 0;
+        gid_t gid = 0;
+        setupOwnerIds(uid, gid);
 
         // create the loop mount and make sure it was constructed
         auto loopMount = std::make_unique<LoopMountDetails>(mRootfsPath,
                                                             properties,
-                                                            tmp_uid,
-                                                            tmp_gid,
+                                                            uid,
+                                                            gid,
                                                             mUtils);
 
         if (loopMount)
@@ -501,6 +491,132 @@ std::vector<DynamicMountProperties> Storage::getDynamicMounts() const
 
     AI_LOG_FN_EXIT();
     return mounts;
+}
+
+// -----------------------------------------------------------------------------
+/**
+ *  @brief Create mount owner details vector from all mount owners in config.
+ *
+ *
+ *  @return vector of MountOwnerDetails that were in the config
+ */
+std::vector<std::unique_ptr<MountOwnerDetails>> Storage::getMountOwnerDetails() const
+{
+    AI_LOG_FN_ENTRY();
+
+    const std::vector<MountOwnerProperties> mountOwners = getMountOwners();
+    std::vector<std::unique_ptr<MountOwnerDetails>> ownerDetails;
+
+    // Setup the user/group IDs
+    uid_t uid = 0;
+    gid_t gid = 0;
+    setupOwnerIds(uid, gid);
+
+    // loop though all the mount owners for the given container and create individual
+    // MountOwnerDetails objects for each
+    for (const MountOwnerProperties &properties : mountOwners)
+    {
+        // create the mount owner details and make sure it was constructed
+        auto mountOwner = std::make_unique<MountOwnerDetails>(mRootfsPath,
+                                                              properties,
+                                                              uid,
+                                                              gid,
+                                                              mUtils);
+
+        if (mountOwner)
+        {
+            ownerDetails.emplace_back(std::move(mountOwner));
+        }
+    }
+
+    AI_LOG_FN_EXIT();
+
+    return ownerDetails;
+}
+
+// -----------------------------------------------------------------------------
+/**
+ *  @brief Reads container config to obtain source path on host, userId, groupId
+ * and recursive options. These will be used later to change ownership of the
+ * source path based on userId and groupId within the host namespace.
+ *
+ *  @return vector of MountOwnerProperties that were in the config
+ */
+std::vector<MountOwnerProperties> Storage::getMountOwners() const
+{
+    AI_LOG_FN_ENTRY();
+
+    std::vector<MountOwnerProperties> mountOwners;
+
+    // Check if container has mount data
+    if (mContainerConfig->rdk_plugins->storage->data)
+    {
+        // loop though all the mount owners for the given container and create individual
+        // MountOwnerProperties objects for each
+        for (size_t i = 0; i < mContainerConfig->rdk_plugins->storage->data->mount_owner_len; i++)
+        {
+            auto mountOwner = mContainerConfig->rdk_plugins->storage->data->mount_owner[i];
+
+            MountOwnerProperties mountOwnerProps;
+            mountOwnerProps.source = std::string(mountOwner->source);
+            if (mountOwner->user)
+            {
+                mountOwnerProps.user = std::string(mountOwner->user);
+            }
+            if (mountOwner->group)
+            {
+                mountOwnerProps.group  = std::string(mountOwner->group);
+            }
+            mountOwnerProps.recursive = mountOwner->recursive_present ? mountOwner->recursive : false;
+            mountOwners.push_back(mountOwnerProps);
+        }
+    }
+    else
+    {
+        AI_LOG_ERROR("No storage data in config file");
+    }
+
+    AI_LOG_FN_EXIT();
+    return mountOwners;
+}
+
+// -----------------------------------------------------------------------------
+/**
+ *  @brief Gets userId and groupId
+ *
+ *  @param[in]  id          Id we want to map
+ *  @param[in]  mapping     Mapping that should be used
+ *  @param[in]  mapping_len Length of mapping
+ *
+ *  @return if found mapped id, if not found initial id
+ */
+void Storage::setupOwnerIds(uid_t& uid, gid_t& gid) const
+{
+    uid = 0;
+    gid = 0;
+
+    // Get uid/gid from process
+    if(mContainerConfig->process && mContainerConfig->process->user)
+    {
+        if (mContainerConfig->process->user->uid_present)
+        {
+            uid = mContainerConfig->process->user->uid;
+        }
+
+        if (mContainerConfig->process->user->gid_present)
+        {
+            gid = mContainerConfig->process->user->gid;
+        }
+    }
+
+    // Then map it inside container
+    uid = getMappedId(uid,
+                      mContainerConfig->linux->uid_mappings,
+                      mContainerConfig->linux->uid_mappings_len);
+
+    gid = getMappedId(gid,
+                      mContainerConfig->linux->gid_mappings,
+                      mContainerConfig->linux->gid_mappings_len);
 }
 
 // -----------------------------------------------------------------------------
