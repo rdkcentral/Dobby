@@ -505,6 +505,12 @@ void DobbyManager::cleanupContainersShutdown()
             // notified of the container stop event
             if (!stopContainer(it->second->descriptor, false))
             {
+                // As DobbyRunC::killCont already handles problem of masked SIGTERM in
+                // case we failed to stop it means that it tried to SIGKILL too, so
+                // container must be in uninterrable sleep and we cannot do anything
+                // Remove it container from the list (even though it wasn't clean up)
+                // to avoid repeating indefinitely. It will be cleaned on boot-up
+                it = mContainers.erase(it);
                 AI_LOG_ERROR("Failed to stop container %s. Will attempt to clean up at daemon restart", it->first.c_str());
             }
             else
