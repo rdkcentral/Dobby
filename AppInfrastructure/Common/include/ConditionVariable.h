@@ -117,7 +117,7 @@ private:
         ts.tv_sec += std::chrono::duration_cast<std::chrono::seconds>(rel_time).count();
         ts.tv_nsec += (rel_time % std::chrono::seconds(1)).count();
 
-        if (ts.tv_nsec > 1000000000L)
+        if (ts.tv_nsec >= 1000000000L)
         {
             ts.tv_nsec -= 1000000000L;
             ts.tv_sec += 1;
@@ -221,6 +221,7 @@ public:
             }
             else if (err != 0)
             {
+                AI_LOG_FATAL("Condition variable error in wait_for '%d'", err);
                 __ConditionVariableThrowOnError(err);
             }
         }
