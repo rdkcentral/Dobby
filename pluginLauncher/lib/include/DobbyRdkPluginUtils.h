@@ -40,6 +40,7 @@
 #include <list>
 #include <mutex>
 #include <arpa/inet.h>
+#include <vector>
 
 
 // TODO:: This would be better stored in the dobby workspace dir rather than /tmp,
@@ -129,6 +130,7 @@ public:
     pid_t getContainerPid() const;
     std::string getContainerId() const;
     bool getContainerNetworkInfo(ContainerNetworkInfo &networkInfo);
+    bool getTakenVeths(std::vector<std::string> &takenVeths);
 
     bool writeTextFile(const std::string &path,
                        const std::string &str,

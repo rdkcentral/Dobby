@@ -725,7 +725,10 @@ bool NetworkSetup::setupVeth(const std::shared_ptr<DobbyRdkPluginUtils> &utils,
 
     // step 3 - create a veth pair for the container, using the name of the
     // first external interface defined in Dobby settings
-    std::string vethName = netlink->createVeth(PEER_NAME, containerPid);
+    std::vector<std::string> takenVeths;
+    utils->getTakenVeths(takenVeths);
+
+    std::string vethName = netlink->createVeth(PEER_NAME, containerPid, takenVeths);
     if (vethName.empty())
     {
         AI_LOG_ERROR_EXIT("failed to create veth pair for container '%s'",
