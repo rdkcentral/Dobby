@@ -1409,7 +1409,9 @@ std::string Netlink::createVeth(const std::string& peerVethName,
         if (already_taken)
         {
             AI_LOG_WARN("Tried to use already taken vethName '%s', continue looking", vethName.c_str());
-            vethNameStartIndex++;
+            // if more than one container is on we can "jump" to the next free one, we don't need
+            // to iterate one by one
+            vethNameStartIndex = std::stoi(vethName.erase(0, 4)) + 1;
             continue;
         }
 
