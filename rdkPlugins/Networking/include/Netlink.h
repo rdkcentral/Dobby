@@ -104,7 +104,8 @@ public:
 
 public:
     std::string createVeth(const std::string& peerVethName,
-                           pid_t peerPid);
+                           pid_t peerPid,
+                           std::vector<std::string> &takenVeths);
     bool checkVeth(const std::string& vethName);
 
 public:
