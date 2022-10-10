@@ -35,6 +35,7 @@
 #include <fstream>
 #include <iostream>
 #include <map>
+#include <dirent.h>
 
 DobbyRdkPluginUtils::DobbyRdkPluginUtils(const std::shared_ptr<rt_dobby_schema> &cfg,
                                         const std::string& containerId)
@@ -172,6 +173,64 @@ bool DobbyRdkPluginUtils::getContainerNetworkInfo(ContainerNetworkInfo &networkI
     // Convert the in_addr_t value to a human readable value (e.g. 100.64.11.x)
     networkInfo.ipAddress = ipAddressToString(htonl(ip));
     networkInfo.vethName = addressFileStr.substr(ipStr.length() + 1, addressFileStr.length());
+
+    return true;
+}
+
+// -------------------------------------------------------------------------
+/**
+ *  @brief Gets allocated veth devices
+ *
+ * As we are storing veth device names in the files we should be able
+ * to tell which veth devices are "taken".
+ *
+ * @params[out] takenVeths     vector of veth devices that are thaken
+ *
+ * @returns true if successfully got info, false for failure
+ */
+bool DobbyRdkPluginUtils::getTakenVeths(std::vector<std::string> &takenVeths)
+{
+    struct dirent *entry;
+    DIR *directory;
+
+    directory = opendir(ADDRESS_FILE_DIR);
+    if (directory)
+    {
+        while ((entry = readdir(directory)) != NULL) {
+            std::string filePath = std::string(ADDRESS_FILE_DIR) + std::string(entry->d_name);
+            struct stat sb;
+            if (stat(filePath.c_str(), &sb) != 0 || !S_ISREG(sb.st_mode))
+            {
+                AI_LOG_DEBUG("skipping %s as it is not a file", filePath.c_str());
+                continue;
+            }
+
+            const std::string addressFileStr = readTextFile(filePath);
+            if (addressFileStr.empty())
+            {
+                AI_LOG_ERROR("failed to get veth name from %s", filePath.c_str());
+                continue;
+            }
+
+            // file contains IP address in in_addr_t form
+            const int index = addressFileStr.find("/");
+
+            // check if string contains a veth name after the ip address
+            if (index < 0 || addressFileStr.length() - index <= 1)
+            {
+                AI_LOG_ERROR("failed to get veth name from %s", filePath.c_str());
+                continue;
+            }
+
+            takenVeths.push_back(addressFileStr.substr(index + 1, addressFileStr.length()));
+        }
+        closedir(directory);
+    }
+    else
+    {
+        AI_LOG_ERROR_EXIT("failed to open container network storage directory %s", ADDRESS_FILE_DIR);
+        return false;
+    }
 
     return true;
 }
