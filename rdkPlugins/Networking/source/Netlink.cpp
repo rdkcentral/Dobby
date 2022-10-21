@@ -1350,13 +1350,16 @@ std::string Netlink::getAvailableVethName(const int startIndex) const
  *  @param[in]  peerPid         The pid of the process which has the netns we
  *                              want to create the veth in (i.e. the pid of
  *                              init process within the container).
+ *  @param[in]  takenVeths      Veth devices reserved by other containers.
+ *                              We want to check that in case of races.
  *
  *  @return on success the interface name of the veth pair, this is the name
  *  outside the container and will be of the form veth%d, ie veth0, veth1, etc.
  *  On failure an empty string is returned.
  */
 std::string Netlink::createVeth(const std::string& peerVethName,
-                                const pid_t peerPid)
+                                const pid_t peerPid,
+                                std::vector<std::string> &takenVeths)
 {
     AI_LOG_FN_ENTRY();
 
@@ -1390,6 +1393,26 @@ std::string Netlink::createVeth(const std::string& peerVethName,
         {
             AI_LOG_ERROR("no free veth%%d names available");
             break;
+        }
+
+        // check if some other container doesn't already claims this veth
+        bool already_taken = false;
+        for (auto & taken : takenVeths)
+        {
+            if(vethName.compare(taken) == 0)
+            {
+                already_taken = true;
+                break;
+            }
+        }
+
+        if (already_taken)
+        {
+            AI_LOG_WARN("Tried to use already taken vethName '%s', continue looking", vethName.c_str());
+            // if more than one container is on we can "jump" to the next free one, we don't need
+            // to iterate one by one
+            vethNameStartIndex = std::stoi(vethName.erase(0, 4)) + 1;
+            continue;
         }
 
         // create the veth pair
