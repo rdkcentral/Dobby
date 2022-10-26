@@ -801,7 +801,7 @@ bool Netfilter::addRules(RuleSet &ruleSet, const int ipVersion, Operation operat
         else
         {
             // table exists, merge new rules to the end of it
-            cacheRuleSetTable->second.merge(it.second);
+            cacheRuleSetTable->second.splice(cacheRuleSetTable->second.end(), it.second);
         }
     }
 
