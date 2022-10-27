@@ -687,6 +687,70 @@ bool DobbyConfig::updateBundleConfig(const ContainerId& id, std::shared_ptr<rt_d
     return true;
 }
 
+// -----------------------------------------------------------------------------
+/**
+ *  @brief Verify and Write bundle config apparmorProfile string to a file.
+ *
+ *  @param[in]  profile  The name of apparmor profile to write to.
+ *
+ *  @return true if the apparmor profile was loaded in kernel space, otherwise false.
+ */
+
+bool DobbyConfig::isApparmorProfileLoaded(char *profile)
+{
+    FILE *fp = nullptr;
+    char line[256];
+    bool status = false;
+    char* ptr;
+    std::string str;
+
+    fp = popen("cat /sys/kernel/security/apparmor/profiles", "r");
+
+    if (fp == nullptr)
+    {
+        AI_LOG_ERROR("/sys/kernel/security/apparmor/profiles open failed");
+        return status;
+    }
+
+    while (!feof(fp))
+    {
+        fgets (line, sizeof(line), fp);
+        ptr = strchr(line,'\n');
+
+	if (ptr)
+          *ptr = '\0';
+
+        str = line;
+
+	if (str.find(profile )!= -1)
+        {
+            status = true;
+            AI_LOG_INFO("Apparmor profile [%s] is loaded",profile);
+            break;
+        }
+    }
+
+    fclose(fp);
+    return status;
+}
+
+bool DobbyConfig::setDobbyDefaultApparmorProfile(std::shared_ptr<rt_dobby_schema> cfg)
+{
+    bool status = false;
+
+    if (cfg->process->apparmor_profile)
+    {
+        status = isApparmorProfileLoaded(cfg->process->apparmor_profile);
+    }
+
+    if (!status)
+    {
+        cfg->process->apparmor_profile = "dobby_default";
+        status = isApparmorProfileLoaded( cfg->process->apparmor_profile);
+    }
+
+    return status;
+}
 
 // -----------------------------------------------------------------------------
 /**
@@ -708,6 +772,12 @@ bool DobbyConfig::convertToCompliant(const ContainerId& id, std::shared_ptr<rt_d
     {
         AI_LOG_ERROR_EXIT("Invalid bundle config");
         return false;
+    }
+
+    if (!setDobbyDefaultApparmorProfile(cfg))
+    {
+       cfg->process->apparmor_profile = nullptr;
+       AI_LOG_INFO("No apparmor profile is loaded");
     }
 
     // check config version and process as needed

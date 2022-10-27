@@ -142,6 +142,8 @@ protected:
     bool convertToCompliant(const ContainerId& id,
                             std::shared_ptr<rt_dobby_schema> cfg,
                             const std::string& bundlePath);
+    bool isApparmorProfileLoaded(char *profile);
+    bool setDobbyDefaultApparmorProfile(std::shared_ptr<rt_dobby_schema> cfg);
 
     struct DevNode
     {
