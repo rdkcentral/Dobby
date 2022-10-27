@@ -839,7 +839,7 @@ bool NetworkSetup::setupVeth(const std::shared_ptr<DobbyRdkPluginUtils> &utils,
             ipv4RuleSet = createDropAllRule(vethName);
         }
 
-        if (!netfilter->addRules(ipv4RuleSet, AF_INET, Netfilter::Operation::Insert))
+        if (!netfilter->addRules(ipv4RuleSet, AF_INET, Netfilter::Operation::Append))
         {
             AI_LOG_ERROR_EXIT("failed to add iptables rule to drop veth packets");
             return false;
@@ -857,7 +857,7 @@ bool NetworkSetup::setupVeth(const std::shared_ptr<DobbyRdkPluginUtils> &utils,
             ipv6RuleSet = createDropAllRule(vethName);
         }
 
-        if (!netfilter->addRules(ipv6RuleSet, AF_INET6, Netfilter::Operation::Insert))
+        if (!netfilter->addRules(ipv6RuleSet, AF_INET6, Netfilter::Operation::Append))
         {
             AI_LOG_ERROR_EXIT("failed to add iptables rule to drop veth packets");
             return false;
