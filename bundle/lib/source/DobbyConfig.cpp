@@ -741,13 +741,9 @@ bool DobbyConfig::setDobbyDefaultApparmorProfile(std::shared_ptr<rt_dobby_schema
     if (cfg->process->apparmor_profile)
     {
         status = isApparmorProfileLoaded(cfg->process->apparmor_profile);
-        if (!status)
-        {
-            cfg->process->apparmor_profile = "dobby_default";
-            status = isApparmorProfileLoaded( cfg->process->apparmor_profile);
-        }
     }
-    else
+
+    if (!status)
     {
         cfg->process->apparmor_profile = "dobby_default";
         status = isApparmorProfileLoaded( cfg->process->apparmor_profile);
