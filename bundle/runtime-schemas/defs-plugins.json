@@ -630,6 +630,29 @@
                 }
             }
         },
+        "MemCheckpointRestore": {
+            "type": "object",
+            "required": [
+                "required",
+                "data"
+            ],
+            "properties": {
+                "required": {
+                    "type": "boolean"
+                },
+                "data": {
+                    "type": "object",
+                    "properties" : {
+                        "mountpoints": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "defs.json#/definitions/Mount"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "LegacyPlugins": {
             "type": "object",
             "properties": {
@@ -688,6 +711,9 @@
                 },
                 "devicemapper": {
                     "$ref": "#/definitions/DeviceMapper"
+                },
+                "memcheckpointrestore": {
+                    "$ref": "#/definitions/MemCheckpointRestore"
                 }
             }
         }

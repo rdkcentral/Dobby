@@ -359,6 +359,10 @@ if(PLUGIN_OOMCRASH)
 	add_subdirectory(rdkPlugins/OOMCrash)
 endif()
 
+if(PLUGIN_MEMCR)
+	add_subdirectory(rdkPlugins/MemCheckpointRestore)
+endif()
+
 # Export targets in Dobby package
 # ---------------------------------------------------------
 
