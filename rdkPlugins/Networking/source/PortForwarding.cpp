@@ -487,21 +487,35 @@ std::vector<Netfilter::RuleSet> constructMasqueradeRules(const std::shared_ptr<N
     if (!portForwards.containerToHost.empty())
     {
         std::list<std::string> natRules;
+        std::list<std::string> filterRules;
         std::vector<struct PortForward> ports = portForwards.containerToHost;
 
         for (size_t i = 0; i < ports.size(); i++)
         {
-            const std::string dnatRule = createMasqueradeDnatRule(ports[i], containerId, containerAddress, ipVersion);
             const std::string snatRule = createMasqueradeSnatRule(ports[i], containerId, containerAddress, ipVersion);
-
-            natRules.emplace_back(dnatRule);
             natRules.emplace_back(snatRule);
+
+            if (ipVersion == AF_INET)
+            {
+                const std::string dnatRule = createMasqueradeDnatRule(ports[i], containerId, containerAddress, ipVersion);
+                natRules.emplace_back(dnatRule);
+            }
+            else if (ipVersion == AF_INET6)
+            {
+                const std::string filterRule = createNoIpv6LocalRule(ports[i], containerId, containerAddress, ipVersion);
+                filterRules.emplace_back(filterRule);
+
+                const std::string snatRule2 = createLocalLinkSnatRule(ports[i], containerId, containerAddress, ipVersion);
+                natRules.emplace_back(snatRule2);
+            }
+
         }
 
         // No need to bother with merge logic here as this is the only set of
         // rules added, just add them to the set
         Netfilter::RuleSet rules = {
-            { Netfilter::TableType::Nat, natRules }
+            { Netfilter::TableType::Nat, natRules },
+            { Netfilter::TableType::Filter, filterRules }
         };
         ruleSets.emplace(ruleSets.begin(), rules);
     }
@@ -911,7 +925,8 @@ std::string createAcceptRule(const PortForward &portForward,
 // -----------------------------------------------------------------------------
 /**
  *  @brief Constructs an OUTPUT DNAT rule to forward packets from 127.0.0.1 inside
- *  the container to the bridge device (100.64.11.1) on the given port
+ *  the container to the bridge device (100.64.11.1) on the given port. We cannot
+ *  do the same thing for IPv6. Check createNoIpv6LocalRule for details.
  *
  *  @param[in]  portForward The protocol and port to forward.
  *  @param[in]  id          The id of the container making the request.
@@ -929,34 +944,81 @@ std::string createMasqueradeDnatRule(const PortForward &portForward,
 
     std::string destination;
 
-    std::string baseRule("OUTPUT "
-                         "-o lo "
-                         "-p %s "                   // protocol
-                         "-m %s "                   // protocol
-                         "--dport %s "              // port number
-                         "-j DNAT "
-                         "-m comment --comment %s " // Container id
-                         "--to-destination %s"      // Bridge address:port
-    );
-
     // create addresses based on IP version
     if (ipVersion == AF_INET)
     {
+        std::string baseRule("OUTPUT "
+                            "-o lo "
+                            "-p %s "                   // protocol
+                            "-m %s "                   // protocol
+                            "--dport %s "              // port number
+                            "-j DNAT "
+                            "-m comment --comment %s " // Container id
+                            "--to-destination %s"      // Bridge address:port
+        );
+
         destination = std::string() + BRIDGE_ADDRESS + ":" + portForward.port;
-    }
-    else
-    {
-        destination = std::string() + "[" + BRIDGE_ADDRESS_IPV6 + "]:" + portForward.port;
+
+        // populate '%s' fields in base rule
+        snprintf(buf, sizeof(buf), baseRule.c_str(),
+                portForward.protocol.c_str(),
+                portForward.protocol.c_str(),
+                portForward.port.c_str(),
+                id.c_str(),
+                destination.c_str(),
+                portForward.port.c_str());
     }
 
-    // populate '%s' fields in base rule
-    snprintf(buf, sizeof(buf), baseRule.c_str(),
-             portForward.protocol.c_str(),
-             portForward.protocol.c_str(),
-             portForward.port.c_str(),
-             id.c_str(),
-             destination.c_str(),
-             portForward.port.c_str());
+    return std::string(buf);
+}
+
+// -----------------------------------------------------------------------------
+/**
+ *  @brief Constructs an OUTPUT DNAT rule to reject IPv6 based local traffic.
+ *  We would like this port to be accessible outside of the container
+ *  but there is no IPv6 equivalent of:
+ *  /proc/sys/net/ipv4/conf/interface/route_localnet
+ *  so there is no possibility to route localnet trafic outside. For the clarity
+ *  we just REJECT packets and hope that they will try to use IPv4 instead.
+ *
+ *  @param[in]  portForward The protocol and port to forward.
+ *  @param[in]  id          The id of the container making the request.
+ *  @param[in]  ipAddress   The ip address of the container.
+ *  @param[in]  ipVersion   IPv family version (AF_INET/AF_INET6).
+ *
+ *  @return returns the created rule.
+ */
+std::string createNoIpv6LocalRule(const PortForward &portForward,
+                                    const std::string &id,
+                                    const std::string &ipAddress,
+                                    const int ipVersion)
+{
+    char buf[256];
+
+    std::string destination;
+
+
+    // create addresses based on IP version
+    if (ipVersion == AF_INET6)
+    {
+        std::string baseRule("OUTPUT "
+                            "-o lo "
+                            "-p %s "                   // protocol
+                            "-m %s "                   // protocol
+                            "--dport %s "              // port number
+                            "-m comment --comment %s " // Container id
+                            "-j REJECT"                // Bridge address:port
+        );
+
+        destination = std::string() + BRIDGE_ADDRESS + ":" + portForward.port;
+
+        // populate '%s' fields in base rule
+        snprintf(buf, sizeof(buf), baseRule.c_str(),
+                portForward.protocol.c_str(),
+                portForward.protocol.c_str(),
+                portForward.port.c_str(),
+                id.c_str());
+    }
 
     return std::string(buf);
 }
@@ -1005,6 +1067,63 @@ std::string createMasqueradeSnatRule(const PortForward &portForward,
         sourceAddr = "::1/128";
         destination = std::string() + ipAddress;
         bridgeAddr = std::string() + BRIDGE_ADDRESS_IPV6;
+    }
+
+    // populate '%s' fields in base rule
+    snprintf(buf, sizeof(buf), baseRule.c_str(),
+             portForward.protocol.c_str(),
+             sourceAddr.c_str(),
+             bridgeAddr.c_str(),
+             id.c_str(),
+             destination.c_str());
+
+    return std::string(buf);
+}
+
+// -----------------------------------------------------------------------------
+/**
+ *  @brief Constructs an POSTROUTING SNAT rule so that the source address is changed
+ *  to the veth0 inside the container so we get the replies. For Local Link
+ *  addresses ("fe80::"" based)
+ *
+ *  @param[in]  portForward The protocol and port to forward.
+ *  @param[in]  id          The id of the container making the request.
+ *  @param[in]  ipAddress   The ip address of the container.
+ *  @param[in]  ipVersion   IPv family version (AF_INET/AF_INET6).
+ *
+ *  @return returns the created rule.
+ *
+ */
+std::string createLocalLinkSnatRule(const PortForward &portForward,
+                                    const std::string &id,
+                                    const std::string &ipAddress,
+                                    const int ipVersion)
+{
+    char buf[256];
+
+    std::string bridgeAddr;
+    std::string sourceAddr;
+    std::string destination;
+
+    std::string baseRule("POSTROUTING "
+                        "-p %s "                    // protocol
+                        "-s %s "                    // container local link
+                        "-d %s "                    // bridge address
+                        "-j SNAT "
+                        "-m comment --comment %s "  // container id
+                        "--to %s");                 // container address
+
+    // create addresses based on IP version
+    if (ipVersion == AF_INET6)
+    {
+        sourceAddr = "fe80::/10";
+        destination = std::string() + ipAddress;
+        bridgeAddr = std::string() + BRIDGE_ADDRESS_IPV6;
+    }
+    else
+    {
+        //do nothing for IPv4 as there is only one IP per interface
+        return std::string();
     }
 
     // populate '%s' fields in base rule
