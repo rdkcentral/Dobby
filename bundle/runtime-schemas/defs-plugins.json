@@ -412,6 +412,32 @@
                 }
             }
         },
+        "EnvironmentVariable": {
+            "type": "object",
+            "required": [
+                "required",
+                "data"
+            ],
+            "properties": {
+                "required": {
+                    "type": "boolean"
+                },
+                "dependsOn": {
+                    "$ref": "defs.json#/definitions/ArrayOfStrings"
+                },
+                "data": {
+                    "type": "object",
+                    "required": [
+                        "variables"
+                    ],
+                    "properties": {
+                        "variables": {
+                            "$ref": "defs.json#/definitions/ArrayOfStrings"
+                        }
+                    }
+                }
+            }
+        },
         "Minidump": {
             "type": "object",
             "required": [
@@ -664,6 +690,9 @@
                 },
                 "storage": {
                     "$ref": "#/definitions/Storage"
+                },
+                "environmentvariable": {
+                    "$ref": "#/definitions/EnvironmentVariable"
                 },
                 "minidump": {
                     "$ref": "#/definitions/Minidump"
