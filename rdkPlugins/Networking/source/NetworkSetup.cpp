@@ -317,14 +317,27 @@ Netfilter::RuleSet createAntiSpoofRule(const std::string &vethName,
  */
 Netfilter::RuleSet createDropAllRule(const std::string &vethName)
 {
+    std::list<std::string> rules;
+
     // construct the rule
     char filterRule[128];
     snprintf(filterRule, sizeof(filterRule),
              "DobbyInputChain -i " BRIDGE_NAME " -m physdev --physdev-in %s -j DROP",
              vethName.c_str());
 
+    rules.emplace_back(std::string(filterRule));
+    memset(filterRule, 0, sizeof(filterRule));
+
+    snprintf(filterRule, sizeof(filterRule),
+             "FORWARD -i " BRIDGE_NAME " -m physdev --physdev-in %s -j REJECT",
+             vethName.c_str());
+    rules.emplace_back(std::string(filterRule));
+    memset(filterRule, 0, sizeof(filterRule));
+
+    AI_LOG_ERROR("Koczek inside");
+
     // return the rule in the default filter table
-    return Netfilter::RuleSet {{ Netfilter::TableType::Filter, { filterRule }}};
+    return Netfilter::RuleSet {{ Netfilter::TableType::Filter, rules}};
 }
 
 
@@ -824,6 +837,8 @@ bool NetworkSetup::setupVeth(const std::shared_ptr<DobbyRdkPluginUtils> &utils,
         return false;
     }
 
+    Netfilter::Operation operation = Netfilter::Operation::Append;
+
     // step 11 - add an iptables rule to either drop anything that comes from the
     // veth if a private network is enabled, or to drop anything that doesn't
     // have the correct ip address
@@ -833,13 +848,15 @@ bool NetworkSetup::setupVeth(const std::shared_ptr<DobbyRdkPluginUtils> &utils,
         if (networkType == NetworkType::Nat)
         {
             ipv4RuleSet = createAntiSpoofRule(vethName, helper->ipv4AddrStr(), AF_INET);
+            operation = Netfilter::Operation::Append;
         }
         else if (networkType == NetworkType::None)
         {
             ipv4RuleSet = createDropAllRule(vethName);
+            operation = Netfilter::Operation::Insert;
         }
 
-        if (!netfilter->addRules(ipv4RuleSet, AF_INET, Netfilter::Operation::Append))
+        if (!netfilter->addRules(ipv4RuleSet, AF_INET, operation))
         {
             AI_LOG_ERROR_EXIT("failed to add iptables rule to drop veth packets");
             return false;
@@ -851,13 +868,15 @@ bool NetworkSetup::setupVeth(const std::shared_ptr<DobbyRdkPluginUtils> &utils,
         if (networkType == NetworkType::Nat)
         {
             ipv6RuleSet = createAntiSpoofRule(vethName, helper->ipv6AddrStr(), AF_INET6);
+            operation = Netfilter::Operation::Append;
         }
         else if (networkType == NetworkType::None)
         {
             ipv6RuleSet = createDropAllRule(vethName);
+            operation = Netfilter::Operation::Insert;
         }
 
-        if (!netfilter->addRules(ipv6RuleSet, AF_INET6, Netfilter::Operation::Append))
+        if (!netfilter->addRules(ipv6RuleSet, AF_INET6, operation))
         {
             AI_LOG_ERROR_EXIT("failed to add iptables rule to drop veth packets");
             return false;
