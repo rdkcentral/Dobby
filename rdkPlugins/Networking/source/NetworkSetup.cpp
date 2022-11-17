@@ -334,8 +334,6 @@ Netfilter::RuleSet createDropAllRule(const std::string &vethName)
     rules.emplace_back(std::string(filterRule));
     memset(filterRule, 0, sizeof(filterRule));
 
-    AI_LOG_ERROR("Koczek inside");
-
     // return the rule in the default filter table
     return Netfilter::RuleSet {{ Netfilter::TableType::Filter, rules}};
 }
