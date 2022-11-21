@@ -74,6 +74,9 @@ DobbyBundleConfig::DobbyBundleConfig(const std::shared_ptr<IDobbyUtils>& utils,
             std::ofstream dst(bundlePath + "/config.json", std::ios::binary);
             dst << src.rdbuf();
 
+            //close the file else on further operations on the file, the size of the file equals 32764 even if it is greater than 32764.
+            dst.close();
+
             // we need to re-run post installation hook, so remove success flag
             std::string postInstallPath = bundlePath + "/postinstallhooksuccess";
             remove(postInstallPath.c_str());
@@ -241,7 +244,7 @@ bool DobbyBundleConfig::parseOCIConfig(const std::string& bundlePath)
         return false;
     }
     bundleConfigFs.seekg(0, std::ifstream::end);
-    ssize_t length = bundleConfigFs.tellg();
+    uint32_t length = bundleConfigFs.tellg();
     bundleConfigFs.seekg(0, std::ifstream::beg);
     char* buffer = new char[length];
     bundleConfigFs.read(buffer, length);
