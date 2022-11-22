@@ -453,7 +453,11 @@
                 },
                 "data": {
                     "type": "object",
-                    "properties": {}
+                    "properties": {
+                        "setTZ" : {
+                            "type": "string"
+                        }
+                    }
                 }
             }
         },
