@@ -46,6 +46,7 @@ public:
 
 public:
     bool postInstallation() override;
+    bool preCreation() override;
 
 public:
     std::vector<std::string> getDependencies() const override;
@@ -54,6 +55,7 @@ private:
     const std::string mName;
     const std::string mRootfsPath;
     std::shared_ptr<rt_dobby_schema> mContainerConfig;
+    const std::shared_ptr<DobbyRdkPluginUtils> mUtils;
 };
 
 #endif // !defined(LOCALTIMEPLUGIN_H)
