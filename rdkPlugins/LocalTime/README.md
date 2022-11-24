@@ -8,16 +8,20 @@ Add the following section to your OCI runtime configuration `config.json` file t
     "rdkPlugins": {
         "localtime": {
             "required": true,
-            "data": {}
+            "data": {
+                "setTZ": "<path>"
+            }
         }
     }
 }
 ```
-
-**Note:** This plugin takes no data, so the `data` field should be left empty.
 
 If you already have other RDK plugins in the bundle, then just add the localtime plugin. Do not create multiple `rdkPlugin` sections.
 
 ## Prerequisites
 
 `/etc/localtime` symlink must be available and point to the correct file based on locale.
+
+## Options
+### setTZ
+Optional parameter, if set it should contain a path to file holding time stamp. This time stamp will be placed in containers env variable called TZ
