@@ -298,6 +298,8 @@ option(PLUGIN_APPSERVICES "Include AppServices plugin" OFF)
 option(PLUGIN_IONMEMORY "Include ION Memory plugin" OFF)
 option(PLUGIN_DEVICEMAPPER "Include DeviceMapper plugin" OFF)
 
+option(PLUGIN_GAMEPAD "Include GamepadPlugin plugin" ON)
+
 
 if(PLUGIN_TESTPLUGIN)
     add_subdirectory(rdkPlugins/TestPlugin)
@@ -357,6 +359,10 @@ endif()
 
 if(PLUGIN_OOMCRASH)
 	add_subdirectory(rdkPlugins/OOMCrash)
+endif()
+
+if(PLUGIN_GAMEPAD)
+	add_subdirectory(rdkPlugins/Gamepad)
 endif()
 
 # Export targets in Dobby package
