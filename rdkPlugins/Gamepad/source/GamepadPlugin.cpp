@@ -19,13 +19,6 @@
 
 #include "GamepadPlugin.h"
 
-// #include <linux/limits.h>
-// #include <sys/mount.h>
-// #include <sys/stat.h>
-// #include <sys/types.h>
-// #include <fcntl.h>
-// #include <unistd.h>
-// #include <mntent.h>
 #include <iostream>
 #include <sstream>
 
@@ -61,6 +54,7 @@ bool GamepadPlugin::postInstallation()
     size_t old_devices_len = schemaResources->devices_len;
     const int FIRST_CONTROLLER = 64;
     const int NUM_CONTROLLERS = 10;
+    const int DEV_INPUT_EVENT_MAJOR = 13;
 
     schemaResources->devices_len += NUM_CONTROLLERS;
     schemaResources->devices = (rt_defs_linux_device_cgroup**)realloc(schemaResources->devices, sizeof(rt_defs_linux_device_cgroup*) * schemaResources->devices_len);
@@ -72,7 +66,7 @@ bool GamepadPlugin::postInstallation()
         device = (rt_defs_linux_device_cgroup*)calloc(1, sizeof(rt_defs_linux_device_cgroup));
         device->type = strdup("c");
         device->access = strdup("rw");
-        device->major = 13;
+        device->major = DEV_INPUT_EVENT_MAJOR;
         device->major_present = true;
         device->minor = FIRST_CONTROLLER + i;
         device->minor_present = true;
