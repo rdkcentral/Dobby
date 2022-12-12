@@ -130,54 +130,57 @@ bool DynamicMountDetails::onCreateContainer() const
 
     bool success = false;
     std::string targetPath = mRootfsPath + mMountProperties.destination;
-    std::string dirPath; 
 
     struct stat buffer;
     if (stat(mMountProperties.source.c_str(), &buffer) == 0)
     {
         bool isDir = S_ISDIR(buffer.st_mode);
-        // Determine path based on whether source is a directory or file
-        if (isDir)
+        if (stat(targetPath.c_str(), &buffer) != 0)
         {
-            dirPath = targetPath;
-        }
-        else
-        {
-            // Mounting a file so exclude filename from directory path
-            std::size_t found = targetPath.find_last_of("/");
-            dirPath = targetPath.substr(0, found);
-        }
-
-        // Recursively create destination directory structure
-        if (mUtils->mkdirRecursive(dirPath, 0755) || (errno == EEXIST))
-        {
+            std::string dirPath; 
+            // Determine path based on whether target is a directory or file
             if (isDir)
             {
-                success = true;
+                dirPath = targetPath;
             }
             else
             {
-                // If mounting a file, make sure a file with the same name
-                // exists at the desination path prior to bind mounting.
-                // Otherwise the bind mount may fail if the destination path
-                // filesystem is read-only.
-                // Creating the file first ensures an inode exists for the
-                // bind mount to target.
-                int fd = open(targetPath.c_str(), O_RDONLY | O_CREAT, 0644);
-                if ((fd == 0) || (errno == EEXIST))
+                // Mounting a file so exclude filename from directory path
+                std::size_t found = targetPath.find_last_of("/");
+                dirPath = targetPath.substr(0, found);
+            }
+
+            // Recursively create destination directory structure
+            if (mUtils->mkdirRecursive(dirPath, 0755) || (errno == EEXIST))
+            {
+                if (isDir)
                 {
-                    close(fd);
                     success = true;
                 }
                 else
                 {
-                    AI_LOG_SYS_ERROR(errno, "failed to open or create destination '%s'", targetPath.c_str());
+                    // If mounting a file, make sure a file with the same name
+                    // exists at the desination path prior to bind mounting.
+                    // Otherwise the bind mount may fail if the destination path
+                    // filesystem is read-only.
+                    // Creating the file first ensures an inode exists for the
+                    // bind mount to target.
+                    int fd = open(targetPath.c_str(), O_RDONLY | O_CREAT, 0644);
+                    if ((fd == 0) || (errno == EEXIST))
+                    {
+                        close(fd);
+                        success = true;
+                    }
+                    else
+                    {
+                        AI_LOG_SYS_ERROR(errno, "failed to open or create destination '%s'", targetPath.c_str());
+                    }
                 }
             }
-        }
-        else
-        {
-            AI_LOG_SYS_ERROR(errno, "failed to create mount destination path '%s' in storage plugin", targetPath.c_str());
+            else
+            {
+                AI_LOG_SYS_ERROR(errno, "failed to create mount destination path '%s' in storage plugin", targetPath.c_str());
+            }
         }
         success = addMount();
     }
