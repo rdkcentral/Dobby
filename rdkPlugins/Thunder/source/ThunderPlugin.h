@@ -20,6 +20,8 @@
 #ifndef THUNDERPLUGIN_H
 #define THUNDERPLUGIN_H
 
+#include "NetworkingHelper.h"
+
 #include <Netfilter.h>
 #if defined (DOBBY_BUILD)
     #include <RdkPluginBase.h>
@@ -109,6 +111,7 @@ private:
     const bool mEnableConnLimit;
     const std::string mSocketDirectory;
     const std::string mSocketPath;
+    std::shared_ptr<NetworkingHelper> mHelper;
     bool mSocketExists;
 };
 #endif // !defined(THUNDERPLUGIN_H)

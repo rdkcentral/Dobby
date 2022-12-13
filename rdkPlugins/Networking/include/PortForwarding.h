@@ -68,6 +68,9 @@ bool removePortForwards(const std::shared_ptr<Netfilter> &netfilter,
 bool addLocalhostMasquerading(const std::shared_ptr<NetworkingHelper> &helper,
                               const std::shared_ptr<DobbyRdkPluginUtils> &utils,
                               rt_defs_plugins_networking_data_port_forwarding *portsConfig);
+
+bool addLocalhostMasqueradingThunder(const std::shared_ptr<NetworkingHelper> &helper,
+                                     const std::shared_ptr<DobbyRdkPluginUtils> &utils);
 };
 
 typedef struct PortForward

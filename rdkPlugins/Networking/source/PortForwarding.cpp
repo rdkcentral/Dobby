@@ -288,13 +288,78 @@ bool PortForwarding::addLocalhostMasquerading(const std::shared_ptr<NetworkingHe
     }
 
     // Enable route_localnet inside the container
-    const std::string routingFilename = "/proc/sys/net/ipv4/conf/eth0/route_localnet";
+    std::string routingFilename;
+#if defined(DEV_VM)
+    routingFilename = "/proc/sys/net/ipv4/conf/enp0s3/route_localnet";
+#else
+    routingFilename = "/proc/sys/net/ipv4/conf/eth0/route_localnet";
+#endif
     utils->writeTextFile(routingFilename, "1", O_TRUNC | O_WRONLY, 0);
 
     AI_LOG_FN_EXIT();
     return true;
 }
 
+// -----------------------------------------------------------------------------
+/**
+ * @brief Adds iptables rules for Thunder plugin to forward packets from the 
+ * container localhost to the host's localhost on specific ports.
+ *
+ * This must be run inside the container's network namespace
+ *
+ *  @param[in]  helper              Instance of NetworkingHelper.
+ *  @param[in]  utils               Instance of DobbyRdkPluginUtils.
+ *  @param[in]  nsNetfilter         Instance of Netfilter
+ *
+ *  @return true on success, otherwise false.
+ */
+bool PortForwarding::addLocalhostMasqueradingThunder(const std::shared_ptr<NetworkingHelper> &helper,
+                                                     const std::shared_ptr<DobbyRdkPluginUtils> &utils)
+{
+    AI_LOG_FN_ENTRY();
+
+    const std::string containerId = utils->getContainerId();
+    Netfilter nsNetfilter;
+    PortForwards portForwards;
+    portForwards.isValid = true;
+    portForwards.containerToHost.push_back(PortForward{"tcp", "9998"});
+
+    std::vector<Netfilter::RuleSet> ipv4Rules = constructMasqueradeRules(helper,
+                                                                         containerId,
+                                                                         portForwards,
+                                                                         AF_INET);
+    if (ipv4Rules.empty())
+    {
+        AI_LOG_ERROR_EXIT("failed to construct localhost masquerade iptables rules");
+        return false;
+    }
+
+    // insert vector index 0 of constructed rules
+    if (!nsNetfilter.addRules(ipv4Rules[0], AF_INET, Netfilter::Operation::Insert))
+    {
+        AI_LOG_ERROR_EXIT("failed to insert localhost masquerade rules to iptables");
+        return false;
+    }
+
+    // Apply the iptables rules
+    if (!nsNetfilter.applyRules(AF_INET))
+    {
+        AI_LOG_ERROR_EXIT("failed to apply iptables rules");
+        return false;
+    }
+
+    // Enable route_localnet inside the container
+    std::string routingFilename;
+#if defined(DEV_VM)
+    routingFilename = "/proc/sys/net/ipv4/conf/enp0s3/route_localnet";
+#else
+    routingFilename = "/proc/sys/net/ipv4/conf/eth0/route_localnet";
+#endif
+    utils->writeTextFile(routingFilename, "1", O_TRUNC | O_WRONLY, 0);
+
+    AI_LOG_FN_EXIT();
+    return true;
+}
 
 // -----------------------------------------------------------------------------
 /**

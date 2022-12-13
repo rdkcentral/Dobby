@@ -17,6 +17,7 @@
 * limitations under the License.
 */
 
+#include "PortForwarding.h"
 #include "ThunderPlugin.h"
 
 #ifdef HAS_SECURITY_AGENT
@@ -52,7 +53,8 @@ ThunderPlugin::ThunderPlugin(std::shared_ptr<rt_dobby_schema> &containerConfig,
       mThunderPort(9998), // Change this if Thunder runs on non-standard port
       mEnableConnLimit(false),
       mSocketDirectory("/tmp/SecurityAgent"),
-      mSocketPath(mSocketDirectory + "/token")
+      mSocketPath(mSocketDirectory + "/token"),
+      mHelper(std::make_shared<NetworkingHelper>(true, false))
 {
     AI_LOG_FN_ENTRY();
 
@@ -287,6 +289,16 @@ bool ThunderPlugin::createRuntime()
         return false;
     }
 
+    // Add localhost masquerade 
+    if (!mUtils->callInNamespace(mUtils->getContainerPid(), CLONE_NEWNET,
+                                 &PortForwarding::addLocalhostMasqueradingThunder,
+                                 mHelper,
+                                 mUtils))
+    {
+        AI_LOG_ERROR_EXIT("Failed to add localhost masquerade iptables rules inside container");
+        return false;
+    }
+
     AI_LOG_FN_EXIT();
     return true;
 }
@@ -367,6 +379,8 @@ Netfilter::RuleSet ThunderPlugin::constructRules() const
     }
     const std::string &ipAddress = networkInfo.ipAddress;
     const std::string &vethName = networkInfo.vethName;
+
+    mHelper->storeContainerInterface(networkInfo.ipAddressRaw, vethName);
 
     // add the Thunder iptables rules
     std::list<std::string> acceptRules;
