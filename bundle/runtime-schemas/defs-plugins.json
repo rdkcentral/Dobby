@@ -634,6 +634,24 @@
                 }
             }
         },
+        "Gamepad": {
+            "type": "object",
+            "required": [
+                "required"
+            ],
+            "properties": {
+                "required": {
+                    "type": "boolean"
+                },
+                "dependsOn": {
+                    "$ref": "defs.json#/definitions/ArrayOfStrings"
+                },
+                "data": {
+                    "type": "object",
+                    "properties": {}
+                }
+            }
+        },
         "LegacyPlugins": {
             "type": "object",
             "properties": {
@@ -692,6 +710,9 @@
                 },
                 "devicemapper": {
                     "$ref": "#/definitions/DeviceMapper"
+                },
+                "gamepad": {
+                    "$ref": "#/definitions/Gamepad"
                 }
             }
         }
