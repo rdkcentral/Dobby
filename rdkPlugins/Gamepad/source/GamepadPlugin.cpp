@@ -49,61 +49,20 @@ bool GamepadPlugin::postInstallation()
 {
     AI_LOG_FN_ENTRY();
 
-    // 1. add devices
-    rt_config_linux_resources* schemaResources = mContainerConfig->linux->resources;
-    size_t old_devices_len = schemaResources->devices_len;
-    const int FIRST_CONTROLLER = 64;
-    const int NUM_CONTROLLERS = 10;
-    const int DEV_INPUT_EVENT_MAJOR = 13;
+    const int64_t devInputEventMajor = 13;
+    const int64_t devInputEventMinor = 64;
+    const int numDevices = 10;
+    const std::string type{"c"};
+    const std::string mode{"rw"};
 
-    schemaResources->devices_len += NUM_CONTROLLERS;
-    schemaResources->devices = (rt_defs_linux_device_cgroup**)realloc(schemaResources->devices, sizeof(rt_defs_linux_device_cgroup*) * schemaResources->devices_len);
+    addDevices(devInputEventMajor, devInputEventMinor, numDevices, type, mode);
 
-    rt_defs_linux_device_cgroup* device = schemaResources->devices[old_devices_len];
-
-    for (int i = 0; i < NUM_CONTROLLERS; ++i)
-    {
-        device = (rt_defs_linux_device_cgroup*)calloc(1, sizeof(rt_defs_linux_device_cgroup));
-        device->type = strdup("c");
-        device->access = strdup("rw");
-        device->major = DEV_INPUT_EVENT_MAJOR;
-        device->major_present = true;
-        device->minor = FIRST_CONTROLLER + i;
-        device->minor_present = true;
-        device->allow = true;
-        device->allow_present = true;
-
-        schemaResources->devices[old_devices_len + i] = device;
-        device++;
-    }
-
-
-    // 2. add /dev/input mount, "nodev"(MS_NODEV) flag removed
     mUtils->addMount("/dev/input/", "/dev/input/", "bind", {"bind", "nosuid", "noexec"});
 
+    gid_t inputGroupId = getInputGroupId();
 
-    // 3. add input group to gidMapping
-    int inputGroupId = getInputGroupId();
-    //printf("inputGroupId: %d\n", inputGroupId);
-    rt_defs_id_mapping* newMapping = (rt_defs_id_mapping*)calloc(1, sizeof(rt_defs_id_mapping));
-    newMapping->container_id = inputGroupId;
-    newMapping->container_id_present = true;
-    newMapping->host_id = inputGroupId;
-    newMapping->host_id_present = true;
-    newMapping->size = 1;
-    newMapping->size_present = true;
-
-    rt_config_linux* schemaLinux = mContainerConfig->linux;
-    schemaLinux->gid_mappings_len++;
-    schemaLinux->gid_mappings = (rt_defs_id_mapping**)realloc(schemaLinux->gid_mappings, sizeof(rt_defs_id_mapping*) * schemaLinux->gid_mappings_len);
-    schemaLinux->gid_mappings[schemaLinux->gid_mappings_len - 1] = newMapping;
-
-
-    // 4. add additionalGids to process->user
-    rt_dobby_schema_process_user* schemaUser = mContainerConfig->process->user;
-    schemaUser->additional_gids_len++;
-    schemaUser->additional_gids = (gid_t*)realloc(schemaUser->additional_gids, sizeof(gid_t) * schemaUser->additional_gids_len);
-    schemaUser->additional_gids[schemaUser->additional_gids_len - 1] = inputGroupId;
+    addGidMapping(inputGroupId, inputGroupId);
+    addAdditionalGid(inputGroupId);
 
     AI_LOG_FN_EXIT();
     return true;
@@ -134,16 +93,99 @@ std::vector<std::string> GamepadPlugin::getDependencies() const
 
 // Begin private methods
 
-int GamepadPlugin::getInputGroupId() const
+// -----------------------------------------------------------------------------
+/**
+ *  @brief Adds devices to containe_config->linux->resources->devices
+ *
+ *  Multiple devices can be added. All devices will have major number
+ *  equal to major param. Minor numbers are in range [minor .. minor + numDevices - 1].
+ *
+ *  @param[in]  major         major number of the devices that will be added
+ *  @param[in]  minor         starting minor number of the devices
+ *  @param[in]  numDevices    number of devices that will be added
+ *  @param[in]  type          character ("c") of block ("b")
+ *  @param[in]  mode          access mode
+ */
+void GamepadPlugin::addDevices(int64_t major, int64_t minor, int numDevices, const std::string& type, const std::string& mode) const
+{
+    rt_config_linux_resources* schemaResources = mContainerConfig->linux->resources;
+    size_t old_devices_len = schemaResources->devices_len;
+
+    schemaResources->devices_len += numDevices;
+    schemaResources->devices = (rt_defs_linux_device_cgroup**)realloc(schemaResources->devices, sizeof(rt_defs_linux_device_cgroup*) * schemaResources->devices_len);
+
+    rt_defs_linux_device_cgroup* device = schemaResources->devices[old_devices_len];
+
+    for (int i = 0; i < numDevices; ++i)
+    {
+        device = (rt_defs_linux_device_cgroup*)calloc(1, sizeof(rt_defs_linux_device_cgroup));
+        device->type = strdup(type.c_str());
+        device->access = strdup(mode.c_str());
+        device->major = major;
+        device->major_present = true;
+        device->minor = minor + i;
+        device->minor_present = true;
+        device->allow = true;
+        device->allow_present = true;
+
+        schemaResources->devices[old_devices_len + i] = device;
+        device++;
+    }
+}
+
+// -----------------------------------------------------------------------------
+/**
+ *  @brief Adds gid mapping  to container_config->linux->gid_mappings
+ *
+ *  @param[in]  host_id         host group id to be added to the mapping
+ *  @param[in]  container_id    container group id to be added to the mapping
+ */
+void GamepadPlugin::addGidMapping(gid_t host_id, gid_t container_id) const
+{
+    rt_defs_id_mapping* newMapping = (rt_defs_id_mapping*)calloc(1, sizeof(rt_defs_id_mapping));
+    newMapping->container_id = container_id;
+    newMapping->container_id_present = true;
+    newMapping->host_id = host_id;
+    newMapping->host_id_present = true;
+    newMapping->size = 1;
+    newMapping->size_present = true;
+
+    rt_config_linux* schemaLinux = mContainerConfig->linux;
+    schemaLinux->gid_mappings_len++;
+    schemaLinux->gid_mappings = (rt_defs_id_mapping**)realloc(schemaLinux->gid_mappings, sizeof(rt_defs_id_mapping*) * schemaLinux->gid_mappings_len);
+    schemaLinux->gid_mappings[schemaLinux->gid_mappings_len - 1] = newMapping;
+}
+
+// -----------------------------------------------------------------------------
+/**
+ *  @brief Adds additionalGid to container_config->process->user->additional_gids
+ *
+ *  @param[in]  gid   group id to be added
+ */
+void GamepadPlugin::addAdditionalGid(gid_t gid) const
+{
+    rt_dobby_schema_process_user* schemaUser = mContainerConfig->process->user;
+    schemaUser->additional_gids_len++;
+    schemaUser->additional_gids = (gid_t*)realloc(schemaUser->additional_gids, sizeof(gid_t) * schemaUser->additional_gids_len);
+    schemaUser->additional_gids[schemaUser->additional_gids_len - 1] = gid;
+}
+
+// -----------------------------------------------------------------------------
+/**
+ *  @brief Finds input group id in /etc/group file
+ *
+ *  Each line in /etc/group contains "group_name:password:group_id:group_list".
+ *  Finds the line starting with 'input', then finds the group_id in that line.
+ *
+ *  @return input groups group id or -1 if group id is not found
+ */
+gid_t GamepadPlugin::getInputGroupId() const
 {
     std::ifstream etcGroupFile;
 
     etcGroupFile.open("/etc/group");
     if (etcGroupFile.is_open())
     {
-        // each line in /etc/group contains "group_name:password:group_id:group_list"
-        // find the line starting with 'input', then find the group_id in that line
-
         std::string line;
         while (std::getline(etcGroupFile, line))
         {

@@ -55,7 +55,10 @@ public:
     std::vector<std::string> getDependencies() const override;
 
 private:
-    int getInputGroupId() const;
+    void addDevices(int64_t major, int64_t minor, int numDevices, const std::string& type, const std::string& mode) const;
+    void addGidMapping(gid_t host_id, gid_t container_id) const;
+    void addAdditionalGid(gid_t gid) const;
+    gid_t getInputGroupId() const;
 
     const std::string mName;
     std::shared_ptr<rt_dobby_schema> mContainerConfig;
