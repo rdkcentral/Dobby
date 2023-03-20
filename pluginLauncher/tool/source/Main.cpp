@@ -175,10 +175,10 @@ std::shared_ptr<const rt_state_schema> getContainerState()
     std::mutex lock;
     std::lock_guard<std::mutex> locker(lock);
 
-    char buf[1000];
+    char buf[4096];
     bzero(buf, sizeof(buf));
 
-    if (read(STDIN_FILENO, buf, sizeof(buf)) < 0)
+    if (read(STDIN_FILENO, buf, sizeof(buf)-1) < 0)
     {
         AI_LOG_SYS_ERROR(errno, "failed to read stdin");
         return nullptr;
@@ -204,6 +204,10 @@ std::shared_ptr<const rt_state_schema> getContainerState()
 
     if (state.get() == nullptr || err)
     {
+        if (hookStdin.length() == sizeof(buf)-1)
+        {
+            AI_LOG_ERROR("Most probably the read buffer is too small and causes the parse error below!");
+        }
         AI_LOG_ERROR_EXIT("Failed to parse container state, err '%s'", err);
         return nullptr;
     }
