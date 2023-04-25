@@ -58,17 +58,28 @@ bool LocalTimePlugin::postInstallation()
 {
     AI_LOG_FN_ENTRY();
 
+    const char* path = mContainerConfig->rdk_plugins->localtime->data->path;
+    if (path)
+    {
+        AI_LOG_INFO("Set localtime path %s",path);
+    }
+    else
+    {
+        path = "/etc/localtime";
+        AI_LOG_INFO("Set default path %s", path);
+    }
+
     // get the real path to the correct local time zone
     char pathBuf[PATH_MAX];
-    ssize_t len = readlink("/etc/localtime", pathBuf, sizeof(pathBuf));
+    ssize_t len = readlink(path, pathBuf, sizeof(pathBuf));
     if (len <= 0)
     {
-        AI_LOG_SYS_ERROR_EXIT(errno, "readlink failed on '/etc/localtime'");
+        AI_LOG_SYS_ERROR_EXIT(errno, "readlink failed on %s", path);
         return false;
     }
 
     const std::string localtimeInHost(pathBuf, len);
-    const std::string localtimeInContainer = mRootfsPath + "/etc/localtime";
+    const std::string localtimeInContainer = mRootfsPath + path;
 
     if (localtimeInHost.empty())
     {
@@ -77,7 +88,7 @@ bool LocalTimePlugin::postInstallation()
     }
     else if (symlink(localtimeInHost.c_str(), localtimeInContainer.c_str()) < 0)
     {
-        AI_LOG_SYS_ERROR_EXIT(errno, "failed to create /etc/localtime symlink");
+        AI_LOG_SYS_ERROR_EXIT(errno, "failed to create %s symlink", path);
         return false;
     }
 

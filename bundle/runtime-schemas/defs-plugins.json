@@ -456,7 +456,10 @@
                     "properties": {
                         "setTZ" : {
                             "type": "string"
-                        }
+                        },
+                       "path" : {
+                               "type": "string"
+                       }
                     }
                 }
             }
