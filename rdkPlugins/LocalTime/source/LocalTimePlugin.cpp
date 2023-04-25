@@ -59,6 +59,15 @@ bool LocalTimePlugin::postInstallation()
     AI_LOG_FN_ENTRY();
 
     const char* path = mContainerConfig->rdk_plugins->localtime->data->path;
+    if (path)
+    {
+        AI_LOG_INFO("Set localtime path %s",path);
+    }
+    else
+    {
+        path = "/etc/localtime";
+        AI_LOG_INFO("Set default path %s", path);
+    }
 
     // get the real path to the correct local time zone
     char pathBuf[PATH_MAX];
