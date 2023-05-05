@@ -27,6 +27,7 @@
 
 #include <array>
 #include <atomic>
+#include <algorithm>
 #include <grp.h>
 #include <fcntl.h>
 #include <limits.h>
