@@ -31,6 +31,12 @@
 #include <set>
 #include <netinet/in.h>
 
+#if defined(RDK)
+#  include <json/json.h>
+#else
+#  include <jsoncpp/json.h>
+#endif
+
 // -----------------------------------------------------------------------------
 /**
  *  @class IDobbySettings
@@ -189,6 +195,7 @@ public:
      */
     virtual std::vector<std::string> defaultPlugins() const = 0;
 
+    virtual Json::Value rdkPluginsData() const = 0;
 
     struct LogRelaySettings
     {
