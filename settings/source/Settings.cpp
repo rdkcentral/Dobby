@@ -152,6 +152,12 @@ Settings::Settings(const Json::Value& settings)
             getEnvVarsFromJson(settings, Json::Path(".extraEnvVariables"));
     }
 
+    // process the extra mounts
+    {
+        mExtraMounts =
+            getExtraMounts(settings, Json::Path(".extraMounts"));
+    }
+
     // process the gpu settings
     {
         mGpuHardwareAccess =
@@ -357,6 +363,16 @@ std::map<std::string, std::string> Settings::extraEnvVariables() const
  *  @brief
  *
  */
+std::list<IDobbySettings::ExtraMount> Settings::extraMounts() const
+{
+    return mExtraMounts;
+}
+
+// -----------------------------------------------------------------------------
+/**
+ *  @brief
+ *
+ */
 std::shared_ptr<IDobbySettings::HardwareAccessSettings> Settings::gpuAccessSettings() const
 {
     return mGpuHardwareAccess;
@@ -452,6 +468,13 @@ void Settings::dump(int aiLogLevel) const
     {
         __AI_LOG_PRINTF(aiLogLevel, "settings.extraEnvVariables[%u]='%s=%s'",
                         i++, envVar.first.c_str(), envVar.second.c_str());
+    }
+
+    i = 0;
+    for (const auto& mount : mExtraMounts)
+    {
+        __AI_LOG_PRINTF(aiLogLevel, "settings.extraMounts[%u]={src:'%s', target:'%s', type:'%s'}",
+                        i++, mount.source.c_str(), mount.target.c_str(), mount.type.c_str());
     }
 
     i = 0;
@@ -843,7 +866,7 @@ std::list<Settings::ExtraMount> Settings::getExtraMounts(const Json::Value& root
         // verify the value in an array is a string
         if (!extraMount.isObject())
         {
-            AI_LOG_ERROR("invalid JSON value in extra gpu mount var array in settings file");
+            AI_LOG_ERROR("invalid JSON value in extra mounts var array in settings file");
             return std::list<ExtraMount>();
         }
 
