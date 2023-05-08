@@ -113,6 +113,14 @@ public:
 
     // -------------------------------------------------------------------------
     /**
+     *  @brief A list of extra mounts that will be set for all
+     *  containers.
+     *
+     */
+    virtual std::list<ExtraMount> extraMounts() const = 0;
+
+    // -------------------------------------------------------------------------
+    /**
      *  Describes the details of anything extra needed to enable access to
      *  certain hardware blocks, like the GPU or VPU.
      *

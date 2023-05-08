@@ -64,6 +64,7 @@ public:
     std::string consoleSocketPath() const override;
 
     std::map<std::string, std::string> extraEnvVariables() const override;
+    std::list<ExtraMount> extraMounts() const override;
 
 public:
     std::shared_ptr<HardwareAccessSettings> gpuAccessSettings() const override;
@@ -116,6 +117,7 @@ private:
     std::string mConsoleSocketPath;
 
     std::map<std::string, std::string> mExtraEnvVars;
+    std::list<ExtraMount> mExtraMounts;
 
     std::shared_ptr<HardwareAccessSettings> mGpuHardwareAccess;
     std::shared_ptr<HardwareAccessSettings> mVpuHardwareAccess;

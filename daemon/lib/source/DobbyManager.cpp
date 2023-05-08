@@ -677,6 +677,21 @@ bool DobbyManager::customiseConfig(const std::shared_ptr<DobbyConfig> &config,
         changesMade = true;
     }
 
+    // Add the extra mounts
+    const std::list<IDobbySettings::ExtraMount>& extraMounts = mSettings->extraMounts();
+    if (!extraMounts.empty())
+    {
+        for (const auto& mount : extraMounts)
+        {
+            std::list<std::string> flags;
+            std::copy(mount.flags.begin(), mount.flags.end(), std::inserter(flags));
+
+            config->addMount(mount.source, mount.target, mount.type, 0, flags);
+            AI_LOG_ERROR("Added extra mount src: '%s', target: '%s', type: '%s'", mount.source.c_str(), mount.target.c_str(), mount.type.c_str());
+        }
+        changesMade = true;
+    }
+
     AI_LOG_FN_EXIT();
     return changesMade;
 }
