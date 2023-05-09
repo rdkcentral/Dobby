@@ -27,6 +27,7 @@
 
 #include <array>
 #include <atomic>
+#include <algorithm>
 #include <grp.h>
 #include <fcntl.h>
 #include <limits.h>
@@ -206,6 +207,7 @@ DobbySpecConfig::DobbySpecConfig(const std::shared_ptr<IDobbyUtils> &utils,
     , mGpuSettings(settings->gpuAccessSettings())
     , mVpuSettings(settings->vpuAccessSettings())
     , mDefaultPlugins(settings->defaultPlugins())
+    , mRdkPluginsData(settings->rdkPluginsData())
     , mDictionary(nullptr)
     , mConf(nullptr)
     , mSpecVersion(SpecVersion::Unknown)
@@ -618,11 +620,10 @@ bool DobbySpecConfig::parseSpec(ctemplate::TemplateDictionary* dictionary,
     dictionary->ShowSection(ENABLE_RDK_PLUGINS);
 
     // step 6.5 - add any default plugins in the settings file
-    // TODO:: Allow defining plugin data in the settings file
-    Json::Value rdkPluginData = Json::objectValue;
+    Json::Value rdkPluginData = mRdkPluginsData;
     for (const auto& pluginName : mDefaultPlugins)
     {
-        mRdkPluginsJson[pluginName]["data"] = rdkPluginData;
+        mRdkPluginsJson[pluginName]["data"] = rdkPluginData[pluginName];
         mRdkPluginsJson[pluginName]["required"] = false;
     }
 

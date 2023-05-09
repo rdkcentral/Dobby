@@ -441,8 +441,7 @@
         "LocalTime": {
             "type": "object",
             "required": [
-                "required",
-                "data"
+                "required"
             ],
             "properties": {
                 "required": {
@@ -456,7 +455,10 @@
                     "properties": {
                         "setTZ" : {
                             "type": "string"
-                        }
+                        },
+                       "path" : {
+                               "type": "string"
+                       }
                     }
                 }
             }
