@@ -470,12 +470,7 @@ void Settings::dump(int aiLogLevel) const
                         i++, envVar.first.c_str(), envVar.second.c_str());
     }
 
-    i = 0;
-    for (const auto& mount : mExtraMounts)
-    {
-        __AI_LOG_PRINTF(aiLogLevel, "settings.extraMounts[%u]={src:'%s', target:'%s', type:'%s'}",
-                        i++, mount.source.c_str(), mount.target.c_str(), mount.type.c_str());
-    }
+    dumpExtraMounts(aiLogLevel, "settings.extraMounts", mExtraMounts);
 
     i = 0;
     for (const auto& extIface : mExternalInterfaces)
@@ -487,6 +482,30 @@ void Settings::dump(int aiLogLevel) const
     dumpHardwareAccess(aiLogLevel, "gpu", mGpuHardwareAccess);
     dumpHardwareAccess(aiLogLevel, "vpu", mVpuHardwareAccess);
 }
+
+// -----------------------------------------------------------------------------
+/**
+ *  @brief Debugging function to dump extra mounts.
+ *
+ *
+ */
+void Settings::dumpExtraMounts(int aiLogLevel, const std::string& path,
+                     const std::list<ExtraMount>& extraMounts) const
+{
+    int i = 0;
+    for (const auto& extraMount : extraMounts)
+    {
+        std::ostringstream flags;
+        for (const std::string& flag : extraMount.flags)
+            flags << flag << ", ";
+
+        __AI_LOG_PRINTF(aiLogLevel, "%s[%u]={ src='%s' dst='%s' type='%s' flags=[%s] }",
+                        path.c_str(), i++,
+                        extraMount.source.c_str(), extraMount.target.c_str(),
+                        extraMount.type.c_str(), flags.str().c_str());
+    }
+}
+
 
 // -----------------------------------------------------------------------------
 /**
@@ -511,18 +530,7 @@ void Settings::dumpHardwareAccess(int aiLogLevel, const std::string& name,
                         name.c_str(), i++, devNode.c_str());
     }
 
-    i = 0;
-    for (const auto& extraMount : hwAccess->extraMounts)
-    {
-        std::ostringstream flags;
-        for (const std::string& flag : extraMount.flags)
-            flags << flag << ", ";
-
-        __AI_LOG_PRINTF(aiLogLevel, "settings.%s.extraMounts[%u]={ src='%s' dst='%s' type='%s' flags=[%s] }",
-                        name.c_str(), i++,
-                        extraMount.source.c_str(), extraMount.target.c_str(),
-                        extraMount.type.c_str(), flags.str().c_str());
-    }
+    dumpExtraMounts(aiLogLevel, "settings." + name + ".extraMounts", hwAccess->extraMounts);
 
     i = 0;
     for (const auto& envVar : hwAccess->extraEnvVariables)
