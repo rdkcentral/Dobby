@@ -110,6 +110,8 @@ private:
 
     void dumpHardwareAccess(int aiLogLevel, const std::string& name,
                             const std::shared_ptr<const HardwareAccessSettings>& hwAccess) const;
+    void dumpExtraMounts(int aiLogLevel, const std::string& path,
+                         const std::list<ExtraMount>& extraMouts) const;
 
 private:
     std::string mWorkspaceDir;
