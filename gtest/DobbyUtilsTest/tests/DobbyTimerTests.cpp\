@@ -27,7 +27,6 @@
 
 #include <Logging.h>
 
-#include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
 #include "DobbyTimer.h"
