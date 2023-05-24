@@ -273,6 +273,10 @@ if( ENABLE_DOBBYTOOL )
     add_subdirectory( client/tool )
 endif()
 
+if( ENABLE_DOBBYTEST )
+    add_subdirectory( gtest/DobbyUtilsTest )
+endif()
+
 # RDK Plugins
 # ---------------------------------------------------------
 
