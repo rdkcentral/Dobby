@@ -27,6 +27,7 @@
 #include <glob.h>
 #include <sys/stat.h>
 #include <fstream>
+#include <FileUtilities.h>
 
 #define OCI_VERSION_CURRENT         "1.0.2"         // currently used version of OCI in bundles
 #define OCI_VERSION_CURRENT_DOBBY   "1.0.2-dobby"   // currently used version of extended OCI in bundles
@@ -309,6 +310,76 @@ bool DobbyConfig::changeProcessArgs(const std::string& command)
     }
 
     AI_LOG_FN_EXIT();
+    return true;
+}
+
+void DobbyConfig::printCommand() const
+{
+    std::shared_ptr<rt_dobby_schema> cfg = config();
+    if (cfg == nullptr)
+    {
+        AI_LOG_ERROR("Invalid bundle config");
+        return;
+    }
+
+    std::stringstream ss;
+    ss << "command: '";
+    for (size_t i = 0; i < cfg->process->args_len; i++)
+    {
+        ss << " " << cfg->process->args[i];
+    }
+    ss << "'";
+    AI_LOG_DEBUG("%s", ss.str().c_str());
+}
+
+bool DobbyConfig::enableSTrace(const std::string& logsDir)
+{
+    AI_LOG_FN_ENTRY();
+
+    std::shared_ptr<rt_dobby_schema> cfg = config();
+    if (cfg == nullptr)
+    {
+        AI_LOG_ERROR("Invalid bundle config");
+        return false;
+    }
+
+    AI_LOG_INFO("Enabling strace for '%s', logs ", cfg->hostname);
+
+    if (!addMount(logsDir, logsDir, "bind", 0, { "bind", "nosuid", "nodev" }))
+    {
+        AI_LOG_ERROR("Failed to add strace logs mount");
+        return false;
+    }
+
+    {
+        // add  "/usr/bin/strace -o logs -f " before the rest of command args
+
+        const std::string logsPath = logsDir + "/strace-" + cfg->hostname + ".txt";
+        const std::vector<std::string> params{"/usr/bin/strace", "-o", logsPath, "-f"};
+
+        std::lock_guard<std::mutex> locker(mLock);
+        size_t new_args_len = cfg->process->args_len + params.size();
+        char** new_args = (char **)realloc(cfg->process->args, sizeof(char *) * new_args_len);
+
+        // make place for the new args in front of the args list
+        for (size_t i = 0; i < cfg->process->args_len; ++i)
+        {
+            new_args[new_args_len - 1 - i] = new_args[cfg->process->args_len - 1 - i];
+        }
+
+        for (size_t i = 0; i < params.size(); ++i)
+        {
+            new_args[i] = strdup(params[i].c_str());
+        }
+
+        cfg->process->args_len = new_args_len;
+        cfg->process->args = new_args;
+    }
+
+    AI_LOG_FN_EXIT();
+
+    printCommand();
+
     return true;
 }
 

@@ -677,6 +677,12 @@ bool DobbyManager::customiseConfig(const std::shared_ptr<DobbyConfig> &config,
         changesMade = true;
     }
 
+    if (shouldEnableSTrace(config))
+    {
+        config->enableSTrace(mSettings->straceSettings().logsDir);
+        changesMade = true;
+    }
+
     AI_LOG_FN_EXIT();
     return changesMade;
 }
@@ -2623,4 +2629,16 @@ bool DobbyManager::invalidContainerCleanupTask()
 
     AI_LOG_FN_EXIT();
     return true;
+}
+
+bool DobbyManager::shouldEnableSTrace(const std::shared_ptr<DobbyConfig> &config) const
+{
+    std::shared_ptr<rt_dobby_schema> containerConfig(config->config());
+    if (containerConfig == nullptr)
+        return false;
+
+    const std::string hostName{containerConfig->hostname};
+    const std::vector<std::string> apps = mSettings->straceSettings().apps;
+
+    return std::find(apps.begin(), apps.end(), hostName) != apps.end();
 }

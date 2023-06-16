@@ -78,6 +78,8 @@ public:
 
     LogRelaySettings logRelaySettings() const override;
 
+    StraceSettings straceSettings() const override;
+
     void dump(int aiLogLevel = -1) const;
 
 private:
@@ -127,6 +129,7 @@ private:
     Json::Value mRdkPluginsData;
 
     LogRelaySettings mLogRelaySettings;
+    StraceSettings mStraceSettings;
 };
 
 #endif // !defined(SETTINGS_H)
