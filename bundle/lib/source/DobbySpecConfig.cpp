@@ -991,6 +991,15 @@ bool DobbySpecConfig::processConsole(const Json::Value& value,
     if (value.isNull())
     {
         mConsoleDisabled = true;
+
+        // Even though console is disabled, we must still add the logging plugin so that
+        // the container ptty is configured correctly and there is something on the receiving
+        // end to drain it
+        Json::Value rdkPluginData;
+        rdkPluginData["sink"] = "devnull";
+        mRdkPluginsJson[RDK_LOGGING_PLUGIN_NAME]["data"] = rdkPluginData;
+        mRdkPluginsJson[RDK_LOGGING_PLUGIN_NAME]["required"] = false;
+
         return true;
     }
 
@@ -1003,7 +1012,19 @@ bool DobbySpecConfig::processConsole(const Json::Value& value,
     const Json::Value& path = value["path"];
     if (path.isNull())
     {
+        AI_LOG_WARN("Console option set but no path provided - cannot enable console redirection");
+
         mConsoleDisabled = true;
+
+        // Even though console is disabled, we must still add the logging plugin so that
+        // the container ptty is configured correctly and there is something on the receiving
+        // end to drain it
+        Json::Value rdkPluginData;
+        rdkPluginData["sink"] = "devnull";
+        mRdkPluginsJson[RDK_LOGGING_PLUGIN_NAME]["data"] = rdkPluginData;
+        mRdkPluginsJson[RDK_LOGGING_PLUGIN_NAME]["required"] = false;
+
+        return true;
     }
     else if (path.isString())
     {

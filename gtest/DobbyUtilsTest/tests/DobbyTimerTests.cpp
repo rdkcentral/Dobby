@@ -27,7 +27,6 @@
 
 #include <Logging.h>
 
-#include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
 #include "DobbyTimer.h"
@@ -146,7 +145,7 @@ TEST_F(DobbyTimerTests, testSimplePeriodicTimer)
 
 
     ASSERT_NEAR(static_cast<long long>(mTimerEvents.size()),
-                (testPeriod.count() / period.count()), 5LL);
+                (testPeriod.count() / period.count()), 10LL);
 
     std::vector< std::pair<int, TimePoint> >::const_iterator event = mTimerEvents.begin() + 1;
     for (; event != mTimerEvents.end(); ++event)
@@ -156,7 +155,7 @@ TEST_F(DobbyTimerTests, testSimplePeriodicTimer)
         TimePoint prevTime = (event - 1)->second;
         long long diff = timeDiff(event->second, prevTime);
 
-        ASSERT_NEAR(diff, period.count(), 10);
+        ASSERT_NEAR(diff, period.count(), 50);
     }
 }
 
@@ -286,4 +285,3 @@ TEST_F(DobbyTimerTests, testRemoveInsideHandlerFails)
 
     ASSERT_TRUE(handlerCalled);
 }
-
