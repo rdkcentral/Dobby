@@ -313,6 +313,10 @@ bool DobbyConfig::changeProcessArgs(const std::string& command)
     return true;
 }
 
+// -----------------------------------------------------------------------------
+/**
+ *  Prints startup command for the container.
+ */
 void DobbyConfig::printCommand() const
 {
     std::shared_ptr<rt_dobby_schema> cfg = config();
@@ -332,6 +336,14 @@ void DobbyConfig::printCommand() const
     AI_LOG_DEBUG("%s", ss.str().c_str());
 }
 
+// -----------------------------------------------------------------------------
+/**
+ *  @brief Enables strace for the container
+ *
+ *  @param[in]  logsDir      Directory to which strace logs will be written
+ *
+ *  @return true if strace was sucessfully enabled for the container, otherwise false.
+ */
 bool DobbyConfig::enableSTrace(const std::string& logsDir)
 {
     AI_LOG_FN_ENTRY();
@@ -367,6 +379,7 @@ bool DobbyConfig::enableSTrace(const std::string& logsDir)
             new_args[new_args_len - 1 - i] = new_args[cfg->process->args_len - 1 - i];
         }
 
+        // copy the new params at the start of new args list
         for (size_t i = 0; i < params.size(); ++i)
         {
             new_args[i] = strdup(params[i].c_str());

@@ -309,37 +309,24 @@ Settings::Settings(const Json::Value& settings)
                     AI_LOG_ERROR("unable to read strace.logsDir, uses default (\"%s\")", mStraceSettings.logsDir.c_str());
                 }
 
-                if (!AICommon::mkdirRecursive(mStraceSettings.logsDir, DEFFILEMODE))
+                if (!AICommon::mkdirRecursive(mStraceSettings.logsDir, ACCESSPERMS))
                 {
                     AI_LOG_ERROR("unable to create strace.logsDir(\"%s\")", mStraceSettings.logsDir.c_str());
                 }
                 else
                 {
-                    struct stat sb;
-                    if (stat(mStraceSettings.logsDir.c_str(), &sb) != 0)
+                    // read apps only if we're able to create directory for strace logs.
+                    // If we can not create logs directory, we don't want to run any apps with strace,
+                    // because strace would close when not able to create it's output file.
+                    const Json::Value apps = straceSettings["apps"];
+                    if (apps.isArray())
                     {
-                        AI_LOG_ERROR("failed to create strace.logsDir(\"%s\")", mStraceSettings.logsDir.c_str());
-                    }
-                    else
-                    {
-                        if (sb.st_mode & DEFFILEMODE == 0)
+                        for (const Json::Value &app : apps)
                         {
-                            chmod(mStraceSettings.logsDir.c_str(), sb.st_mode | DEFFILEMODE);
-                        }
-
-                        // read apps only if we're able to create directory for strace logs.
-                        // If we can not create logs directory, we don't want to run any apps with strace,
-                        // because strace would close when not able to create it's output file.
-                        const Json::Value apps = straceSettings["apps"];
-                        if (apps.isArray())
-                        {
-                            for (const Json::Value &app : apps)
-                            {
-                                if (app.isString())
-                                    mStraceSettings.apps.push_back(app.asString());
-                                else
-                                    AI_LOG_ERROR("invalid entry in strace.apps in JSON settings file");
-                            }
+                            if (app.isString())
+                                mStraceSettings.apps.push_back(app.asString());
+                            else
+                                AI_LOG_ERROR("invalid entry in strace.apps in JSON settings file");
                         }
                     }
                 }

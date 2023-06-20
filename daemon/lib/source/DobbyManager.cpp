@@ -2638,7 +2638,7 @@ bool DobbyManager::shouldEnableSTrace(const std::shared_ptr<DobbyConfig> &config
         return false;
 
     const std::string hostName{containerConfig->hostname};
-    const std::vector<std::string> apps = mSettings->straceSettings().apps;
+    const std::vector<std::string>& apps = mSettings->straceSettings().apps;
 
     return std::find(apps.begin(), apps.end(), hostName) != apps.end();
 }
