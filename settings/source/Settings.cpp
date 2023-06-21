@@ -152,6 +152,12 @@ Settings::Settings(const Json::Value& settings)
             getEnvVarsFromJson(settings, Json::Path(".extraEnvVariables"));
     }
 
+    // process the extra mounts
+    {
+        mExtraMounts =
+            getExtraMounts(settings, Json::Path(".extraMounts"));
+    }
+
     // process the gpu settings
     {
         mGpuHardwareAccess =
@@ -357,6 +363,16 @@ std::map<std::string, std::string> Settings::extraEnvVariables() const
  *  @brief
  *
  */
+std::list<IDobbySettings::ExtraMount> Settings::extraMounts() const
+{
+    return mExtraMounts;
+}
+
+// -----------------------------------------------------------------------------
+/**
+ *  @brief
+ *
+ */
 std::shared_ptr<IDobbySettings::HardwareAccessSettings> Settings::gpuAccessSettings() const
 {
     return mGpuHardwareAccess;
@@ -454,6 +470,8 @@ void Settings::dump(int aiLogLevel) const
                         i++, envVar.first.c_str(), envVar.second.c_str());
     }
 
+    dumpExtraMounts(aiLogLevel, "settings.extraMounts", mExtraMounts);
+
     i = 0;
     for (const auto& extIface : mExternalInterfaces)
     {
@@ -464,6 +482,30 @@ void Settings::dump(int aiLogLevel) const
     dumpHardwareAccess(aiLogLevel, "gpu", mGpuHardwareAccess);
     dumpHardwareAccess(aiLogLevel, "vpu", mVpuHardwareAccess);
 }
+
+// -----------------------------------------------------------------------------
+/**
+ *  @brief Debugging function to dump extra mounts.
+ *
+ *
+ */
+void Settings::dumpExtraMounts(int aiLogLevel, const std::string& path,
+                     const std::list<ExtraMount>& extraMounts) const
+{
+    int i = 0;
+    for (const auto& extraMount : extraMounts)
+    {
+        std::ostringstream flags;
+        for (const std::string& flag : extraMount.flags)
+            flags << flag << ", ";
+
+        __AI_LOG_PRINTF(aiLogLevel, "%s[%u]={ src='%s' dst='%s' type='%s' flags=[%s] }",
+                        path.c_str(), i++,
+                        extraMount.source.c_str(), extraMount.target.c_str(),
+                        extraMount.type.c_str(), flags.str().c_str());
+    }
+}
+
 
 // -----------------------------------------------------------------------------
 /**
@@ -488,18 +530,7 @@ void Settings::dumpHardwareAccess(int aiLogLevel, const std::string& name,
                         name.c_str(), i++, devNode.c_str());
     }
 
-    i = 0;
-    for (const auto& extraMount : hwAccess->extraMounts)
-    {
-        std::ostringstream flags;
-        for (const std::string& flag : extraMount.flags)
-            flags << flag << ", ";
-
-        __AI_LOG_PRINTF(aiLogLevel, "settings.%s.extraMounts[%u]={ src='%s' dst='%s' type='%s' flags=[%s] }",
-                        name.c_str(), i++,
-                        extraMount.source.c_str(), extraMount.target.c_str(),
-                        extraMount.type.c_str(), flags.str().c_str());
-    }
+    dumpExtraMounts(aiLogLevel, "settings." + name + ".extraMounts", hwAccess->extraMounts);
 
     i = 0;
     for (const auto& envVar : hwAccess->extraEnvVariables)
@@ -843,7 +874,7 @@ std::list<Settings::ExtraMount> Settings::getExtraMounts(const Json::Value& root
         // verify the value in an array is a string
         if (!extraMount.isObject())
         {
-            AI_LOG_ERROR("invalid JSON value in extra gpu mount var array in settings file");
+            AI_LOG_ERROR("invalid JSON value in extra mounts var array in settings file");
             return std::list<ExtraMount>();
         }
 
