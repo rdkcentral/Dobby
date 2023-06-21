@@ -52,7 +52,7 @@ NullSink::~NullSink()
     {
         if (close(mDevNullFd) < 0)
         {
-            AI_LOG_SYS_ERROR(errno, "Failed to close journald stream");
+            AI_LOG_SYS_ERROR(errno, "Failed to close /dev/null stream");
         }
     }
 }
@@ -105,7 +105,7 @@ void NullSink::process(const std::shared_ptr<AICommon::IPollLoop> &pollLoop, epo
 
             if (write(mDevNullFd, mBuf, ret) < 0)
             {
-                AI_LOG_SYS_ERROR(errno, "Write to journald stream failed");
+                AI_LOG_SYS_ERROR(errno, "Write to /dev/null stream failed");
             }
         }
 
