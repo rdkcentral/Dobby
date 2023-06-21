@@ -232,7 +232,7 @@ Settings::Settings(const Json::Value& settings)
                     else if(pluginName.isObject())
                     {
                         for (const auto& value : pluginName.getMemberNames())
-			{
+			            {
                             mDefaultPlugins.push_back(value);
                             mRdkPluginsData[value] = pluginName[value];
                         }
@@ -292,6 +292,47 @@ Settings::Settings(const Json::Value& settings)
         }
     }
 
+    // Process strace settings
+    {
+        Json::Value straceSettings = Json::Path(".strace").resolve(settings);
+        if (!straceSettings.isNull())
+        {
+            if (straceSettings.isObject())
+            {
+                const Json::Value logsDir = straceSettings["logsDir"];
+                if (!logsDir.isNull() && logsDir.isString())
+                {
+                    mStraceSettings.logsDir = logsDir.asString();
+                }
+                else
+                {
+                    AI_LOG_ERROR("unable to read strace.logsDir, uses default (\"%s\")", mStraceSettings.logsDir.c_str());
+                }
+
+                if (!AICommon::mkdirRecursive(mStraceSettings.logsDir, ACCESSPERMS))
+                {
+                    AI_LOG_ERROR("unable to create strace.logsDir(\"%s\")", mStraceSettings.logsDir.c_str());
+                }
+                else
+                {
+                    // read apps only if we're able to create directory for strace logs.
+                    // If we can not create logs directory, we don't want to run any apps with strace,
+                    // because strace would close when not able to create it's output file.
+                    const Json::Value apps = straceSettings["apps"];
+                    if (apps.isArray())
+                    {
+                        for (const Json::Value &app : apps)
+                        {
+                            if (app.isString())
+                                mStraceSettings.apps.push_back(app.asString());
+                            else
+                                AI_LOG_ERROR("invalid entry in strace.apps in JSON settings file");
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -302,6 +343,7 @@ Settings::Settings(const Json::Value& settings)
 void Settings::setDefaults()
 {
     mConsoleSocketPath = "/tmp/dobbyPty.sock";
+    mStraceSettings.logsDir = "/tmp/strace";
 
 #if defined(RDK)
     mWorkspaceDir = getPathFromEnv("AI_WORKSPACE_PATH", "/var/volatile/rdk");
@@ -430,6 +472,11 @@ Json::Value Settings::rdkPluginsData() const
 IDobbySettings::LogRelaySettings Settings::logRelaySettings() const
 {
     return mLogRelaySettings;
+}
+
+IDobbySettings::StraceSettings Settings::straceSettings() const
+{
+    return mStraceSettings;
 }
 
 // -----------------------------------------------------------------------------
