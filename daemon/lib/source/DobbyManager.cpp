@@ -2250,12 +2250,6 @@ void DobbyManager::handleContainerTerminate(const ContainerId &id, const std::un
         container->state = DobbyContainer::State::Stopping;
     }
 
-    // signal the higher layers that a container has died
-    if (mContainerStoppedCb)
-    {
-        mContainerStoppedCb(container->descriptor, id, status);
-    }
-
     // check if the container has the respawn flag, if so attempt to
     // restart the container now, this skips the preDestruction /
     // postConstruction hooks
@@ -2388,6 +2382,12 @@ void DobbyManager::onChildExit()
                         id.c_str(), containerPid, status);
 
             handleContainerTerminate(id, container, status);
+
+            // signal the higher layers that a container has died
+            if (mContainerStoppedCb)
+            {
+                mContainerStoppedCb(container->descriptor, id, status);
+            }
 
             if (!container->shouldRestart(status) || !restartContainer(id, container))
             {
