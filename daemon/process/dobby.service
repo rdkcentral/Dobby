@@ -33,7 +33,7 @@
 
 [Unit]
 Description=RDK Dobby (Container) daemon
-Requires=dbus.socket
+Requires=dbus.service
 Before=wpeframework.service
 After=dbus.socket
 
