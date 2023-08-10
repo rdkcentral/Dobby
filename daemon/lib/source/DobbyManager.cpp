@@ -677,6 +677,12 @@ bool DobbyManager::customiseConfig(const std::shared_ptr<DobbyConfig> &config,
         changesMade = true;
     }
 
+    if (shouldEnableSTrace(config))
+    {
+        config->enableSTrace(mSettings->straceSettings().logsDir);
+        changesMade = true;
+    }
+
     AI_LOG_FN_EXIT();
     return changesMade;
 }
@@ -2244,12 +2250,6 @@ void DobbyManager::handleContainerTerminate(const ContainerId &id, const std::un
         container->state = DobbyContainer::State::Stopping;
     }
 
-    // signal the higher layers that a container has died
-    if (mContainerStoppedCb)
-    {
-        mContainerStoppedCb(container->descriptor, id, status);
-    }
-
     // check if the container has the respawn flag, if so attempt to
     // restart the container now, this skips the preDestruction /
     // postConstruction hooks
@@ -2382,6 +2382,12 @@ void DobbyManager::onChildExit()
                         id.c_str(), containerPid, status);
 
             handleContainerTerminate(id, container, status);
+
+            // signal the higher layers that a container has died
+            if (mContainerStoppedCb)
+            {
+                mContainerStoppedCb(container->descriptor, id, status);
+            }
 
             if (!container->shouldRestart(status) || !restartContainer(id, container))
             {
@@ -2623,4 +2629,16 @@ bool DobbyManager::invalidContainerCleanupTask()
 
     AI_LOG_FN_EXIT();
     return true;
+}
+
+bool DobbyManager::shouldEnableSTrace(const std::shared_ptr<DobbyConfig> &config) const
+{
+    std::shared_ptr<rt_dobby_schema> containerConfig(config->config());
+    if (containerConfig == nullptr)
+        return false;
+
+    const std::string hostName{containerConfig->hostname};
+    const std::vector<std::string>& apps = mSettings->straceSettings().apps;
+
+    return std::find(apps.begin(), apps.end(), hostName) != apps.end();
 }

@@ -200,6 +200,8 @@ private:
 
     bool invalidContainerCleanupTask();
 
+    bool shouldEnableSTrace(const std::shared_ptr<DobbyConfig> &config) const;
+
 private:
     const std::shared_ptr<IDobbyEnv> mEnvironment;
     const std::shared_ptr<IDobbyUtils> mUtilities;

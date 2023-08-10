@@ -129,6 +129,8 @@ public:
 
     const std::string configJson() const;
 
+    void printCommand() const;
+    bool enableSTrace(const std::string& logsDir);
 
 // protected methods for derived classes to use
 protected:

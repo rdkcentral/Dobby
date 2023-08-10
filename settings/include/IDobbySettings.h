@@ -208,6 +208,24 @@ public:
 
     virtual LogRelaySettings logRelaySettings() const = 0;
 
+    // -------------------------------------------------------------------------
+    /**
+     *  Settings needed for running an app with strace
+     *
+     *      - logsDir
+     *          Path to directory where strace logs will be written
+     *      - apps
+     *          A list of app names that should be run with strace.
+     *          Hostname field from containers config is used as app name.
+     *
+     */
+    struct StraceSettings
+    {
+        std::string logsDir;
+        std::vector<std::string> apps;
+    };
+
+    virtual StraceSettings straceSettings() const = 0;
 };
 
 #endif // !defined(IDOBBYSETTINGS_H)
