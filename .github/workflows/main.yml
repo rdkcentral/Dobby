@@ -1,3 +1,4 @@
+name: generate doxygen docs and deploy on Github pages
 on:
   push:
     branches:
