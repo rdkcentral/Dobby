@@ -1,0 +1,4 @@
+<map id="AI_IPC::DbusWatches::_WatchEntry" name="AI_IPC::DbusWatches::_WatchEntry">
+<area shape="rect" id="node1" title=" " alt="" coords="5,5,164,47"/>
+<area shape="rect" id="node2" href="$classAI__IPC_1_1DbusWatches.html" title="Utility object to handle installing / removing dbus watches from the poll loop." alt="" coords="5,109,164,136"/>
+</map>

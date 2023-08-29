@@ -1,0 +1,5 @@
+<map id="PerfettoPlugin" name="PerfettoPlugin">
+<area shape="rect" id="node1" title="Dobby plugin for granting access to system perfetto tracing in the container." alt="" coords="5,155,120,181"/>
+<area shape="rect" id="node2" href="$classPluginBase.html" title="Basic object that provides the default overrides for a plugin." alt="" coords="15,80,110,107"/>
+<area shape="rect" id="node3" href="$classIDobbyPlugin.html" title="Interface that plugin libraries have to implement." alt="" coords="9,5,117,32"/>
+</map>

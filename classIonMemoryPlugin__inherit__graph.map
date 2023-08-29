@@ -1,0 +1,5 @@
+<map id="IonMemoryPlugin" name="IonMemoryPlugin">
+<area shape="rect" id="node1" title="Plugin used to setup the ION cgroup controller for the container." alt="" coords="5,155,141,181"/>
+<area shape="rect" id="node2" href="$classRdkPluginBase.html" title="Basic object that provides the default overrides for a plugin." alt="" coords="14,80,133,107"/>
+<area shape="rect" id="node3" href="$classIDobbyRdkPlugin.html" title="Interface that plugin libraries have to implement." alt="" coords="7,5,140,32"/>
+</map>

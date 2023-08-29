@@ -1,0 +1,6 @@
+<map id="IDobbyRdkLoggingPlugin" name="IDobbyRdkLoggingPlugin">
+<area shape="rect" id="node1" title="Interface that plugin libraries have to implement." alt="" coords="5,80,189,107"/>
+<area shape="rect" id="node3" href="$classDobbyLoggerBase.html" title=" " alt="" coords="27,155,167,181"/>
+<area shape="rect" id="node2" href="$classIDobbyRdkPlugin.html" title="Interface that plugin libraries have to implement." alt="" coords="31,5,164,32"/>
+<area shape="rect" id="node4" href="$classLoggingPlugin.html" title="Dobby Logging plugin." alt="" coords="41,229,154,256"/>
+</map>

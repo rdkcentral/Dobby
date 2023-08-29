@@ -1,0 +1,4 @@
+<map id="MountOwnerDetails" name="MountOwnerDetails">
+<area shape="rect" id="node1" title="Class that represents mount ownership and whether to apply recursively." alt="" coords="19,95,170,121"/>
+<area shape="rect" id="node2" href="$struct__MountOwnerProperties.html" title="MountOwnerProperties struct used for Storage plugin." alt="" coords="5,5,184,32"/>
+</map>

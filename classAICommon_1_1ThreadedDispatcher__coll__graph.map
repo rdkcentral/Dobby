@@ -1,0 +1,5 @@
+<map id="AICommon::ThreadedDispatcher" name="AICommon::ThreadedDispatcher">
+<area shape="rect" id="node1" title="A dispatcher that does all the work on a single, separate thread started in constructor." alt="" coords="5,155,239,181"/>
+<area shape="rect" id="node2" href="$classAICommon_1_1IDispatcher.html" title="A dispatcher interface." alt="" coords="34,80,210,107"/>
+<area shape="rect" id="node3" href="$classAICommon_1_1Polymorphic.html" title="Inherit from this from all types that have virtual functions." alt="" coords="31,5,213,32"/>
+</map>

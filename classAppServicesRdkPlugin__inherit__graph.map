@@ -1,0 +1,5 @@
+<map id="AppServicesRdkPlugin" name="AppServicesRdkPlugin">
+<area shape="rect" id="node1" title="Plugin just used to map in access for AS services." alt="" coords="5,155,172,181"/>
+<area shape="rect" id="node2" href="$classRdkPluginBase.html" title="Basic object that provides the default overrides for a plugin." alt="" coords="29,80,148,107"/>
+<area shape="rect" id="node3" href="$classIDobbyRdkPlugin.html" title="Interface that plugin libraries have to implement." alt="" coords="22,5,155,32"/>
+</map>

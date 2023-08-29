@@ -1,0 +1,4 @@
+<map id="SDBusAsyncReplyGetter" name="SDBusAsyncReplyGetter">
+<area shape="rect" id="node1" title="Implements the IAsyncReplyGetter getter interface to provide an API to get the results to a method ca..." alt="" coords="11,80,192,107"/>
+<area shape="rect" id="node2" href="$classAI__IPC_1_1IAsyncReplyGetter.html" title="Helper class to get reply." alt="" coords="5,5,197,32"/>
+</map>

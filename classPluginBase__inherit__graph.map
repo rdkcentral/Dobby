@@ -1,0 +1,8 @@
+<map id="PluginBase" name="PluginBase">
+<area shape="rect" id="node1" title="Basic object that provides the default overrides for a plugin." alt="" coords="273,80,367,107"/>
+<area shape="rect" id="node3" href="$classEthanLogPlugin.html" title="Plugin library that create a DIAG logging pipe for a container." alt="" coords="5,155,128,181"/>
+<area shape="rect" id="node4" href="$classMulticastSocketPlugin.html" title="Plugin used to setup multicast server and client sockets out of the container and passes their file d..." alt="" coords="152,155,317,181"/>
+<area shape="rect" id="node5" href="$classOpenCDMPlugin.html" title="Dobby plugin for creating the necessary OCDM buffers." alt="" coords="342,155,469,181"/>
+<area shape="rect" id="node6" href="$classPerfettoPlugin.html" title="Dobby plugin for granting access to system perfetto tracing in the container." alt="" coords="493,155,608,181"/>
+<area shape="rect" id="node2" href="$classIDobbyPlugin.html" title="Interface that plugin libraries have to implement." alt="" coords="266,5,374,32"/>
+</map>

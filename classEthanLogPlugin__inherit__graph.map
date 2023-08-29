@@ -1,0 +1,5 @@
+<map id="EthanLogPlugin" name="EthanLogPlugin">
+<area shape="rect" id="node1" title="Plugin library that create a DIAG logging pipe for a container." alt="" coords="5,155,128,181"/>
+<area shape="rect" id="node2" href="$classPluginBase.html" title="Basic object that provides the default overrides for a plugin." alt="" coords="19,80,114,107"/>
+<area shape="rect" id="node3" href="$classIDobbyPlugin.html" title="Interface that plugin libraries have to implement." alt="" coords="13,5,121,32"/>
+</map>

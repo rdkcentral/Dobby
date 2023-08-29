@@ -1,0 +1,4 @@
+<map id="DynamicMountDetails" name="DynamicMountDetails">
+<area shape="rect" id="node1" title="Class that represents a single mount within a container when the source exists on the host." alt="" coords="19,95,186,121"/>
+<area shape="rect" id="node2" href="$struct__DynamicMountProperties.html" title="DynamicMountProperties struct used for Storage plugin." alt="" coords="5,5,200,32"/>
+</map>

@@ -1,0 +1,19 @@
+<map id="RdkPluginBase" name="RdkPluginBase">
+<area shape="rect" id="node1" title="Basic object that provides the default overrides for a plugin." alt="" coords="187,360,305,387"/>
+<area shape="rect" id="node3" href="$classAppServicesRdkPlugin.html" title="Plugin just used to map in access for AS services." alt="" coords="353,5,520,32"/>
+<area shape="rect" id="node4" href="$classDeviceMapperPlugin.html" title=" " alt="" coords="359,56,515,83"/>
+<area shape="rect" id="node5" href="$classGamepadPlugin.html" title="Dobby Gamepad plugin." alt="" coords="374,107,499,133"/>
+<area shape="rect" id="node6" href="$classGpuPlugin.html" title="Dobby GPU plugin." alt="" coords="393,157,481,184"/>
+<area shape="rect" id="node7" href="$classHttpProxyPlugin.html" title="Used to set http proxy environment variables and optionally add additional root ca certificates to th..." alt="" coords="373,208,500,235"/>
+<area shape="rect" id="node8" href="$classIonMemoryPlugin.html" title="Plugin used to setup the ION cgroup controller for the container." alt="" coords="369,259,505,285"/>
+<area shape="rect" id="node9" href="$classIpcPlugin.html" title="IPC Plugin." alt="" coords="396,309,477,336"/>
+<area shape="rect" id="node10" href="$classLocalTimePlugin.html" title="Dobby LocalTime plugin." alt="" coords="372,360,501,387"/>
+<area shape="rect" id="node11" href="$classMinidump.html" title="Dobby RDK Minidump Plugin." alt="" coords="393,411,480,437"/>
+<area shape="rect" id="node12" href="$classNetworkingPlugin.html" title=" " alt="" coords="368,461,505,488"/>
+<area shape="rect" id="node13" href="$classOOMCrash.html" title="Dobby RDK OOMCrash Plugin." alt="" coords="391,512,482,539"/>
+<area shape="rect" id="node14" href="$classRtSchedulingPlugin.html" title="Dobby RtScheduling plugin." alt="" coords="363,563,510,589"/>
+<area shape="rect" id="node15" href="$classStorage.html" title="Dobby RDK Storage Plugin." alt="" coords="401,613,473,640"/>
+<area shape="rect" id="node16" href="$classTestRdkPlugin.html" title="Simple Dobby RDK Plugin." alt="" coords="380,664,493,691"/>
+<area shape="rect" id="node17" href="$classThunderPlugin.html" title="Plugin used to map in the wpeframework (aka thunder) server." alt="" coords="379,715,494,741"/>
+<area shape="rect" id="node2" href="$classIDobbyRdkPlugin.html" title="Interface that plugin libraries have to implement." alt="" coords="5,360,139,387"/>
+</map>

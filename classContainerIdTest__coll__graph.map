@@ -1,0 +1,5 @@
+<map id="ContainerIdTest" name="ContainerIdTest">
+<area shape="rect" id="node1" title=" " alt="" coords="56,109,179,136"/>
+<area shape="rect" id="node2" title=" " alt="" coords="5,5,107,32"/>
+<area shape="rect" id="node3" href="$classContainerId.html" title="A wrapper around a std::string, used to add some type definition to to an id and also to sanity check..." alt="" coords="131,5,229,32"/>
+</map>

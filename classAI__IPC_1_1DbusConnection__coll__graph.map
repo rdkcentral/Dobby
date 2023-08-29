@@ -1,0 +1,7 @@
+<map id="AI_IPC::DbusConnection" name="AI_IPC::DbusConnection">
+<area shape="rect" id="node1" title="Wraps a dbus connection pointer and runs the dispatch loop for it." alt="" coords="391,81,568,108"/>
+<area shape="rect" id="node2" href="$classAICommon_1_1ConditionVariable.html" title=" " alt="" coords="5,5,223,32"/>
+<area shape="rect" id="node3" href="$classAICommon_1_1Spinlock.html" title=" " alt="" coords="35,56,193,83"/>
+<area shape="rect" id="node4" href="$classAICommon_1_1Mutex.html" title=" " alt="" coords="43,107,185,133"/>
+<area shape="rect" id="node5" href="$classAI__IPC_1_1DbusEventDispatcher.html" title="Event dispatcher loop, runs the thread that polls on the dbus fds." alt="" coords="9,157,219,184"/>
+</map>

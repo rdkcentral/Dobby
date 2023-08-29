@@ -1,0 +1,4 @@
+<map id="AICommon::Notifier&lt; T &gt;" name="AICommon::Notifier&lt; T &gt;">
+<area shape="rect" id="node1" title="A template of observable objects that send notifications defined in interface T." alt="" coords="5,80,193,107"/>
+<area shape="rect" id="node2" href="$classAICommon_1_1Polymorphic.html" title="Inherit from this from all types that have virtual functions." alt="" coords="8,5,191,32"/>
+</map>

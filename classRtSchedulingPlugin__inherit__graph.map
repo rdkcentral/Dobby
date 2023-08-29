@@ -1,0 +1,5 @@
+<map id="RtSchedulingPlugin" name="RtSchedulingPlugin">
+<area shape="rect" id="node1" title="Dobby RtScheduling plugin." alt="" coords="5,155,152,181"/>
+<area shape="rect" id="node2" href="$classRdkPluginBase.html" title="Basic object that provides the default overrides for a plugin." alt="" coords="19,80,138,107"/>
+<area shape="rect" id="node3" href="$classIDobbyRdkPlugin.html" title="Interface that plugin libraries have to implement." alt="" coords="12,5,145,32"/>
+</map>

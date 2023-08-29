@@ -1,0 +1,6 @@
+<map id="IDobbyProxy" name="IDobbyProxy">
+<area shape="rect" id="node1" title="Wrapper around an IpcService object that provides simpler method calls to the Dobby &#39;hypervisor&#39; daem..." alt="" coords="44,169,149,196"/>
+<area shape="rect" id="node4" href="$classDobbyProxy.html" title="Wrapper around an IpcService object that provides simpler method calls to the dobby daemon." alt="" coords="46,244,147,271"/>
+<area shape="rect" id="node2" href="$classAICommon_1_1Notifier.html" title=" " alt="" coords="7,80,186,121"/>
+<area shape="rect" id="node3" href="$classAICommon_1_1Polymorphic.html" title="Inherit from this from all types that have virtual functions." alt="" coords="5,5,188,32"/>
+</map>

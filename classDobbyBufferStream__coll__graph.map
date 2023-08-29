@@ -1,0 +1,4 @@
+<map id="DobbyBufferStream" name="DobbyBufferStream">
+<area shape="rect" id="node1" title="Stream that just redirects all the input to an internal memory buffer." alt="" coords="5,80,156,107"/>
+<area shape="rect" id="node2" href="$classIDobbyStream.html" title="Interface for all character streams used in the daemon." alt="" coords="23,5,138,32"/>
+</map>

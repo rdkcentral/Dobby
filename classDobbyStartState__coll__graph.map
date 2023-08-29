@@ -1,0 +1,4 @@
+<map id="DobbyStartState" name="DobbyStartState">
+<area shape="rect" id="node1" title="Stores the start state of the container." alt="" coords="7,80,137,107"/>
+<area shape="rect" id="node2" href="$classIDobbyStartState.html" title="Utility interface passed in at the post&#45;construction phase, to allow some final tweaking of the conta..." alt="" coords="5,5,139,32"/>
+</map>

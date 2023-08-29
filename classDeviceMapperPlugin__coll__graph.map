@@ -1,0 +1,5 @@
+<map id="DeviceMapperPlugin" name="DeviceMapperPlugin">
+<area shape="rect" id="node1" title=" " alt="" coords="5,155,161,181"/>
+<area shape="rect" id="node2" href="$classRdkPluginBase.html" title="Basic object that provides the default overrides for a plugin." alt="" coords="24,80,143,107"/>
+<area shape="rect" id="node3" href="$classIDobbyRdkPlugin.html" title="Interface that plugin libraries have to implement." alt="" coords="17,5,150,32"/>
+</map>

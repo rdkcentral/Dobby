@@ -1,0 +1,4 @@
+<map id="DobbyDevNullStream" name="DobbyDevNullStream">
+<area shape="rect" id="node1" title="Stream that just redirects all the input to /dev/null." alt="" coords="5,80,168,107"/>
+<area shape="rect" id="node2" href="$classIDobbyStream.html" title="Interface for all character streams used in the daemon." alt="" coords="29,5,144,32"/>
+</map>

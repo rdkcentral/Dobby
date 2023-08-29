@@ -1,0 +1,4 @@
+<map id="DobbyEnv" name="DobbyEnv">
+<area shape="rect" id="node1" title="Basic class used to store the stb environment." alt="" coords="7,80,95,107"/>
+<area shape="rect" id="node2" href="$classIDobbyEnv.html" title="Interface that exports the environment of the daemon to plugins." alt="" coords="5,5,97,32"/>
+</map>

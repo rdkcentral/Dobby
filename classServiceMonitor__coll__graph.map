@@ -1,0 +1,6 @@
+<map id="ServiceMonitor" name="ServiceMonitor">
+<area shape="rect" id="node1" title="Utility class to actively monitor the status of a dbus service." alt="" coords="70,171,190,197"/>
+<area shape="rect" id="node2" href="$structAI__IPC_1_1Signal.html" title="Method identified by object, interface and signal name itself." alt="" coords="5,81,116,108"/>
+<area shape="rect" id="node3" href="$structAI__IPC_1_1RemoteEntry.html" title="Remote entry, which can be either a signal or method." alt="" coords="52,5,208,32"/>
+<area shape="rect" id="node4" href="$structAI__IPC_1_1Method.html" title="Method identified by a service, object, interface and method name itself." alt="" coords="141,81,261,108"/>
+</map>
