@@ -17,8 +17,8 @@
 * limitations under the License.
 */
 
-#ifndef GPUPLUGIN_H
-#define GPUPLUGIN_H
+#ifndef GAMEPADPLUGIN_H
+#define GAMEPADPLUGIN_H
 
 #include <RdkPluginBase.h>
 
@@ -62,8 +62,7 @@ private:
 
     const std::string mName;
     std::shared_ptr<rt_dobby_schema> mContainerConfig;
-    const std::string mRootfsPath;
     const std::shared_ptr<DobbyRdkPluginUtils> mUtils;
 };
 
-#endif // !defined(GPUPLUGIN_H)
+#endif // !defined(GAMEPADPLUGIN_H)
