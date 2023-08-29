@@ -90,8 +90,8 @@ $(function() {
 <div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160;<span class="comment">* limitations under the License.</span></div>
 <div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160;<span class="comment">*/</span></div>
 <div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160; </div>
-<div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160;<span class="preprocessor">#ifndef GPUPLUGIN_H</span></div>
-<div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160;<span class="preprocessor">#define GPUPLUGIN_H</span></div>
+<div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160;<span class="preprocessor">#ifndef GAMEPADPLUGIN_H</span></div>
+<div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160;<span class="preprocessor">#define GAMEPADPLUGIN_H</span></div>
 <div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160; </div>
 <div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160;<span class="preprocessor">#include &lt;RdkPluginBase.h&gt;</span></div>
 <div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160; </div>
@@ -131,11 +131,10 @@ $(function() {
 <div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160; </div>
 <div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;    <span class="keyword">const</span> std::string mName;</div>
 <div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;    std::shared_ptr&lt;rt_dobby_schema&gt; mContainerConfig;</div>
-<div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;    <span class="keyword">const</span> std::string mRootfsPath;</div>
-<div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;    <span class="keyword">const</span> std::shared_ptr&lt;DobbyRdkPluginUtils&gt; mUtils;</div>
-<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;};</div>
-<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160; </div>
-<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;<span class="preprocessor">#endif </span><span class="comment">// !defined(GPUPLUGIN_H)</span></div>
+<div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;    <span class="keyword">const</span> std::shared_ptr&lt;DobbyRdkPluginUtils&gt; mUtils;</div>
+<div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;};</div>
+<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160; </div>
+<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;<span class="preprocessor">#endif </span><span class="comment">// !defined(GAMEPADPLUGIN_H)</span></div>
 <div class="ttc" id="aclassGamepadPlugin_html"><div class="ttname"><a href="classGamepadPlugin.html">GamepadPlugin</a></div><div class="ttdoc">Dobby Gamepad plugin.</div><div class="ttdef"><b>Definition:</b> GamepadPlugin.h:37</div></div>
 <div class="ttc" id="aclassGamepadPlugin_html_a0cf32f8dacda311cab2316ad54246da8"><div class="ttname"><a href="classGamepadPlugin.html#a0cf32f8dacda311cab2316ad54246da8">GamepadPlugin::getInputGroupId</a></div><div class="ttdeci">gid_t getInputGroupId() const</div><div class="ttdoc">Finds input group id in /etc/group file.</div><div class="ttdef"><b>Definition:</b> GamepadPlugin.cpp:182</div></div>
 <div class="ttc" id="aclassGamepadPlugin_html_a4621bc012de83a0ecc12937b20d0ab5b"><div class="ttname"><a href="classGamepadPlugin.html#a4621bc012de83a0ecc12937b20d0ab5b">GamepadPlugin::addGidMapping</a></div><div class="ttdeci">void addGidMapping(gid_t host_id, gid_t container_id) const</div><div class="ttdoc">Adds gid mapping to container_config-&gt;linux-&gt;gid_mappings.</div><div class="ttdef"><b>Definition:</b> GamepadPlugin.cpp:143</div></div>

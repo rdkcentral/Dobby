@@ -137,11 +137,10 @@ $(function() {
 <div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;<span class="keyword">private</span>:</div>
 <div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;    <span class="keyword">const</span> std::string mName;</div>
 <div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;    std::shared_ptr&lt;rt_dobby_schema&gt; mContainerConfig;</div>
-<div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;    <span class="keyword">const</span> std::string mRootfsPath;</div>
-<div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;    <span class="keyword">const</span> std::shared_ptr&lt;DobbyRdkPluginUtils&gt; mUtils;</div>
-<div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;};</div>
-<div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160; </div>
-<div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;<span class="preprocessor">#endif </span><span class="comment">// !defined(GPUPLUGIN_H)</span></div>
+<div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;    <span class="keyword">const</span> std::shared_ptr&lt;DobbyRdkPluginUtils&gt; mUtils;</div>
+<div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;};</div>
+<div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160; </div>
+<div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;<span class="preprocessor">#endif </span><span class="comment">// !defined(GPUPLUGIN_H)</span></div>
 <div class="ttc" id="aclassGpuPlugin_html"><div class="ttname"><a href="classGpuPlugin.html">GpuPlugin</a></div><div class="ttdoc">Dobby GPU plugin.</div><div class="ttdef"><b>Definition:</b> GpuPlugin.h:45</div></div>
 <div class="ttc" id="aclassGpuPlugin_html_a0d7e104c74449d084c0e43223e4daca4"><div class="ttname"><a href="classGpuPlugin.html#a0d7e104c74449d084c0e43223e4daca4">GpuPlugin::getDependencies</a></div><div class="ttdeci">std::vector&lt; std::string &gt; getDependencies() const override</div><div class="ttdoc">Should return the names of the plugins this plugin depends on.</div><div class="ttdef"><b>Definition:</b> GpuPlugin.cpp:146</div></div>
 <div class="ttc" id="aclassGpuPlugin_html_a0e8b9b5273ed9211a5e80cd0f3cbe34d"><div class="ttname"><a href="classGpuPlugin.html#a0e8b9b5273ed9211a5e80cd0f3cbe34d">GpuPlugin::postStop</a></div><div class="ttdeci">bool postStop() override</div><div class="ttdoc">We use the postStop point to remove the cgroup directory created in the createRuntime phase.</div><div class="ttdef"><b>Definition:</b> GpuPlugin.cpp:105</div></div>
