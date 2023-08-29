@@ -76,7 +76,6 @@ private:
 private:
     const std::string mName;
     std::shared_ptr<rt_dobby_schema> mContainerConfig;
-    const std::string mRootfsPath;
     const std::shared_ptr<DobbyRdkPluginUtils> mUtils;
 };
 
