@@ -71,6 +71,7 @@ If you with to develop Dobby further, detailed instructions on setting up a deve
 # Documentation
 * A high level overview of Dobby can be found at RDKCentral [here](https://wiki.rdkcentral.com/display/ASP/Dobby+Documentation)
 * Code documentation can be generated with Doxygen by running `doxygen ./Doxyfile`
+* Doxgyen documentation is hosted here: https://rdkcentral.github.io/Dobby/
 
 # Usage
 ## DobbyDaemon
