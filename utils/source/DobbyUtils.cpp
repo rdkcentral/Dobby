@@ -48,7 +48,6 @@
 #endif
 
 #define TEST_LOG(x, ...) fprintf(stderr, "\033[1;32m[%s:%d](%s)" x "\n\033[0m", __FILE__, __LINE__, __FUNCTION__, ##__VA_ARGS__); fflush(stderr);
-
 // The major number of the loop back devices
 #define LOOP_DEV_MAJOR_NUM          7
 
