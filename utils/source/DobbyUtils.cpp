@@ -47,6 +47,8 @@
 #include <linux/loop.h>
 #endif
 
+#define TEST_LOG(x, ...) fprintf(stderr, "\033[1;32m[%s:%d](%s)" x "\n\033[0m", __FILE__, __LINE__, __FUNCTION__, ##__VA_ARGS__); fflush(stderr);
+
 // The major number of the loop back devices
 #define LOOP_DEV_MAJOR_NUM          7
 
@@ -796,8 +798,10 @@ bool DobbyUtils::attachFileToLoopDevice(int loopFd, int fileFd) const
 {
     AI_LOG_FN_ENTRY();
 
+    TEST_LOG("Siva => before ioctl");
     if (ioctl(loopFd, LOOP_SET_FD, fileFd) < 0)
     {
+        TEST_LOG(Siva => failed to attach to file to loop device);
         AI_LOG_SYS_ERROR_EXIT(errno, "failed to attach to file to loop device");
         return false;
     }
@@ -809,9 +813,10 @@ bool DobbyUtils::attachFileToLoopDevice(int loopFd, int fileFd) const
     if (ioctl(loopFd, LOOP_SET_STATUS64, &loopInfo) < 0)
     {
         AI_LOG_SYS_ERROR(errno, "failed to set the autoclear flag");
-
+        TEST_LOG("Siva => failed to set the autoclear flag");
         if (ioctl(loopFd, LOOP_CLR_FD, 0) < 0)
         {
+            TEST_LOG("Siva => failed to detach from loop device");
             AI_LOG_SYS_WARN(errno, "failed to detach from loop device");
         }
 
@@ -820,7 +825,7 @@ bool DobbyUtils::attachFileToLoopDevice(int loopFd, int fileFd) const
     }
 
     AI_LOG_DEBUG("attached file to loop device");
-
+    TEST_LOG("Siva => attached file to loop device");
     AI_LOG_FN_EXIT();
     return true;
 }
