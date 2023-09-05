@@ -801,7 +801,7 @@ bool DobbyUtils::attachFileToLoopDevice(int loopFd, int fileFd) const
     TEST_LOG("Siva => before ioctl");
     if (ioctl(loopFd, LOOP_SET_FD, fileFd) < 0)
     {
-        TEST_LOG(Siva => failed to attach to file to loop device);
+        TEST_LOG("Siva => failed to attach to file to loop device");
         AI_LOG_SYS_ERROR_EXIT(errno, "failed to attach to file to loop device");
         return false;
     }
