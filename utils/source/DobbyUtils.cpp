@@ -719,6 +719,7 @@ int DobbyUtils::openLoopDevice(std::string* loopDevice) const
     int devCtlFd = open("/dev/loop-control", O_RDWR | O_CLOEXEC);
     if (devCtlFd < 0)
     {
+        TEST_LOG("Siva => failed to open '/dev/loop-control");
         AI_LOG_SYS_ERROR_EXIT(errno, "failed to open '/dev/loop-control'");
         return -1;
     }
@@ -729,12 +730,12 @@ int DobbyUtils::openLoopDevice(std::string* loopDevice) const
         int devNum = ioctl(devCtlFd, LOOP_CTL_GET_FREE);
         if (devNum < 0)
         {
-            AI_LOG_SYS_ERROR_EXIT(errno, "failed to get free device from loop control");
+            TEST_LOG("failed to get free device from loop control");
             close(devCtlFd);
             return -1;
         }
 
-        AI_LOG_DEBUG("found free loop device number %d", devNum);
+        TEST_LOG("found free loop device number %d", devNum);
 
         char loopDevPath[32];
         sprintf(loopDevPath, "/dev/loop%d", devNum);
@@ -753,7 +754,7 @@ int DobbyUtils::openLoopDevice(std::string* loopDevice) const
                           makedev(LOOP_DEV_MAJOR_NUM, devNum)) != 0)
                 {
                     if (errno != EEXIST)
-                        AI_LOG_SYS_ERROR(errno, "failed to mknod '%s'", loopDevPath);
+                        TEST_LOG("failed to mknod '%s'", loopDevPath);
                 }
             }
 
@@ -764,12 +765,12 @@ int DobbyUtils::openLoopDevice(std::string* loopDevice) const
         // check again if managed to open the file
         if (devFd < 0)
         {
-            AI_LOG_SYS_ERROR(errno, "failed to open '%s'", loopDevPath);
+            TEST_LOG("failed to open '%s'", loopDevPath);
 
             // try and release the loop device we created (but failed to
             // connect to)
             if (ioctl(devCtlFd, LOOP_CTL_REMOVE, devNum) != 0)
-                AI_LOG_SYS_ERROR(errno, "failed to free device from loop control");
+                TEST_LOG("failed to free device from loop control");
         }
         else if (loopDevice != nullptr)
         {
@@ -779,7 +780,7 @@ int DobbyUtils::openLoopDevice(std::string* loopDevice) const
 
     if (close(devCtlFd) != 0)
     {
-        AI_LOG_SYS_ERROR(errno, "failed to close '/dev/loop-control'");
+        TEST_LOG("failed to close '/dev/loop-control'");
     }
 
     AI_LOG_FN_EXIT();
