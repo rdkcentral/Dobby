@@ -121,16 +121,16 @@ TEST_F(DobbyTimerTests, testSimpleTimeout)
     ASSERT_EQ(mTimerEvents.size(), 4U);
 
     ASSERT_EQ(mTimerEvents[0].first, 0);
-    ASSERT_NEAR(timeDiff(mTimerEvents[0].second, start), 0, 100 /*50 need to check*/);
+    ASSERT_NEAR(timeDiff(mTimerEvents[0].second, start), 0, 50);
 
     ASSERT_EQ(mTimerEvents[1].first, 100);
-    ASSERT_NEAR(timeDiff(mTimerEvents[1].second, start), 100, 100 /*50 need to check*/);
+    ASSERT_NEAR(timeDiff(mTimerEvents[1].second, start), 100, 50);
 
     ASSERT_EQ(mTimerEvents[2].first, 200);
-    ASSERT_NEAR(timeDiff(mTimerEvents[2].second, start), 200, 100 /*50 need to check*/);
+    ASSERT_NEAR(timeDiff(mTimerEvents[2].second, start), 200, 50);
 
     ASSERT_EQ(mTimerEvents[3].first, 300);
-    ASSERT_NEAR(timeDiff(mTimerEvents[3].second, start), 300, 100 /*50 need to check*/);
+    ASSERT_NEAR(timeDiff(mTimerEvents[3].second, start), 300, 50);
 }
 
 TEST_F(DobbyTimerTests, testSimplePeriodicTimer)
