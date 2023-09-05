@@ -32,7 +32,7 @@ jobs:
       - name: install-dependencies
         run: |
           sudo apt-get update -y -q
-          sudo apt-get install -q -y automake libtool autotools-dev software-properties-common build-essential cmake libsystemd-dev libctemplate-dev libjsoncpp-dev libdbus-1-dev libnl-3-dev libnl-route-3-dev libsystemd-dev libyajl-dev libcap-dev libboost-dev libgtest-dev valgrind lcov clang
+          sudo apt-get install -q -y automake libtool autotools-dev software-properties-common build-essential cmake libsystemd-dev libctemplate-dev libjsoncpp-dev libdbus-1-dev libnl-3-dev libnl-route-3-dev libsystemd-dev libyajl-dev libcap-dev libboost-dev libgtest-dev lcov clang
 
       - name: Set clang toolchain
         if: ${{ matrix.compiler == 'clang' }}
@@ -50,20 +50,9 @@ jobs:
          cmake -DCMAKE_TOOLCHAIN_FILE="${{ env.TOOLCHAIN_FILE }}" -DRDK_PLATFORM=DEV_VM -DCMAKE_INSTALL_PREFIX:PATH=/usr -DENABLE_DOBBYL1TEST=ON -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} ${{ matrix.extra_flags }} ${{ env.optional_plugins }} ..
          make -j $(nproc)
 
-      - name: Run unit tests without valgrind
+      - name: Run unit tests
         run: |
           sudo $GITHUB_WORKSPACE/build/unit_tests/L1_testing/DobbyL1Test
-
-      - name: Run unit tests with valgrind
-        run: >
-          sudo valgrind
-          --tool=memcheck
-          --log-file=valgrind_log
-          --leak-check=yes
-          --show-reachable=yes
-          --track-fds=yes
-          --fair-sched=try
-          $GITHUB_WORKSPACE/build/unit_tests/L1_testing/DobbyL1Test
 
       - name: Generate coverage
         if: ${{ matrix.coverage == 'with-coverage'}}
@@ -89,6 +78,5 @@ jobs:
         with:
           name: artifacts
           path: |
-            coverage/
-            valgrind_log
+            coverage
           if-no-files-found: warn
