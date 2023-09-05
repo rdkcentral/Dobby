@@ -154,6 +154,15 @@ static const ctemplate::StaticTemplateString PLUGIN_NAME =
 static const ctemplate::StaticTemplateString PLUGIN_DATA =
     STS_INIT(PLUGIN_DATA, "PLUGIN_DATA");
 
+static const ctemplate::StaticTemplateString SECCOMP_ENABLED =
+    STS_INIT(SECCOMP_ENABLED, "SECCOMP_ENABLED");
+static const ctemplate::StaticTemplateString SECCOMP_DEFAULT_ACTION =
+    STS_INIT(SECCOMP_DEFAULT_ACTION, "SECCOMP_DEFAULT_ACTION");
+static const ctemplate::StaticTemplateString SECCOMP_ACTION =
+    STS_INIT(SECCOMP_ACTION, "SECCOMP_ACTION");
+static const ctemplate::StaticTemplateString SECCOMP_SYSCALLS =
+    STS_INIT(SECCOMP_SYSCALLS, "SECCOMP_SYSCALLS");
+
 
 // Flags that are set as various parts of the json spec file is parsed
 #define JSON_FLAG_ENV               (0x1U << 1)
@@ -177,6 +186,7 @@ static const ctemplate::StaticTemplateString PLUGIN_DATA =
 #define JSON_FLAG_CAPABILITIES      (0x1U << 19)
 #define JSON_FLAG_FILECAPABILITIES  (0x1U << 20)
 #define JSON_FLAG_VPU               (0x1U << 21)
+#define JSON_FLAG_SECCOMP           (0x1U << 22)
 
 int DobbySpecConfig::mNumCores = -1;
 
@@ -488,7 +498,8 @@ bool DobbySpecConfig::parseSpec(ctemplate::TemplateDictionary* dictionary,
         { "syslog",         {   JSON_FLAG_SYSLOG,           &DobbySpecConfig::processSyslog         }   },
         { "cpu",            {   JSON_FLAG_CPU,              &DobbySpecConfig::processCpu            }   },
         { "devices",        {   JSON_FLAG_DEVICES,          &DobbySpecConfig::processDevices        }   },
-        { "capabilities",   {   JSON_FLAG_CAPABILITIES,     &DobbySpecConfig::processCapabilities   }   }
+        { "capabilities",   {   JSON_FLAG_CAPABILITIES,     &DobbySpecConfig::processCapabilities   }   },
+        { "seccomp",        {   JSON_FLAG_SECCOMP,          &DobbySpecConfig::processSeccomp        }   }
     };
 
     // step 1 - parse the 'dobby' spec document
@@ -2533,6 +2544,115 @@ bool DobbySpecConfig::processCapabilities(const Json::Value& value,
     // that match the capabilities we've given the container
     dictionary->SetValue(NO_NEW_PRIVS, "false");
 #endif // !defined(RDK)
+
+    return true;
+}
+
+// -----------------------------------------------------------------------------
+/**
+ *  @brief Processes the seccomp field of the json spec
+ *
+ *  Example json:
+ *
+ *      "seccomp": {
+ *          "defaultAction": "SCMP_ACT_ALLOW",
+ *          "syscalls": {
+ *              "names": [
+ *                  "getcwd",
+ *                  "chmod"
+ *              ],
+ *              "action": "SCMP_ACT_ERRNO"
+ *          }
+ *      }
+ *
+ *  This adds extra capabilities to the container.
+ *
+ *  @param[in]  value       The json spec document from the client
+ *  @param[in]  dictionary  Pointer to the OCI dictionary to populate
+ *
+ *  @return true if correctly processed the value, otherwise false.
+ */
+bool DobbySpecConfig::processSeccomp(const Json::Value& value,
+                                    ctemplate::TemplateDictionary* dictionary)
+{
+    if (!value.isObject())
+    {
+        AI_LOG_ERROR("invalid 'seccomp' field");
+        return false;
+    }
+
+    const Json::Value& defaultAction = value["defaultAction"];
+    if (!processSeccompAction(defaultAction))
+    {
+        AI_LOG_ERROR("invalid 'seccomp.defaultAction' field");
+        return false;
+    }
+
+    const Json::Value& syscalls = value["syscalls"];
+    if (!syscalls.isObject())
+    {
+        AI_LOG_ERROR("invalid 'seccomp.syscalls' field");
+        return false;
+    }
+
+    const Json::Value& action = syscalls["action"];
+    if (!processSeccompAction(action))
+    {
+        AI_LOG_ERROR("invalid 'seccomp.syscalls.action' field");
+        return false;
+    }
+
+    const Json::Value& names = syscalls["names"];
+    if (!names.isArray())
+    {
+        AI_LOG_ERROR("invalid 'seccomp.syscalls.names' field");
+        return false;
+    }
+
+    std::stringstream ss;
+    if (names.size() > 0)
+    {
+        for (int i = 0; i < (int)names.size() - 1; ++i)
+        {
+            const Json::Value& entry = names[i];
+            if (!entry.isString())
+            {
+                AI_LOG_ERROR("invalid 'seccomp.syscalls.names[%d]' field", i);
+                return false;
+            }
+
+            ss << "\"" << entry.asString() << "\", ";
+        }
+
+        ss << "\"" << names[names.size() - 1].asString() << "\"";
+    }
+    else
+    {
+        AI_LOG_ERROR("empty 'seccomp.syscalls.names' array");
+        return false;
+    }
+
+    dictionary->SetValue(SECCOMP_DEFAULT_ACTION, defaultAction.asString());
+    dictionary->SetValue(SECCOMP_ACTION, action.asString());
+    dictionary->SetValue(SECCOMP_SYSCALLS, ss.str());
+    dictionary->ShowSection(SECCOMP_ENABLED);
+
+    return true;
+}
+
+bool DobbySpecConfig::processSeccompAction(const Json::Value& value) const
+{
+    if (!value.isString())
+    {
+        return false;
+    }
+
+    static const std::vector<std::string> actions{"SCMP_ACT_ERRNO", "SCMP_ACT_ALLOW"};
+
+    if (std::find(actions.begin(), actions.end(), value.asString()) == actions.end())
+    {
+        return false;
+    }
 
     return true;
 }

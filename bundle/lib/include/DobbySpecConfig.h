@@ -142,6 +142,7 @@ private:
     JSON_FIELD_PROCESSOR(processCpu);
     JSON_FIELD_PROCESSOR(processDevices);
     JSON_FIELD_PROCESSOR(processCapabilities);
+    JSON_FIELD_PROCESSOR(processSeccomp);
 
     #undef JSON_FIELD_PROCESSOR
 
@@ -154,6 +155,7 @@ private:
                                  const Json::Value& pluginData);
     bool processRdkPlugins(const Json::Value& value,
                            ctemplate::TemplateDictionary* dictionary);
+    bool processSeccompAction(const Json::Value& value) const;
 
 private:
     template <std::size_t N>
