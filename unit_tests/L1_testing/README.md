@@ -9,7 +9,6 @@ Below Packages need to be install
 automake libtool autotools-dev software-properties-common build-essential cmake libsystemd-dev libctemplate-dev libjsoncpp-dev
 libdbus-1-dev libnl-3-dev libnl-route-3-dev libsystemd-dev libyajl-dev libcap-dev libboost-dev libgtest-dev lcov clang
 
-
 ## Running tests
 To Running the tests, need to be build the Dobby source and Test codes.
 1. Get the Dobby Repo then follow below steps
@@ -47,5 +46,5 @@ To Running the tests, need to be build the Dobby source and Test codes.
 To write new test you need:
 1. Create new test file under the unit_tests/L1_testing/tests/XXXXTest.cpp
 2. Add the test cases using gtest framework
-3. Once added when you run the commands, new test file also it will compile and run the test. Finally it will give the coverage report.
+3. Once added when you run the above commands, It will compile the new test file and run the test. Finally it will give the coverage report.
    Otherwise if you add your changes in github, .github/workflows/build.yml will build and run the tests then give the results with coverage report.
