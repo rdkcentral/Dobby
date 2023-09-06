@@ -2582,7 +2582,7 @@ bool DobbySpecConfig::processSeccomp(const Json::Value& value,
     }
 
     const Json::Value& defaultAction = value["defaultAction"];
-    if (!processSeccompAction(defaultAction))
+    if (!validateSeccompAction(defaultAction))
     {
         AI_LOG_ERROR("invalid 'seccomp.defaultAction' field");
         return false;
@@ -2596,7 +2596,7 @@ bool DobbySpecConfig::processSeccomp(const Json::Value& value,
     }
 
     const Json::Value& action = syscalls["action"];
-    if (!processSeccompAction(action))
+    if (!validateSeccompAction(action))
     {
         AI_LOG_ERROR("invalid 'seccomp.syscalls.action' field");
         return false;
@@ -2640,7 +2640,15 @@ bool DobbySpecConfig::processSeccomp(const Json::Value& value,
     return true;
 }
 
-bool DobbySpecConfig::processSeccompAction(const Json::Value& value) const
+// -----------------------------------------------------------------------------
+/**
+ *  @brief Validates the seccomp action field value
+ *
+ *  @param[in]  value       seccomp action field value
+ *
+ *  @return true if correct seccomp action value, otherwise false.
+ */
+bool DobbySpecConfig::validateSeccompAction(const Json::Value& value) const
 {
     if (!value.isString())
     {
