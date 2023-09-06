@@ -294,6 +294,9 @@ Private Member Functions</h2></td></tr>
 <tr class="memitem:a1439108a3fc740e0ee71bdff03376953"><td class="memItemLeft" align="right" valign="top"><a id="a1439108a3fc740e0ee71bdff03376953"></a>
 &#160;</td><td class="memItemRight" valign="bottom"><b>JSON_FIELD_PROCESSOR</b> (processCapabilities)</td></tr>
 <tr class="separator:a1439108a3fc740e0ee71bdff03376953"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aba0d54bc0bbc52af7b94c61718824faa"><td class="memItemLeft" align="right" valign="top"><a id="aba0d54bc0bbc52af7b94c61718824faa"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>JSON_FIELD_PROCESSOR</b> (processSeccomp)</td></tr>
+<tr class="separator:aba0d54bc0bbc52af7b94c61718824faa"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab839ce99d8c42deac6723e733ffabcb2"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classDobbySpecConfig.html#ab839ce99d8c42deac6723e733ffabcb2">processLoopMount</a> (const Json::Value &amp;value, ctemplate::TemplateDictionary *dictionary, Json::Value &amp;loopMntData)</td></tr>
 <tr class="memdesc:ab839ce99d8c42deac6723e733ffabcb2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Processes a loop mount field of the json spec.  <a href="classDobbySpecConfig.html#ab839ce99d8c42deac6723e733ffabcb2">More...</a><br /></td></tr>
 <tr class="separator:ab839ce99d8c42deac6723e733ffabcb2"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -303,6 +306,9 @@ Private Member Functions</h2></td></tr>
 <tr class="memitem:a8e23adb54674d19d6c7a4398fd6d4db4"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classDobbySpecConfig.html#a8e23adb54674d19d6c7a4398fd6d4db4">processRdkPlugins</a> (const Json::Value &amp;value, ctemplate::TemplateDictionary *dictionary)</td></tr>
 <tr class="memdesc:a8e23adb54674d19d6c7a4398fd6d4db4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Processes the rdkPlugins field of the json spec.  <a href="classDobbySpecConfig.html#a8e23adb54674d19d6c7a4398fd6d4db4">More...</a><br /></td></tr>
 <tr class="separator:a8e23adb54674d19d6c7a4398fd6d4db4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a78ea214a67e5026c22a8092b1daf32d9"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classDobbySpecConfig.html#a78ea214a67e5026c22a8092b1daf32d9">validateSeccompAction</a> (const Json::Value &amp;value) const</td></tr>
+<tr class="memdesc:a78ea214a67e5026c22a8092b1daf32d9"><td class="mdescLeft">&#160;</td><td class="mdescRight">Validates the seccomp action field value.  <a href="classDobbySpecConfig.html#a78ea214a67e5026c22a8092b1daf32d9">More...</a><br /></td></tr>
+<tr class="separator:a78ea214a67e5026c22a8092b1daf32d9"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa099b3dd47edca56352f5f873ce3c43b"><td class="memTemplParams" colspan="2">template&lt;std::size_t N&gt; </td></tr>
 <tr class="memitem:aa099b3dd47edca56352f5f873ce3c43b"><td class="memTemplItemLeft" align="right" valign="top">std::bitset&lt; N &gt;&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classDobbySpecConfig.html#aa099b3dd47edca56352f5f873ce3c43b">parseBitset</a> (const std::string &amp;str) const</td></tr>
 <tr class="memdesc:aa099b3dd47edca56352f5f873ce3c43b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Parses a string to create a bitset for the appropriate bits set.  <a href="classDobbySpecConfig.html#aa099b3dd47edca56352f5f873ce3c43b">More...</a><br /></td></tr>
@@ -990,6 +996,41 @@ template&lt;std::size_t N&gt; </div>
   </table>
   </dd>
 </dl>
+
+</div>
+</div>
+<a id="a78ea214a67e5026c22a8092b1daf32d9"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a78ea214a67e5026c22a8092b1daf32d9">&#9670;&nbsp;</a></span>validateSeccompAction()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool DobbySpecConfig::validateSeccompAction </td>
+          <td>(</td>
+          <td class="paramtype">const Json::Value &amp;&#160;</td>
+          <td class="paramname"><em>value</em></td><td>)</td>
+          <td> const</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Validates the seccomp action field value. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">value</td><td>seccomp action field value</td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>true if correct seccomp action value, otherwise false. </dd></dl>
 
 </div>
 </div>
