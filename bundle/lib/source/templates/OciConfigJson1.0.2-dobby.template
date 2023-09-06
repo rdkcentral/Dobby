@@ -279,6 +279,19 @@ static const char* ociJsonTemplate = R"JSON(
             {{/ADDITIONAL_GIDS}}
         ],
         {{/USERNS_ENABLED}}
+        {{#SECCOMP_ENABLED}}
+        "seccomp": {
+            "defaultAction": "{{SECCOMP_DEFAULT_ACTION}}",
+            "syscalls": [
+                {
+                    "action": "{{SECCOMP_ACTION}}",
+                    "names": [
+                        {{SECCOMP_SYSCALLS}}
+                    ]
+                }
+            ]
+        },
+        {{/SECCOMP_ENABLED}}
         "devices": [
             {{#ADDITIONAL_DEVICE_NODES}}
             {
