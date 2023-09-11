@@ -22,8 +22,10 @@ To Running the tests, need to be build the Dobby source and Test codes.
    cmake -DRDK_PLATFORM=DEV_VM -DCMAKE_TOOLCHAIN_FILE=unit_tests/L1_testing/gcc-with-coverage.cmake -DCMAKE_INSTALL_PREFIX:PATH=/usr -DENABLE_DOBBYL1TEST=ON -DCMAKE_BUILD_TYPE=Debug -DLEGACY_COMPONENTS=ON -DUSE_SYSTEMD=ON -DPLUGIN_TESTPLUGIN=ON -DPLUGIN_GPU=ON -DPLUGIN_LOCALTIME=ON -DPLUGIN_RTSCHEDULING=ON -DPLUGIN_HTTPPROXY=ON -DPLUGIN_APPSERVICES=ON -DPLUGIN_IONMEMORY=ON -DPLUGIN_DEVICEMAPPER=ON -DPLUGIN_OOMCRASH=ON ..
    make -j $(nproc)
 ```
-   ### Run Run dobby L1 unit test
+   ### Run dobby L1 unit test
+```command
    sudo unit_tests/L1_testing/DobbyL1Test
+```
 ```command
    ###If want coverage report, run the below command
    lcov -c
@@ -43,8 +45,8 @@ To Running the tests, need to be build the Dobby source and Test codes.
           filtered_coverage.info
 ```
 ## Writing tests
-To write new test you need:
+To write new test:
 1. Create new test file under the unit_tests/L1_testing/tests/XXXXTest.cpp
 2. Add the test cases using gtest framework
-3. Once added when you run the above commands, It will compile the new test file and run the test. Finally it will give the coverage report.
-   Otherwise if you add your changes in github, .github/workflows/build.yml will build and run the tests then give the results with coverage report.
+3. Once added the new test, use above commands to build and run the test.
+   Otherwise if add the changes in github, .github/workflows/build.yml will build and run the tests then give the results with coverage report.
