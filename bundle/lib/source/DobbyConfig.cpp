@@ -788,7 +788,7 @@ bool DobbyConfig::isApparmorProfileLoaded(char *profile)
     char* ptr;
     std::string str;
 
-    fp = popen("cat /sys/kernel/security/apparmor/profiles", "r");
+    fp = fopen("/sys/kernel/security/apparmor/profiles", "r");
 
     if (fp == nullptr)
     {
