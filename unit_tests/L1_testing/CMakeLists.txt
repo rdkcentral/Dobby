@@ -18,7 +18,7 @@
 cmake_minimum_required(VERSION 3.7)
 project(DobbyL1Test)
 
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 14)
 
 find_package(GTest REQUIRED)
 include_directories(${GTEST_INCLUDE_DIRS})
@@ -29,6 +29,7 @@ add_library(Utils SHARED
             ../../utils/source/ContainerId.cpp
             ../../utils/source/DobbyTimer.cpp
             ../../AppInfrastructure/Logging/source/Logging.cpp
+			../../daemon/lib/source/DobbyManager.cpp
             )
 
 target_include_directories(Utils
@@ -37,6 +38,20 @@ target_include_directories(Utils
                 ../../utils/source
                 ../../AppInfrastructure/Logging/include
                 ../../AppInfrastructure/Common/include
+				../../bundle/lib/include
+                ../../ipcUtils/include
+                ../../settings/include
+                ../../daemon/lib/source
+                ../../AppInfrastructure/IpcService/include
+                ../../libocispec/generated_output
+                ../../pluginLauncher/lib/include
+                ../../daemon/lib/include
+                ../../protocol/include
+                ../../build/AppInfrastructure/Tracing
+                ../../rdkPlugins/Networking/include
+                /usr/lib/plugins/dobby
+                /usr/include/jsoncpp
+                mocks
                 )
 
 file(GLOB TESTS tests/*.cpp)
