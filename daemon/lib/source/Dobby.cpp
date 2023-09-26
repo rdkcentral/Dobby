@@ -1865,6 +1865,17 @@ void Dobby::onContainerStopped(int32_t cd, const ContainerId& id, int status)
                      DOBBY_CTRL_EVENT_STOPPED);
     }
 
+
+    //Fire off a notification with status
+    if(!mIpcService->emitSignal(AI_IPC::Signal(mObjectPath,
+                                                DOBBY_CTRL_INTERFACE,
+                                                DOBBY_CTRL_EVENT_STOPPED_WITH_STATUS),
+                                 { cd, id.str(), int32_t(status) }))
+    {
+        AI_LOG_ERROR("failed to emit '%s' signal",
+                     DOBBY_CTRL_EVENT_STOPPED_WITH_STATUS);
+    }
+
     AI_LOG_MILESTONE("container '%s'(%d) stopped (status 0x%04x)", id.c_str(),
                      cd, status);
 
