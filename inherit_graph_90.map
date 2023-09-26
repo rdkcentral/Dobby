@@ -1,5 +1,4 @@
 <map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
-<area shape="rect" id="node1" href="$classIDobbyStream.html" title="Interface for all character streams used in the daemon." alt="" coords="5,31,120,57"/>
-<area shape="rect" id="node2" href="$classDobbyBufferStream.html" title="Stream that just redirects all the input to an internal memory buffer." alt="" coords="174,5,325,32"/>
-<area shape="rect" id="node3" href="$classDobbyDevNullStream.html" title="Stream that just redirects all the input to /dev/null." alt="" coords="168,56,331,83"/>
+<area shape="rect" id="node1" href="$classIDobbyStartState.html" title="Utility interface passed in at the post&#45;construction phase, to allow some final tweaking of the conta..." alt="" coords="5,5,139,32"/>
+<area shape="rect" id="node2" href="$classDobbyStartState.html" title="Stores the start state of the container." alt="" coords="187,5,316,32"/>
 </map>
