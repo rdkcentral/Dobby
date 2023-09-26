@@ -29,7 +29,7 @@ add_library(Utils SHARED
             ../../utils/source/ContainerId.cpp
             ../../utils/source/DobbyTimer.cpp
             ../../AppInfrastructure/Logging/source/Logging.cpp
-			../../daemon/lib/source/DobbyManager.cpp
+            ../../daemon/lib/source/DobbyManager.cpp
             )
 
 target_include_directories(Utils
@@ -38,7 +38,7 @@ target_include_directories(Utils
                 ../../utils/source
                 ../../AppInfrastructure/Logging/include
                 ../../AppInfrastructure/Common/include
-				../../bundle/lib/include
+                ../../bundle/lib/include
                 ../../ipcUtils/include
                 ../../settings/include
                 ../../daemon/lib/source
