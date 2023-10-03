@@ -2,9 +2,9 @@
 
 #include <gmock/gmock.h>
 
-#include "DobbySpecConfig.h"
+#include "DobbyConfig.h"
 
-class DobbySpecConfigMock : public DobbySpecConfig {
+class DobbySpecConfigMock : public DobbyConfig {
 
 public:
 
