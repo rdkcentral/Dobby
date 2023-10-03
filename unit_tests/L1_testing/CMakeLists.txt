@@ -71,6 +71,6 @@ file(GLOB TESTS tests/*.cpp)
 
 add_executable(${PROJECT_NAME} ${TESTS})
 
-target_link_libraries(${PROJECT_NAME} Utils ${GTEST_LIBRARIES} gtest_main ctemplate pthread)
+target_link_libraries(${PROJECT_NAME} Utils ${GTEST_LIBRARIES} gtest_main gmock_main ctemplate pthread)
 
 install(TARGETS ${PROJECT_NAME} DESTINATION bin)
