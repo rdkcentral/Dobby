@@ -16,7 +16,7 @@
 
 #include "DobbyRdkPluginManagerMock.h"
 
-#include "DobbySpecConfigMock.h"
+//#include "DobbySpecConfigMock.h"
 
 #include "DobbyBundleConfigMock.h"
 
