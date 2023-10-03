@@ -1,3 +1,4 @@
 <map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
-<area shape="rect" id="node1" href="$classDobbyRdkPluginUtils.html" title="Class for useful utility methods for plugins such as adding mounts and environment variables." alt="" coords="5,5,164,32"/>
+<area shape="rect" id="node1" href="$classDobbyRdkPluginManager.html" title="Class that manages all the RDK plugin hook libraries." alt="" coords="5,5,192,32"/>
+<area shape="rect" id="node2" href="$classDobbyRdkPluginManagerMock.html" title=" " alt="" coords="240,5,461,32"/>
 </map>

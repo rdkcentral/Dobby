@@ -85,7 +85,7 @@ $(function() {
 <div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160; </div>
 <div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160;    <span class="comment">// Declare the mock method using the MOCK_METHOD macro</span></div>
 <div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160;    MOCK_METHOD((<span class="keyword">const</span> std::map&lt;std::string, Json::Value&gt;&amp;), rdkPlugins, (), (<span class="keyword">const</span>));</div>
-<div class="line"><a name="l00015"></a><span class="lineno">   15</span>&#160;    MOCK_METHOD(<span class="keyword">const</span> std::string ,spec, (), (<span class="keyword">const</span>));</div>
+<div class="line"><a name="l00015"></a><span class="lineno">   15</span>&#160;    MOCK_METHOD((<span class="keyword">const</span> std::string) ,spec, (), (<span class="keyword">const</span>));</div>
 <div class="line"><a name="l00016"></a><span class="lineno">   16</span>&#160;    MOCK_METHOD(<span class="keywordtype">bool</span> ,<a class="code" href="classDobbySpecConfig.html#abdda342640f7779b7b4ead19aada17e4">isValid</a>, (), (<span class="keyword">const</span>));</div>
 <div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160;    MOCK_METHOD(std::shared_ptr&lt;rt_dobby_schema&gt; ,config, (), (<span class="keyword">const</span>));</div>
 <div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160;    MOCK_METHOD(<span class="keywordtype">bool</span> ,restartOnCrash, (), (<span class="keyword">const</span>));</div>

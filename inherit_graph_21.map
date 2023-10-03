@@ -1,3 +1,5 @@
 <map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
-<area shape="rect" id="node1" href="$structAI__MD5__CTX.html" title=" " alt="" coords="5,5,111,32"/>
+<area shape="rect" id="node1" href="$structAI__IPC_1_1RemoteEntry.html" title="Remote entry, which can be either a signal or method." alt="" coords="5,31,161,57"/>
+<area shape="rect" id="node2" href="$structAI__IPC_1_1Method.html" title="Method identified by a service, object, interface and method name itself." alt="" coords="209,5,329,32"/>
+<area shape="rect" id="node3" href="$structAI__IPC_1_1Signal.html" title="Method identified by object, interface and signal name itself." alt="" coords="214,56,325,83"/>
 </map>

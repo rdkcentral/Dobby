@@ -1,4 +1,5 @@
 <map id="IDobbySettings" name="IDobbySettings">
-<area shape="rect" id="node1" title="Interface provided to the library at startup, contains the configuration options for Dobby." alt="" coords="5,5,127,32"/>
-<area shape="rect" id="node2" href="$classSettings.html" title="Object containing the settings to pass to the Dobby." alt="" coords="29,80,103,107"/>
+<area shape="rect" id="node1" title="Interface provided to the library at startup, contains the configuration options for Dobby." alt="" coords="89,5,210,32"/>
+<area shape="rect" id="node2" href="$classDobbySettingsMock.html" title=" " alt="" coords="5,80,157,107"/>
+<area shape="rect" id="node3" href="$classSettings.html" title="Object containing the settings to pass to the Dobby." alt="" coords="181,80,256,107"/>
 </map>

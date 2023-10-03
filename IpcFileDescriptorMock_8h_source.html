@@ -74,16 +74,16 @@ $(function() {
 <div class="fragment"><div class="line"><a name="l00001"></a><span class="lineno">    1</span>&#160;<span class="preprocessor">#pragma once</span></div>
 <div class="line"><a name="l00002"></a><span class="lineno">    2</span>&#160; </div>
 <div class="line"><a name="l00003"></a><span class="lineno">    3</span>&#160;<span class="preprocessor">#include &lt;gmock/gmock.h&gt;</span></div>
-<div class="line"><a name="l00004"></a><span class="lineno">    4</span>&#160; </div>
-<div class="line"><a name="l00005"></a><span class="lineno">    5</span>&#160;<span class="preprocessor">#include &quot;IpcFileDescriptor.h&quot;</span></div>
-<div class="line"><a name="l00006"></a><span class="lineno">    6</span>&#160; </div>
-<div class="line"><a name="l00007"></a><span class="lineno"><a class="line" href="classIpcFileDescriptorMock.html">    7</a></span>&#160;<span class="keyword">class </span><a class="code" href="classIpcFileDescriptorMock.html">IpcFileDescriptorMock</a> : <span class="keyword">public</span> <a class="code" href="classAI__IPC_1_1IpcFileDescriptor.html">AI_IPC::IpcFileDescriptor</a> {</div>
-<div class="line"><a name="l00008"></a><span class="lineno">    8</span>&#160; </div>
-<div class="line"><a name="l00009"></a><span class="lineno">    9</span>&#160;<span class="keyword">public</span>:</div>
-<div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160; </div>
-<div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;    <span class="keyword">virtual</span> ~<a class="code" href="classIpcFileDescriptorMock.html">IpcFileDescriptorMock</a>() = <span class="keywordflow">default</span>;</div>
-<div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160; </div>
-<div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160;    <span class="comment">// Declare the mock method using the MOCK_METHOD macro</span></div>
+<div class="line"><a name="l00004"></a><span class="lineno">    4</span>&#160;<span class="preprocessor">#include &quot;IpcFileDescriptor.h&quot;</span></div>
+<div class="line"><a name="l00005"></a><span class="lineno">    5</span>&#160; </div>
+<div class="line"><a name="l00006"></a><span class="lineno"><a class="line" href="classIpcFileDescriptorMock.html">    6</a></span>&#160;<span class="keyword">class </span><a class="code" href="classIpcFileDescriptorMock.html">IpcFileDescriptorMock</a> : <span class="keyword">public</span> <a class="code" href="classAI__IPC_1_1IpcFileDescriptor.html">AI_IPC::IpcFileDescriptor</a> {</div>
+<div class="line"><a name="l00007"></a><span class="lineno">    7</span>&#160; </div>
+<div class="line"><a name="l00008"></a><span class="lineno">    8</span>&#160;<span class="keyword">public</span>:</div>
+<div class="line"><a name="l00009"></a><span class="lineno">    9</span>&#160; </div>
+<div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;    <span class="keyword">virtual</span> ~<a class="code" href="classIpcFileDescriptorMock.html">IpcFileDescriptorMock</a>() = <span class="keywordflow">default</span>;</div>
+<div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160; </div>
+<div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160;    MOCK_METHOD(<span class="keywordtype">bool</span>, <a class="code" href="classAI__IPC_1_1IpcFileDescriptor.html#a277cf70b19cf221c34fb561b063352e3">isValid</a>, (), (<span class="keyword">const</span>));</div>
+<div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160;    MOCK_METHOD(<span class="keywordtype">int</span>, <a class="code" href="classAI__IPC_1_1IpcFileDescriptor.html#a34bdb72eedfc9c595ee9d8ed1f0fd64f">fd</a>, (), (<span class="keyword">const</span>));</div>
 <div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160;    MOCK_METHOD(<span class="keywordtype">void</span>, <a class="code" href="classAI__IPC_1_1IpcFileDescriptor.html#ad022a2b1896bec1193ac024379aa0685">reset</a>, (<span class="keywordtype">int</span> fd_), ());</div>
 <div class="line"><a name="l00015"></a><span class="lineno">   15</span>&#160; </div>
 <div class="line"><a name="l00016"></a><span class="lineno">   16</span>&#160;};</div>
@@ -91,8 +91,10 @@ $(function() {
 <div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160; </div>
 <div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160; </div>
 <div class="ttc" id="aclassAI__IPC_1_1IpcFileDescriptor_html"><div class="ttname"><a href="classAI__IPC_1_1IpcFileDescriptor.html">AI_IPC::IpcFileDescriptor</a></div><div class="ttdef"><b>Definition:</b> IpcFileDescriptor.h:33</div></div>
+<div class="ttc" id="aclassAI__IPC_1_1IpcFileDescriptor_html_a277cf70b19cf221c34fb561b063352e3"><div class="ttname"><a href="classAI__IPC_1_1IpcFileDescriptor.html#a277cf70b19cf221c34fb561b063352e3">AI_IPC::IpcFileDescriptor::isValid</a></div><div class="ttdeci">bool isValid() const</div><div class="ttdef"><b>Definition:</b> IpcFileDescriptor.cpp:166</div></div>
+<div class="ttc" id="aclassAI__IPC_1_1IpcFileDescriptor_html_a34bdb72eedfc9c595ee9d8ed1f0fd64f"><div class="ttname"><a href="classAI__IPC_1_1IpcFileDescriptor.html#a34bdb72eedfc9c595ee9d8ed1f0fd64f">AI_IPC::IpcFileDescriptor::fd</a></div><div class="ttdeci">int fd() const</div><div class="ttdef"><b>Definition:</b> IpcFileDescriptor.cpp:183</div></div>
 <div class="ttc" id="aclassAI__IPC_1_1IpcFileDescriptor_html_ad022a2b1896bec1193ac024379aa0685"><div class="ttname"><a href="classAI__IPC_1_1IpcFileDescriptor.html#ad022a2b1896bec1193ac024379aa0685">AI_IPC::IpcFileDescriptor::reset</a></div><div class="ttdeci">void reset(int fd=-1)</div><div class="ttdef"><b>Definition:</b> IpcFileDescriptor.cpp:212</div></div>
-<div class="ttc" id="aclassIpcFileDescriptorMock_html"><div class="ttname"><a href="classIpcFileDescriptorMock.html">IpcFileDescriptorMock</a></div><div class="ttdef"><b>Definition:</b> IpcFileDescriptorMock.h:7</div></div>
+<div class="ttc" id="aclassIpcFileDescriptorMock_html"><div class="ttname"><a href="classIpcFileDescriptorMock.html">IpcFileDescriptorMock</a></div><div class="ttdef"><b>Definition:</b> IpcFileDescriptorMock.h:6</div></div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
