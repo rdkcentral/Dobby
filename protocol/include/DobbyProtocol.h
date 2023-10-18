@@ -58,6 +58,7 @@
 #define DOBBY_CTRL_METHOD_LIST                      "List"
 #define DOBBY_CTRL_EVENT_STARTED                    "Started"
 #define DOBBY_CTRL_EVENT_STOPPED                    "Stopped"
+#define DOBBY_CTRL_EVENT_STOPPED_WITH_STATUS        "StoppedWithStatus"
 
 #define DOBBY_DEBUG_INTERFACE                   DOBBY_SERVICE ".debug1"
 #define DOBBY_DEBUG_METHOD_CREATE_BUNDLE            "CreateBundle"

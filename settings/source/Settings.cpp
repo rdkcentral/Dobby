@@ -508,6 +508,13 @@ void Settings::dump(int aiLogLevel) const
                         i++, extIface.c_str());
     }
 
+    __AI_LOG_PRINTF(aiLogLevel, "settings.straceSettings.logsDir='%s'", mStraceSettings.logsDir.c_str());
+    i = 0;
+    for (const auto& app : mStraceSettings.apps)
+    {
+        __AI_LOG_PRINTF(aiLogLevel, "settings.straceSettings.apps[%u]='%s'", i++, app.c_str());
+    }
+
     dumpHardwareAccess(aiLogLevel, "gpu", mGpuHardwareAccess);
     dumpHardwareAccess(aiLogLevel, "vpu", mVpuHardwareAccess);
 }

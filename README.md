@@ -69,9 +69,9 @@ Use `-DPLUGIN_[PLUGINNAME]=[ON|OFF]` to enable or disable plugins for your build
 If you with to develop Dobby further, detailed instructions on setting up a development environment can be found in the `develop` directory in this repo, including a Vagrant VM with all the necessary dependencies pre-installed.
 
 # Documentation
-* A high level overview of Dobby can be found at RDKCentral [here](https://wiki.rdkcentral.com/display/ASP/Dobby+Documentation)
+* A high level overview of Dobby can be found at RDKCentral [here](https://wiki.rdkcentral.com/display/ASP/Dobby)
 * Code documentation can be generated with Doxygen by running `doxygen ./Doxyfile`
-* Doxgyen documentation is hosted here: https://rdkcentral.github.io/Dobby/
+* Doxygen documentation is hosted here: https://rdkcentral.github.io/Dobby/
 
 # Usage
 ## DobbyDaemon

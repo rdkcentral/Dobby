@@ -1856,6 +1856,18 @@ void Dobby::onContainerStopped(int32_t cd, const ContainerId& id, int status)
     // Regardless of whether of the not the hooks executed successfully
     // we fire off a notification event indicating that the container
     // has stopped.
+
+    // Fire off a notification with status
+    if (!mIpcService->emitSignal(AI_IPC::Signal(mObjectPath,
+                                                DOBBY_CTRL_INTERFACE,
+                                                DOBBY_CTRL_EVENT_STOPPED_WITH_STATUS),
+                                 { cd, id.str(), int32_t(status) }))
+    {
+        AI_LOG_ERROR("failed to emit '%s' signal",
+                     DOBBY_CTRL_EVENT_STOPPED_WITH_STATUS);
+    }
+
+    //Fire off a normal notification
     if (!mIpcService->emitSignal(AI_IPC::Signal(mObjectPath,
                                                 DOBBY_CTRL_INTERFACE,
                                                 DOBBY_CTRL_EVENT_STOPPED),

@@ -355,18 +355,17 @@ bool DobbyConfig::enableSTrace(const std::string& logsDir)
         return false;
     }
 
-    AI_LOG_INFO("Enabling strace for '%s', logs ", cfg->hostname);
-
     if (!addMount(logsDir, logsDir, "bind", 0, { "bind", "nosuid", "nodev" }))
     {
         AI_LOG_ERROR("Failed to add strace logs mount");
         return false;
     }
 
+    const std::string logsPath = logsDir + "/strace-" + cfg->hostname + ".txt";
+    AI_LOG_INFO("Enabling strace for '%s', logs in '%s'", cfg->hostname, logsPath.c_str());
+
     {
         // add  "/usr/bin/strace -o logs -f " before the rest of command args
-
-        const std::string logsPath = logsDir + "/strace-" + cfg->hostname + ".txt";
         const std::vector<std::string> params{"/usr/bin/strace", "-o", logsPath, "-f"};
 
         std::lock_guard<std::mutex> locker(mLock);
@@ -389,9 +388,9 @@ bool DobbyConfig::enableSTrace(const std::string& logsDir)
         cfg->process->args = new_args;
     }
 
-    AI_LOG_FN_EXIT();
-
     printCommand();
+
+    AI_LOG_FN_EXIT();
 
     return true;
 }
@@ -788,7 +787,7 @@ bool DobbyConfig::isApparmorProfileLoaded(char *profile)
     char* ptr;
     std::string str;
 
-    fp = popen("cat /sys/kernel/security/apparmor/profiles", "r");
+    fp = fopen("/sys/kernel/security/apparmor/profiles", "r");
 
     if (fp == nullptr)
     {
