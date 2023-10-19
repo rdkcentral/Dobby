@@ -2329,12 +2329,19 @@ void DobbyManager::handleContainerTerminate(const ContainerId &id, const std::un
  */
 void DobbyManager::onChildExit()
 {
+    struct ContainerStoppedEvent {
+        int32_t descriptor;
+        ContainerId id;
+        int status;
+    };
+
     AI_LOG_FN_ENTRY();
 
     AI_LOG_DEBUG("detected child terminated signal");
 
     // take the lock as we're being called from the signal monitor thread
     std::lock_guard<std::mutex> locker(mLock);
+    std::vector<ContainerStoppedEvent> containerStoppedEvents;
 
     // find the container which has been launched by the given runc (use pid
     // to match it).
@@ -2383,10 +2390,10 @@ void DobbyManager::onChildExit()
 
             handleContainerTerminate(id, container, status);
 
-            // signal the higher layers that a container has died
+            // signal the higher layers that a container has died, later
             if (mContainerStoppedCb)
             {
-                mContainerStoppedCb(container->descriptor, id, status);
+                containerStoppedEvents.push_back({container->descriptor, id, status});
             }
 
             if (!container->shouldRestart(status) || !restartContainer(id, container))
@@ -2436,6 +2443,15 @@ void DobbyManager::onChildExit()
         else
         {
             ++execit;
+        }
+    }
+
+    if (mContainerStoppedCb)
+    {
+        for (const auto &ev: containerStoppedEvents)
+        {
+            // signal the higher layers that a container has died, now
+            mContainerStoppedCb(ev.descriptor, ev.id, ev.status);
         }
     }
 
