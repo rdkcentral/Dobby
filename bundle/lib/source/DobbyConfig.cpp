@@ -800,15 +800,15 @@ bool DobbyConfig::isApparmorProfileLoaded(char *profile)
         fgets (line, sizeof(line), fp);
         ptr = strchr(line,'\n');
 
-	if (ptr)
-          *ptr = '\0';
+        if (ptr)
+            *ptr = '\0';
 
-        str = line;
+            str = line;
 
-	if (str.find(profile )!= -1)
+        if (str.find(profile) != -1)
         {
             status = true;
-            AI_LOG_INFO("Apparmor profile [%s] is loaded",profile);
+            AI_LOG_INFO("Apparmor profile [%s] is loaded", profile);
             break;
         }
     }
@@ -828,8 +828,8 @@ bool DobbyConfig::setDobbyDefaultApparmorProfile(std::shared_ptr<rt_dobby_schema
 
     if (!status)
     {
-        cfg->process->apparmor_profile = "dobby_default";
-        status = isApparmorProfileLoaded( cfg->process->apparmor_profile);
+        cfg->process->apparmor_profile = strdup("dobby_default");
+        status = isApparmorProfileLoaded(cfg->process->apparmor_profile);
     }
 
     return status;
