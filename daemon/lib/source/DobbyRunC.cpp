@@ -471,14 +471,14 @@ bool DobbyRunC::killCont(const ContainerId& id, int signal, bool all) const
                retryCounter > 0)
         {
             retryCounter--;
-            usleep(500);
+            usleep(50000);
             contStatus = state(id);
         }
 
         // Container wasn't killed
         if(retryCounter <= 0)
         {
-            AI_LOG_DEBUG("SIGTERM kill wasn't kill container (probably masked), "
+            AI_LOG_WARN("SIGTERM kill did not kill container (probably masked), "
                         "retrying kill with SIGKILL");
             // retry kill with SIGKILL now, its result will be proper result now
             returnValue = DobbyRunC::killCont(id, SIGKILL, all);
