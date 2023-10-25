@@ -15,18 +15,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 */
+
 #pragma once
 
 #include <gmock/gmock.h>
-#include "DobbyRdkPluginManager.h"
+#include "DobbyUtils.h"
 
-class DobbyRdkPluginManagerMock : public DobbyRdkPluginManager {
-
+class DobbyUtilsMock : public DobbyUtilsImpl{
 public:
-
-    virtual ~DobbyRdkPluginManagerMock() = default;
-
-    MOCK_METHOD(const std::vector<std::string>, listLoadedPlugins, (), (const));
-    MOCK_METHOD(std::shared_ptr<IDobbyRdkLoggingPlugin>, getContainerLogger, (), (const));
+    virtual ~DobbyUtilsMock() = default;
 };
-

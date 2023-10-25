@@ -71,5 +71,4 @@ private:
     const uint16_t mPlatformIdent;
 };
 
-
 #endif // !defined(DOBBYENV_H)

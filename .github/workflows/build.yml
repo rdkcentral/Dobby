@@ -42,6 +42,17 @@ jobs:
         if: ${{ matrix.compiler == 'gcc' && matrix.coverage == 'with-coverage' }}
         run: echo "TOOLCHAIN_FILE=${GITHUB_WORKSPACE}/unit_tests/L1_testing/gcc-with-coverage.cmake" >> $GITHUB_ENV
 
+      - name: Install gmock
+        run: |
+         cd $GITHUB_WORKSPACE
+         git clone https://github.com/google/googletest.git
+         cd googletest
+         mkdir build
+         cd build
+         cmake ..
+         make
+         sudo make install
+
       - name: build dobby
         run: |
          cd $GITHUB_WORKSPACE
@@ -52,7 +63,8 @@ jobs:
 
       - name: run unit-tests
         run: |
-          sudo $GITHUB_WORKSPACE/build/unit_tests/L1_testing/DobbyL1Test
+          sudo $GITHUB_WORKSPACE/build/unit_tests/L1_testing/tests/DobbyTest/DobbyL1Test
+          sudo $GITHUB_WORKSPACE/build/unit_tests/L1_testing/tests/DobbyUtilsTest/DobbyL1Test_DobbyUtils
 
       - name: Generate coverage
         if: ${{ matrix.coverage == 'with-coverage'}}

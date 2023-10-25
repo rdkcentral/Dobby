@@ -15,18 +15,40 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 */
-#pragma once
+#include "ContainerId.h"
 
-#include <gmock/gmock.h>
-#include "DobbyRdkPluginManager.h"
+static bool isValidContainerId(const std::string& id)
+{
+    if (id.empty() || (id.size() > 128))
+    {
+        return false;
+    }
 
-class DobbyRdkPluginManagerMock : public DobbyRdkPluginManager {
+    unsigned alphaCount = 0;
+    for (const char c : id)
+    {
+        if (!isalnum(c) && (c != '.') && (c != '-') && (c != '_'))
+            return false;
 
-public:
+        if (isalpha(c))
+            alphaCount++;
+    }
 
-    virtual ~DobbyRdkPluginManagerMock() = default;
+    if (id.find("..") != std::string::npos)
+    {
+        return false;
+    }
 
-    MOCK_METHOD(const std::vector<std::string>, listLoadedPlugins, (), (const));
-    MOCK_METHOD(std::shared_ptr<IDobbyRdkLoggingPlugin>, getContainerLogger, (), (const));
-};
+    return (alphaCount > 0);
+}
 
+ContainerId ContainerId::create(const std::string& s)
+{
+    std::string str("dummyId");
+    ContainerId id;
+
+    if (isValidContainerId(str))
+        id.mId.swap(str);
+
+    return id;
+}

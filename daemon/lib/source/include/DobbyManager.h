@@ -94,7 +94,6 @@ private:
     void cleanupContainers();
     bool cleanupContainer(const DobbyRunC::ContainerListItem& container);
     void cleanupContainersShutdown();
-
 public:
 #if defined(LEGACY_COMPONENTS)
     int32_t startContainerFromSpec(const ContainerId& id,
@@ -201,7 +200,6 @@ private:
     bool invalidContainerCleanupTask();
 
     bool shouldEnableSTrace(const std::shared_ptr<DobbyConfig> &config) const;
-
 private:
     const std::shared_ptr<IDobbyEnv> mEnvironment;
     const std::shared_ptr<IDobbyUtils> mUtilities;
