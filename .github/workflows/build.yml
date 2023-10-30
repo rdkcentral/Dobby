@@ -86,6 +86,7 @@ jobs:
           filtered_coverage.info
 
       - name: Upload artifacts
+        if: ${{ !env.ACT }}
         uses: actions/upload-artifact@v3
         with:
           name: artifacts
