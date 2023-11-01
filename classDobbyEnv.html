@@ -65,6 +65,8 @@ $(function() {
 <div class="header">
   <div class="summary">
 <a href="#pub-methods">Public Member Functions</a> &#124;
+<a href="#pub-static-methods">Static Public Member Functions</a> &#124;
+<a href="#pro-static-attribs">Static Protected Attributes</a> &#124;
 <a href="#pri-static-methods">Static Private Member Functions</a> &#124;
 <a href="#pri-attribs">Private Attributes</a> &#124;
 <a href="classDobbyEnv-members.html">List of all members</a>  </div>
@@ -76,7 +78,7 @@ $(function() {
 <p>Basic class used to store the stb environment.  
  <a href="classDobbyEnv.html#details">More...</a></p>
 
-<p><code>#include &lt;<a class="el" href="DobbyEnv_8h_source.html">DobbyEnv.h</a>&gt;</code></p>
+<p><code>#include &lt;<a class="el" href="daemon_2lib_2source_2include_2DobbyEnv_8h_source.html">DobbyEnv.h</a>&gt;</code></p>
 <div class="dynheader">
 Inheritance diagram for DobbyEnv:</div>
 <div class="dyncontent">
@@ -91,8 +93,9 @@ Collaboration diagram for DobbyEnv:</div>
 <div class="dyncontent">
 <div class="center"><img src="classDobbyEnv__coll__graph.png" border="0" usemap="#aDobbyEnv_coll__map" alt="Collaboration graph"/></div>
 <map name="aDobbyEnv_coll__map" id="aDobbyEnv_coll__map">
-<area shape="rect" title="Basic class used to store the stb environment." alt="" coords="7,80,95,107"/>
+<area shape="rect" title="Basic class used to store the stb environment." alt="" coords="71,95,159,121"/>
 <area shape="rect" href="classIDobbyEnv.html" title="Interface that exports the environment of the daemon to plugins." alt="" coords="5,5,97,32"/>
+<area shape="rect" href="classDobbyEnvImpl.html" title=" " alt="" coords="122,5,239,32"/>
 </map>
 <center><span class="legend">[<a href="graph_legend.html">legend</a>]</span></center></div>
 <table class="memberdecls">
@@ -116,6 +119,36 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:ab1d6b875d7bb3d1084754f5d03394b29"><td class="memItemLeft" align="right" valign="top">uint16_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classDobbyEnv.html#ab1d6b875d7bb3d1084754f5d03394b29">platformIdent</a> () const override</td></tr>
 <tr class="memdesc:ab1d6b875d7bb3d1084754f5d03394b29"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the two byte platform identification number.  <a href="classDobbyEnv.html#ab1d6b875d7bb3d1084754f5d03394b29">More...</a><br /></td></tr>
 <tr class="separator:ab1d6b875d7bb3d1084754f5d03394b29"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6a35f1d5214d8683ee6c8afb1835efa8"><td class="memItemLeft" align="right" valign="top"><a id="a6a35f1d5214d8683ee6c8afb1835efa8"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>DobbyEnv</b> (const std::shared_ptr&lt; const <a class="el" href="classIDobbySettings.html">IDobbySettings</a> &gt; &amp;settings)</td></tr>
+<tr class="separator:a6a35f1d5214d8683ee6c8afb1835efa8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-methods"></a>
+Static Public Member Functions</h2></td></tr>
+<tr class="memitem:afa7364f8c6c287d33b559e69db5e8fd9"><td class="memItemLeft" align="right" valign="top"><a id="afa7364f8c6c287d33b559e69db5e8fd9"></a>
+static void&#160;</td><td class="memItemRight" valign="bottom"><b>setImpl</b> (<a class="el" href="classDobbyEnvImpl.html">DobbyEnvImpl</a> *newImpl)</td></tr>
+<tr class="separator:afa7364f8c6c287d33b559e69db5e8fd9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:abf0b453e2e0f583674fcc1b3b313f375"><td class="memItemLeft" align="right" valign="top"><a id="abf0b453e2e0f583674fcc1b3b313f375"></a>
+static <a class="el" href="classDobbyEnv.html">DobbyEnv</a> *&#160;</td><td class="memItemRight" valign="bottom"><b>getInstance</b> ()</td></tr>
+<tr class="separator:abf0b453e2e0f583674fcc1b3b313f375"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a416d779d614de70658f3097478fee0d8"><td class="memItemLeft" align="right" valign="top"><a id="a416d779d614de70658f3097478fee0d8"></a>
+static std::string&#160;</td><td class="memItemRight" valign="bottom"><b>workspaceMountPath</b> ()</td></tr>
+<tr class="separator:a416d779d614de70658f3097478fee0d8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9260e4bb6e03ded3e2b1ffc86f715584"><td class="memItemLeft" align="right" valign="top"><a id="a9260e4bb6e03ded3e2b1ffc86f715584"></a>
+static std::string&#160;</td><td class="memItemRight" valign="bottom"><b>flashMountPath</b> ()</td></tr>
+<tr class="separator:a9260e4bb6e03ded3e2b1ffc86f715584"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1c69f04cbcb8631c0288353ace438df5"><td class="memItemLeft" align="right" valign="top"><a id="a1c69f04cbcb8631c0288353ace438df5"></a>
+static std::string&#160;</td><td class="memItemRight" valign="bottom"><b>pluginsWorkspacePath</b> ()</td></tr>
+<tr class="separator:a1c69f04cbcb8631c0288353ace438df5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae59f50d2384d018061b40accbf792a76"><td class="memItemLeft" align="right" valign="top"><a id="ae59f50d2384d018061b40accbf792a76"></a>
+static uint16_t&#160;</td><td class="memItemRight" valign="bottom"><b>platformIdent</b> ()</td></tr>
+<tr class="separator:ae59f50d2384d018061b40accbf792a76"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pro-static-attribs"></a>
+Static Protected Attributes</h2></td></tr>
+<tr class="memitem:a821dc87955dd9cf24ef4ccf75018bbfa"><td class="memItemLeft" align="right" valign="top"><a id="a821dc87955dd9cf24ef4ccf75018bbfa"></a>
+static <a class="el" href="classDobbyEnvImpl.html">DobbyEnvImpl</a> *&#160;</td><td class="memItemRight" valign="bottom"><b>impl</b></td></tr>
+<tr class="separator:a821dc87955dd9cf24ef4ccf75018bbfa"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pri-static-methods"></a>
 Static Private Member Functions</h2></td></tr>
@@ -392,7 +425,7 @@ Additional Inherited Members</h2></td></tr>
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following files:<ul>
-<li>daemon/lib/source/<a class="el" href="DobbyEnv_8h_source.html">DobbyEnv.h</a></li>
+<li>daemon/lib/source/include/<a class="el" href="daemon_2lib_2source_2include_2DobbyEnv_8h_source.html">DobbyEnv.h</a></li>
 <li>daemon/lib/source/DobbyEnv.cpp</li>
 </ul>
 </div><!-- contents -->

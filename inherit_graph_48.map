@@ -1,4 +1,4 @@
 <map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
-<area shape="rect" id="node1" title=" " alt="" coords="5,5,197,32"/>
-<area shape="rect" id="node2" href="$classDobbyFileEmitter.html" title="Small utility class to emit data to a file rather than string." alt="" coords="245,5,380,32"/>
+<area shape="rect" id="node1" href="$classDobbyEnvImpl.html" title=" " alt="" coords="5,5,123,32"/>
+<area shape="rect" id="node2" href="$classDobbyEnvMock.html" title=" " alt="" coords="171,5,293,32"/>
 </map>

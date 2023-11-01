@@ -1,6 +1,7 @@
 <map id="DobbyUtils" name="DobbyUtils">
-<area shape="rect" id="node1" title="Utility methods for hooks and the general containiser daemon." alt="" coords="19,229,113,256"/>
-<area shape="rect" id="node2" href="$classIDobbyUtils__v3.html" title="Third version of the interface containing extra functions for working with ebtables." alt="" coords="17,155,115,181"/>
-<area shape="rect" id="node3" href="$classIDobbyUtils__v2.html" title="Second version of the interface containing extra functions for working with iptables." alt="" coords="5,80,127,107"/>
+<area shape="rect" id="node1" title="Utility methods for hooks and the general containiser daemon." alt="" coords="119,247,213,273"/>
+<area shape="rect" id="node2" href="$classIDobbyUtils__v3.html" title="Third version of the interface containing extra functions for working with ebtables." alt="" coords="17,157,115,184"/>
+<area shape="rect" id="node3" href="$classIDobbyUtils__v2.html" title="Second version of the interface containing extra functions for working with iptables." alt="" coords="5,81,127,108"/>
 <area shape="rect" id="node4" href="$classIDobbyUtils__v1.html" title="Interface that exports some utilities that plugins may find useful." alt="" coords="5,5,127,32"/>
+<area shape="rect" id="node5" href="$classDobbyUtilsImpl.html" title=" " alt="" coords="139,157,262,184"/>
 </map>

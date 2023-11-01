@@ -69,6 +69,8 @@ $(function() {
 <div class="header">
   <div class="summary">
 <a href="#pub-methods">Public Member Functions</a> &#124;
+<a href="#pub-static-methods">Static Public Member Functions</a> &#124;
+<a href="#pro-static-attribs">Static Protected Attributes</a> &#124;
 <a href="classAI__IPC_1_1IIpcService-members.html">List of all members</a>  </div>
   <div class="headertitle">
 <div class="title">AI_IPC::IIpcService Class Reference<span class="mlabels"><span class="mlabel">abstract</span></span></div>  </div>
@@ -78,16 +80,24 @@ $(function() {
 <p>IPC service that enables us to invoke remote method and emit signals as well as to handle incoming method calls and received signals.  
  <a href="classAI__IPC_1_1IIpcService.html#details">More...</a></p>
 
-<p><code>#include &lt;<a class="el" href="IIpcService_8h_source.html">IIpcService.h</a>&gt;</code></p>
+<p><code>#include &lt;<a class="el" href="AppInfrastructure_2IpcService_2include_2IIpcService_8h_source.html">IIpcService.h</a>&gt;</code></p>
 <div class="dynheader">
 Inheritance diagram for AI_IPC::IIpcService:</div>
 <div class="dyncontent">
 <div class="center"><img src="classAI__IPC_1_1IIpcService__inherit__graph.png" border="0" usemap="#aAI__IPC_1_1IIpcService_inherit__map" alt="Inheritance graph"/></div>
 <map name="aAI__IPC_1_1IIpcService_inherit__map" id="aAI__IPC_1_1IIpcService_inherit__map">
-<area shape="rect" title="IPC service that enables us to invoke remote method and emit signals as well as to handle incoming me..." alt="" coords="177,5,319,32"/>
-<area shape="rect" href="classAI__IPC_1_1IpcServiceMock.html" title=" " alt="" coords="5,80,179,107"/>
-<area shape="rect" href="classIpcService.html" title=" " alt="" coords="203,80,293,107"/>
-<area shape="rect" href="classSDBusIpcService.html" title=" " alt="" coords="317,80,448,107"/>
+<area shape="rect" title="IPC service that enables us to invoke remote method and emit signals as well as to handle incoming me..." alt="" coords="45,5,188,32"/>
+<area shape="rect" href="classIpcService.html" title=" " alt="" coords="5,80,95,107"/>
+<area shape="rect" href="classSDBusIpcService.html" title=" " alt="" coords="119,80,250,107"/>
+</map>
+<center><span class="legend">[<a href="graph_legend.html">legend</a>]</span></center></div>
+<div class="dynheader">
+Collaboration diagram for AI_IPC::IIpcService:</div>
+<div class="dyncontent">
+<div class="center"><img src="classAI__IPC_1_1IIpcService__coll__graph.png" border="0" usemap="#aAI__IPC_1_1IIpcService_coll__map" alt="Collaboration graph"/></div>
+<map name="aAI__IPC_1_1IIpcService_coll__map" id="aAI__IPC_1_1IIpcService_coll__map">
+<area shape="rect" title="IPC service that enables us to invoke remote method and emit signals as well as to handle incoming me..." alt="" coords="19,95,162,121"/>
+<area shape="rect" href="classAI__IPC_1_1IIpcServiceImpl.html" title=" " alt="" coords="5,5,176,32"/>
 </map>
 <center><span class="legend">[<a href="graph_legend.html">legend</a>]</span></center></div>
 <table class="memberdecls">
@@ -135,6 +145,48 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a5b80d9555f4b0fe11d704caaba008f16"><td class="memItemLeft" align="right" valign="top">virtual std::string&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classAI__IPC_1_1IIpcService.html#a5b80d9555f4b0fe11d704caaba008f16">getBusAddress</a> () const =0</td></tr>
 <tr class="memdesc:a5b80d9555f4b0fe11d704caaba008f16"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the dbus address the service is using.  <a href="classAI__IPC_1_1IIpcService.html#a5b80d9555f4b0fe11d704caaba008f16">More...</a><br /></td></tr>
 <tr class="separator:a5b80d9555f4b0fe11d704caaba008f16"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-methods"></a>
+Static Public Member Functions</h2></td></tr>
+<tr class="memitem:a1022d45e5a62d861db0f594e9424fce3"><td class="memItemLeft" align="right" valign="top"><a id="a1022d45e5a62d861db0f594e9424fce3"></a>
+static void&#160;</td><td class="memItemRight" valign="bottom"><b>setImpl</b> (<a class="el" href="classAI__IPC_1_1IIpcServiceImpl.html">IIpcServiceImpl</a> *newImpl)</td></tr>
+<tr class="separator:a1022d45e5a62d861db0f594e9424fce3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ace6da98a1a3071ea64643261d73c1589"><td class="memItemLeft" align="right" valign="top"><a id="ace6da98a1a3071ea64643261d73c1589"></a>
+static <a class="el" href="classAI__IPC_1_1IIpcService.html">IIpcService</a> *&#160;</td><td class="memItemRight" valign="bottom"><b>getInstance</b> ()</td></tr>
+<tr class="separator:ace6da98a1a3071ea64643261d73c1589"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aadff93164061a2386f2c68d577924fb0"><td class="memItemLeft" align="right" valign="top"><a id="aadff93164061a2386f2c68d577924fb0"></a>
+static bool&#160;</td><td class="memItemRight" valign="bottom"><b>isValid</b> ()</td></tr>
+<tr class="separator:aadff93164061a2386f2c68d577924fb0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7cf720d81a9d27f7d0471e82bcf2026d"><td class="memItemLeft" align="right" valign="top"><a id="a7cf720d81a9d27f7d0471e82bcf2026d"></a>
+static std::shared_ptr&lt; <a class="el" href="classAI__IPC_1_1IAsyncReplyGetter.html">IAsyncReplyGetter</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>invokeMethod</b> (const <a class="el" href="structAI__IPC_1_1Method.html">Method</a> &amp;method, const VariantList &amp;args, int timeoutMs=-1)</td></tr>
+<tr class="separator:a7cf720d81a9d27f7d0471e82bcf2026d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a544399223a5d83c75a7da2cf16352f66"><td class="memItemLeft" align="right" valign="top"><a id="a544399223a5d83c75a7da2cf16352f66"></a>
+static bool&#160;</td><td class="memItemRight" valign="bottom"><b>invokeMethod</b> (const <a class="el" href="structAI__IPC_1_1Method.html">Method</a> &amp;method, const VariantList &amp;args, VariantList &amp;replyArgs, int timeoutMs=-1)</td></tr>
+<tr class="separator:a544399223a5d83c75a7da2cf16352f66"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a45f358a0a986514a24cfcd46173d751d"><td class="memItemLeft" align="right" valign="top"><a id="a45f358a0a986514a24cfcd46173d751d"></a>
+static bool&#160;</td><td class="memItemRight" valign="bottom"><b>emitSignal</b> (const <a class="el" href="structAI__IPC_1_1Signal.html">Signal</a> &amp;signal, const VariantList &amp;args)</td></tr>
+<tr class="separator:a45f358a0a986514a24cfcd46173d751d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a84a10799b7e3a9e5795ae26263b9b3fd"><td class="memItemLeft" align="right" valign="top"><a id="a84a10799b7e3a9e5795ae26263b9b3fd"></a>
+static std::string&#160;</td><td class="memItemRight" valign="bottom"><b>registerMethodHandler</b> (const <a class="el" href="structAI__IPC_1_1Method.html">Method</a> &amp;method, const MethodHandler &amp;handler)</td></tr>
+<tr class="separator:a84a10799b7e3a9e5795ae26263b9b3fd"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:abb52d295c013f0cde57fe7641582f225"><td class="memItemLeft" align="right" valign="top"><a id="abb52d295c013f0cde57fe7641582f225"></a>
+static std::string&#160;</td><td class="memItemRight" valign="bottom"><b>registerSignalHandler</b> (const <a class="el" href="structAI__IPC_1_1Signal.html">Signal</a> &amp;signal, const SignalHandler &amp;handler)</td></tr>
+<tr class="separator:abb52d295c013f0cde57fe7641582f225"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aba085b604d2a6b2233e6d33865a6154f"><td class="memItemLeft" align="right" valign="top"><a id="aba085b604d2a6b2233e6d33865a6154f"></a>
+static bool&#160;</td><td class="memItemRight" valign="bottom"><b>unregisterHandler</b> (const std::string &amp;regId)</td></tr>
+<tr class="separator:aba085b604d2a6b2233e6d33865a6154f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0bf0a494df9a08da0e151cec27548ba0"><td class="memItemLeft" align="right" valign="top"><a id="a0bf0a494df9a08da0e151cec27548ba0"></a>
+static bool&#160;</td><td class="memItemRight" valign="bottom"><b>enableMonitor</b> (const std::set&lt; std::string &gt; &amp;matchRules, const MonitorHandler &amp;handler)</td></tr>
+<tr class="separator:a0bf0a494df9a08da0e151cec27548ba0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:afa5624b8d90d7d9b584c9fb1ba5955d7"><td class="memItemLeft" align="right" valign="top"><a id="afa5624b8d90d7d9b584c9fb1ba5955d7"></a>
+static void&#160;</td><td class="memItemRight" valign="bottom"><b>flush</b> ()</td></tr>
+<tr class="separator:afa5624b8d90d7d9b584c9fb1ba5955d7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pro-static-attribs"></a>
+Static Protected Attributes</h2></td></tr>
+<tr class="memitem:a7679a303501861668297b34a76a0cd96"><td class="memItemLeft" align="right" valign="top"><a id="a7679a303501861668297b34a76a0cd96"></a>
+static <a class="el" href="classAI__IPC_1_1IIpcServiceImpl.html">IIpcServiceImpl</a> *&#160;</td><td class="memItemRight" valign="bottom"><b>impl</b> = nullptr</td></tr>
+<tr class="separator:a7679a303501861668297b34a76a0cd96"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>IPC service that enables us to invoke remote method and emit signals as well as to handle incoming method calls and received signals. </p>
@@ -679,8 +731,9 @@ On failure: False. </dd></dl>
 
 </div>
 </div>
-<hr/>The documentation for this class was generated from the following file:<ul>
-<li>AppInfrastructure/IpcService/include/<a class="el" href="IIpcService_8h_source.html">IIpcService.h</a></li>
+<hr/>The documentation for this class was generated from the following files:<ul>
+<li>AppInfrastructure/IpcService/include/<a class="el" href="AppInfrastructure_2IpcService_2include_2IIpcService_8h_source.html">IIpcService.h</a></li>
+<li>unit_tests/L1_testing/tests/DobbyTest/DaemonDobbyTests.cpp</li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->

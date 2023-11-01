@@ -67,6 +67,8 @@ $(function() {
 <a href="#nested-classes">Classes</a> &#124;
 <a href="#pub-types">Public Types</a> &#124;
 <a href="#pub-methods">Public Member Functions</a> &#124;
+<a href="#pub-static-methods">Static Public Member Functions</a> &#124;
+<a href="#pro-static-attribs">Static Protected Attributes</a> &#124;
 <a href="#pri-attribs">Private Attributes</a> &#124;
 <a href="classDobbyWorkQueue-members.html">List of all members</a>  </div>
   <div class="headertitle">
@@ -74,22 +76,14 @@ $(function() {
 </div><!--header-->
 <div class="contents">
 <div class="dynheader">
-Inheritance diagram for DobbyWorkQueue:</div>
-<div class="dyncontent">
-<div class="center"><img src="classDobbyWorkQueue__inherit__graph.png" border="0" usemap="#aDobbyWorkQueue_inherit__map" alt="Inheritance graph"/></div>
-<map name="aDobbyWorkQueue_inherit__map" id="aDobbyWorkQueue_inherit__map">
-<area shape="rect" title=" " alt="" coords="23,5,162,32"/>
-<area shape="rect" href="classDobbyWorkQueueMock.html" title=" " alt="" coords="5,80,180,107"/>
-</map>
-<center><span class="legend">[<a href="graph_legend.html">legend</a>]</span></center></div>
-<div class="dynheader">
 Collaboration diagram for DobbyWorkQueue:</div>
 <div class="dyncontent">
 <div class="center"><img src="classDobbyWorkQueue__coll__graph.png" border="0" usemap="#aDobbyWorkQueue_coll__map" alt="Collaboration graph"/></div>
 <map name="aDobbyWorkQueue_coll__map" id="aDobbyWorkQueue_coll__map">
-<area shape="rect" title=" " alt="" coords="146,109,285,136"/>
+<area shape="rect" title=" " alt="" coords="262,109,401,136"/>
 <area shape="rect" href="classAICommon_1_1ConditionVariable.html" title=" " alt="" coords="5,5,223,32"/>
-<area shape="rect" href="classAICommon_1_1Mutex.html" title=" " alt="" coords="247,5,389,32"/>
+<area shape="rect" href="classDobbyWorkQueueImpl.html" title=" " alt="" coords="247,5,415,32"/>
+<area shape="rect" href="classAICommon_1_1Mutex.html" title=" " alt="" coords="440,5,583,32"/>
 </map>
 <center><span class="legend">[<a href="graph_legend.html">legend</a>]</span></center></div>
 <table class="memberdecls">
@@ -125,6 +119,30 @@ void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="clas
 <tr class="memitem:abcefeb1b430b1eccd2213103e9f58c97"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classDobbyWorkQueue.html#abcefeb1b430b1eccd2213103e9f58c97">postWork</a> (WorkFunc &amp;&amp;work)</td></tr>
 <tr class="memdesc:abcefeb1b430b1eccd2213103e9f58c97"><td class="mdescLeft">&#160;</td><td class="mdescRight">Posts a work job onto the queue.  <a href="classDobbyWorkQueue.html#abcefeb1b430b1eccd2213103e9f58c97">More...</a><br /></td></tr>
 <tr class="separator:abcefeb1b430b1eccd2213103e9f58c97"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-methods"></a>
+Static Public Member Functions</h2></td></tr>
+<tr class="memitem:af07bff93e9716a017a8605b37e0d3d93"><td class="memItemLeft" align="right" valign="top"><a id="af07bff93e9716a017a8605b37e0d3d93"></a>
+static void&#160;</td><td class="memItemRight" valign="bottom"><b>setImpl</b> (<a class="el" href="classDobbyWorkQueueImpl.html">DobbyWorkQueueImpl</a> *newImpl)</td></tr>
+<tr class="separator:af07bff93e9716a017a8605b37e0d3d93"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:afddd05112eb798467e14802f63bca124"><td class="memItemLeft" align="right" valign="top"><a id="afddd05112eb798467e14802f63bca124"></a>
+static <a class="el" href="classDobbyWorkQueue.html">DobbyWorkQueue</a> *&#160;</td><td class="memItemRight" valign="bottom"><b>getInstance</b> ()</td></tr>
+<tr class="separator:afddd05112eb798467e14802f63bca124"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae37b5dd3a9c83aea94dd9966fe455951"><td class="memItemLeft" align="right" valign="top"><a id="ae37b5dd3a9c83aea94dd9966fe455951"></a>
+static bool&#160;</td><td class="memItemRight" valign="bottom"><b>runFor</b> (const std::chrono::milliseconds &amp;msecs)</td></tr>
+<tr class="separator:ae37b5dd3a9c83aea94dd9966fe455951"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac0d65f4099dfe93ce419066bbb5ec685"><td class="memItemLeft" align="right" valign="top"><a id="ac0d65f4099dfe93ce419066bbb5ec685"></a>
+static void&#160;</td><td class="memItemRight" valign="bottom"><b>exit</b> ()</td></tr>
+<tr class="separator:ac0d65f4099dfe93ce419066bbb5ec685"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae5e83e691724ab224e53721619d0438d"><td class="memItemLeft" align="right" valign="top"><a id="ae5e83e691724ab224e53721619d0438d"></a>
+static bool&#160;</td><td class="memItemRight" valign="bottom"><b>postWork</b> (WorkFunc &amp;&amp;work)</td></tr>
+<tr class="separator:ae5e83e691724ab224e53721619d0438d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pro-static-attribs"></a>
+Static Protected Attributes</h2></td></tr>
+<tr class="memitem:a3f2b5df05cfec441f7f64a1b9290bfcc"><td class="memItemLeft" align="right" valign="top"><a id="a3f2b5df05cfec441f7f64a1b9290bfcc"></a>
+static <a class="el" href="classDobbyWorkQueueImpl.html">DobbyWorkQueueImpl</a> *&#160;</td><td class="memItemRight" valign="bottom"><b>impl</b> = nullptr</td></tr>
+<tr class="separator:a3f2b5df05cfec441f7f64a1b9290bfcc"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pri-attribs"></a>
 Private Attributes</h2></td></tr>
@@ -290,8 +308,9 @@ uint64_t&#160;</td><td class="memItemRight" valign="bottom"><b>mWorkCompleteCoun
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following files:<ul>
-<li>daemon/lib/source/<a class="el" href="DobbyWorkQueue_8h_source.html">DobbyWorkQueue.h</a></li>
+<li>daemon/lib/source/include/<a class="el" href="daemon_2lib_2source_2include_2DobbyWorkQueue_8h_source.html">DobbyWorkQueue.h</a></li>
 <li>daemon/lib/source/DobbyWorkQueue.cpp</li>
+<li>unit_tests/L1_testing/tests/DobbyTest/DaemonDobbyTests.cpp</li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->

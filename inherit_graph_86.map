@@ -1,5 +1,6 @@
 <map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
-<area shape="rect" id="node1" href="$classIDobbySettings.html" title="Interface provided to the library at startup, contains the configuration options for Dobby." alt="" coords="5,31,127,57"/>
-<area shape="rect" id="node2" href="$classDobbySettingsMock.html" title=" " alt="" coords="175,5,327,32"/>
-<area shape="rect" id="node3" href="$classSettings.html" title="Object containing the settings to pass to the Dobby." alt="" coords="213,56,288,83"/>
+<area shape="rect" id="node1" href="$structEthanLogLoop_1_1Event.html" title=" " alt="" coords="5,64,164,91"/>
+<area shape="rect" id="node2" href="$structEthanLogLoop_1_1AddClientEvent.html" title=" " alt="" coords="213,5,434,32"/>
+<area shape="rect" id="node3" href="$structEthanLogLoop_1_1SetClientBasePidEvent.html" title=" " alt="" coords="217,57,429,98"/>
+<area shape="rect" id="node4" href="$structEthanLogLoop_1_1TerminateEvent.html" title=" " alt="" coords="212,123,435,149"/>
 </map>

@@ -1,0 +1,4 @@
+<map id="DobbyManager" name="DobbyManager">
+<area shape="rect" id="node1" title="The main object which starts / stops / manages the containers." alt="" coords="20,95,141,121"/>
+<area shape="rect" id="node2" href="$classDobbyManagerImpl.html" title=" " alt="" coords="5,5,156,32"/>
+</map>

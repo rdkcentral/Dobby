@@ -1,4 +1,14 @@
 <map id="DaemonDobbyTest" name="DaemonDobbyTest">
-<area shape="rect" id="node1" title=" " alt="" coords="5,80,151,107"/>
-<area shape="rect" id="node2" title=" " alt="" coords="27,5,129,32"/>
+<area shape="rect" id="node1" title=" " alt="" coords="791,125,936,151"/>
+<area shape="rect" id="node2" title=" " alt="" coords="465,23,566,50"/>
+<area shape="rect" id="node3" href="$classAI__IPC_1_1IAsyncReplySender.html" title="Helper class to send reply of a method call asynchronously." alt="" coords="417,74,613,101"/>
+<area shape="rect" id="node4" href="$classAI__IPC_1_1IAsyncReplySenderApiImpl.html" title=" " alt="" coords="16,5,212,47"/>
+<area shape="rect" id="node5" href="$classDobbyWorkQueue.html" title=" " alt="" coords="446,125,585,151"/>
+<area shape="rect" id="node6" href="$classAICommon_1_1ConditionVariable.html" title=" " alt="" coords="5,71,223,98"/>
+<area shape="rect" id="node7" href="$classDobbyWorkQueueImpl.html" title=" " alt="" coords="30,122,198,149"/>
+<area shape="rect" id="node8" href="$classAICommon_1_1Mutex.html" title=" " alt="" coords="43,177,185,203"/>
+<area shape="rect" id="node9" href="$classAI__IPC_1_1IIpcService.html" title="IPC service that enables us to invoke remote method and emit signals as well as to handle incoming me..." alt="" coords="444,177,587,203"/>
+<area shape="rect" id="node10" href="$classAI__IPC_1_1IIpcServiceImpl.html" title=" " alt="" coords="29,227,199,254"/>
+<area shape="rect" id="node11" href="$classDobbyTemplate.html" title="Singleton class that returns the OCI JSON template." alt="" coords="453,270,577,297"/>
+<area shape="rect" id="node12" href="$classDobbyTemplateImpl.html" title=" " alt="" coords="37,278,191,305"/>
 </map>

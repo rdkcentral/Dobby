@@ -65,6 +65,8 @@ $(function() {
 <div class="header">
   <div class="summary">
 <a href="#pub-methods">Public Member Functions</a> &#124;
+<a href="#pub-static-methods">Static Public Member Functions</a> &#124;
+<a href="#pro-static-attribs">Static Protected Attributes</a> &#124;
 <a href="#pri-methods">Private Member Functions</a> &#124;
 <a href="#pri-static-methods">Static Private Member Functions</a> &#124;
 <a href="#pri-attribs">Private Attributes</a> &#124;
@@ -77,7 +79,7 @@ $(function() {
 <p>Utility methods for hooks and the general containiser daemon.  
  <a href="classDobbyUtils.html#details">More...</a></p>
 
-<p><code>#include &lt;<a class="el" href="DobbyUtils_8h_source.html">DobbyUtils.h</a>&gt;</code></p>
+<p><code>#include &lt;<a class="el" href="utils_2include_2DobbyUtils_8h_source.html">DobbyUtils.h</a>&gt;</code></p>
 <div class="dynheader">
 Inheritance diagram for DobbyUtils:</div>
 <div class="dyncontent">
@@ -94,10 +96,11 @@ Collaboration diagram for DobbyUtils:</div>
 <div class="dyncontent">
 <div class="center"><img src="classDobbyUtils__coll__graph.png" border="0" usemap="#aDobbyUtils_coll__map" alt="Collaboration graph"/></div>
 <map name="aDobbyUtils_coll__map" id="aDobbyUtils_coll__map">
-<area shape="rect" title="Utility methods for hooks and the general containiser daemon." alt="" coords="19,229,113,256"/>
-<area shape="rect" href="classIDobbyUtils__v3.html" title="Third version of the interface containing extra functions for working with ebtables." alt="" coords="17,155,115,181"/>
-<area shape="rect" href="classIDobbyUtils__v2.html" title="Second version of the interface containing extra functions for working with iptables." alt="" coords="5,80,127,107"/>
+<area shape="rect" title="Utility methods for hooks and the general containiser daemon." alt="" coords="119,247,213,273"/>
+<area shape="rect" href="classIDobbyUtils__v3.html" title="Third version of the interface containing extra functions for working with ebtables." alt="" coords="17,157,115,184"/>
+<area shape="rect" href="classIDobbyUtils__v2.html" title="Second version of the interface containing extra functions for working with iptables." alt="" coords="5,81,127,108"/>
 <area shape="rect" href="classIDobbyUtils__v1.html" title="Interface that exports some utilities that plugins may find useful." alt="" coords="5,5,127,32"/>
+<area shape="rect" href="classDobbyUtilsImpl.html" title=" " alt="" coords="139,157,262,184"/>
 </map>
 <center><span class="legend">[<a href="graph_legend.html">legend</a>]</span></center></div>
 <table class="memberdecls">
@@ -354,6 +357,27 @@ template&lt;class Function , class... Args&gt; </td></tr>
 <tr class="memitem:a63592339480cc99ad076f57101efb329 inherit pub_methods_classIDobbyUtils__v1"><td class="memItemLeft" align="right" valign="top"><a id="a63592339480cc99ad076f57101efb329"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>deviceAllowed</b> (unsigned int major, unsigned int minor) const</td></tr>
 <tr class="separator:a63592339480cc99ad076f57101efb329 inherit pub_methods_classIDobbyUtils__v1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-methods"></a>
+Static Public Member Functions</h2></td></tr>
+<tr class="memitem:a927175d829958ffdfe0f5f04f2d9d69b"><td class="memItemLeft" align="right" valign="top"><a id="a927175d829958ffdfe0f5f04f2d9d69b"></a>
+static void&#160;</td><td class="memItemRight" valign="bottom"><b>setImpl</b> (<a class="el" href="classDobbyUtilsImpl.html">DobbyUtilsImpl</a> *newImpl)</td></tr>
+<tr class="separator:a927175d829958ffdfe0f5f04f2d9d69b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a922c293d7a4cf9f2a7720f9ae449b8e4"><td class="memItemLeft" align="right" valign="top"><a id="a922c293d7a4cf9f2a7720f9ae449b8e4"></a>
+static <a class="el" href="classDobbyUtils.html">DobbyUtils</a> *&#160;</td><td class="memItemRight" valign="bottom"><b>getInstance</b> ()</td></tr>
+<tr class="separator:a922c293d7a4cf9f2a7720f9ae449b8e4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4a2adc68dde378c03675f45346d19c34"><td class="memItemLeft" align="right" valign="top"><a id="a4a2adc68dde378c03675f45346d19c34"></a>
+static bool&#160;</td><td class="memItemRight" valign="bottom"><b>cancelTimer</b> (int timerId)</td></tr>
+<tr class="separator:a4a2adc68dde378c03675f45346d19c34"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a295b77d3b6688602f6a1f7282fd7767e"><td class="memItemLeft" align="right" valign="top"><a id="a295b77d3b6688602f6a1f7282fd7767e"></a>
+static int&#160;</td><td class="memItemRight" valign="bottom"><b>startTimer</b> (const std::chrono::microseconds &amp;timeout, bool oneShot, const std::function&lt; bool()&gt; &amp;handler)</td></tr>
+<tr class="separator:a295b77d3b6688602f6a1f7282fd7767e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pro-static-attribs"></a>
+Static Protected Attributes</h2></td></tr>
+<tr class="memitem:a8c53a49b2966cbd2b3c00c0ce2c2e7ac"><td class="memItemLeft" align="right" valign="top"><a id="a8c53a49b2966cbd2b3c00c0ce2c2e7ac"></a>
+static <a class="el" href="classDobbyUtilsImpl.html">DobbyUtilsImpl</a> *&#160;</td><td class="memItemRight" valign="bottom"><b>impl</b> = nullptr</td></tr>
+<tr class="separator:a8c53a49b2966cbd2b3c00c0ce2c2e7ac"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pri-methods"></a>
 Private Member Functions</h2></td></tr>
@@ -627,7 +651,7 @@ Additional Inherited Members</h2></td></tr>
 <p>This method will fail if called from the context of a timer handler, if you want to cancel a repeating timer then just return false in the handler.</p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramdir">[in]</td><td class="paramname">timerId</td><td>The id of the timer to cancel as returned by the <a class="el" href="classIDobbyUtils__v1.html#a0d0a259821d7a4b6b3137fc78b5a5c5d" title="Adds a new timer to the timer queue.">startTimer()</a> method.</td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">timerId</td><td>The id of the timer to cancel as returned by the startTimer() method.</td></tr>
   </table>
   </dd>
 </dl>
@@ -1927,7 +1951,8 @@ Additional Inherited Members</h2></td></tr>
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following files:<ul>
-<li>utils/include/<a class="el" href="DobbyUtils_8h_source.html">DobbyUtils.h</a></li>
+<li>unit_tests/L1_testing/mocks/<a class="el" href="unit__tests_2L1__testing_2mocks_2DobbyUtils_8h_source.html">DobbyUtils.h</a></li>
+<li>unit_tests/L1_testing/tests/DobbyTest/DaemonDobbyTests.cpp</li>
 <li>utils/source/DobbyUtils.cpp</li>
 </ul>
 </div><!-- contents -->

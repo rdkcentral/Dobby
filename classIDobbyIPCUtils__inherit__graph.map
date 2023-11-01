@@ -1,5 +1,4 @@
 <map id="IDobbyIPCUtils" name="IDobbyIPCUtils">
-<area shape="rect" id="node1" title=" " alt="" coords="82,5,201,32"/>
-<area shape="rect" id="node2" href="$classDobbyIPCUtils.html" title="Utility methods for IPC in Dobby." alt="" coords="5,80,120,107"/>
-<area shape="rect" id="node3" href="$classDobbyIPCUtilsMock.html" title=" " alt="" coords="145,80,295,107"/>
+<area shape="rect" id="node1" title=" " alt="" coords="5,5,124,32"/>
+<area shape="rect" id="node2" href="$classDobbyIPCUtils.html" title="Utility methods for IPC in Dobby." alt="" coords="7,80,122,107"/>
 </map>

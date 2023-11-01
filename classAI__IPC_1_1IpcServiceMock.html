@@ -80,7 +80,7 @@ Inheritance diagram for AI_IPC::IpcServiceMock:</div>
 <div class="center"><img src="classAI__IPC_1_1IpcServiceMock__inherit__graph.png" border="0" usemap="#aAI__IPC_1_1IpcServiceMock_inherit__map" alt="Inheritance graph"/></div>
 <map name="aAI__IPC_1_1IpcServiceMock_inherit__map" id="aAI__IPC_1_1IpcServiceMock_inherit__map">
 <area shape="rect" title=" " alt="" coords="5,80,179,107"/>
-<area shape="rect" href="classAI__IPC_1_1IIpcService.html" title="IPC service that enables us to invoke remote method and emit signals as well as to handle incoming me..." alt="" coords="21,5,163,32"/>
+<area shape="rect" href="classAI__IPC_1_1IIpcServiceImpl.html" title=" " alt="" coords="7,5,177,32"/>
 </map>
 <center><span class="legend">[<a href="graph_legend.html">legend</a>]</span></center></div>
 <div class="dynheader">
@@ -89,100 +89,70 @@ Collaboration diagram for AI_IPC::IpcServiceMock:</div>
 <div class="center"><img src="classAI__IPC_1_1IpcServiceMock__coll__graph.png" border="0" usemap="#aAI__IPC_1_1IpcServiceMock_coll__map" alt="Collaboration graph"/></div>
 <map name="aAI__IPC_1_1IpcServiceMock_coll__map" id="aAI__IPC_1_1IpcServiceMock_coll__map">
 <area shape="rect" title=" " alt="" coords="5,80,179,107"/>
-<area shape="rect" href="classAI__IPC_1_1IIpcService.html" title="IPC service that enables us to invoke remote method and emit signals as well as to handle incoming me..." alt="" coords="21,5,163,32"/>
+<area shape="rect" href="classAI__IPC_1_1IIpcServiceImpl.html" title=" " alt="" coords="7,5,177,32"/>
 </map>
 <center><span class="legend">[<a href="graph_legend.html">legend</a>]</span></center></div>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
 <tr class="memitem:a3e7c321aad24a619e5d9264cde541fd1"><td class="memItemLeft" align="right" valign="top"><a id="a3e7c321aad24a619e5d9264cde541fd1"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><b>MOCK_METHOD</b> (bool, <a class="el" href="classAI__IPC_1_1IIpcService.html#a7d3732611d03cdcb087a7cae159c5bec">isValid</a>,(),(const, override))</td></tr>
+&#160;</td><td class="memItemRight" valign="bottom"><b>MOCK_METHOD</b> (bool, isValid,(),(const, override))</td></tr>
 <tr class="separator:a3e7c321aad24a619e5d9264cde541fd1"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a45d2f3c956d0627141a0f7551f49ce57"><td class="memItemLeft" align="right" valign="top"><a id="a45d2f3c956d0627141a0f7551f49ce57"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><b>MOCK_METHOD</b> (std::shared_ptr&lt; <a class="el" href="classAI__IPC_1_1IAsyncReplyGetter.html">IAsyncReplyGetter</a> &gt;, <a class="el" href="classAI__IPC_1_1IIpcService.html#afc594ab5e4901c867bbf4406b0ad7310">invokeMethod</a>,(const <a class="el" href="structAI__IPC_1_1Method.html">Method</a> &amp;method, const VariantList &amp;args, int timeoutMs),(override))</td></tr>
+&#160;</td><td class="memItemRight" valign="bottom"><b>MOCK_METHOD</b> (std::shared_ptr&lt; <a class="el" href="classAI__IPC_1_1IAsyncReplyGetter.html">IAsyncReplyGetter</a> &gt;, invokeMethod,(const <a class="el" href="structAI__IPC_1_1Method.html">Method</a> &amp;method, const VariantList &amp;args, int timeoutMs),(override))</td></tr>
 <tr class="separator:a45d2f3c956d0627141a0f7551f49ce57"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:abf0c8747fe0b8e1563c1990e58fbd596"><td class="memItemLeft" align="right" valign="top"><a id="abf0c8747fe0b8e1563c1990e58fbd596"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><b>MOCK_METHOD</b> (bool, <a class="el" href="classAI__IPC_1_1IIpcService.html#afc594ab5e4901c867bbf4406b0ad7310">invokeMethod</a>,(const <a class="el" href="structAI__IPC_1_1Method.html">Method</a> &amp;method, const VariantList &amp;args, VariantList &amp;replyArgs, int timeoutMs),(override))</td></tr>
+&#160;</td><td class="memItemRight" valign="bottom"><b>MOCK_METHOD</b> (bool, invokeMethod,(const <a class="el" href="structAI__IPC_1_1Method.html">Method</a> &amp;method, const VariantList &amp;args, VariantList &amp;replyArgs, int timeoutMs),(override))</td></tr>
 <tr class="separator:abf0c8747fe0b8e1563c1990e58fbd596"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6c3a6856c7feaf3d1bb19505d772ed32"><td class="memItemLeft" align="right" valign="top"><a id="a6c3a6856c7feaf3d1bb19505d772ed32"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><b>MOCK_METHOD</b> (std::string, <a class="el" href="classAI__IPC_1_1IIpcService.html#a1691c3775a36c6176a6f2048bac542e0">registerMethodHandler</a>,(const <a class="el" href="structAI__IPC_1_1Method.html">Method</a> &amp;method, const MethodHandler &amp;handler),(override))</td></tr>
+&#160;</td><td class="memItemRight" valign="bottom"><b>MOCK_METHOD</b> (std::string, registerMethodHandler,(const <a class="el" href="structAI__IPC_1_1Method.html">Method</a> &amp;method, const MethodHandler &amp;handler),(override))</td></tr>
 <tr class="separator:a6c3a6856c7feaf3d1bb19505d772ed32"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a869ff6e9644e1d3775f764f46b242b88"><td class="memItemLeft" align="right" valign="top"><a id="a869ff6e9644e1d3775f764f46b242b88"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><b>MOCK_METHOD</b> (bool, <a class="el" href="classAI__IPC_1_1IIpcService.html#a978d4b9b348675a36ea6f3b52b5c4ddc">emitSignal</a>,(const <a class="el" href="structAI__IPC_1_1Signal.html">Signal</a> &amp;signal, const VariantList &amp;args),(override))</td></tr>
+&#160;</td><td class="memItemRight" valign="bottom"><b>MOCK_METHOD</b> (bool, emitSignal,(const <a class="el" href="structAI__IPC_1_1Signal.html">Signal</a> &amp;signal, const VariantList &amp;args),(override))</td></tr>
 <tr class="separator:a869ff6e9644e1d3775f764f46b242b88"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6f73b846ebf8c204d391f255da0f4dd6"><td class="memItemLeft" align="right" valign="top"><a id="a6f73b846ebf8c204d391f255da0f4dd6"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><b>MOCK_METHOD</b> (std::string, <a class="el" href="classAI__IPC_1_1IIpcService.html#af4460211de8c7a7b0dff13c7a6d3246c">registerSignalHandler</a>,(const <a class="el" href="structAI__IPC_1_1Signal.html">Signal</a> &amp;signal, const SignalHandler &amp;handler),(override))</td></tr>
+&#160;</td><td class="memItemRight" valign="bottom"><b>MOCK_METHOD</b> (std::string, registerSignalHandler,(const <a class="el" href="structAI__IPC_1_1Signal.html">Signal</a> &amp;signal, const SignalHandler &amp;handler),(override))</td></tr>
 <tr class="separator:a6f73b846ebf8c204d391f255da0f4dd6"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af1cc17e132e2f287e23697f355c33ff6"><td class="memItemLeft" align="right" valign="top"><a id="af1cc17e132e2f287e23697f355c33ff6"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><b>MOCK_METHOD</b> (bool, <a class="el" href="classAI__IPC_1_1IIpcService.html#a6ac0fec32ad8d21a5295a7c1df51fc42">unregisterHandler</a>,(const std::string &amp;regId),(override))</td></tr>
+&#160;</td><td class="memItemRight" valign="bottom"><b>MOCK_METHOD</b> (bool, unregisterHandler,(const std::string &amp;regId),(override))</td></tr>
 <tr class="separator:af1cc17e132e2f287e23697f355c33ff6"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a22d9a62539c1126a321093e8f30a5ee2"><td class="memItemLeft" align="right" valign="top"><a id="a22d9a62539c1126a321093e8f30a5ee2"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><b>MOCK_METHOD</b> (bool, <a class="el" href="classAI__IPC_1_1IIpcService.html#a86e1d81176c9c69d0c4078345b8eaf69">enableMonitor</a>,(const std::set&lt; std::string &gt; &amp;matchRules, const MonitorHandler &amp;handler),(override))</td></tr>
+&#160;</td><td class="memItemRight" valign="bottom"><b>MOCK_METHOD</b> (bool, enableMonitor,(const std::set&lt; std::string &gt; &amp;matchRules, const MonitorHandler &amp;handler),(override))</td></tr>
 <tr class="separator:a22d9a62539c1126a321093e8f30a5ee2"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a57490b6e37c4c78b63c4b1eed6f110c4"><td class="memItemLeft" align="right" valign="top"><a id="a57490b6e37c4c78b63c4b1eed6f110c4"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><b>MOCK_METHOD</b> (bool, <a class="el" href="classAI__IPC_1_1IIpcService.html#a66ac0e4572db1ee18e8522f533987228">disableMonitor</a>,(),(override))</td></tr>
-<tr class="separator:a57490b6e37c4c78b63c4b1eed6f110c4"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a22364e4685ca0e6e35a6eee66ca67e05"><td class="memItemLeft" align="right" valign="top"><a id="a22364e4685ca0e6e35a6eee66ca67e05"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><b>MOCK_METHOD</b> (bool, <a class="el" href="classAI__IPC_1_1IIpcService.html#a6ab4e79545b182becef319ea3e1be968">isServiceAvailable</a>,(const std::string &amp;serviceName),(const, override))</td></tr>
-<tr class="separator:a22364e4685ca0e6e35a6eee66ca67e05"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa2dc81942bf80ec36eeb8cdaf30bd02e"><td class="memItemLeft" align="right" valign="top"><a id="aa2dc81942bf80ec36eeb8cdaf30bd02e"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><b>MOCK_METHOD</b> (void, <a class="el" href="classAI__IPC_1_1IIpcService.html#a498461ed015c331ea10ec1bb68724aa6">flush</a>,(),(override))</td></tr>
+&#160;</td><td class="memItemRight" valign="bottom"><b>MOCK_METHOD</b> (void, flush,(),(override))</td></tr>
 <tr class="separator:aa2dc81942bf80ec36eeb8cdaf30bd02e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a0ce1e6437443846b40c9a74ad893bd46"><td class="memItemLeft" align="right" valign="top"><a id="a0ce1e6437443846b40c9a74ad893bd46"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><b>MOCK_METHOD</b> (bool, <a class="el" href="classAI__IPC_1_1IIpcService.html#a4950f93c98f60d1cab672744119de44a">start</a>,(),(override))</td></tr>
-<tr class="separator:a0ce1e6437443846b40c9a74ad893bd46"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad1dc841bde55f37b3c958d4045a971ba"><td class="memItemLeft" align="right" valign="top"><a id="ad1dc841bde55f37b3c958d4045a971ba"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><b>MOCK_METHOD</b> (bool, <a class="el" href="classAI__IPC_1_1IIpcService.html#ab21b638ab17be229062ceb4bca31fd34">stop</a>,(),(override))</td></tr>
-<tr class="separator:ad1dc841bde55f37b3c958d4045a971ba"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a88590ad71742bcd0d4a8c2fd890701a0"><td class="memItemLeft" align="right" valign="top"><a id="a88590ad71742bcd0d4a8c2fd890701a0"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><b>MOCK_METHOD</b> (std::string, <a class="el" href="classAI__IPC_1_1IIpcService.html#a5b80d9555f4b0fe11d704caaba008f16">getBusAddress</a>,(),(const, override))</td></tr>
-<tr class="separator:a88590ad71742bcd0d4a8c2fd890701a0"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="inherit_header pub_methods_classAI__IPC_1_1IIpcService"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_classAI__IPC_1_1IIpcService')"><img src="closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="classAI__IPC_1_1IIpcService.html">AI_IPC::IIpcService</a></td></tr>
-<tr class="memitem:a7d3732611d03cdcb087a7cae159c5bec inherit pub_methods_classAI__IPC_1_1IIpcService"><td class="memItemLeft" align="right" valign="top">virtual bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classAI__IPC_1_1IIpcService.html#a7d3732611d03cdcb087a7cae159c5bec">isValid</a> () const =0</td></tr>
-<tr class="memdesc:a7d3732611d03cdcb087a7cae159c5bec inherit pub_methods_classAI__IPC_1_1IIpcService"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns true if we initialised ourselves successfully.  <a href="classAI__IPC_1_1IIpcService.html#a7d3732611d03cdcb087a7cae159c5bec">More...</a><br /></td></tr>
-<tr class="separator:a7d3732611d03cdcb087a7cae159c5bec inherit pub_methods_classAI__IPC_1_1IIpcService"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:afc594ab5e4901c867bbf4406b0ad7310 inherit pub_methods_classAI__IPC_1_1IIpcService"><td class="memItemLeft" align="right" valign="top">virtual std::shared_ptr&lt; <a class="el" href="classAI__IPC_1_1IAsyncReplyGetter.html">IAsyncReplyGetter</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classAI__IPC_1_1IIpcService.html#afc594ab5e4901c867bbf4406b0ad7310">invokeMethod</a> (const <a class="el" href="structAI__IPC_1_1Method.html">Method</a> &amp;method, const VariantList &amp;args, int timeoutMs=-1)=0</td></tr>
-<tr class="memdesc:afc594ab5e4901c867bbf4406b0ad7310 inherit pub_methods_classAI__IPC_1_1IIpcService"><td class="mdescLeft">&#160;</td><td class="mdescRight">Invoke a method and get reply asynchronously.  <a href="classAI__IPC_1_1IIpcService.html#afc594ab5e4901c867bbf4406b0ad7310">More...</a><br /></td></tr>
-<tr class="separator:afc594ab5e4901c867bbf4406b0ad7310 inherit pub_methods_classAI__IPC_1_1IIpcService"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ac165426012fc609627410bba146d7b75 inherit pub_methods_classAI__IPC_1_1IIpcService"><td class="memItemLeft" align="right" valign="top">virtual bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classAI__IPC_1_1IIpcService.html#ac165426012fc609627410bba146d7b75">invokeMethod</a> (const <a class="el" href="structAI__IPC_1_1Method.html">Method</a> &amp;method, const VariantList &amp;args, VariantList &amp;replyArgs, int timeoutMs=-1)=0</td></tr>
-<tr class="memdesc:ac165426012fc609627410bba146d7b75 inherit pub_methods_classAI__IPC_1_1IIpcService"><td class="mdescLeft">&#160;</td><td class="mdescRight">Invoke a method and get reply synchronously.  <a href="classAI__IPC_1_1IIpcService.html#ac165426012fc609627410bba146d7b75">More...</a><br /></td></tr>
-<tr class="separator:ac165426012fc609627410bba146d7b75 inherit pub_methods_classAI__IPC_1_1IIpcService"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a978d4b9b348675a36ea6f3b52b5c4ddc inherit pub_methods_classAI__IPC_1_1IIpcService"><td class="memItemLeft" align="right" valign="top">virtual bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classAI__IPC_1_1IIpcService.html#a978d4b9b348675a36ea6f3b52b5c4ddc">emitSignal</a> (const <a class="el" href="structAI__IPC_1_1Signal.html">Signal</a> &amp;signal, const VariantList &amp;args)=0</td></tr>
-<tr class="memdesc:a978d4b9b348675a36ea6f3b52b5c4ddc inherit pub_methods_classAI__IPC_1_1IIpcService"><td class="mdescLeft">&#160;</td><td class="mdescRight">Emit a signal.  <a href="classAI__IPC_1_1IIpcService.html#a978d4b9b348675a36ea6f3b52b5c4ddc">More...</a><br /></td></tr>
-<tr class="separator:a978d4b9b348675a36ea6f3b52b5c4ddc inherit pub_methods_classAI__IPC_1_1IIpcService"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a1691c3775a36c6176a6f2048bac542e0 inherit pub_methods_classAI__IPC_1_1IIpcService"><td class="memItemLeft" align="right" valign="top">virtual std::string&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classAI__IPC_1_1IIpcService.html#a1691c3775a36c6176a6f2048bac542e0">registerMethodHandler</a> (const <a class="el" href="structAI__IPC_1_1Method.html">Method</a> &amp;method, const MethodHandler &amp;handler)=0</td></tr>
-<tr class="memdesc:a1691c3775a36c6176a6f2048bac542e0 inherit pub_methods_classAI__IPC_1_1IIpcService"><td class="mdescLeft">&#160;</td><td class="mdescRight">Register a method handler.  <a href="classAI__IPC_1_1IIpcService.html#a1691c3775a36c6176a6f2048bac542e0">More...</a><br /></td></tr>
-<tr class="separator:a1691c3775a36c6176a6f2048bac542e0 inherit pub_methods_classAI__IPC_1_1IIpcService"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:af4460211de8c7a7b0dff13c7a6d3246c inherit pub_methods_classAI__IPC_1_1IIpcService"><td class="memItemLeft" align="right" valign="top">virtual std::string&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classAI__IPC_1_1IIpcService.html#af4460211de8c7a7b0dff13c7a6d3246c">registerSignalHandler</a> (const <a class="el" href="structAI__IPC_1_1Signal.html">Signal</a> &amp;signal, const SignalHandler &amp;handler)=0</td></tr>
-<tr class="memdesc:af4460211de8c7a7b0dff13c7a6d3246c inherit pub_methods_classAI__IPC_1_1IIpcService"><td class="mdescLeft">&#160;</td><td class="mdescRight">Register a signal handler.  <a href="classAI__IPC_1_1IIpcService.html#af4460211de8c7a7b0dff13c7a6d3246c">More...</a><br /></td></tr>
-<tr class="separator:af4460211de8c7a7b0dff13c7a6d3246c inherit pub_methods_classAI__IPC_1_1IIpcService"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a6ac0fec32ad8d21a5295a7c1df51fc42 inherit pub_methods_classAI__IPC_1_1IIpcService"><td class="memItemLeft" align="right" valign="top">virtual bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classAI__IPC_1_1IIpcService.html#a6ac0fec32ad8d21a5295a7c1df51fc42">unregisterHandler</a> (const std::string &amp;regId)=0</td></tr>
-<tr class="memdesc:a6ac0fec32ad8d21a5295a7c1df51fc42 inherit pub_methods_classAI__IPC_1_1IIpcService"><td class="mdescLeft">&#160;</td><td class="mdescRight">Unregister a method or signal handler.  <a href="classAI__IPC_1_1IIpcService.html#a6ac0fec32ad8d21a5295a7c1df51fc42">More...</a><br /></td></tr>
-<tr class="separator:a6ac0fec32ad8d21a5295a7c1df51fc42 inherit pub_methods_classAI__IPC_1_1IIpcService"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a86e1d81176c9c69d0c4078345b8eaf69 inherit pub_methods_classAI__IPC_1_1IIpcService"><td class="memItemLeft" align="right" valign="top">virtual bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classAI__IPC_1_1IIpcService.html#a86e1d81176c9c69d0c4078345b8eaf69">enableMonitor</a> (const std::set&lt; std::string &gt; &amp;matchRules, const MonitorHandler &amp;handler)=0</td></tr>
-<tr class="memdesc:a86e1d81176c9c69d0c4078345b8eaf69 inherit pub_methods_classAI__IPC_1_1IIpcService"><td class="mdescLeft">&#160;</td><td class="mdescRight">Enables monitor mode for the service.  <a href="classAI__IPC_1_1IIpcService.html#a86e1d81176c9c69d0c4078345b8eaf69">More...</a><br /></td></tr>
-<tr class="separator:a86e1d81176c9c69d0c4078345b8eaf69 inherit pub_methods_classAI__IPC_1_1IIpcService"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a66ac0e4572db1ee18e8522f533987228 inherit pub_methods_classAI__IPC_1_1IIpcService"><td class="memItemLeft" align="right" valign="top">virtual bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classAI__IPC_1_1IIpcService.html#a66ac0e4572db1ee18e8522f533987228">disableMonitor</a> ()=0</td></tr>
-<tr class="memdesc:a66ac0e4572db1ee18e8522f533987228 inherit pub_methods_classAI__IPC_1_1IIpcService"><td class="mdescLeft">&#160;</td><td class="mdescRight">Disables monitor mode for the service.  <a href="classAI__IPC_1_1IIpcService.html#a66ac0e4572db1ee18e8522f533987228">More...</a><br /></td></tr>
-<tr class="separator:a66ac0e4572db1ee18e8522f533987228 inherit pub_methods_classAI__IPC_1_1IIpcService"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a6ab4e79545b182becef319ea3e1be968 inherit pub_methods_classAI__IPC_1_1IIpcService"><td class="memItemLeft" align="right" valign="top">virtual bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classAI__IPC_1_1IIpcService.html#a6ab4e79545b182becef319ea3e1be968">isServiceAvailable</a> (const std::string &amp;serviceName) const =0</td></tr>
-<tr class="memdesc:a6ab4e79545b182becef319ea3e1be968 inherit pub_methods_classAI__IPC_1_1IIpcService"><td class="mdescLeft">&#160;</td><td class="mdescRight">Checks if the given service name is currently registered on the bus.  <a href="classAI__IPC_1_1IIpcService.html#a6ab4e79545b182becef319ea3e1be968">More...</a><br /></td></tr>
-<tr class="separator:a6ab4e79545b182becef319ea3e1be968 inherit pub_methods_classAI__IPC_1_1IIpcService"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a498461ed015c331ea10ec1bb68724aa6 inherit pub_methods_classAI__IPC_1_1IIpcService"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classAI__IPC_1_1IIpcService.html#a498461ed015c331ea10ec1bb68724aa6">flush</a> ()=0</td></tr>
-<tr class="memdesc:a498461ed015c331ea10ec1bb68724aa6 inherit pub_methods_classAI__IPC_1_1IIpcService"><td class="mdescLeft">&#160;</td><td class="mdescRight">Flushes all messages out.  <a href="classAI__IPC_1_1IIpcService.html#a498461ed015c331ea10ec1bb68724aa6">More...</a><br /></td></tr>
-<tr class="separator:a498461ed015c331ea10ec1bb68724aa6 inherit pub_methods_classAI__IPC_1_1IIpcService"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a4950f93c98f60d1cab672744119de44a inherit pub_methods_classAI__IPC_1_1IIpcService"><td class="memItemLeft" align="right" valign="top">virtual bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classAI__IPC_1_1IIpcService.html#a4950f93c98f60d1cab672744119de44a">start</a> ()=0</td></tr>
-<tr class="memdesc:a4950f93c98f60d1cab672744119de44a inherit pub_methods_classAI__IPC_1_1IIpcService"><td class="mdescLeft">&#160;</td><td class="mdescRight">Start IPC service.  <a href="classAI__IPC_1_1IIpcService.html#a4950f93c98f60d1cab672744119de44a">More...</a><br /></td></tr>
-<tr class="separator:a4950f93c98f60d1cab672744119de44a inherit pub_methods_classAI__IPC_1_1IIpcService"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab21b638ab17be229062ceb4bca31fd34 inherit pub_methods_classAI__IPC_1_1IIpcService"><td class="memItemLeft" align="right" valign="top">virtual bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classAI__IPC_1_1IIpcService.html#ab21b638ab17be229062ceb4bca31fd34">stop</a> ()=0</td></tr>
-<tr class="memdesc:ab21b638ab17be229062ceb4bca31fd34 inherit pub_methods_classAI__IPC_1_1IIpcService"><td class="mdescLeft">&#160;</td><td class="mdescRight">Stop IPC service.  <a href="classAI__IPC_1_1IIpcService.html#ab21b638ab17be229062ceb4bca31fd34">More...</a><br /></td></tr>
-<tr class="separator:ab21b638ab17be229062ceb4bca31fd34 inherit pub_methods_classAI__IPC_1_1IIpcService"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a5b80d9555f4b0fe11d704caaba008f16 inherit pub_methods_classAI__IPC_1_1IIpcService"><td class="memItemLeft" align="right" valign="top">virtual std::string&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classAI__IPC_1_1IIpcService.html#a5b80d9555f4b0fe11d704caaba008f16">getBusAddress</a> () const =0</td></tr>
-<tr class="memdesc:a5b80d9555f4b0fe11d704caaba008f16 inherit pub_methods_classAI__IPC_1_1IIpcService"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the dbus address the service is using.  <a href="classAI__IPC_1_1IIpcService.html#a5b80d9555f4b0fe11d704caaba008f16">More...</a><br /></td></tr>
-<tr class="separator:a5b80d9555f4b0fe11d704caaba008f16 inherit pub_methods_classAI__IPC_1_1IIpcService"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="inherit_header pub_methods_classAI__IPC_1_1IIpcServiceImpl"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_classAI__IPC_1_1IIpcServiceImpl')"><img src="closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="classAI__IPC_1_1IIpcServiceImpl.html">AI_IPC::IIpcServiceImpl</a></td></tr>
+<tr class="memitem:af25921aece2d74797cfdcf385ea18d81 inherit pub_methods_classAI__IPC_1_1IIpcServiceImpl"><td class="memItemLeft" align="right" valign="top"><a id="af25921aece2d74797cfdcf385ea18d81"></a>
+virtual bool&#160;</td><td class="memItemRight" valign="bottom"><b>isValid</b> () const =0</td></tr>
+<tr class="separator:af25921aece2d74797cfdcf385ea18d81 inherit pub_methods_classAI__IPC_1_1IIpcServiceImpl"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3fe412eeb8877676a8a7036fb7a3ee78 inherit pub_methods_classAI__IPC_1_1IIpcServiceImpl"><td class="memItemLeft" align="right" valign="top"><a id="a3fe412eeb8877676a8a7036fb7a3ee78"></a>
+virtual std::shared_ptr&lt; <a class="el" href="classAI__IPC_1_1IAsyncReplyGetter.html">IAsyncReplyGetter</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>invokeMethod</b> (const <a class="el" href="structAI__IPC_1_1Method.html">Method</a> &amp;method, const VariantList &amp;args, int timeoutMs=-1)=0</td></tr>
+<tr class="separator:a3fe412eeb8877676a8a7036fb7a3ee78 inherit pub_methods_classAI__IPC_1_1IIpcServiceImpl"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a181eeb44bfcb2c9b8ce170a79eb9602e inherit pub_methods_classAI__IPC_1_1IIpcServiceImpl"><td class="memItemLeft" align="right" valign="top"><a id="a181eeb44bfcb2c9b8ce170a79eb9602e"></a>
+virtual bool&#160;</td><td class="memItemRight" valign="bottom"><b>invokeMethod</b> (const <a class="el" href="structAI__IPC_1_1Method.html">Method</a> &amp;method, const VariantList &amp;args, VariantList &amp;replyArgs, int timeoutMs=-1)=0</td></tr>
+<tr class="separator:a181eeb44bfcb2c9b8ce170a79eb9602e inherit pub_methods_classAI__IPC_1_1IIpcServiceImpl"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad2bd2db942fb229a99eb98c2a64979af inherit pub_methods_classAI__IPC_1_1IIpcServiceImpl"><td class="memItemLeft" align="right" valign="top"><a id="ad2bd2db942fb229a99eb98c2a64979af"></a>
+virtual bool&#160;</td><td class="memItemRight" valign="bottom"><b>emitSignal</b> (const <a class="el" href="structAI__IPC_1_1Signal.html">Signal</a> &amp;signal, const VariantList &amp;args)=0</td></tr>
+<tr class="separator:ad2bd2db942fb229a99eb98c2a64979af inherit pub_methods_classAI__IPC_1_1IIpcServiceImpl"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af44b7442dd38cebfabe03ee30d258d30 inherit pub_methods_classAI__IPC_1_1IIpcServiceImpl"><td class="memItemLeft" align="right" valign="top"><a id="af44b7442dd38cebfabe03ee30d258d30"></a>
+virtual std::string&#160;</td><td class="memItemRight" valign="bottom"><b>registerMethodHandler</b> (const <a class="el" href="structAI__IPC_1_1Method.html">Method</a> &amp;method, const MethodHandler &amp;handler)=0</td></tr>
+<tr class="separator:af44b7442dd38cebfabe03ee30d258d30 inherit pub_methods_classAI__IPC_1_1IIpcServiceImpl"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a28ad3b033fbe2deaeb4b4a9b56832ace inherit pub_methods_classAI__IPC_1_1IIpcServiceImpl"><td class="memItemLeft" align="right" valign="top"><a id="a28ad3b033fbe2deaeb4b4a9b56832ace"></a>
+virtual std::string&#160;</td><td class="memItemRight" valign="bottom"><b>registerSignalHandler</b> (const <a class="el" href="structAI__IPC_1_1Signal.html">Signal</a> &amp;signal, const SignalHandler &amp;handler)=0</td></tr>
+<tr class="separator:a28ad3b033fbe2deaeb4b4a9b56832ace inherit pub_methods_classAI__IPC_1_1IIpcServiceImpl"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a85fe06d3d4cfd3bf2146f39d38a0e7b0 inherit pub_methods_classAI__IPC_1_1IIpcServiceImpl"><td class="memItemLeft" align="right" valign="top"><a id="a85fe06d3d4cfd3bf2146f39d38a0e7b0"></a>
+virtual bool&#160;</td><td class="memItemRight" valign="bottom"><b>unregisterHandler</b> (const std::string &amp;regId)=0</td></tr>
+<tr class="separator:a85fe06d3d4cfd3bf2146f39d38a0e7b0 inherit pub_methods_classAI__IPC_1_1IIpcServiceImpl"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aff71ff209da1339329a4c9d9833a07ed inherit pub_methods_classAI__IPC_1_1IIpcServiceImpl"><td class="memItemLeft" align="right" valign="top"><a id="aff71ff209da1339329a4c9d9833a07ed"></a>
+virtual bool&#160;</td><td class="memItemRight" valign="bottom"><b>enableMonitor</b> (const std::set&lt; std::string &gt; &amp;matchRules, const MonitorHandler &amp;handler)=0</td></tr>
+<tr class="separator:aff71ff209da1339329a4c9d9833a07ed inherit pub_methods_classAI__IPC_1_1IIpcServiceImpl"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3f1d41e5a4e347ab8f81caca6362e233 inherit pub_methods_classAI__IPC_1_1IIpcServiceImpl"><td class="memItemLeft" align="right" valign="top"><a id="a3f1d41e5a4e347ab8f81caca6362e233"></a>
+virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>flush</b> ()=0</td></tr>
+<tr class="separator:a3f1d41e5a4e347ab8f81caca6362e233 inherit pub_methods_classAI__IPC_1_1IIpcServiceImpl"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <hr/>The documentation for this class was generated from the following file:<ul>
-<li>unit_tests/L1_testing/mocks/<a class="el" href="IpcServiceMock_8h_source.html">IpcServiceMock.h</a></li>
+<li>unit_tests/L1_testing/mocks/<a class="el" href="IIpcServiceMock_8h_source.html">IIpcServiceMock.h</a></li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->

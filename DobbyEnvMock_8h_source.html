@@ -71,36 +71,48 @@ $(function() {
 <div class="title">DobbyEnvMock.h</div>  </div>
 </div><!--header-->
 <div class="contents">
-<div class="fragment"><div class="line"><a name="l00001"></a><span class="lineno">    1</span>&#160;<span class="preprocessor">#pragma once</span></div>
-<div class="line"><a name="l00002"></a><span class="lineno">    2</span>&#160; </div>
-<div class="line"><a name="l00003"></a><span class="lineno">    3</span>&#160;<span class="preprocessor">#include &quot;DobbyEnv.h&quot;</span></div>
-<div class="line"><a name="l00004"></a><span class="lineno">    4</span>&#160;<span class="preprocessor">#include &lt;gmock/gmock.h&gt;</span></div>
-<div class="line"><a name="l00005"></a><span class="lineno">    5</span>&#160; </div>
-<div class="line"><a name="l00006"></a><span class="lineno"><a class="line" href="classDobbyEnvMock.html">    6</a></span>&#160;<span class="keyword">class </span><a class="code" href="classDobbyEnvMock.html">DobbyEnvMock</a> : <span class="keyword">public</span> <a class="code" href="classIDobbyEnv.html">IDobbyEnv</a> {</div>
-<div class="line"><a name="l00007"></a><span class="lineno">    7</span>&#160; </div>
-<div class="line"><a name="l00008"></a><span class="lineno">    8</span>&#160;<span class="keyword">public</span>:</div>
-<div class="line"><a name="l00009"></a><span class="lineno">    9</span>&#160; </div>
-<div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;    <a class="code" href="classDobbyEnvMock.html">DobbyEnvMock</a>(<span class="keyword">const</span> std::shared_ptr&lt;const IDobbySettings&gt;&amp; settings)</div>
-<div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;        : mSettings(settings) {}</div>
-<div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160; </div>
-<div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160;    <span class="keyword">virtual</span> ~<a class="code" href="classDobbyEnvMock.html">DobbyEnvMock</a>() = <span class="keywordflow">default</span>;</div>
-<div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160; </div>
-<div class="line"><a name="l00015"></a><span class="lineno">   15</span>&#160;    MOCK_METHOD(std::string, <a class="code" href="classIDobbyEnv.html#a89e1d27b2338cf19db6cfe485912c910">workspaceMountPath</a>, (), (<span class="keyword">const</span>));</div>
-<div class="line"><a name="l00016"></a><span class="lineno">   16</span>&#160;    MOCK_METHOD(std::string, <a class="code" href="classIDobbyEnv.html#a926d20a348eac6f581d135eb2138ee2b">flashMountPath</a>, (), (<span class="keyword">const</span>));</div>
-<div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160;    MOCK_METHOD(std::string, <a class="code" href="classIDobbyEnv.html#af38a17c90a878c2c90efd0220ff79317">pluginsWorkspacePath</a>, (), (<span class="keyword">const</span>));</div>
-<div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160;    MOCK_METHOD(std::string, <a class="code" href="classIDobbyEnv.html#a1af7ebfbb60a41133de6514ad61bb008">cgroupMountPath</a>, (Cgroup cgroup), (<span class="keyword">const</span>));</div>
-<div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160;    MOCK_METHOD(uint16_t, <a class="code" href="classIDobbyEnv.html#ace7562b3e6f2d415720ba78a907cf90e">platformIdent</a>, (), (<span class="keyword">const</span>));</div>
+<div class="fragment"><div class="line"><a name="l00001"></a><span class="lineno">    1</span>&#160;<span class="comment">/* If not stated otherwise in this file or this component&#39;s LICENSE file the</span></div>
+<div class="line"><a name="l00002"></a><span class="lineno">    2</span>&#160;<span class="comment"># following copyright and licenses apply:</span></div>
+<div class="line"><a name="l00003"></a><span class="lineno">    3</span>&#160;<span class="comment">#</span></div>
+<div class="line"><a name="l00004"></a><span class="lineno">    4</span>&#160;<span class="comment"># Copyright 2023 Synamedia</span></div>
+<div class="line"><a name="l00005"></a><span class="lineno">    5</span>&#160;<span class="comment">#</span></div>
+<div class="line"><a name="l00006"></a><span class="lineno">    6</span>&#160;<span class="comment"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span></div>
+<div class="line"><a name="l00007"></a><span class="lineno">    7</span>&#160;<span class="comment"># you may not use this file except in compliance with the License.</span></div>
+<div class="line"><a name="l00008"></a><span class="lineno">    8</span>&#160;<span class="comment"># You may obtain a copy of the License at</span></div>
+<div class="line"><a name="l00009"></a><span class="lineno">    9</span>&#160;<span class="comment">#</span></div>
+<div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;<span class="comment"># http://www.apache.org/licenses/LICENSE-2.0</span></div>
+<div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;<span class="comment">#</span></div>
+<div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160;<span class="comment"># Unless required by applicable law or agreed to in writing, software</span></div>
+<div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160;<span class="comment"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span></div>
+<div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160;<span class="comment"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span></div>
+<div class="line"><a name="l00015"></a><span class="lineno">   15</span>&#160;<span class="comment"># See the License for the specific language governing permissions and</span></div>
+<div class="line"><a name="l00016"></a><span class="lineno">   16</span>&#160;<span class="comment"># limitations under the License.</span></div>
+<div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160;<span class="comment">*/</span></div>
+<div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160; </div>
+<div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160;<span class="preprocessor">#pragma once</span></div>
 <div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160; </div>
-<div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160;<span class="keyword">private</span>:</div>
-<div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;    <span class="keyword">const</span> std::shared_ptr&lt;const IDobbySettings&gt; mSettings;</div>
-<div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160;};</div>
-<div class="ttc" id="aclassDobbyEnvMock_html"><div class="ttname"><a href="classDobbyEnvMock.html">DobbyEnvMock</a></div><div class="ttdef"><b>Definition:</b> DobbyEnvMock.h:6</div></div>
-<div class="ttc" id="aclassIDobbyEnv_html"><div class="ttname"><a href="classIDobbyEnv.html">IDobbyEnv</a></div><div class="ttdoc">Interface that exports the environment of the daemon to plugins.</div><div class="ttdef"><b>Definition:</b> IDobbyEnv.h:46</div></div>
-<div class="ttc" id="aclassIDobbyEnv_html_a1af7ebfbb60a41133de6514ad61bb008"><div class="ttname"><a href="classIDobbyEnv.html#a1af7ebfbb60a41133de6514ad61bb008">IDobbyEnv::cgroupMountPath</a></div><div class="ttdeci">virtual std::string cgroupMountPath(Cgroup cgroup) const =0</div><div class="ttdoc">Returns the absolute path to the cgroup mount point for the given cgroup.</div></div>
-<div class="ttc" id="aclassIDobbyEnv_html_a89e1d27b2338cf19db6cfe485912c910"><div class="ttname"><a href="classIDobbyEnv.html#a89e1d27b2338cf19db6cfe485912c910">IDobbyEnv::workspaceMountPath</a></div><div class="ttdeci">virtual std::string workspaceMountPath() const =0</div><div class="ttdoc">Returns the absolute AI workspace mount point path.</div></div>
-<div class="ttc" id="aclassIDobbyEnv_html_a926d20a348eac6f581d135eb2138ee2b"><div class="ttname"><a href="classIDobbyEnv.html#a926d20a348eac6f581d135eb2138ee2b">IDobbyEnv::flashMountPath</a></div><div class="ttdeci">virtual std::string flashMountPath() const =0</div><div class="ttdoc">Returns the absolute path to the AI area on flash.</div></div>
-<div class="ttc" id="aclassIDobbyEnv_html_ace7562b3e6f2d415720ba78a907cf90e"><div class="ttname"><a href="classIDobbyEnv.html#ace7562b3e6f2d415720ba78a907cf90e">IDobbyEnv::platformIdent</a></div><div class="ttdeci">virtual uint16_t platformIdent() const =0</div><div class="ttdoc">Returns the two byte platform identification number.</div></div>
-<div class="ttc" id="aclassIDobbyEnv_html_af38a17c90a878c2c90efd0220ff79317"><div class="ttname"><a href="classIDobbyEnv.html#af38a17c90a878c2c90efd0220ff79317">IDobbyEnv::pluginsWorkspacePath</a></div><div class="ttdeci">virtual std::string pluginsWorkspacePath() const =0</div><div class="ttdoc">Returns the path to directory that plugins can write to.</div></div>
+<div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160;<span class="preprocessor">#include &quot;DobbyEnv.h&quot;</span></div>
+<div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;<span class="preprocessor">#include &lt;gmock/gmock.h&gt;</span></div>
+<div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160; </div>
+<div class="line"><a name="l00024"></a><span class="lineno"><a class="line" href="classDobbyEnvMock.html">   24</a></span>&#160;<span class="keyword">class </span><a class="code" href="classDobbyEnvMock.html">DobbyEnvMock</a> : <span class="keyword">public</span> <a class="code" href="classDobbyEnvImpl.html">DobbyEnvImpl</a> {</div>
+<div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160; </div>
+<div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160;<span class="keyword">public</span>:</div>
+<div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160; </div>
+<div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;    <a class="code" href="classDobbyEnvMock.html">DobbyEnvMock</a>(<span class="keyword">const</span> std::shared_ptr&lt;const IDobbySettings&gt;&amp; settings)</div>
+<div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;        : mSettings(settings) {}</div>
+<div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160; </div>
+<div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;    <span class="keyword">virtual</span> ~<a class="code" href="classDobbyEnvMock.html">DobbyEnvMock</a>() = <span class="keywordflow">default</span>;</div>
+<div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160; </div>
+<div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;    MOCK_METHOD(std::string, workspaceMountPath, (), (<span class="keyword">const</span>,<span class="keyword">override</span>));</div>
+<div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;    MOCK_METHOD(std::string, flashMountPath, (), (<span class="keyword">const</span>,<span class="keyword">override</span>));</div>
+<div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;    MOCK_METHOD(std::string, pluginsWorkspacePath, (), (<span class="keyword">const</span>,<span class="keyword">override</span>));</div>
+<div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;    MOCK_METHOD(uint16_t, platformIdent, (), (<span class="keyword">const</span>,<span class="keyword">override</span>));</div>
+<div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160; </div>
+<div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;<span class="keyword">private</span>:</div>
+<div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;    <span class="keyword">const</span> std::shared_ptr&lt;const IDobbySettings&gt; mSettings;</div>
+<div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;};</div>
+<div class="ttc" id="aclassDobbyEnvImpl_html"><div class="ttname"><a href="classDobbyEnvImpl.html">DobbyEnvImpl</a></div><div class="ttdef"><b>Definition:</b> DobbyEnv.h:30</div></div>
+<div class="ttc" id="aclassDobbyEnvMock_html"><div class="ttname"><a href="classDobbyEnvMock.html">DobbyEnvMock</a></div><div class="ttdef"><b>Definition:</b> DobbyEnvMock.h:24</div></div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>

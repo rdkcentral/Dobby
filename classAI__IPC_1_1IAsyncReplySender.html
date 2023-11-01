@@ -70,7 +70,7 @@ $(function() {
   <div class="summary">
 <a href="#pub-methods">Public Member Functions</a> &#124;
 <a href="#pub-static-methods">Static Public Member Functions</a> &#124;
-<a href="#pub-attribs">Public Attributes</a> &#124;
+<a href="#pro-static-attribs">Static Protected Attributes</a> &#124;
 <a href="classAI__IPC_1_1IAsyncReplySender-members.html">List of all members</a>  </div>
   <div class="headertitle">
 <div class="title">AI_IPC::IAsyncReplySender Class Reference<span class="mlabels"><span class="mlabel">abstract</span></span></div>  </div>
@@ -121,18 +121,24 @@ virtual std::string&#160;</td><td class="memItemRight" valign="bottom"><a class=
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-methods"></a>
 Static Public Member Functions</h2></td></tr>
-<tr class="memitem:a87b2ea2d4b3ca3b0ca429a22da9772ac"><td class="memItemLeft" align="right" valign="top"><a id="a87b2ea2d4b3ca3b0ca429a22da9772ac"></a>
-static <a class="el" href="classAI__IPC_1_1IAsyncReplySender.html">IAsyncReplySender</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>getInstance</b> ()</td></tr>
-<tr class="separator:a87b2ea2d4b3ca3b0ca429a22da9772ac"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab6cb2c959fa39d720e4600fb9cc6414f"><td class="memItemLeft" align="right" valign="top"><a id="ab6cb2c959fa39d720e4600fb9cc6414f"></a>
+static void&#160;</td><td class="memItemRight" valign="bottom"><b>setImpl</b> (<a class="el" href="classAI__IPC_1_1IAsyncReplySenderApiImpl.html">IAsyncReplySenderApiImpl</a> *newImpl)</td></tr>
+<tr class="separator:ab6cb2c959fa39d720e4600fb9cc6414f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a484b3070ae5f3878ff4cd2a65202cb43"><td class="memItemLeft" align="right" valign="top"><a id="a484b3070ae5f3878ff4cd2a65202cb43"></a>
+static <a class="el" href="classAI__IPC_1_1IAsyncReplySender.html">IAsyncReplySender</a> *&#160;</td><td class="memItemRight" valign="bottom"><b>getInstance</b> ()</td></tr>
+<tr class="separator:a484b3070ae5f3878ff4cd2a65202cb43"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a2e735820f8811b42c040811a693bbaf4"><td class="memItemLeft" align="right" valign="top"><a id="a2e735820f8811b42c040811a693bbaf4"></a>
 static bool&#160;</td><td class="memItemRight" valign="bottom"><b>sendReply</b> (const VariantList &amp;replyArgs)</td></tr>
 <tr class="separator:a2e735820f8811b42c040811a693bbaf4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8374bbaf74cb3384f9032df3f4d6c616"><td class="memItemLeft" align="right" valign="top"><a id="a8374bbaf74cb3384f9032df3f4d6c616"></a>
+static VariantList&#160;</td><td class="memItemRight" valign="bottom"><b>getMethodCallArguments</b> ()</td></tr>
+<tr class="separator:a8374bbaf74cb3384f9032df3f4d6c616"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
-Public Attributes</h2></td></tr>
-<tr class="memitem:ac5d41e3e81bc7a2cb3d21b3e92a5a2bb"><td class="memItemLeft" align="right" valign="top"><a id="ac5d41e3e81bc7a2cb3d21b3e92a5a2bb"></a>
-<a class="el" href="classAI__IPC_1_1IAsyncReplySenderApiImpl.html">IAsyncReplySenderApiImpl</a> *&#160;</td><td class="memItemRight" valign="bottom"><b>impl</b></td></tr>
-<tr class="separator:ac5d41e3e81bc7a2cb3d21b3e92a5a2bb"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pro-static-attribs"></a>
+Static Protected Attributes</h2></td></tr>
+<tr class="memitem:a450d1b52a203924e076b6dcdba0cd6a5"><td class="memItemLeft" align="right" valign="top"><a id="a450d1b52a203924e076b6dcdba0cd6a5"></a>
+static <a class="el" href="classAI__IPC_1_1IAsyncReplySenderApiImpl.html">IAsyncReplySenderApiImpl</a> *&#160;</td><td class="memItemRight" valign="bottom"><b>impl</b> = nullptr</td></tr>
+<tr class="separator:a450d1b52a203924e076b6dcdba0cd6a5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Helper class to send reply of a method call asynchronously. </p>
@@ -171,8 +177,9 @@ On failure: FALSE </dd></dl>
 
 </div>
 </div>
-<hr/>The documentation for this class was generated from the following file:<ul>
+<hr/>The documentation for this class was generated from the following files:<ul>
 <li>AppInfrastructure/IpcService/include/<a class="el" href="AppInfrastructure_2IpcService_2include_2IpcCommon_8h_source.html">IpcCommon.h</a></li>
+<li>unit_tests/L1_testing/tests/DobbyTest/DaemonDobbyTests.cpp</li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->

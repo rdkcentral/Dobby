@@ -71,64 +71,73 @@ $(function() {
 <div class="title">DobbyManagerMock.h</div>  </div>
 </div><!--header-->
 <div class="contents">
-<div class="fragment"><div class="line"><a name="l00001"></a><span class="lineno">    1</span>&#160;<span class="preprocessor">#pragma once</span></div>
-<div class="line"><a name="l00002"></a><span class="lineno">    2</span>&#160; </div>
-<div class="line"><a name="l00003"></a><span class="lineno">    3</span>&#160;<span class="preprocessor">#include &quot;DobbyManager.h&quot;</span></div>
-<div class="line"><a name="l00004"></a><span class="lineno">    4</span>&#160;<span class="preprocessor">#include &lt;gmock/gmock.h&gt;</span></div>
-<div class="line"><a name="l00005"></a><span class="lineno">    5</span>&#160; </div>
-<div class="line"><a name="l00006"></a><span class="lineno"><a class="line" href="classDobbyManagerMock.html">    6</a></span>&#160;<span class="keyword">class  </span><a class="code" href="classDobbyManagerMock.html">DobbyManagerMock</a> : <span class="keyword">public</span> <a class="code" href="classDobbyManager.html">DobbyManager</a> {</div>
-<div class="line"><a name="l00007"></a><span class="lineno">    7</span>&#160; </div>
-<div class="line"><a name="l00008"></a><span class="lineno">    8</span>&#160;<span class="keyword">public</span>:</div>
-<div class="line"><a name="l00009"></a><span class="lineno">    9</span>&#160; </div>
-<div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;    MOCK_METHOD(int32_t, startContainerFromSpec, (<span class="keyword">const</span> <a class="code" href="classContainerId.html">ContainerId</a>&amp; <span class="keywordtype">id</span>,</div>
-<div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;                                              <span class="keyword">const</span> std::string&amp; jsonSpec,</div>
-<div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160;                                              <span class="keyword">const</span> std::list&lt;int&gt;&amp; files,</div>
-<div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160;                                              <span class="keyword">const</span> std::string&amp; command,</div>
-<div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160;                                              <span class="keyword">const</span> std::string&amp; displaySocket,</div>
-<div class="line"><a name="l00015"></a><span class="lineno">   15</span>&#160;                                              <span class="keyword">const</span> std::vector&lt;std::string&gt;&amp; envVars),(<span class="keyword">const</span>));</div>
-<div class="line"><a name="l00016"></a><span class="lineno">   16</span>&#160; </div>
-<div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160;    MOCK_METHOD(int32_t, <a class="code" href="classDobbyManager.html#a66e3c66c1edf14b1f292fb28004968d3">startContainerFromBundle</a>, (<span class="keyword">const</span> <a class="code" href="classContainerId.html">ContainerId</a>&amp; <span class="keywordtype">id</span>,</div>
-<div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160;                                                <span class="keyword">const</span> std::string&amp; bundlePath,</div>
-<div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160;                                                <span class="keyword">const</span> std::list&lt;int&gt;&amp; files,</div>
-<div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160;                                                <span class="keyword">const</span> std::string&amp; command,</div>
-<div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160;                                                <span class="keyword">const</span> std::string&amp; displaySocket,</div>
-<div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;                                                <span class="keyword">const</span> std::vector&lt;std::string&gt;&amp; envVars), (<span class="keyword">const</span>));</div>
+<div class="fragment"><div class="line"><a name="l00001"></a><span class="lineno">    1</span>&#160;<span class="comment">/* If not stated otherwise in this file or this component&#39;s LICENSE file the</span></div>
+<div class="line"><a name="l00002"></a><span class="lineno">    2</span>&#160;<span class="comment"># following copyright and licenses apply:</span></div>
+<div class="line"><a name="l00003"></a><span class="lineno">    3</span>&#160;<span class="comment">#</span></div>
+<div class="line"><a name="l00004"></a><span class="lineno">    4</span>&#160;<span class="comment"># Copyright 2023 Synamedia</span></div>
+<div class="line"><a name="l00005"></a><span class="lineno">    5</span>&#160;<span class="comment">#</span></div>
+<div class="line"><a name="l00006"></a><span class="lineno">    6</span>&#160;<span class="comment"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span></div>
+<div class="line"><a name="l00007"></a><span class="lineno">    7</span>&#160;<span class="comment"># you may not use this file except in compliance with the License.</span></div>
+<div class="line"><a name="l00008"></a><span class="lineno">    8</span>&#160;<span class="comment"># You may obtain a copy of the License at</span></div>
+<div class="line"><a name="l00009"></a><span class="lineno">    9</span>&#160;<span class="comment">#</span></div>
+<div class="line"><a name="l00010"></a><span class="lineno">   10</span>&#160;<span class="comment"># http://www.apache.org/licenses/LICENSE-2.0</span></div>
+<div class="line"><a name="l00011"></a><span class="lineno">   11</span>&#160;<span class="comment">#</span></div>
+<div class="line"><a name="l00012"></a><span class="lineno">   12</span>&#160;<span class="comment"># Unless required by applicable law or agreed to in writing, software</span></div>
+<div class="line"><a name="l00013"></a><span class="lineno">   13</span>&#160;<span class="comment"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span></div>
+<div class="line"><a name="l00014"></a><span class="lineno">   14</span>&#160;<span class="comment"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span></div>
+<div class="line"><a name="l00015"></a><span class="lineno">   15</span>&#160;<span class="comment"># See the License for the specific language governing permissions and</span></div>
+<div class="line"><a name="l00016"></a><span class="lineno">   16</span>&#160;<span class="comment"># limitations under the License.</span></div>
+<div class="line"><a name="l00017"></a><span class="lineno">   17</span>&#160;<span class="comment">*/</span></div>
+<div class="line"><a name="l00018"></a><span class="lineno">   18</span>&#160; </div>
+<div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160;<span class="preprocessor">#pragma once</span></div>
+<div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160; </div>
+<div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160;<span class="preprocessor">#include &quot;DobbyManager.h&quot;</span></div>
+<div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;<span class="preprocessor">#include &lt;gmock/gmock.h&gt;</span></div>
 <div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160; </div>
-<div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;    MOCK_METHOD(<span class="keywordtype">bool</span>, <a class="code" href="classDobbyManager.html#abc24032118b91fc1660ae4be7dedaf2f">stopContainer</a>, (int32_t cd, <span class="keywordtype">bool</span> withPrejudice), ());</div>
+<div class="line"><a name="l00024"></a><span class="lineno"><a class="line" href="classDobbyManagerMock.html">   24</a></span>&#160;<span class="keyword">class  </span><a class="code" href="classDobbyManagerMock.html">DobbyManagerMock</a> : <span class="keyword">public</span> <a class="code" href="classDobbyManagerImpl.html">DobbyManagerImpl</a> {</div>
 <div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160; </div>
-<div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160;    MOCK_METHOD(<span class="keywordtype">bool</span>, <a class="code" href="classDobbyManager.html#ae68bb880628681639726ce3e0d48067d">pauseContainer</a>, (int32_t cd), ());</div>
+<div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160;<span class="keyword">public</span>:</div>
 <div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160; </div>
-<div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;    MOCK_METHOD(<span class="keywordtype">bool</span>, <a class="code" href="classDobbyManager.html#a2d4e604d228f20045b2a4624d0295a30">resumeContainer</a>, (int32_t cd), ());</div>
-<div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160; </div>
-<div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;    MOCK_METHOD(<span class="keywordtype">bool</span>, <a class="code" href="classDobbyManager.html#a26f396a3d1f2f145aa05ff23bfc50685">execInContainer</a>, (int32_t cd,</div>
-<div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;                                   <span class="keyword">const</span> std::string&amp; options,</div>
-<div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;                                   <span class="keyword">const</span> std::string&amp; command), ());</div>
-<div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160; </div>
-<div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;    MOCK_METHOD((std::list&lt;std::pair&lt;int32_t, ContainerId&gt;&gt;), <a class="code" href="classDobbyManager.html#a916432f3341a3eeae5de5e06807374e3">listContainers</a>, (), (<span class="keyword">const</span>));</div>
-<div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160; </div>
-<div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;    MOCK_METHOD(int32_t, <a class="code" href="classDobbyManager.html#abceecde3a6a164e13f3799a5dd4a3636">stateOfContainer</a>, (int32_t cd), (<span class="keyword">const</span>));</div>
-<div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160; </div>
-<div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;    MOCK_METHOD(std::string, <a class="code" href="classDobbyManager.html#a50849443ccba22c698d223234125471b">statsOfContainer</a>, (int32_t cd), (<span class="keyword">const</span>));</div>
-<div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160; </div>
-<div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;    MOCK_METHOD(std::string, <a class="code" href="classDobbyManager.html#a7ab07082f515abc77f157954747cad11">ociConfigOfContainer</a>, (int32_t cd), (<span class="keyword">const</span>));</div>
+<div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;    MOCK_METHOD(int32_t, startContainerFromSpec, (<span class="keyword">const</span> <a class="code" href="classContainerId.html">ContainerId</a>&amp; <span class="keywordtype">id</span>,</div>
+<div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;                                              <span class="keyword">const</span> std::string&amp; jsonSpec,</div>
+<div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;                                              <span class="keyword">const</span> std::list&lt;int&gt;&amp; files,</div>
+<div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;                                              <span class="keyword">const</span> std::string&amp; command,</div>
+<div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;                                              <span class="keyword">const</span> std::string&amp; displaySocket,</div>
+<div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;                                              <span class="keyword">const</span> std::vector&lt;std::string&gt;&amp; envVars),(<span class="keyword">const</span>));</div>
+<div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160; </div>
+<div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;    MOCK_METHOD(int32_t, startContainerFromBundle, (<span class="keyword">const</span> <a class="code" href="classContainerId.html">ContainerId</a>&amp; <span class="keywordtype">id</span>,</div>
+<div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;                                                <span class="keyword">const</span> std::string&amp; bundlePath,</div>
+<div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;                                                <span class="keyword">const</span> std::list&lt;int&gt;&amp; files,</div>
+<div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;                                                <span class="keyword">const</span> std::string&amp; command,</div>
+<div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;                                                <span class="keyword">const</span> std::string&amp; displaySocket,</div>
+<div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;                                                <span class="keyword">const</span> std::vector&lt;std::string&gt;&amp; envVars), (<span class="keyword">const</span>));</div>
 <div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160; </div>
-<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;    MOCK_METHOD(std::string, specOfContainer, (int32_t cd), (<span class="keyword">const</span>));</div>
+<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;    MOCK_METHOD(<span class="keywordtype">bool</span>, stopContainer, (int32_t cd, <span class="keywordtype">bool</span> withPrejudice), ());</div>
 <div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160; </div>
-<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;    MOCK_METHOD(<span class="keywordtype">bool</span>, createBundle, (<span class="keyword">const</span> <a class="code" href="classContainerId.html">ContainerId</a>&amp; <span class="keywordtype">id</span>, <span class="keyword">const</span> std::string&amp; jsonSpec), ());</div>
+<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;    MOCK_METHOD(<span class="keywordtype">bool</span>, pauseContainer, (int32_t cd), ());</div>
 <div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160; </div>
-<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;};</div>
+<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;    MOCK_METHOD(<span class="keywordtype">bool</span>, resumeContainer, (int32_t cd), ());</div>
+<div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160; </div>
+<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;    MOCK_METHOD(<span class="keywordtype">bool</span>, execInContainer, (int32_t cd,</div>
+<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;                                   <span class="keyword">const</span> std::string&amp; options,</div>
+<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;                                   <span class="keyword">const</span> std::string&amp; command), ());</div>
+<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160; </div>
+<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;    MOCK_METHOD((std::list&lt;std::pair&lt;int32_t, ContainerId&gt;&gt;), listContainers, (), (<span class="keyword">const</span>));</div>
+<div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160; </div>
+<div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;    MOCK_METHOD(int32_t, stateOfContainer, (int32_t cd), (<span class="keyword">const</span>));</div>
+<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160; </div>
+<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;    MOCK_METHOD(std::string, statsOfContainer, (int32_t cd), (<span class="keyword">const</span>));</div>
+<div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160; </div>
+<div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;    MOCK_METHOD(std::string, ociConfigOfContainer, (int32_t cd), (<span class="keyword">const</span>));</div>
+<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160; </div>
+<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;    MOCK_METHOD(std::string, specOfContainer, (int32_t cd), (<span class="keyword">const</span>));</div>
+<div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160; </div>
+<div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;    MOCK_METHOD(<span class="keywordtype">bool</span>, createBundle, (<span class="keyword">const</span> <a class="code" href="classContainerId.html">ContainerId</a>&amp; <span class="keywordtype">id</span>, <span class="keyword">const</span> std::string&amp; jsonSpec), ());</div>
+<div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160; </div>
+<div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;};</div>
 <div class="ttc" id="aclassContainerId_html"><div class="ttname"><a href="classContainerId.html">ContainerId</a></div><div class="ttdoc">A wrapper around a std::string, used to add some type definition to to an id and also to sanity check...</div><div class="ttdef"><b>Definition:</b> ContainerId.h:41</div></div>
-<div class="ttc" id="aclassDobbyManagerMock_html"><div class="ttname"><a href="classDobbyManagerMock.html">DobbyManagerMock</a></div><div class="ttdef"><b>Definition:</b> DobbyManagerMock.h:6</div></div>
-<div class="ttc" id="aclassDobbyManager_html"><div class="ttname"><a href="classDobbyManager.html">DobbyManager</a></div><div class="ttdoc">The main object which starts / stops / manages the containers.</div><div class="ttdef"><b>Definition:</b> DobbyManager.h:76</div></div>
-<div class="ttc" id="aclassDobbyManager_html_a26f396a3d1f2f145aa05ff23bfc50685"><div class="ttname"><a href="classDobbyManager.html#a26f396a3d1f2f145aa05ff23bfc50685">DobbyManager::execInContainer</a></div><div class="ttdeci">bool execInContainer(int32_t cd, const std::string &amp;options, const std::string &amp;command)</div><div class="ttdoc">Executes a command in a running container.</div><div class="ttdef"><b>Definition:</b> DobbyManager.cpp:1528</div></div>
-<div class="ttc" id="aclassDobbyManager_html_a2d4e604d228f20045b2a4624d0295a30"><div class="ttname"><a href="classDobbyManager.html#a2d4e604d228f20045b2a4624d0295a30">DobbyManager::resumeContainer</a></div><div class="ttdeci">bool resumeContainer(int32_t cd)</div><div class="ttdoc">Thaws a frozen container.</div><div class="ttdef"><b>Definition:</b> DobbyManager.cpp:1473</div></div>
-<div class="ttc" id="aclassDobbyManager_html_a50849443ccba22c698d223234125471b"><div class="ttname"><a href="classDobbyManager.html#a50849443ccba22c698d223234125471b">DobbyManager::statsOfContainer</a></div><div class="ttdeci">std::string statsOfContainer(int32_t cd) const</div><div class="ttdoc">Gets the stats for the container.</div><div class="ttdef"><b>Definition:</b> DobbyManager.cpp:1715</div></div>
-<div class="ttc" id="aclassDobbyManager_html_a66e3c66c1edf14b1f292fb28004968d3"><div class="ttname"><a href="classDobbyManager.html#a66e3c66c1edf14b1f292fb28004968d3">DobbyManager::startContainerFromBundle</a></div><div class="ttdeci">int32_t startContainerFromBundle(const ContainerId &amp;id, const std::string &amp;bundlePath, const std::list&lt; int &gt; &amp;files, const std::string &amp;command, const std::string &amp;displaySocket, const std::vector&lt; std::string &gt; &amp;envVars)</div><div class="ttdoc">Where the magic begins ... attempts to create a container from an OCI bundle*.</div><div class="ttdef"><b>Definition:</b> DobbyManager.cpp:990</div></div>
-<div class="ttc" id="aclassDobbyManager_html_a7ab07082f515abc77f157954747cad11"><div class="ttname"><a href="classDobbyManager.html#a7ab07082f515abc77f157954747cad11">DobbyManager::ociConfigOfContainer</a></div><div class="ttdeci">std::string ociConfigOfContainer(int32_t cd) const</div><div class="ttdoc">Debugging method to allow you to retrieve the OCI config.json spec used to create the container.</div><div class="ttdef"><b>Definition:</b> DobbyManager.cpp:1777</div></div>
-<div class="ttc" id="aclassDobbyManager_html_a916432f3341a3eeae5de5e06807374e3"><div class="ttname"><a href="classDobbyManager.html#a916432f3341a3eeae5de5e06807374e3">DobbyManager::listContainers</a></div><div class="ttdeci">std::list&lt; std::pair&lt; int32_t, ContainerId &gt; &gt; listContainers() const</div><div class="ttdoc">Returns a list of all the containers.</div><div class="ttdef"><b>Definition:</b> DobbyManager.cpp:1606</div></div>
-<div class="ttc" id="aclassDobbyManager_html_abc24032118b91fc1660ae4be7dedaf2f"><div class="ttname"><a href="classDobbyManager.html#abc24032118b91fc1660ae4be7dedaf2f">DobbyManager::stopContainer</a></div><div class="ttdeci">bool stopContainer(int32_t cd, bool withPrejudice)</div><div class="ttdoc">Stops a running container.</div><div class="ttdef"><b>Definition:</b> DobbyManager.cpp:1295</div></div>
-<div class="ttc" id="aclassDobbyManager_html_abceecde3a6a164e13f3799a5dd4a3636"><div class="ttname"><a href="classDobbyManager.html#abceecde3a6a164e13f3799a5dd4a3636">DobbyManager::stateOfContainer</a></div><div class="ttdeci">int32_t stateOfContainer(int32_t cd) const</div><div class="ttdoc">Returns the state of a given container.</div><div class="ttdef"><b>Definition:</b> DobbyManager.cpp:1631</div></div>
-<div class="ttc" id="aclassDobbyManager_html_ae68bb880628681639726ce3e0d48067d"><div class="ttname"><a href="classDobbyManager.html#ae68bb880628681639726ce3e0d48067d">DobbyManager::pauseContainer</a></div><div class="ttdeci">bool pauseContainer(int32_t cd)</div><div class="ttdoc">Freezes a running container.</div><div class="ttdef"><b>Definition:</b> DobbyManager.cpp:1412</div></div>
+<div class="ttc" id="aclassDobbyManagerImpl_html"><div class="ttname"><a href="classDobbyManagerImpl.html">DobbyManagerImpl</a></div><div class="ttdef"><b>Definition:</b> DobbyManager.h:58</div></div>
+<div class="ttc" id="aclassDobbyManagerMock_html"><div class="ttname"><a href="classDobbyManagerMock.html">DobbyManagerMock</a></div><div class="ttdef"><b>Definition:</b> DobbyManagerMock.h:24</div></div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
