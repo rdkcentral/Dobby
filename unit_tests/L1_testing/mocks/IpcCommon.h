@@ -1,22 +1,77 @@
+/* If not stated otherwise in this file or this component's LICENSE file the
+# following copyright and licenses apply:
+#
+# Copyright 2023 Synamedia
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+*/
+
 #ifndef AI_IPC_IPCCOMMON_H
 #define AI_IPC_IPCCOMMON_H
 
+#include "IpcVariantList.h"
 #include <string>
 #include <map>
 #include <vector>
 #include <functional>
 #include <memory>
+#include <iostream>
 
 namespace AI_IPC
 {
 
-typedef std::vector<int> Variant;
-typedef std::vector<Variant> VariantList;
-
 class IAsyncReplySenderApiImpl {
+
 public:
     virtual ~IAsyncReplySenderApiImpl() = default;
     virtual bool sendReply(const VariantList& replyArgs) = 0;
+    virtual VariantList getMethodCallArguments() const = 0;
+};
+
+
+class IAsyncReplySender {
+
+protected:
+   static IAsyncReplySenderApiImpl* impl;
+
+public:
+    
+    static void setImpl(IAsyncReplySenderApiImpl* newImpl)
+    {
+        impl = newImpl;
+    }
+
+    static IAsyncReplySender* getInstance()
+    {
+        static IAsyncReplySender* instance = nullptr;
+        if(nullptr != instance)
+        {
+            instance = new IAsyncReplySender();
+        }
+        return instance;
+    }
+
+
+    static bool sendReply(const VariantList& replyArgs)
+    {
+        return impl->sendReply(replyArgs);
+    }
+
+    static VariantList getMethodCallArguments()
+    {
+        return impl->getMethodCallArguments();
+    }
+
 };
 
 
@@ -106,21 +161,6 @@ public:
     virtual bool getReply(VariantList& argList) = 0;
 };
 
-class IAsyncReplySender {
-public:
-    static IAsyncReplySender& getInstance()
-    {
-        static IAsyncReplySender instance;
-        return instance;
-    }
-
-    IAsyncReplySenderApiImpl* impl;
-
-    static bool sendReply(const VariantList& replyArgs)
-    {
-        return getInstance().impl->sendReply(replyArgs);
-    }
-};
 
 
 /**
@@ -159,6 +199,7 @@ typedef std::function<void(EventType,
 
 
 constexpr auto sendReply = &IAsyncReplySender::sendReply;
+
 
 } // namespace AI_IPC
 

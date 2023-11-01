@@ -19,14 +19,9 @@
 #pragma once
 
 #include <gmock/gmock.h>
-#include "DobbyWorkQueue.h"
+#include "DobbyUtils.h"
 
-class DobbyWorkQueueMock : public DobbyWorkQueueImpl{
-
+class DobbyUtilsMock : public DobbyUtilsImpl{
 public:
-    virtual ~DobbyWorkQueueMock() = default;
-
-    MOCK_METHOD(bool, runFor, (const std::chrono::milliseconds& msecs), (override));
-    MOCK_METHOD(void, exit, (), (override));
-    MOCK_METHOD(bool, postWork, (const WorkFunc &work), (override));
+    virtual ~DobbyUtilsMock() = default;
 };

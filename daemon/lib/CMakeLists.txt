@@ -45,6 +45,7 @@ target_include_directories( DobbyDaemonLib
 
         PUBLIC
         include
+        source/include
         $<TARGET_PROPERTY:IpcService,INTERFACE_INCLUDE_DIRECTORIES>
 
         PRIVATE

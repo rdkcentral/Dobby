@@ -15,18 +15,40 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 */
+#include "ContainerId.h"
 
-#pragma once
+static bool isValidContainerId(const std::string& id)
+{
+    if (id.empty() || (id.size() > 128))
+    {
+        return false;
+    }
 
-#include <gmock/gmock.h>
-#include "DobbyWorkQueue.h"
+    unsigned alphaCount = 0;
+    for (const char c : id)
+    {
+        if (!isalnum(c) && (c != '.') && (c != '-') && (c != '_'))
+            return false;
 
-class DobbyWorkQueueMock : public DobbyWorkQueueImpl{
+        if (isalpha(c))
+            alphaCount++;
+    }
 
-public:
-    virtual ~DobbyWorkQueueMock() = default;
+    if (id.find("..") != std::string::npos)
+    {
+        return false;
+    }
 
-    MOCK_METHOD(bool, runFor, (const std::chrono::milliseconds& msecs), (override));
-    MOCK_METHOD(void, exit, (), (override));
-    MOCK_METHOD(bool, postWork, (const WorkFunc &work), (override));
-};
+    return (alphaCount > 0);
+}
+
+ContainerId ContainerId::create(const std::string& s)
+{
+    std::string str("dummyId");
+    ContainerId id;
+
+    if (isValidContainerId(str))
+        id.mId.swap(str);
+
+    return id;
+}

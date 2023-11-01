@@ -1,4 +1,4 @@
-/* If not stated otherwise in this file or this component's LICENSE file the
+# If not stated otherwise in this file or this component's LICENSE file the
 # following copyright and licenses apply:
 #
 # Copyright 2023 Synamedia
@@ -14,19 +14,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-*/
 
-#pragma once
-
-#include <gmock/gmock.h>
-#include "DobbyWorkQueue.h"
-
-class DobbyWorkQueueMock : public DobbyWorkQueueImpl{
-
-public:
-    virtual ~DobbyWorkQueueMock() = default;
-
-    MOCK_METHOD(bool, runFor, (const std::chrono::milliseconds& msecs), (override));
-    MOCK_METHOD(void, exit, (), (override));
-    MOCK_METHOD(bool, postWork, (const WorkFunc &work), (override));
-};
+add_subdirectory(DobbyUtilsTest)
+add_subdirectory(DobbyTest)
