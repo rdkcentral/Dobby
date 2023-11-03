@@ -19,19 +19,17 @@
 
 #pragma once
 
+#include "IDobbyEnv.h"
 #include <gmock/gmock.h>
 
-#include "DobbyConfig.h"
+class IDobbyEnvMock : public IDobbyEnv {
 
-class DobbyConfigMock : public DobbyConfig {
 public:
-    virtual ~DobbyConfigMock() = default;
 
-    MOCK_METHOD((std::map<std::string, Json::Value>&), rdkPlugins, (), (const,override));
-    MOCK_METHOD((std::shared_ptr<rt_dobby_schema>), config, (), (const,override));
-#if defined(LEGACY_COMPONENTS)
-    MOCK_METHOD(std::string, spec, (), (const,override));
-    MOCK_METHOD((std::map<std::string, Json::Value>&), legacyPlugins, (), (const,override));
-#endif //defined(LEGACY_COMPONENTS)
+    virtual ~IDobbyEnvMock() = default;
 
+    MOCK_METHOD(std::string, workspaceMountPath, (), (const,override));
+    MOCK_METHOD(std::string ,flashMountPath, (), (const,override));
+    MOCK_METHOD(std::string,pluginsWorkspacePath, (), (const,override));
+    MOCK_METHOD(uint16_t ,platformIdent, (), (const,override));
 };

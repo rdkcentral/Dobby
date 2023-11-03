@@ -16,7 +16,7 @@
 #limitations under the License.
 
 cmake_minimum_required(VERSION 3.7)
-project(DobbyL1Test)
+project(DobbyManagerL1Test)
 
 set(CMAKE_CXX_STANDARD 14)
 
@@ -26,50 +26,50 @@ find_package(jsoncpp REQUIRED)
 
 include_directories(${GTEST_INCLUDE_DIRS})
 
-
-add_library(DaemonDobbyTests SHARED STATIC
-            ../../../../daemon/lib/source/Dobby.cpp
-            ../../../../AppInfrastructure/Logging/source/Logging.cpp
+add_library(DaemonDobbyManagerTest SHARED STATIC
+            ../../../../daemon/lib/source/DobbyManager.cpp
+            ../../../../AppInfrastructure/Logging/source/Logging.cpp 
             )
 
-
-target_include_directories(DaemonDobbyTests
+target_include_directories(DaemonDobbyManagerTest
                 PUBLIC
                 ../../mocks
-                        ../../mocks/dobbymanager
                 ../../../../utils/include
                 ../../../../utils/source
                 ../../../../AppInfrastructure/Logging/include
                 ../../../../AppInfrastructure/Common/include
                 ../../../../bundle/lib/include
-                ../../../../AppInfrastructure/IpcService/include
                 ../../../../ipcUtils/include
                 ../../../../settings/include
-                ../../../../AppInfrastructure/IpcService/source/libdbus
+                ../../../../daemon/lib/include
+                ../../../../daemon/lib/source/include
+                ../../../../libocispec/generated_output
+                ../../../../AppInfrastructure/IpcService/include
                 ../../../../libocispec/generated_output
                 ../../../../pluginLauncher/lib/include
+                ../../../../daemon/lib/include
                 ../../../../protocol/include
-	        ../../../../daemon/lib/include
-	        ../../../../daemon/lib/source/include
-                ../../../../build/AppInfrastructure/Tracing                
+                ../../../../build/AppInfrastructure/Tracing
+                ../../../../AppInfrastructure/ReadLine/include
+                ../../../../AppInfrastructure/IpcService/source/libdbus
+                ../../../../rdkPlugins/Networking/include
                 ../../../../AppInfrastructure/ReadLine/include
                 ../../../../AppInfrastructure/ReadLine/source
-                ../../../../rdkPlugins/Networking/include
+                ../../../../unit_tests/L1_testing/tests
                 /usr/lib/plugins/dobby
                 /usr/include/jsoncpp
+                /usr/include/dbus-1.0
+                /usr/lib/x86_64-linux-gnu/dbus-1.0/include
                 )
 
-file(GLOB TESTS *.cpp 
-     ../../mocks/IpcVariantList.cpp
-     ../../mocks/ContainerIdMock.cpp 
-     )
+file(GLOB TESTS *.cpp)
 
 add_executable(${PROJECT_NAME} ${TESTS})
 
 target_link_libraries(${PROJECT_NAME}
     PRIVATE
     gmock_main
-    DaemonDobbyTests
+    DaemonDobbyManagerTest
     ${GTEST_LIBRARIES}
     GTest::GTest
     GTest::Main

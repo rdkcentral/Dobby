@@ -19,19 +19,17 @@
 
 #pragma once
 
+#include "IDobbyUtils.h"
 #include <gmock/gmock.h>
 
-#include "DobbyConfig.h"
+class IDobbyUtilsMock : public IDobbyUtils_v3 {
 
-class DobbyConfigMock : public DobbyConfig {
 public:
-    virtual ~DobbyConfigMock() = default;
 
-    MOCK_METHOD((std::map<std::string, Json::Value>&), rdkPlugins, (), (const,override));
-    MOCK_METHOD((std::shared_ptr<rt_dobby_schema>), config, (), (const,override));
-#if defined(LEGACY_COMPONENTS)
-    MOCK_METHOD(std::string, spec, (), (const,override));
-    MOCK_METHOD((std::map<std::string, Json::Value>&), legacyPlugins, (), (const,override));
-#endif //defined(LEGACY_COMPONENTS)
+    virtual ~IDobbyUtilsMock() = default;
 
+    // Declare the mock method using the MOCK_METHOD macro
+    MOCK_METHOD(bool, insertEbtablesRule, (const std::string &args), (const,override));
+    MOCK_METHOD(bool ,deleteEbtablesRule, (const std::string &args), (const,override));
 };
+

@@ -17,3 +17,4 @@
 
 add_subdirectory(DobbyUtilsTest)
 add_subdirectory(DobbyTest)
+add_subdirectory(DobbyManagerTest)
