@@ -91,20 +91,25 @@ public:
         return impl->rdkPlugins();
     }
 
-    static const std::map<std::string, Json::Value>& legacyPlugins()
-    {
-        return impl->legacyPlugins();
-    }
-
     static const std::shared_ptr<rt_dobby_schema> config()
     {
         return impl->config();
+    }
+
+#if defined(LEGACY_COMPONENTS)
+
+    static const std::map<std::string, Json::Value>& legacyPlugins()
+    {
+        return impl->legacyPlugins();
     }
 
     static const std::string spec()
     {
         return impl->spec();
     }
+
+#endif //defined(LEGACY_COMPONENTS)
+
 
 };
 
