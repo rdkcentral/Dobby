@@ -22,7 +22,7 @@
 #include <gmock/gmock.h>
 #include "DobbyBundleConfig.h"
 
-class DobbyBundleConfigMock : public DobbyBundleConfig {
+class DobbyBundleConfigMock : public DobbyBundleConfigImpl {
 
 public:
     virtual ~DobbyBundleConfigMock() = default;

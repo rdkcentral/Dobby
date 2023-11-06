@@ -23,12 +23,12 @@
 #include <gmock/gmock.h>
 #include "DobbyContainer.h"
 
-class DobbyContainerMock : public DobbyContainer {
+class DobbyContainerMock : public DobbyContainerImpl {
 
 public:
 
     virtual ~DobbyContainerMock() = default;
-    MOCK_METHOD(void, setRestartOnCrash, (const std::list<int>& files), ());
-    MOCK_METHOD(void, clearRestartOnCrash, (), ());
+    MOCK_METHOD(void, setRestartOnCrash, (const std::list<int>& files), (override));
+    MOCK_METHOD(void, clearRestartOnCrash, (), (override));
 
 };

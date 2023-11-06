@@ -110,7 +110,7 @@ public:
     static DobbyRdkPluginUtils* getInstance()
     {
         static DobbyRdkPluginUtils* instance = nullptr;
-        if (nullptr != instance)
+        if (nullptr == instance)
         {
            instance = new DobbyRdkPluginUtils();
         }

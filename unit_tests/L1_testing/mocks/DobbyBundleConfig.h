@@ -59,7 +59,7 @@ public:
     static DobbyBundleConfig* getInstance()
     {
         static DobbyBundleConfig* instance = nullptr;
-        if (nullptr != instance)
+        if (nullptr == instance)
         {
            instance = new DobbyBundleConfig();
         }

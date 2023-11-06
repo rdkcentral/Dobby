@@ -23,10 +23,11 @@
 
 #include "DobbyConfig.h"
 
-class DobbyConfigMock : public DobbyConfig {
+class DobbyConfigMock : public DobbyConfigImpl {
 public:
     virtual ~DobbyConfigMock() = default;
 
+    MOCK_METHOD(bool, writeConfigJson, (const std::string& filePath), (const,override));
     MOCK_METHOD((std::map<std::string, Json::Value>&), rdkPlugins, (), (const,override));
     MOCK_METHOD((std::shared_ptr<rt_dobby_schema>), config, (), (const,override));
 #if defined(LEGACY_COMPONENTS)

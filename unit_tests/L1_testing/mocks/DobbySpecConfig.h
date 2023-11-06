@@ -69,7 +69,7 @@ public:
     static DobbySpecConfig* getInstance()
     {
         static DobbySpecConfig* instance = nullptr;
-        if (nullptr != instance)
+        if (nullptr == instance)
         {
            instance = new DobbySpecConfig();
         }

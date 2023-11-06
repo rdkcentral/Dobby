@@ -119,9 +119,9 @@ public:
     static DobbyManager* getInstance()
     {
         static DobbyManager* instance = nullptr;
-        if(nullptr != instance)
+        if(nullptr == instance)
         {
-            new DobbyManager();
+            instance = new DobbyManager();
         }
         return instance;
     }

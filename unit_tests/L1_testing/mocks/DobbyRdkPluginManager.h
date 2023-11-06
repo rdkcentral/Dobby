@@ -62,7 +62,7 @@ public:
     static DobbyRdkPluginManager* getInstance()
     {
         static DobbyRdkPluginManager* instance = nullptr;
-        if (nullptr != instance)
+        if (nullptr == instance)
         {
            instance = new DobbyRdkPluginManager();
         }

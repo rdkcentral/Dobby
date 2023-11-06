@@ -32,4 +32,6 @@ public:
     MOCK_METHOD(std::string ,flashMountPath, (), (const,override));
     MOCK_METHOD(std::string,pluginsWorkspacePath, (), (const,override));
     MOCK_METHOD(uint16_t ,platformIdent, (), (const,override));
+    MOCK_METHOD(std::string ,cgroupMountPath, (Cgroup cgroup), (const,override));
+
 };

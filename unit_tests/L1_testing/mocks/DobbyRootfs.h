@@ -62,7 +62,7 @@ public:
     static DobbyRootfs* getInstance()
     {
         static DobbyRootfs* instance = nullptr;
-        if (nullptr != instance)
+        if (nullptr == instance)
         {
            instance = new DobbyRootfs();
         }

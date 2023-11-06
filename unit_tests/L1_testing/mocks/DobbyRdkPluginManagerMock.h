@@ -22,7 +22,7 @@
 #include <gmock/gmock.h>
 #include "DobbyRdkPluginManager.h"
 
-class DobbyRdkPluginManagerMock : public DobbyRdkPluginManager {
+class DobbyRdkPluginManagerMock : public DobbyRdkPluginManagerImpl {
 
 public:
 
