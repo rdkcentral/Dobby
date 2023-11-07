@@ -50,7 +50,10 @@ protected:
 public:
 
     DobbyRootfs(){}
+#if defined(LEGACY_COMPONENTS)
     DobbyRootfs(const std::shared_ptr<IDobbyUtils>& utils,const std::shared_ptr<const DobbyBundle>& bundle,const std::shared_ptr<const DobbySpecConfig>& config){}
+#endif // LEGACY_COMPONENTS
+
     DobbyRootfs(const std::shared_ptr<IDobbyUtils>& utils,const std::shared_ptr<const DobbyBundle>& bundle,const std::shared_ptr<const DobbyBundleConfig>& config){}
     ~DobbyRootfs(){}
 

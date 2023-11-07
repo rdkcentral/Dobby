@@ -98,14 +98,14 @@ public:
 
 #if defined(LEGACY_COMPONENTS)
 
-    static const std::map<std::string, Json::Value>& legacyPlugins()
-    {
-        return impl->legacyPlugins();
-    }
-
     static const std::string spec()
     {
         return impl->spec();
+    }
+
+    static const std::map<std::string, Json::Value>& legacyPlugins()
+    {
+        return impl->legacyPlugins();
     }
 
 #endif //defined(LEGACY_COMPONENTS)

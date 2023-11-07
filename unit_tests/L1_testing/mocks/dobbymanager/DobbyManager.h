@@ -60,12 +60,21 @@ class DobbyManagerImpl {
 public:
     virtual ~DobbyManagerImpl() = default;
 
+#if defined(LEGACY_COMPONENTS)
+
     virtual int32_t startContainerFromSpec(const ContainerId& id,
                                           const std::string& jsonSpec,
                                           const std::list<int>& files,
                                           const std::string& command,
                                           const std::string& displaySocket,
                                           const std::vector<std::string>& envVars) = 0;
+
+    virtual std::string specOfContainer(int32_t cd) const = 0;
+
+    virtual bool createBundle(const ContainerId& id, const std::string& jsonSpec) = 0;
+
+#endif //defined(LEGACY_COMPONENTS)
+
 
     virtual int32_t startContainerFromBundle(const ContainerId& id,
                                             const std::string& bundlePath,
@@ -92,9 +101,6 @@ public:
 
     virtual std::string ociConfigOfContainer(int32_t cd) const = 0;
 
-    virtual std::string specOfContainer(int32_t cd) const = 0;
-
-    virtual bool createBundle(const ContainerId& id, const std::string& jsonSpec) = 0;
 };
 
 class DobbyManager {
@@ -126,6 +132,8 @@ public:
         return instance;
     }
 
+#if defined(LEGACY_COMPONENTS)
+
     static int32_t startContainerFromSpec(const ContainerId& id,
                                           const std::string& jsonSpec,
                                           const std::list<int>& files,
@@ -135,6 +143,17 @@ public:
     {
         return impl->startContainerFromSpec(id, jsonSpec, files, command, displaySocket, envVars);
     }
+
+    static std::string specOfContainer(int32_t cd)
+    {
+        return impl->specOfContainer(cd);
+    }
+
+    static bool createBundle(const ContainerId& id, const std::string& jsonSpec)
+    {
+        return impl->createBundle(id, jsonSpec);
+    }
+#endif //defined(LEGACY_COMPONENTS)
 
     static int32_t startContainerFromBundle(const ContainerId& id,
                                             const std::string& bundlePath,
@@ -186,16 +205,6 @@ public:
     static std::string ociConfigOfContainer(int32_t cd)
     {
         return impl->ociConfigOfContainer(cd);
-    }
-
-    static std::string specOfContainer(int32_t cd)
-    {
-        return impl->specOfContainer(cd);
-    }
-
-    static bool createBundle(const ContainerId& id, const std::string& jsonSpec)
-    {
-        return impl->createBundle(id, jsonSpec);
     }
 
     ContainerStartedFunc mContainerStartedCb;

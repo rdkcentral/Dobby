@@ -43,7 +43,11 @@ public:
 
     DobbyBundle(){}
 
+#if defined(LEGACY_COMPONENTS)
+
     DobbyBundle(const std::shared_ptr<const IDobbyUtils>& utils,const std::shared_ptr<const IDobbyEnv>& env, const ContainerId& id){}
+#endif // defined(LEGACY_COMPONENTS)
+
     DobbyBundle(const std::shared_ptr<const IDobbyUtils>& utils,const std::shared_ptr<const IDobbyEnv>& env,const std::string& bundlePath){}
     ~DobbyBundle(){}
 

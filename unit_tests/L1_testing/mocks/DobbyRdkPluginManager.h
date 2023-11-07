@@ -20,6 +20,7 @@
 #ifndef DOBBYRDKPLUGINMANAGER_H
 #define DOBBYRDKPLUGINMANAGER_H
 
+#include <algorithm>
 #include "IDobbyRdkPlugin.h"
 #include "IDobbyRdkLoggingPlugin.h"
 

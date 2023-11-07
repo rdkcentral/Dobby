@@ -25,12 +25,20 @@ class  DobbyManagerMock : public DobbyManagerImpl {
 
 public:
 
+#if defined(LEGACY_COMPONENTS)
+
     MOCK_METHOD(int32_t, startContainerFromSpec, (const ContainerId& id,
                                               const std::string& jsonSpec,
                                               const std::list<int>& files,
                                               const std::string& command,
                                               const std::string& displaySocket,
                                               const std::vector<std::string>& envVars),(const));
+
+    MOCK_METHOD(std::string, specOfContainer, (int32_t cd), (const));
+
+    MOCK_METHOD(bool, createBundle, (const ContainerId& id, const std::string& jsonSpec), ());
+
+#endif //defined(LEGACY_COMPONENTS)
 
     MOCK_METHOD(int32_t, startContainerFromBundle, (const ContainerId& id,
                                                 const std::string& bundlePath,
@@ -56,9 +64,5 @@ public:
     MOCK_METHOD(std::string, statsOfContainer, (int32_t cd), (const));
 
     MOCK_METHOD(std::string, ociConfigOfContainer, (int32_t cd), (const));
-
-    MOCK_METHOD(std::string, specOfContainer, (int32_t cd), (const));
-
-    MOCK_METHOD(bool, createBundle, (const ContainerId& id, const std::string& jsonSpec), ());
 
 };

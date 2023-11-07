@@ -58,6 +58,4 @@ public:
     MOCK_METHOD(std::string ,getStringMetaData, (const ContainerId &id, const std::string &key, const std::string &defaultValue), (const,override));
     MOCK_METHOD(void ,clearContainerMetaData, (const ContainerId &id), (override));
     MOCK_METHOD(bool ,checkExtImageFile, (int dirFd, const std::string& imageFileName,bool repair), (const,override));
-
 };
-
