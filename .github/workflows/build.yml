@@ -65,6 +65,7 @@ jobs:
         run: |
           sudo $GITHUB_WORKSPACE/build/unit_tests/L1_testing/tests/DobbyTest/DobbyL1Test
           sudo $GITHUB_WORKSPACE/build/unit_tests/L1_testing/tests/DobbyUtilsTest/DobbyL1Test_DobbyUtils
+          sudo $GITHUB_WORKSPACE/build/unit_tests/L1_testing/tests/DobbyManagerTest/DobbyManagerL1Test
 
       - name: Generate coverage
         if: ${{ matrix.coverage == 'with-coverage'}}

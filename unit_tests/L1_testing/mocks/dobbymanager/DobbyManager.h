@@ -1,19 +1,20 @@
-/* If not stated otherwise in this file or this component's LICENSE file the
-# following copyright and licenses apply:
-#
-# Copyright 2023 Synamedia
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-# http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+/*
+* If not stated otherwise in this file or this component's LICENSE file the
+* following copyright and licenses apply:
+*
+* Copyright 2023 Synamedia
+*
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+* http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
 */
 
 #ifndef DOBBYMANAGER_H
@@ -59,12 +60,21 @@ class DobbyManagerImpl {
 public:
     virtual ~DobbyManagerImpl() = default;
 
+#if defined(LEGACY_COMPONENTS)
+
     virtual int32_t startContainerFromSpec(const ContainerId& id,
                                           const std::string& jsonSpec,
                                           const std::list<int>& files,
                                           const std::string& command,
                                           const std::string& displaySocket,
                                           const std::vector<std::string>& envVars) = 0;
+
+    virtual std::string specOfContainer(int32_t cd) const = 0;
+
+    virtual bool createBundle(const ContainerId& id, const std::string& jsonSpec) = 0;
+
+#endif //defined(LEGACY_COMPONENTS)
+
 
     virtual int32_t startContainerFromBundle(const ContainerId& id,
                                             const std::string& bundlePath,
@@ -91,15 +101,14 @@ public:
 
     virtual std::string ociConfigOfContainer(int32_t cd) const = 0;
 
-    virtual std::string specOfContainer(int32_t cd) const = 0;
-
-    virtual bool createBundle(const ContainerId& id, const std::string& jsonSpec) = 0;
 };
 
 class DobbyManager {
 
 protected:
+
     static DobbyManagerImpl* impl;
+
 
 public:
     typedef std::function<void(int32_t cd, const ContainerId& id)> ContainerStartedFunc;
@@ -116,13 +125,14 @@ public:
     static DobbyManager* getInstance()
     {
         static DobbyManager* instance = nullptr;
-        if(nullptr != instance)
+        if(nullptr == instance)
         {
-            new DobbyManager();
+            instance = new DobbyManager();
         }
         return instance;
     }
 
+#if defined(LEGACY_COMPONENTS)
 
     static int32_t startContainerFromSpec(const ContainerId& id,
                                           const std::string& jsonSpec,
@@ -133,6 +143,17 @@ public:
     {
         return impl->startContainerFromSpec(id, jsonSpec, files, command, displaySocket, envVars);
     }
+
+    static std::string specOfContainer(int32_t cd)
+    {
+        return impl->specOfContainer(cd);
+    }
+
+    static bool createBundle(const ContainerId& id, const std::string& jsonSpec)
+    {
+        return impl->createBundle(id, jsonSpec);
+    }
+#endif //defined(LEGACY_COMPONENTS)
 
     static int32_t startContainerFromBundle(const ContainerId& id,
                                             const std::string& bundlePath,
@@ -184,16 +205,6 @@ public:
     static std::string ociConfigOfContainer(int32_t cd)
     {
         return impl->ociConfigOfContainer(cd);
-    }
-
-    static std::string specOfContainer(int32_t cd)
-    {
-        return impl->specOfContainer(cd);
-    }
-
-    static bool createBundle(const ContainerId& id, const std::string& jsonSpec)
-    {
-        return impl->createBundle(id, jsonSpec);
     }
 
     ContainerStartedFunc mContainerStartedCb;

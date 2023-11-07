@@ -1,4 +1,3 @@
-
 /*
 * If not stated otherwise in this file or this component's LICENSE file the
 * following copyright and licenses apply:
@@ -20,15 +19,19 @@
 
 #pragma once
 
+#include "IDobbyEnv.h"
 #include <gmock/gmock.h>
-#include "DobbyContainer.h"
 
-class DobbyContainerMock : public DobbyContainerImpl {
+class IDobbyEnvMock : public IDobbyEnv {
 
 public:
 
-    virtual ~DobbyContainerMock() = default;
-    MOCK_METHOD(void, setRestartOnCrash, (const std::list<int>& files), (override));
-    MOCK_METHOD(void, clearRestartOnCrash, (), (override));
+    virtual ~IDobbyEnvMock() = default;
+
+    MOCK_METHOD(std::string, workspaceMountPath, (), (const,override));
+    MOCK_METHOD(std::string ,flashMountPath, (), (const,override));
+    MOCK_METHOD(std::string,pluginsWorkspacePath, (), (const,override));
+    MOCK_METHOD(uint16_t ,platformIdent, (), (const,override));
+    MOCK_METHOD(std::string ,cgroupMountPath, (Cgroup cgroup), (const,override));
 
 };

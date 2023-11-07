@@ -21,13 +21,19 @@
 #include <gmock/gmock.h>
 #include "DobbySpecConfig.h"
 
-class DobbySpecConfigMock : public DobbySpecConfig {
+class DobbySpecConfigMock : public DobbySpecConfigImpl {
 public:
 
     virtual ~DobbySpecConfigMock() = default;
+
     MOCK_METHOD((const std::map<std::string, Json::Value>&), rdkPlugins, (), (const));
-    MOCK_METHOD((const std::string) ,spec, (), (const));
-    MOCK_METHOD(bool ,isValid, (), (const));
+#if defined(LEGACY_COMPONENTS)
+    MOCK_METHOD((const std::string) ,spec, (), (const,override));
+#endif //defined(LEGACY_COMPONENTS)    MOCK_METHOD(bool ,isValid, (), (const));
+    MOCK_METHOD(bool ,isValid, (), (const,override));
+
     MOCK_METHOD(std::shared_ptr<rt_dobby_schema> ,config, (), (const));
     MOCK_METHOD(bool ,restartOnCrash, (), (const));
+    MOCK_METHOD(bool ,writeConfigJson, (const std::string& filePath), (const,override));
+
 };

@@ -21,12 +21,12 @@
 #include <gmock/gmock.h>
 #include "DobbyRootfs.h"
 
-class DobbyRootfsMock : public DobbyRootfs {
+class DobbyRootfsMock : public DobbyRootfsImpl {
 public:
 
     virtual ~DobbyRootfsMock() = default;
 
-    MOCK_METHOD(void, setPersistence, (bool persist), ());
-    MOCK_METHOD(const std::string&, path, (), (const));
-    MOCK_METHOD(bool, isValid, (), (const));
+    MOCK_METHOD(void, setPersistence, (bool persist), (override));
+    MOCK_METHOD(const std::string&, path, (), (const,override));
+    MOCK_METHOD(bool, isValid, (), (const,override));
 };
