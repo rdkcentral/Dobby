@@ -67,6 +67,7 @@ $(function() {
 <a href="#pub-methods">Public Member Functions</a> &#124;
 <a href="#pub-static-methods">Static Public Member Functions</a> &#124;
 <a href="#pub-attribs">Public Attributes</a> &#124;
+<a href="#pro-static-attribs">Static Protected Attributes</a> &#124;
 <a href="#pri-methods">Private Member Functions</a> &#124;
 <a href="#pri-attribs">Private Attributes</a> &#124;
 <a href="classDobbyRdkPluginUtils-members.html">List of all members</a>  </div>
@@ -78,7 +79,16 @@ $(function() {
 <p>Class for useful utility methods for plugins such as adding mounts and environment variables.  
  <a href="classDobbyRdkPluginUtils.html#details">More...</a></p>
 
-<p><code>#include &lt;<a class="el" href="DobbyRdkPluginUtils_8h_source.html">DobbyRdkPluginUtils.h</a>&gt;</code></p>
+<p><code>#include &lt;<a class="el" href="pluginLauncher_2lib_2include_2DobbyRdkPluginUtils_8h_source.html">DobbyRdkPluginUtils.h</a>&gt;</code></p>
+<div class="dynheader">
+Collaboration diagram for DobbyRdkPluginUtils:</div>
+<div class="dyncontent">
+<div class="center"><img src="classDobbyRdkPluginUtils__coll__graph.png" border="0" usemap="#aDobbyRdkPluginUtils_coll__map" alt="Collaboration graph"/></div>
+<map name="aDobbyRdkPluginUtils_coll__map" id="aDobbyRdkPluginUtils_coll__map">
+<area shape="rect" title="Class for useful utility methods for plugins such as adding mounts and environment variables." alt="" coords="20,95,179,121"/>
+<area shape="rect" href="classDobbyRdkPluginUtilsImpl.html" title=" " alt="" coords="5,5,193,32"/>
+</map>
+<center><span class="legend">[<a href="graph_legend.html">legend</a>]</span></center></div>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
@@ -137,18 +147,84 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:ac70e4ea2fb1816c82265d55ca8f9def4"><td class="memItemLeft" align="right" valign="top">std::list&lt; int &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classDobbyRdkPluginUtils.html#ac70e4ea2fb1816c82265d55ca8f9def4">files</a> (const std::string &amp;pluginName) const</td></tr>
 <tr class="memdesc:ac70e4ea2fb1816c82265d55ca8f9def4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Gets all file descriptor registered by concrete client.  <a href="classDobbyRdkPluginUtils.html#ac70e4ea2fb1816c82265d55ca8f9def4">More...</a><br /></td></tr>
 <tr class="separator:ac70e4ea2fb1816c82265d55ca8f9def4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:acd06e9ec0e8c452403fbf2dbe211452f"><td class="memItemLeft" align="right" valign="top"><a id="acd06e9ec0e8c452403fbf2dbe211452f"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>DobbyRdkPluginUtils</b> (const std::shared_ptr&lt; rt_dobby_schema &gt; &amp;cfg, const std::string &amp;containerId)</td></tr>
+<tr class="separator:acd06e9ec0e8c452403fbf2dbe211452f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a70b74ef99bf14d97c33e4bffef33c995"><td class="memItemLeft" align="right" valign="top"><a id="a70b74ef99bf14d97c33e4bffef33c995"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>DobbyRdkPluginUtils</b> (const std::shared_ptr&lt; rt_dobby_schema &gt; &amp;cfg, const std::shared_ptr&lt; <a class="el" href="classIDobbyStartState.html">IDobbyStartState</a> &gt; &amp;startState, const std::string &amp;containerId)</td></tr>
+<tr class="separator:a70b74ef99bf14d97c33e4bffef33c995"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a51f08dbd7c66a015e50042692a20e14d"><td class="memItemLeft" align="right" valign="top"><a id="a51f08dbd7c66a015e50042692a20e14d"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>DobbyRdkPluginUtils</b> (const std::shared_ptr&lt; rt_dobby_schema &gt; &amp;cfg, const std::shared_ptr&lt; const rt_state_schema &gt; &amp;state, const std::string &amp;containerId)</td></tr>
+<tr class="separator:a51f08dbd7c66a015e50042692a20e14d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8c0efaff2a4c385cb3c3ca36b4572db6"><td class="memItemLeft" align="right" valign="top"><a id="a8c0efaff2a4c385cb3c3ca36b4572db6"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>DobbyRdkPluginUtils</b> (const std::shared_ptr&lt; rt_dobby_schema &gt; &amp;cfg, const std::shared_ptr&lt; const rt_state_schema &gt; &amp;state, const std::shared_ptr&lt; <a class="el" href="classIDobbyStartState.html">IDobbyStartState</a> &gt; &amp;startState, const std::string &amp;containerId)</td></tr>
+<tr class="separator:a8c0efaff2a4c385cb3c3ca36b4572db6"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-methods"></a>
 Static Public Member Functions</h2></td></tr>
 <tr class="memitem:a625de02c9793e7da91cee9a2cdd30777"><td class="memItemLeft" align="right" valign="top">static bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classDobbyRdkPluginUtils.html#a625de02c9793e7da91cee9a2cdd30777">mkdirRecursive</a> (const std::string &amp;path, mode_t mode)</td></tr>
 <tr class="memdesc:a625de02c9793e7da91cee9a2cdd30777"><td class="mdescLeft">&#160;</td><td class="mdescRight">Makes a directory and all parent directories as needed.  <a href="classDobbyRdkPluginUtils.html#a625de02c9793e7da91cee9a2cdd30777">More...</a><br /></td></tr>
 <tr class="separator:a625de02c9793e7da91cee9a2cdd30777"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a348f73921dba4c84294844800ba20180"><td class="memItemLeft" align="right" valign="top"><a id="a348f73921dba4c84294844800ba20180"></a>
+static void&#160;</td><td class="memItemRight" valign="bottom"><b>setImpl</b> (<a class="el" href="classDobbyRdkPluginUtilsImpl.html">DobbyRdkPluginUtilsImpl</a> *newImpl)</td></tr>
+<tr class="separator:a348f73921dba4c84294844800ba20180"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a78a922348f7721bf214e117afa5e8fd1"><td class="memItemLeft" align="right" valign="top"><a id="a78a922348f7721bf214e117afa5e8fd1"></a>
+static <a class="el" href="classDobbyRdkPluginUtils.html">DobbyRdkPluginUtils</a> *&#160;</td><td class="memItemRight" valign="bottom"><b>getInstance</b> ()</td></tr>
+<tr class="separator:a78a922348f7721bf214e117afa5e8fd1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9f46f7483510f3a796928563c1d3d1c9"><td class="memItemLeft" align="right" valign="top"><a id="a9f46f7483510f3a796928563c1d3d1c9"></a>
+static bool&#160;</td><td class="memItemRight" valign="bottom"><b>callInNamespaceImpl</b> (pid_t pid, int nsType, const std::function&lt; bool()&gt; &amp;func)</td></tr>
+<tr class="separator:a9f46f7483510f3a796928563c1d3d1c9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8cb82fc7158660754b84ab5c7f6c9ece"><td class="memItemLeft" align="right" valign="top"><a id="a8cb82fc7158660754b84ab5c7f6c9ece"></a>
+static void&#160;</td><td class="memItemRight" valign="bottom"><b>nsThread</b> (int newNsFd, int nsType, bool *success, std::function&lt; bool()&gt; &amp;func)</td></tr>
+<tr class="separator:a8cb82fc7158660754b84ab5c7f6c9ece"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:abb438a7bc40f15cb075ebc42619e32eb"><td class="memItemLeft" align="right" valign="top"><a id="abb438a7bc40f15cb075ebc42619e32eb"></a>
+static pid_t&#160;</td><td class="memItemRight" valign="bottom"><b>getContainerPid</b> ()</td></tr>
+<tr class="separator:abb438a7bc40f15cb075ebc42619e32eb"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a69b65b098a54e51fa5739628e03703fe"><td class="memItemLeft" align="right" valign="top"><a id="a69b65b098a54e51fa5739628e03703fe"></a>
+static std::string&#160;</td><td class="memItemRight" valign="bottom"><b>getContainerId</b> ()</td></tr>
+<tr class="separator:a69b65b098a54e51fa5739628e03703fe"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2a9d73ff9aa3dd79b7a4902cc67f5bef"><td class="memItemLeft" align="right" valign="top"><a id="a2a9d73ff9aa3dd79b7a4902cc67f5bef"></a>
+static bool&#160;</td><td class="memItemRight" valign="bottom"><b>getContainerNetworkInfo</b> (<a class="el" href="structContainerNetworkInfo.html">ContainerNetworkInfo</a> &amp;networkInfo)</td></tr>
+<tr class="separator:a2a9d73ff9aa3dd79b7a4902cc67f5bef"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac70838ab299b5906b845b4d6bf87f445"><td class="memItemLeft" align="right" valign="top"><a id="ac70838ab299b5906b845b4d6bf87f445"></a>
+static bool&#160;</td><td class="memItemRight" valign="bottom"><b>getTakenVeths</b> (std::vector&lt; std::string &gt; &amp;takenVeths)</td></tr>
+<tr class="separator:ac70838ab299b5906b845b4d6bf87f445"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad4e290ddc827d6856ed1545acfa91794"><td class="memItemLeft" align="right" valign="top"><a id="ad4e290ddc827d6856ed1545acfa91794"></a>
+static bool&#160;</td><td class="memItemRight" valign="bottom"><b>writeTextFile</b> (const std::string &amp;path, const std::string &amp;str, int flags, mode_t mode)</td></tr>
+<tr class="separator:ad4e290ddc827d6856ed1545acfa91794"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a198889c240a2b61a730ea2d989eed376"><td class="memItemLeft" align="right" valign="top"><a id="a198889c240a2b61a730ea2d989eed376"></a>
+static std::string&#160;</td><td class="memItemRight" valign="bottom"><b>readTextFile</b> (const std::string &amp;path)</td></tr>
+<tr class="separator:a198889c240a2b61a730ea2d989eed376"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac1ba3b46cc887425486947caaf59155b"><td class="memItemLeft" align="right" valign="top"><a id="ac1ba3b46cc887425486947caaf59155b"></a>
+static bool&#160;</td><td class="memItemRight" valign="bottom"><b>addMount</b> (const std::string &amp;source, const std::string &amp;target, const std::string &amp;fsType, const std::list&lt; std::string &gt; &amp;mountOptions)</td></tr>
+<tr class="separator:ac1ba3b46cc887425486947caaf59155b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a216430a790aed5a998e0e0bcbe199487"><td class="memItemLeft" align="right" valign="top"><a id="a216430a790aed5a998e0e0bcbe199487"></a>
+static bool&#160;</td><td class="memItemRight" valign="bottom"><b>mkdirRecursive</b> (const std::string &amp;path, mode_t mode)</td></tr>
+<tr class="separator:a216430a790aed5a998e0e0bcbe199487"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1f1e307eebb6d878390f575a776ed800"><td class="memItemLeft" align="right" valign="top"><a id="a1f1e307eebb6d878390f575a776ed800"></a>
+static bool&#160;</td><td class="memItemRight" valign="bottom"><b>addEnvironmentVar</b> (const std::string &amp;envVar)</td></tr>
+<tr class="separator:a1f1e307eebb6d878390f575a776ed800"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac70f54d870b427dadc35dd7583eb9eb3"><td class="memItemLeft" align="right" valign="top"><a id="ac70f54d870b427dadc35dd7583eb9eb3"></a>
+static int&#160;</td><td class="memItemRight" valign="bottom"><b>addFileDescriptor</b> (const std::string &amp;pluginName, int fd)</td></tr>
+<tr class="separator:ac70f54d870b427dadc35dd7583eb9eb3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0b31ea08415742256750df5d50229729"><td class="memItemLeft" align="right" valign="top"><a id="a0b31ea08415742256750df5d50229729"></a>
+static std::list&lt; int &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>files</b> ()</td></tr>
+<tr class="separator:a0b31ea08415742256750df5d50229729"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a915eb6a537db9ab20dcbd30e8b964a83"><td class="memItemLeft" align="right" valign="top"><a id="a915eb6a537db9ab20dcbd30e8b964a83"></a>
+static std::list&lt; int &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>files</b> (const std::string &amp;pluginName)</td></tr>
+<tr class="separator:a915eb6a537db9ab20dcbd30e8b964a83"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
 <tr class="memitem:a4ebf2a95e0fb860ec720343199e5a29c"><td class="memItemLeft" align="right" valign="top"><a id="a4ebf2a95e0fb860ec720343199e5a29c"></a>
 int&#160;</td><td class="memItemRight" valign="bottom"><b>exitStatus</b></td></tr>
 <tr class="separator:a4ebf2a95e0fb860ec720343199e5a29c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pro-static-attribs"></a>
+Static Protected Attributes</h2></td></tr>
+<tr class="memitem:ab4369e2eb8c8fbbef98fc5e0254da2da"><td class="memItemLeft" align="right" valign="top"><a id="ab4369e2eb8c8fbbef98fc5e0254da2da"></a>
+static <a class="el" href="classDobbyRdkPluginUtilsImpl.html">DobbyRdkPluginUtilsImpl</a> *&#160;</td><td class="memItemRight" valign="bottom"><b>impl</b> = nullptr</td></tr>
+<tr class="separator:ab4369e2eb8c8fbbef98fc5e0254da2da"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pri-methods"></a>
 Private Member Functions</h2></td></tr>
@@ -727,8 +803,9 @@ template&lt;class Function , class... Args&gt; </div>
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following files:<ul>
-<li>pluginLauncher/lib/include/<a class="el" href="DobbyRdkPluginUtils_8h_source.html">DobbyRdkPluginUtils.h</a></li>
+<li>pluginLauncher/lib/include/<a class="el" href="pluginLauncher_2lib_2include_2DobbyRdkPluginUtils_8h_source.html">DobbyRdkPluginUtils.h</a></li>
 <li>pluginLauncher/lib/source/DobbyRdkPluginUtils.cpp</li>
+<li>unit_tests/L1_testing/tests/DobbyManagerTest/DaemonDobbyManagerTest.cpp</li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->

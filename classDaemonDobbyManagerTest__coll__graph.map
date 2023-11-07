@@ -1,0 +1,22 @@
+<map id="DaemonDobbyManagerTest" name="DaemonDobbyManagerTest">
+<area shape="rect" id="node1" title=" " alt="" coords="891,268,1093,295"/>
+<area shape="rect" id="node2" title=" " alt="" coords="565,8,666,35"/>
+<area shape="rect" id="node3" href="$classDobbyBundleConfig.html" title="Takes a JSON formatted OCI bundle configuration file in the constructor, parses it and extracts the r..." alt="" coords="540,179,691,205"/>
+<area shape="rect" id="node4" href="$classDobbyConfig.html" title="Interface that configuration file parser classes have to implement." alt="" coords="276,107,381,133"/>
+<area shape="rect" id="node13" href="$classDobbySpecConfig.html" title="Takes a JSON formatted spec file in the constructor, parses it and extracts the relevant fields." alt="" coords="547,59,683,85"/>
+<area shape="rect" id="node5" href="$classDobbyConfigImpl.html" title=" " alt="" coords="5,107,140,133"/>
+<area shape="rect" id="node6" href="$classDobbyBundleConfigImpl.html" title=" " alt="" coords="239,185,418,212"/>
+<area shape="rect" id="node7" href="$classDobbyContainer.html" title="Wrapper object used to store container resources." alt="" coords="552,244,679,271"/>
+<area shape="rect" id="node8" href="$classDobbyContainerImpl.html" title=" " alt="" coords="251,236,407,263"/>
+<area shape="rect" id="node9" href="$classAI__IPC_1_1IAsyncReplySender.html" title="Helper class to send reply of a method call asynchronously." alt="" coords="517,295,713,321"/>
+<area shape="rect" id="node10" href="$classAI__IPC_1_1IAsyncReplySenderApiImpl.html" title=" " alt="" coords="231,287,427,329"/>
+<area shape="rect" id="node11" href="$classDobbyRdkPluginUtils.html" title="Class for useful utility methods for plugins such as adding mounts and environment variables." alt="" coords="536,347,695,373"/>
+<area shape="rect" id="node12" href="$classDobbyRdkPluginUtilsImpl.html" title=" " alt="" coords="235,353,423,380"/>
+<area shape="rect" id="node14" href="$classDobbySpecConfigImpl.html" title=" " alt="" coords="246,5,411,32"/>
+<area shape="rect" id="node15" href="$classDobbyRdkPluginManager.html" title="Class that manages all the RDK plugin hook libraries." alt="" coords="522,399,709,425"/>
+<area shape="rect" id="node16" href="$classDobbyRdkPluginManagerImpl.html" title=" " alt="" coords="221,404,436,431"/>
+<area shape="rect" id="node17" href="$classDobbyBundle.html" title="Simple class that just creates a subdir in the bundles directory." alt="" coords="561,453,670,480"/>
+<area shape="rect" id="node18" href="$classDobbyBundleImpl.html" title=" " alt="" coords="259,455,398,481"/>
+<area shape="rect" id="node19" href="$classDobbyRootfs.html" title="Creates a directory populated with rootfs based on the supplied container config." alt="" coords="562,505,669,532"/>
+<area shape="rect" id="node20" href="$classDobbyRootfsImpl.html" title=" " alt="" coords="261,505,396,532"/>
+</map>

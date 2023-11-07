@@ -1,6 +1,6 @@
 <map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
-<area shape="rect" id="node1" href="$classIDobbyUtils__v1.html" title="Interface that exports some utilities that plugins may find useful." alt="" coords="5,5,127,32"/>
-<area shape="rect" id="node2" href="$classIDobbyUtils__v2.html" title="Second version of the interface containing extra functions for working with iptables." alt="" coords="175,5,296,32"/>
-<area shape="rect" id="node3" href="$classIDobbyUtils__v3.html" title="Third version of the interface containing extra functions for working with ebtables." alt="" coords="344,5,465,32"/>
-<area shape="rect" id="node4" href="$classDobbyUtils.html" title="Utility methods for hooks and the general containiser daemon." alt="" coords="513,5,608,32"/>
+<area shape="rect" id="node1" href="$classIDobbySettings.html" title="Interface provided to the library at startup, contains the configuration options for Dobby." alt="" coords="5,56,127,83"/>
+<area shape="rect" id="node2" href="$classDobbySettingsMock.html" title=" " alt="" coords="177,5,329,32"/>
+<area shape="rect" id="node3" href="$classIDobbySettingsMock.html" title=" " alt="" coords="175,56,331,83"/>
+<area shape="rect" id="node4" href="$classSettings.html" title="Object containing the settings to pass to the Dobby." alt="" coords="215,107,290,133"/>
 </map>

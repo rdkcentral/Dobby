@@ -1,5 +1,4 @@
 <map id="DobbySpecConfigMock" name="DobbySpecConfigMock">
-<area shape="rect" id="node1" title=" " alt="" coords="5,155,176,181"/>
-<area shape="rect" id="node2" href="$classDobbySpecConfig.html" title="Takes a JSON formatted spec file in the constructor, parses it and extracts the relevant fields." alt="" coords="23,80,159,107"/>
-<area shape="rect" id="node3" href="$classDobbyConfig.html" title="Interface that configuration file parser classes have to implement." alt="" coords="38,5,143,32"/>
+<area shape="rect" id="node1" title=" " alt="" coords="5,80,176,107"/>
+<area shape="rect" id="node2" href="$classDobbySpecConfigImpl.html" title=" " alt="" coords="8,5,173,32"/>
 </map>

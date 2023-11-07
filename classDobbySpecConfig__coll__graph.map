@@ -1,4 +1,6 @@
 <map id="DobbySpecConfig" name="DobbySpecConfig">
-<area shape="rect" id="node1" title="Takes a JSON formatted spec file in the constructor, parses it and extracts the relevant fields." alt="" coords="5,80,141,107"/>
-<area shape="rect" id="node2" href="$classDobbyConfig.html" title="Interface that configuration file parser classes have to implement." alt="" coords="21,5,126,32"/>
+<area shape="rect" id="node1" title="Takes a JSON formatted spec file in the constructor, parses it and extracts the relevant fields." alt="" coords="5,184,141,211"/>
+<area shape="rect" id="node2" href="$classDobbyConfig.html" title="Interface that configuration file parser classes have to implement." alt="" coords="21,95,126,121"/>
+<area shape="rect" id="node3" href="$classDobbyConfigImpl.html" title=" " alt="" coords="6,5,141,32"/>
+<area shape="rect" id="node4" href="$classDobbySpecConfigImpl.html" title=" " alt="" coords="149,95,315,121"/>
 </map>

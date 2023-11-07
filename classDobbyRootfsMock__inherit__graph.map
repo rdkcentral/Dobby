@@ -1,4 +1,4 @@
 <map id="DobbyRootfsMock" name="DobbyRootfsMock">
 <area shape="rect" id="node1" title=" " alt="" coords="5,80,147,107"/>
-<area shape="rect" id="node2" href="$classDobbyRootfs.html" title="Creates a directory populated with rootfs based on the supplied container config." alt="" coords="23,5,129,32"/>
+<area shape="rect" id="node2" href="$classDobbyRootfsImpl.html" title=" " alt="" coords="9,5,143,32"/>
 </map>

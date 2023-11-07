@@ -75,9 +75,8 @@ Inheritance diagram for DobbySpecConfigMock:</div>
 <div class="dyncontent">
 <div class="center"><img src="classDobbySpecConfigMock__inherit__graph.png" border="0" usemap="#aDobbySpecConfigMock_inherit__map" alt="Inheritance graph"/></div>
 <map name="aDobbySpecConfigMock_inherit__map" id="aDobbySpecConfigMock_inherit__map">
-<area shape="rect" title=" " alt="" coords="5,155,176,181"/>
-<area shape="rect" href="classDobbySpecConfig.html" title="Takes a JSON formatted spec file in the constructor, parses it and extracts the relevant fields." alt="" coords="23,80,159,107"/>
-<area shape="rect" href="classDobbyConfig.html" title="Interface that configuration file parser classes have to implement." alt="" coords="38,5,143,32"/>
+<area shape="rect" title=" " alt="" coords="5,80,176,107"/>
+<area shape="rect" href="classDobbySpecConfigImpl.html" title=" " alt="" coords="8,5,173,32"/>
 </map>
 <center><span class="legend">[<a href="graph_legend.html">legend</a>]</span></center></div>
 <div class="dynheader">
@@ -85,9 +84,8 @@ Collaboration diagram for DobbySpecConfigMock:</div>
 <div class="dyncontent">
 <div class="center"><img src="classDobbySpecConfigMock__coll__graph.png" border="0" usemap="#aDobbySpecConfigMock_coll__map" alt="Collaboration graph"/></div>
 <map name="aDobbySpecConfigMock_coll__map" id="aDobbySpecConfigMock_coll__map">
-<area shape="rect" title=" " alt="" coords="5,155,176,181"/>
-<area shape="rect" href="classDobbySpecConfig.html" title="Takes a JSON formatted spec file in the constructor, parses it and extracts the relevant fields." alt="" coords="23,80,159,107"/>
-<area shape="rect" href="classDobbyConfig.html" title="Interface that configuration file parser classes have to implement." alt="" coords="38,5,143,32"/>
+<area shape="rect" title=" " alt="" coords="5,80,176,107"/>
+<area shape="rect" href="classDobbySpecConfigImpl.html" title=" " alt="" coords="8,5,173,32"/>
 </map>
 <center><span class="legend">[<a href="graph_legend.html">legend</a>]</span></center></div>
 <table class="memberdecls">
@@ -96,156 +94,34 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a90f28de049669bb2ea24be242cbe7140"><td class="memItemLeft" align="right" valign="top"><a id="a90f28de049669bb2ea24be242cbe7140"></a>
 &#160;</td><td class="memItemRight" valign="bottom"><b>MOCK_METHOD</b> ((const std::map&lt; std::string, Json::Value &gt; &amp;), rdkPlugins,(),(const))</td></tr>
 <tr class="separator:a90f28de049669bb2ea24be242cbe7140"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab91d3e4d0b9f65bfa59b76a1db78ef5d"><td class="memItemLeft" align="right" valign="top"><a id="ab91d3e4d0b9f65bfa59b76a1db78ef5d"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><b>MOCK_METHOD</b> ((const std::string), spec,(),(const))</td></tr>
-<tr class="separator:ab91d3e4d0b9f65bfa59b76a1db78ef5d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a1ce6f96bc5869e284528e482992f0e38"><td class="memItemLeft" align="right" valign="top"><a id="a1ce6f96bc5869e284528e482992f0e38"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><b>MOCK_METHOD</b> (bool, <a class="el" href="classDobbySpecConfig.html#abdda342640f7779b7b4ead19aada17e4">isValid</a>,(),(const))</td></tr>
-<tr class="separator:a1ce6f96bc5869e284528e482992f0e38"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a19d2eb353875f47e485b4270b2593d20"><td class="memItemLeft" align="right" valign="top"><a id="a19d2eb353875f47e485b4270b2593d20"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>MOCK_METHOD</b> (bool, isValid,(),(const, override))</td></tr>
+<tr class="separator:a19d2eb353875f47e485b4270b2593d20"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:afb504c40bfbf1707282d2116dc532522"><td class="memItemLeft" align="right" valign="top"><a id="afb504c40bfbf1707282d2116dc532522"></a>
 &#160;</td><td class="memItemRight" valign="bottom"><b>MOCK_METHOD</b> (std::shared_ptr&lt; rt_dobby_schema &gt;, config,(),(const))</td></tr>
 <tr class="separator:afb504c40bfbf1707282d2116dc532522"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a71a0da7113b60a17ee394ada2f2cd12a"><td class="memItemLeft" align="right" valign="top"><a id="a71a0da7113b60a17ee394ada2f2cd12a"></a>
 &#160;</td><td class="memItemRight" valign="bottom"><b>MOCK_METHOD</b> (bool, restartOnCrash,(),(const))</td></tr>
 <tr class="separator:a71a0da7113b60a17ee394ada2f2cd12a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="inherit_header pub_methods_classDobbySpecConfig"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_classDobbySpecConfig')"><img src="closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="classDobbySpecConfig.html">DobbySpecConfig</a></td></tr>
-<tr class="memitem:a9e2bb3b703c2bee38dc5001291b76937 inherit pub_methods_classDobbySpecConfig"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classDobbySpecConfig.html#a9e2bb3b703c2bee38dc5001291b76937">DobbySpecConfig</a> (const std::shared_ptr&lt; <a class="el" href="classIDobbyUtils__v3.html">IDobbyUtils</a> &gt; &amp;utils, const std::shared_ptr&lt; const <a class="el" href="classIDobbySettings.html">IDobbySettings</a> &gt; &amp;settings, const <a class="el" href="classContainerId.html">ContainerId</a> &amp;id, const std::shared_ptr&lt; const <a class="el" href="classDobbyBundle.html">DobbyBundle</a> &gt; &amp;bundle, const std::string &amp;specJson)</td></tr>
-<tr class="memdesc:a9e2bb3b703c2bee38dc5001291b76937 inherit pub_methods_classDobbySpecConfig"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructor used to parse a <a class="el" href="classDobby.html" title="The root Dobby object, runs the dbus loop.">Dobby</a> spec file into an OCI config file.  <a href="classDobbySpecConfig.html#a9e2bb3b703c2bee38dc5001291b76937">More...</a><br /></td></tr>
-<tr class="separator:a9e2bb3b703c2bee38dc5001291b76937 inherit pub_methods_classDobbySpecConfig"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad27e2484039d00a84081d2427223d13c inherit pub_methods_classDobbySpecConfig"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classDobbySpecConfig.html#ad27e2484039d00a84081d2427223d13c">DobbySpecConfig</a> (const std::shared_ptr&lt; <a class="el" href="classIDobbyUtils__v3.html">IDobbyUtils</a> &gt; &amp;utils, const std::shared_ptr&lt; const <a class="el" href="classIDobbySettings.html">IDobbySettings</a> &gt; &amp;settings, const std::shared_ptr&lt; const <a class="el" href="classDobbyBundle.html">DobbyBundle</a> &gt; &amp;bundle, const std::string &amp;specJson)</td></tr>
-<tr class="memdesc:ad27e2484039d00a84081d2427223d13c inherit pub_methods_classDobbySpecConfig"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructor used to parse a <a class="el" href="classDobby.html" title="The root Dobby object, runs the dbus loop.">Dobby</a> spec file into an OCI config file. Used with bundle generation.  <a href="classDobbySpecConfig.html#ad27e2484039d00a84081d2427223d13c">More...</a><br /></td></tr>
-<tr class="separator:ad27e2484039d00a84081d2427223d13c inherit pub_methods_classDobbySpecConfig"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:abdda342640f7779b7b4ead19aada17e4 inherit pub_methods_classDobbySpecConfig"><td class="memItemLeft" align="right" valign="top"><a id="abdda342640f7779b7b4ead19aada17e4"></a>
-bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classDobbySpecConfig.html#abdda342640f7779b7b4ead19aada17e4">isValid</a> () const override</td></tr>
-<tr class="memdesc:abdda342640f7779b7b4ead19aada17e4 inherit pub_methods_classDobbySpecConfig"><td class="mdescLeft">&#160;</td><td class="mdescRight">Getters used for plugins. <br /></td></tr>
-<tr class="separator:abdda342640f7779b7b4ead19aada17e4 inherit pub_methods_classDobbySpecConfig"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a5f78eaa0f4bf9c88285874e8cff0f3bb inherit pub_methods_classDobbySpecConfig"><td class="memItemLeft" align="right" valign="top"><a id="a5f78eaa0f4bf9c88285874e8cff0f3bb"></a>
-const std::string&#160;</td><td class="memItemRight" valign="bottom"><b>spec</b> () const override</td></tr>
-<tr class="separator:a5f78eaa0f4bf9c88285874e8cff0f3bb inherit pub_methods_classDobbySpecConfig"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a80bdc14daef29ed3841f61d07346fa9e inherit pub_methods_classDobbySpecConfig"><td class="memItemLeft" align="right" valign="top"><a id="a80bdc14daef29ed3841f61d07346fa9e"></a>
-uid_t&#160;</td><td class="memItemRight" valign="bottom"><b>userId</b> () const override</td></tr>
-<tr class="separator:a80bdc14daef29ed3841f61d07346fa9e inherit pub_methods_classDobbySpecConfig"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a2a6551a6d20992f53cde3cd847dea6b8 inherit pub_methods_classDobbySpecConfig"><td class="memItemLeft" align="right" valign="top"><a id="a2a6551a6d20992f53cde3cd847dea6b8"></a>
-gid_t&#160;</td><td class="memItemRight" valign="bottom"><b>groupId</b> () const override</td></tr>
-<tr class="separator:a2a6551a6d20992f53cde3cd847dea6b8 inherit pub_methods_classDobbySpecConfig"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a062d129ff003fc4f7991b44314f1c397 inherit pub_methods_classDobbySpecConfig"><td class="memItemLeft" align="right" valign="top"><a id="a062d129ff003fc4f7991b44314f1c397"></a>
-<a class="el" href="classIDobbyIPCUtils.html#aa2bbe0bc876ca7cd2436b01a826302a6">IDobbyIPCUtils::BusType</a>&#160;</td><td class="memItemRight" valign="bottom"><b>systemDbus</b> () const override</td></tr>
-<tr class="separator:a062d129ff003fc4f7991b44314f1c397 inherit pub_methods_classDobbySpecConfig"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa98f9175411ac0dfff1c5510692e6691 inherit pub_methods_classDobbySpecConfig"><td class="memItemLeft" align="right" valign="top"><a id="aa98f9175411ac0dfff1c5510692e6691"></a>
-<a class="el" href="classIDobbyIPCUtils.html#aa2bbe0bc876ca7cd2436b01a826302a6">IDobbyIPCUtils::BusType</a>&#160;</td><td class="memItemRight" valign="bottom"><b>sessionDbus</b> () const override</td></tr>
-<tr class="separator:aa98f9175411ac0dfff1c5510692e6691 inherit pub_methods_classDobbySpecConfig"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a6c18b07fc18779d477862202356a49fc inherit pub_methods_classDobbySpecConfig"><td class="memItemLeft" align="right" valign="top"><a id="a6c18b07fc18779d477862202356a49fc"></a>
-<a class="el" href="classIDobbyIPCUtils.html#aa2bbe0bc876ca7cd2436b01a826302a6">IDobbyIPCUtils::BusType</a>&#160;</td><td class="memItemRight" valign="bottom"><b>debugDbus</b> () const override</td></tr>
-<tr class="separator:a6c18b07fc18779d477862202356a49fc inherit pub_methods_classDobbySpecConfig"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ac6207d217ac53900c2672395ea3ddf8d inherit pub_methods_classDobbySpecConfig"><td class="memItemLeft" align="right" valign="top"><a id="ac6207d217ac53900c2672395ea3ddf8d"></a>
-bool&#160;</td><td class="memItemRight" valign="bottom"><b>restartOnCrash</b> () const override</td></tr>
-<tr class="separator:ac6207d217ac53900c2672395ea3ddf8d inherit pub_methods_classDobbySpecConfig"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a5cf3da18d6785fd2837daf74f82e7bb0 inherit pub_methods_classDobbySpecConfig"><td class="memItemLeft" align="right" valign="top"><a id="a5cf3da18d6785fd2837daf74f82e7bb0"></a>
-std::shared_ptr&lt; rt_dobby_schema &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>config</b> () const override</td></tr>
-<tr class="separator:a5cf3da18d6785fd2837daf74f82e7bb0 inherit pub_methods_classDobbySpecConfig"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a1fd88663eb7dc860d10ae06f33ab52ff inherit pub_methods_classDobbySpecConfig"><td class="memItemLeft" align="right" valign="top"><a id="a1fd88663eb7dc860d10ae06f33ab52ff"></a>
-const std::string &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>etcHosts</b> () const</td></tr>
-<tr class="separator:a1fd88663eb7dc860d10ae06f33ab52ff inherit pub_methods_classDobbySpecConfig"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:af3e7f463f9a299bbc9d2ab54ad67de24 inherit pub_methods_classDobbySpecConfig"><td class="memItemLeft" align="right" valign="top"><a id="af3e7f463f9a299bbc9d2ab54ad67de24"></a>
-const std::string &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>etcServices</b> () const</td></tr>
-<tr class="separator:af3e7f463f9a299bbc9d2ab54ad67de24 inherit pub_methods_classDobbySpecConfig"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:abc64ff922db986b25c55cf15938ce6cf inherit pub_methods_classDobbySpecConfig"><td class="memItemLeft" align="right" valign="top"><a id="abc64ff922db986b25c55cf15938ce6cf"></a>
-const std::string &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>etcPasswd</b> () const</td></tr>
-<tr class="separator:abc64ff922db986b25c55cf15938ce6cf inherit pub_methods_classDobbySpecConfig"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a2f173ce918249bd0229b4f9b989f8eb2 inherit pub_methods_classDobbySpecConfig"><td class="memItemLeft" align="right" valign="top"><a id="a2f173ce918249bd0229b4f9b989f8eb2"></a>
-const std::string &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>etcGroup</b> () const</td></tr>
-<tr class="separator:a2f173ce918249bd0229b4f9b989f8eb2 inherit pub_methods_classDobbySpecConfig"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aaa03d617e24239e7237ffcf716bf8f07 inherit pub_methods_classDobbySpecConfig"><td class="memItemLeft" align="right" valign="top"><a id="aaa03d617e24239e7237ffcf716bf8f07"></a>
-const std::string &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>etcLdSoPreload</b> () const</td></tr>
-<tr class="separator:aaa03d617e24239e7237ffcf716bf8f07 inherit pub_methods_classDobbySpecConfig"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa7a0f6eb0e4ee1d674a7449ebe21868c inherit pub_methods_classDobbySpecConfig"><td class="memItemLeft" align="right" valign="top"><a id="aa7a0f6eb0e4ee1d674a7449ebe21868c"></a>
-bool&#160;</td><td class="memItemRight" valign="bottom"><b>consoleDisabled</b> () const override</td></tr>
-<tr class="separator:aa7a0f6eb0e4ee1d674a7449ebe21868c inherit pub_methods_classDobbySpecConfig"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a939b09cd3aa7262fead8a083426539df inherit pub_methods_classDobbySpecConfig"><td class="memItemLeft" align="right" valign="top"><a id="a939b09cd3aa7262fead8a083426539df"></a>
-ssize_t&#160;</td><td class="memItemRight" valign="bottom"><b>consoleLimit</b> () const override</td></tr>
-<tr class="separator:a939b09cd3aa7262fead8a083426539df inherit pub_methods_classDobbySpecConfig"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a0a2df70325834f323c44030340404ae1 inherit pub_methods_classDobbySpecConfig"><td class="memItemLeft" align="right" valign="top"><a id="a0a2df70325834f323c44030340404ae1"></a>
-const std::string &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>consolePath</b> () const override</td></tr>
-<tr class="separator:a0a2df70325834f323c44030340404ae1 inherit pub_methods_classDobbySpecConfig"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a30de8497c8c06ebb6b05bcf1c1c92b36 inherit pub_methods_classDobbySpecConfig"><td class="memItemLeft" align="right" valign="top"><a id="a30de8497c8c06ebb6b05bcf1c1c92b36"></a>
-const std::map&lt; std::string, Json::Value &gt; &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>legacyPlugins</b> () const override</td></tr>
-<tr class="separator:a30de8497c8c06ebb6b05bcf1c1c92b36 inherit pub_methods_classDobbySpecConfig"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a80cb4b7bf958790d441b4b74ec607fb1 inherit pub_methods_classDobbySpecConfig"><td class="memItemLeft" align="right" valign="top"><a id="a80cb4b7bf958790d441b4b74ec607fb1"></a>
-const std::map&lt; std::string, Json::Value &gt; &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>rdkPlugins</b> () const override</td></tr>
-<tr class="separator:a80cb4b7bf958790d441b4b74ec607fb1 inherit pub_methods_classDobbySpecConfig"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a273837ee878326442566618022d479f5 inherit pub_methods_classDobbySpecConfig"><td class="memItemLeft" align="right" valign="top"><a id="a273837ee878326442566618022d479f5"></a>
-std::vector&lt; <a class="el" href="structDobbySpecConfig_1_1__MountPoint.html">MountPoint</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>mountPoints</b> () const</td></tr>
-<tr class="separator:a273837ee878326442566618022d479f5 inherit pub_methods_classDobbySpecConfig"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aae616eb4989e2fa5c7ff693637d1566a inherit pub_methods_classDobbySpecConfig"><td class="memItemLeft" align="right" valign="top"><a id="aae616eb4989e2fa5c7ff693637d1566a"></a>
-const std::string &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>rootfsPath</b> () const override</td></tr>
-<tr class="separator:aae616eb4989e2fa5c7ff693637d1566a inherit pub_methods_classDobbySpecConfig"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="inherit_header pub_methods_classDobbyConfig"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_classDobbyConfig')"><img src="closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="classDobbyConfig.html">DobbyConfig</a></td></tr>
-<tr class="memitem:ac330905c18115ad7b10780c002ceada4 inherit pub_methods_classDobbyConfig"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classDobbyConfig.html#ac330905c18115ad7b10780c002ceada4">addMount</a> (const std::string &amp;source, const std::string &amp;target, const std::string &amp;fsType, unsigned long mountFlags, const std::list&lt; std::string &gt; &amp;mountOptions)</td></tr>
-<tr class="memdesc:ac330905c18115ad7b10780c002ceada4 inherit pub_methods_classDobbyConfig"><td class="mdescLeft">&#160;</td><td class="mdescRight">Public api to allow for adding additional mounts.  <a href="classDobbyConfig.html#ac330905c18115ad7b10780c002ceada4">More...</a><br /></td></tr>
-<tr class="separator:ac330905c18115ad7b10780c002ceada4 inherit pub_methods_classDobbyConfig"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a17f3fc7e96c97324b7729840f19c913c inherit pub_methods_classDobbyConfig"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classDobbyConfig.html#a17f3fc7e96c97324b7729840f19c913c">addEnvironmentVar</a> (const std::string &amp;envVar)</td></tr>
-<tr class="memdesc:a17f3fc7e96c97324b7729840f19c913c inherit pub_methods_classDobbyConfig"><td class="mdescLeft">&#160;</td><td class="mdescRight">Public api to allow for adding additional env variables.  <a href="classDobbyConfig.html#a17f3fc7e96c97324b7729840f19c913c">More...</a><br /></td></tr>
-<tr class="separator:a17f3fc7e96c97324b7729840f19c913c inherit pub_methods_classDobbyConfig"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a2d535b818b5a4ae1ee4b436060fe74c0 inherit pub_methods_classDobbyConfig"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classDobbyConfig.html#a2d535b818b5a4ae1ee4b436060fe74c0">changeProcessArgs</a> (const std::string &amp;command)</td></tr>
-<tr class="separator:a2d535b818b5a4ae1ee4b436060fe74c0 inherit pub_methods_classDobbyConfig"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a3019be987c2e81e1f436c30728b067f1 inherit pub_methods_classDobbyConfig"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classDobbyConfig.html#a3019be987c2e81e1f436c30728b067f1">addWesterosMount</a> (const std::string &amp;socketPath)</td></tr>
-<tr class="separator:a3019be987c2e81e1f436c30728b067f1 inherit pub_methods_classDobbyConfig"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aad976c50ac8273ca3c631978b9aee0e4 inherit pub_methods_classDobbyConfig"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classDobbyConfig.html#aad976c50ac8273ca3c631978b9aee0e4">writeConfigJson</a> (const std::string &amp;filePath) const</td></tr>
-<tr class="memdesc:aad976c50ac8273ca3c631978b9aee0e4 inherit pub_methods_classDobbyConfig"><td class="mdescLeft">&#160;</td><td class="mdescRight">Writes bundle config string to a file.  <a href="classDobbyConfig.html#aad976c50ac8273ca3c631978b9aee0e4">More...</a><br /></td></tr>
-<tr class="separator:aad976c50ac8273ca3c631978b9aee0e4 inherit pub_methods_classDobbyConfig"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa8223f8155756a1260eceee7d257f235 inherit pub_methods_classDobbyConfig"><td class="memItemLeft" align="right" valign="top">const std::string&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classDobbyConfig.html#aa8223f8155756a1260eceee7d257f235">configJson</a> () const</td></tr>
-<tr class="memdesc:aa8223f8155756a1260eceee7d257f235 inherit pub_methods_classDobbyConfig"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get OCI bundle config json as string.  <a href="classDobbyConfig.html#aa8223f8155756a1260eceee7d257f235">More...</a><br /></td></tr>
-<tr class="separator:aa8223f8155756a1260eceee7d257f235 inherit pub_methods_classDobbyConfig"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a0d4092fbb951946e873243b7185cd9b6 inherit pub_methods_classDobbyConfig"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classDobbyConfig.html#a0d4092fbb951946e873243b7185cd9b6">printCommand</a> () const</td></tr>
-<tr class="separator:a0d4092fbb951946e873243b7185cd9b6 inherit pub_methods_classDobbyConfig"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa34cf839e860bea452f19fbdd0cdde9e inherit pub_methods_classDobbyConfig"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classDobbyConfig.html#aa34cf839e860bea452f19fbdd0cdde9e">enableSTrace</a> (const std::string &amp;logsDir)</td></tr>
-<tr class="memdesc:aa34cf839e860bea452f19fbdd0cdde9e inherit pub_methods_classDobbyConfig"><td class="mdescLeft">&#160;</td><td class="mdescRight">Enables strace for the container.  <a href="classDobbyConfig.html#aa34cf839e860bea452f19fbdd0cdde9e">More...</a><br /></td></tr>
-<tr class="separator:aa34cf839e860bea452f19fbdd0cdde9e inherit pub_methods_classDobbyConfig"><td class="memSeparator" colspan="2">&#160;</td></tr>
-</table><table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="inherited"></a>
-Additional Inherited Members</h2></td></tr>
-<tr class="inherit_header pub_types_classDobbySpecConfig"><td colspan="2" onclick="javascript:toggleInherit('pub_types_classDobbySpecConfig')"><img src="closed.png" alt="-"/>&#160;Public Types inherited from <a class="el" href="classDobbySpecConfig.html">DobbySpecConfig</a></td></tr>
-<tr class="memitem:a8823aef447d59b2e73ffadc9b668601a inherit pub_types_classDobbySpecConfig"><td class="memItemLeft" align="right" valign="top"><a id="a8823aef447d59b2e73ffadc9b668601a"></a>
-typedef struct <a class="el" href="structDobbySpecConfig_1_1__MountPoint.html">DobbySpecConfig::_MountPoint</a>&#160;</td><td class="memItemRight" valign="bottom"><b>MountPoint</b></td></tr>
-<tr class="separator:a8823aef447d59b2e73ffadc9b668601a inherit pub_types_classDobbySpecConfig"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="inherit_header pub_types_classDobbyConfig"><td colspan="2" onclick="javascript:toggleInherit('pub_types_classDobbyConfig')"><img src="closed.png" alt="-"/>&#160;Public Types inherited from <a class="el" href="classDobbyConfig.html">DobbyConfig</a></td></tr>
-<tr class="memitem:adfa694cdaf688a0eac91896a2120f145 inherit pub_types_classDobbyConfig"><td class="memItemLeft" align="right" valign="top"><a id="adfa694cdaf688a0eac91896a2120f145"></a>enum class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classDobbyConfig.html#adfa694cdaf688a0eac91896a2120f145">NetworkType</a> { <b>None</b>
-, <b>Nat</b>
-, <b>Open</b>
- }</td></tr>
-<tr class="memdesc:adfa694cdaf688a0eac91896a2120f145"><td class="mdescLeft">&#160;</td><td class="mdescRight">Network type used for Network plugin. <br /></td></tr>
-<tr class="separator:adfa694cdaf688a0eac91896a2120f145 inherit pub_types_classDobbyConfig"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aaa07d1569638bf0d97a9ed0b9c05c3f7 inherit pub_types_classDobbyConfig"><td class="memItemLeft" align="right" valign="top"><a id="aaa07d1569638bf0d97a9ed0b9c05c3f7"></a>
-typedef struct <a class="el" href="structDobbyConfig_1_1__LoopMount.html">DobbyConfig::_LoopMount</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classDobbyConfig.html#aaa07d1569638bf0d97a9ed0b9c05c3f7">LoopMount</a></td></tr>
-<tr class="memdesc:aaa07d1569638bf0d97a9ed0b9c05c3f7 inherit pub_types_classDobbyConfig"><td class="mdescLeft">&#160;</td><td class="mdescRight">Loopmount struct used for <a class="el" href="classStorage.html" title="Dobby RDK Storage Plugin.">Storage</a> plugin. <br /></td></tr>
-<tr class="separator:aaa07d1569638bf0d97a9ed0b9c05c3f7 inherit pub_types_classDobbyConfig"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="inherit_header pro_methods_classDobbyConfig"><td colspan="2" onclick="javascript:toggleInherit('pro_methods_classDobbyConfig')"><img src="closed.png" alt="-"/>&#160;Protected Member Functions inherited from <a class="el" href="classDobbyConfig.html">DobbyConfig</a></td></tr>
-<tr class="memitem:a3fe413d72f5ebd2ee5de097f489eb7ae inherit pro_methods_classDobbyConfig"><td class="memItemLeft" align="right" valign="top"><a id="a3fe413d72f5ebd2ee5de097f489eb7ae"></a>
-bool&#160;</td><td class="memItemRight" valign="bottom"><b>writeConfigJsonImpl</b> (const std::string &amp;filePath) const</td></tr>
-<tr class="separator:a3fe413d72f5ebd2ee5de097f489eb7ae inherit pro_methods_classDobbyConfig"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a196a17855ac7757d2f32435c6a37aa63 inherit pro_methods_classDobbyConfig"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classDobbyConfig.html#a196a17855ac7757d2f32435c6a37aa63">updateBundleConfig</a> (const <a class="el" href="classContainerId.html">ContainerId</a> &amp;id, std::shared_ptr&lt; rt_dobby_schema &gt; cfg, const std::string &amp;bundlePath)</td></tr>
-<tr class="memdesc:a196a17855ac7757d2f32435c6a37aa63 inherit pro_methods_classDobbyConfig"><td class="mdescLeft">&#160;</td><td class="mdescRight">Convert the input config.json into an OCI compliant bundle config that adds support for DobbyPluginLauncher to work with rdkPlugins.  <a href="classDobbyConfig.html#a196a17855ac7757d2f32435c6a37aa63">More...</a><br /></td></tr>
-<tr class="separator:a196a17855ac7757d2f32435c6a37aa63 inherit pro_methods_classDobbyConfig"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a6682dd66f832c626ee806e47e88a75b1 inherit pro_methods_classDobbyConfig"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classDobbyConfig.html#a6682dd66f832c626ee806e47e88a75b1">setHostnameToContainerId</a> (const <a class="el" href="classContainerId.html">ContainerId</a> &amp;id, std::shared_ptr&lt; rt_dobby_schema &gt; cfg, const std::string &amp;bundlePath)</td></tr>
-<tr class="memdesc:a6682dd66f832c626ee806e47e88a75b1 inherit pro_methods_classDobbyConfig"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sets the container hostname to the container ID.  <a href="classDobbyConfig.html#a6682dd66f832c626ee806e47e88a75b1">More...</a><br /></td></tr>
-<tr class="separator:a6682dd66f832c626ee806e47e88a75b1 inherit pro_methods_classDobbyConfig"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa53f1d8f18afe7fe6e62b546f6d3172c inherit pro_methods_classDobbyConfig"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classDobbyConfig.html#aa53f1d8f18afe7fe6e62b546f6d3172c">convertToCompliant</a> (const <a class="el" href="classContainerId.html">ContainerId</a> &amp;id, std::shared_ptr&lt; rt_dobby_schema &gt; cfg, const std::string &amp;bundlePath)</td></tr>
-<tr class="memdesc:aa53f1d8f18afe7fe6e62b546f6d3172c inherit pro_methods_classDobbyConfig"><td class="mdescLeft">&#160;</td><td class="mdescRight">Convert the input config.json into an OCI compliant bundle config that adds support for DobbyPluginLauncher to work with rdkPlugins.  <a href="classDobbyConfig.html#aa53f1d8f18afe7fe6e62b546f6d3172c">More...</a><br /></td></tr>
-<tr class="separator:aa53f1d8f18afe7fe6e62b546f6d3172c inherit pro_methods_classDobbyConfig"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a04b40b2647f0e052dd08d6d117331cd3 inherit pro_methods_classDobbyConfig"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classDobbyConfig.html#a04b40b2647f0e052dd08d6d117331cd3">isApparmorProfileLoaded</a> (char *profile)</td></tr>
-<tr class="memdesc:a04b40b2647f0e052dd08d6d117331cd3 inherit pro_methods_classDobbyConfig"><td class="mdescLeft">&#160;</td><td class="mdescRight">Verify and Write bundle config apparmorProfile string to a file.  <a href="classDobbyConfig.html#a04b40b2647f0e052dd08d6d117331cd3">More...</a><br /></td></tr>
-<tr class="separator:a04b40b2647f0e052dd08d6d117331cd3 inherit pro_methods_classDobbyConfig"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a9cd8b963eb2a6916ec14a636d5ae454a inherit pro_methods_classDobbyConfig"><td class="memItemLeft" align="right" valign="top"><a id="a9cd8b963eb2a6916ec14a636d5ae454a"></a>
-bool&#160;</td><td class="memItemRight" valign="bottom"><b>setDobbyDefaultApparmorProfile</b> (std::shared_ptr&lt; rt_dobby_schema &gt; cfg)</td></tr>
-<tr class="separator:a9cd8b963eb2a6916ec14a636d5ae454a inherit pro_methods_classDobbyConfig"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="inherit_header pro_static_methods_classDobbyConfig"><td colspan="2" onclick="javascript:toggleInherit('pro_static_methods_classDobbyConfig')"><img src="closed.png" alt="-"/>&#160;Static Protected Member Functions inherited from <a class="el" href="classDobbyConfig.html">DobbyConfig</a></td></tr>
-<tr class="memitem:a62045def2ed6c8703c74fcd15b419d72 inherit pro_static_methods_classDobbyConfig"><td class="memItemLeft" align="right" valign="top">static std::list&lt; <a class="el" href="structDobbyConfig_1_1DevNode.html">DevNode</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classDobbyConfig.html#a62045def2ed6c8703c74fcd15b419d72">scanDevNodes</a> (const std::list&lt; std::string &gt; &amp;devNodes)</td></tr>
-<tr class="memdesc:a62045def2ed6c8703c74fcd15b419d72 inherit pro_static_methods_classDobbyConfig"><td class="mdescLeft">&#160;</td><td class="mdescRight">Takes a list of glob patterns corresponding to dev node paths and returns a list of structs with their details.  <a href="classDobbyConfig.html#a62045def2ed6c8703c74fcd15b419d72">More...</a><br /></td></tr>
-<tr class="separator:a62045def2ed6c8703c74fcd15b419d72 inherit pro_static_methods_classDobbyConfig"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="inherit_header pro_attribs_classDobbyConfig"><td colspan="2" onclick="javascript:toggleInherit('pro_attribs_classDobbyConfig')"><img src="closed.png" alt="-"/>&#160;Protected Attributes inherited from <a class="el" href="classDobbyConfig.html">DobbyConfig</a></td></tr>
-<tr class="memitem:af8fbd47a51268051c2f997dd1431597d inherit pro_attribs_classDobbyConfig"><td class="memItemLeft" align="right" valign="top"><a id="af8fbd47a51268051c2f997dd1431597d"></a>
-std::mutex&#160;</td><td class="memItemRight" valign="bottom"><b>mLock</b></td></tr>
-<tr class="separator:af8fbd47a51268051c2f997dd1431597d inherit pro_attribs_classDobbyConfig"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad7251ef937af10d73265a1b847b024b4"><td class="memItemLeft" align="right" valign="top"><a id="ad7251ef937af10d73265a1b847b024b4"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>MOCK_METHOD</b> (bool, writeConfigJson,(const std::string &amp;filePath),(const, override))</td></tr>
+<tr class="separator:ad7251ef937af10d73265a1b847b024b4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="inherit_header pub_methods_classDobbySpecConfigImpl"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_classDobbySpecConfigImpl')"><img src="closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="classDobbySpecConfigImpl.html">DobbySpecConfigImpl</a></td></tr>
+<tr class="memitem:a61e03805644ab219465ddf5bc059e858 inherit pub_methods_classDobbySpecConfigImpl"><td class="memItemLeft" align="right" valign="top"><a id="a61e03805644ab219465ddf5bc059e858"></a>
+virtual const std::map&lt; std::string, Json::Value &gt; &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>rdkPlugins</b> () const =0</td></tr>
+<tr class="separator:a61e03805644ab219465ddf5bc059e858 inherit pub_methods_classDobbySpecConfigImpl"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a69ad24af7375f7cb316b9bd8ce5b31b7 inherit pub_methods_classDobbySpecConfigImpl"><td class="memItemLeft" align="right" valign="top"><a id="a69ad24af7375f7cb316b9bd8ce5b31b7"></a>
+virtual bool&#160;</td><td class="memItemRight" valign="bottom"><b>isValid</b> () const =0</td></tr>
+<tr class="separator:a69ad24af7375f7cb316b9bd8ce5b31b7 inherit pub_methods_classDobbySpecConfigImpl"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a35761e3bba8be3b3d4d5521a8f6d635c inherit pub_methods_classDobbySpecConfigImpl"><td class="memItemLeft" align="right" valign="top"><a id="a35761e3bba8be3b3d4d5521a8f6d635c"></a>
+virtual std::shared_ptr&lt; rt_dobby_schema &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>config</b> () const =0</td></tr>
+<tr class="separator:a35761e3bba8be3b3d4d5521a8f6d635c inherit pub_methods_classDobbySpecConfigImpl"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa5853062854388beb5f31ae21729d91d inherit pub_methods_classDobbySpecConfigImpl"><td class="memItemLeft" align="right" valign="top"><a id="aa5853062854388beb5f31ae21729d91d"></a>
+virtual bool&#160;</td><td class="memItemRight" valign="bottom"><b>restartOnCrash</b> () const =0</td></tr>
+<tr class="separator:aa5853062854388beb5f31ae21729d91d inherit pub_methods_classDobbySpecConfigImpl"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af3903434d3f5e6c4fa33e3906964bbe1 inherit pub_methods_classDobbySpecConfigImpl"><td class="memItemLeft" align="right" valign="top"><a id="af3903434d3f5e6c4fa33e3906964bbe1"></a>
+virtual bool&#160;</td><td class="memItemRight" valign="bottom"><b>writeConfigJson</b> (const std::string &amp;filePath) const =0</td></tr>
+<tr class="separator:af3903434d3f5e6c4fa33e3906964bbe1 inherit pub_methods_classDobbySpecConfigImpl"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <hr/>The documentation for this class was generated from the following file:<ul>
 <li>unit_tests/L1_testing/mocks/<a class="el" href="DobbySpecConfigMock_8h_source.html">DobbySpecConfigMock.h</a></li>

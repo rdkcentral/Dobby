@@ -1,4 +1,0 @@
-<map id="DobbyRootfs" name="DobbyRootfs">
-<area shape="rect" id="node1" title="Creates a directory populated with rootfs based on the supplied container config." alt="" coords="23,5,129,32"/>
-<area shape="rect" id="node2" href="$classDobbyRootfsMock.html" title=" " alt="" coords="5,80,147,107"/>
-</map>

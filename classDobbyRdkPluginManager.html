@@ -65,6 +65,8 @@ $(function() {
 <div class="header">
   <div class="summary">
 <a href="#pub-methods">Public Member Functions</a> &#124;
+<a href="#pub-static-methods">Static Public Member Functions</a> &#124;
+<a href="#pro-static-attribs">Static Protected Attributes</a> &#124;
 <a href="#pri-methods">Private Member Functions</a> &#124;
 <a href="#pri-attribs">Private Attributes</a> &#124;
 <a href="classDobbyRdkPluginManager-members.html">List of all members</a>  </div>
@@ -76,14 +78,14 @@ $(function() {
 <p>Class that manages all the RDK plugin hook libraries.  
  <a href="classDobbyRdkPluginManager.html#details">More...</a></p>
 
-<p><code>#include &lt;<a class="el" href="DobbyRdkPluginManager_8h_source.html">DobbyRdkPluginManager.h</a>&gt;</code></p>
+<p><code>#include &lt;<a class="el" href="pluginLauncher_2lib_2include_2DobbyRdkPluginManager_8h_source.html">DobbyRdkPluginManager.h</a>&gt;</code></p>
 <div class="dynheader">
-Inheritance diagram for DobbyRdkPluginManager:</div>
+Collaboration diagram for DobbyRdkPluginManager:</div>
 <div class="dyncontent">
-<div class="center"><img src="classDobbyRdkPluginManager__inherit__graph.png" border="0" usemap="#aDobbyRdkPluginManager_inherit__map" alt="Inheritance graph"/></div>
-<map name="aDobbyRdkPluginManager_inherit__map" id="aDobbyRdkPluginManager_inherit__map">
-<area shape="rect" title="Class that manages all the RDK plugin hook libraries." alt="" coords="23,5,209,32"/>
-<area shape="rect" href="classDobbyRdkPluginManagerMock.html" title=" " alt="" coords="5,80,227,107"/>
+<div class="center"><img src="classDobbyRdkPluginManager__coll__graph.png" border="0" usemap="#aDobbyRdkPluginManager_coll__map" alt="Collaboration graph"/></div>
+<map name="aDobbyRdkPluginManager_coll__map" id="aDobbyRdkPluginManager_coll__map">
+<area shape="rect" title="Class that manages all the RDK plugin hook libraries." alt="" coords="19,95,206,121"/>
+<area shape="rect" href="classDobbyRdkPluginManagerImpl.html" title=" " alt="" coords="5,5,220,32"/>
 </map>
 <center><span class="legend">[<a href="graph_legend.html">legend</a>]</span></center></div>
 <table class="memberdecls">
@@ -111,6 +113,39 @@ const std::vector&lt; std::string &gt;&#160;</td><td class="memItemRight" valign
 <tr class="memitem:ad86ab60fff19426d2f7489d6825600cc"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classDobbyRdkPluginManager.html#ad86ab60fff19426d2f7489d6825600cc">setExitStatus</a> (int status) const</td></tr>
 <tr class="memdesc:ad86ab60fff19426d2f7489d6825600cc"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set the exit status of the container.  <a href="classDobbyRdkPluginManager.html#ad86ab60fff19426d2f7489d6825600cc">More...</a><br /></td></tr>
 <tr class="separator:ad86ab60fff19426d2f7489d6825600cc"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a85b5125a31ea006b1a81a8c80b4f5b1b"><td class="memItemLeft" align="right" valign="top"><a id="a85b5125a31ea006b1a81a8c80b4f5b1b"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>DobbyRdkPluginManager</b> (std::shared_ptr&lt; rt_dobby_schema &gt; containerConfig, const std::string &amp;rootfsPath, const std::string &amp;pluginPath, const std::shared_ptr&lt; <a class="el" href="classDobbyRdkPluginUtils.html">DobbyRdkPluginUtils</a> &gt; &amp;utils)</td></tr>
+<tr class="separator:a85b5125a31ea006b1a81a8c80b4f5b1b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad1fde2c4c9f5295f9a650f831f4f70aa"><td class="memItemLeft" align="right" valign="top"><a id="ad1fde2c4c9f5295f9a650f831f4f70aa"></a>
+virtual bool&#160;</td><td class="memItemRight" valign="bottom"><b>runPlugins</b> (const <a class="el" href="classIDobbyRdkPlugin.html#a2d3635518c5ee88a5d3fb8c9acdc0e8f">IDobbyRdkPlugin::HintFlags</a> &amp;hookPoint, const uint timeoutMs) const</td></tr>
+<tr class="separator:ad1fde2c4c9f5295f9a650f831f4f70aa"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3e3b847530e8547d1b1dd04e2f0a0a0b"><td class="memItemLeft" align="right" valign="top"><a id="a3e3b847530e8547d1b1dd04e2f0a0a0b"></a>
+virtual bool&#160;</td><td class="memItemRight" valign="bottom"><b>runPlugins</b> (const <a class="el" href="classIDobbyRdkPlugin.html#a2d3635518c5ee88a5d3fb8c9acdc0e8f">IDobbyRdkPlugin::HintFlags</a> &amp;hookPoint) const</td></tr>
+<tr class="separator:a3e3b847530e8547d1b1dd04e2f0a0a0b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad86ab60fff19426d2f7489d6825600cc"><td class="memItemLeft" align="right" valign="top"><a id="ad86ab60fff19426d2f7489d6825600cc"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>setExitStatus</b> (int status) const</td></tr>
+<tr class="separator:ad86ab60fff19426d2f7489d6825600cc"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-methods"></a>
+Static Public Member Functions</h2></td></tr>
+<tr class="memitem:aba6801cfb0e66dd4a962c1f78fda2c41"><td class="memItemLeft" align="right" valign="top"><a id="aba6801cfb0e66dd4a962c1f78fda2c41"></a>
+static void&#160;</td><td class="memItemRight" valign="bottom"><b>setImpl</b> (<a class="el" href="classDobbyRdkPluginManagerImpl.html">DobbyRdkPluginManagerImpl</a> *newImpl)</td></tr>
+<tr class="separator:aba6801cfb0e66dd4a962c1f78fda2c41"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3e6d1424c4a7d34f48a125176e98c1b1"><td class="memItemLeft" align="right" valign="top"><a id="a3e6d1424c4a7d34f48a125176e98c1b1"></a>
+static <a class="el" href="classDobbyRdkPluginManager.html">DobbyRdkPluginManager</a> *&#160;</td><td class="memItemRight" valign="bottom"><b>getInstance</b> ()</td></tr>
+<tr class="separator:a3e6d1424c4a7d34f48a125176e98c1b1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab03780fc1c28e82d703a240764fd2142"><td class="memItemLeft" align="right" valign="top"><a id="ab03780fc1c28e82d703a240764fd2142"></a>
+static const std::vector&lt; std::string &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>listLoadedPlugins</b> ()</td></tr>
+<tr class="separator:ab03780fc1c28e82d703a240764fd2142"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7f6d49fecf9fe7898287c7ad4f2f5bc5"><td class="memItemLeft" align="right" valign="top"><a id="a7f6d49fecf9fe7898287c7ad4f2f5bc5"></a>
+static std::shared_ptr&lt; <a class="el" href="classIDobbyRdkLoggingPlugin.html">IDobbyRdkLoggingPlugin</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>getContainerLogger</b> ()</td></tr>
+<tr class="separator:a7f6d49fecf9fe7898287c7ad4f2f5bc5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pro-static-attribs"></a>
+Static Protected Attributes</h2></td></tr>
+<tr class="memitem:aa914bf6f1d9f1ebc5a9a702fa2257162"><td class="memItemLeft" align="right" valign="top"><a id="aa914bf6f1d9f1ebc5a9a702fa2257162"></a>
+static <a class="el" href="classDobbyRdkPluginManagerImpl.html">DobbyRdkPluginManagerImpl</a> *&#160;</td><td class="memItemRight" valign="bottom"><b>impl</b> = nullptr</td></tr>
+<tr class="separator:aa914bf6f1d9f1ebc5a9a702fa2257162"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pri-methods"></a>
 Private Member Functions</h2></td></tr>
@@ -716,8 +751,9 @@ std::unique_ptr&lt; <a class="el" href="classDobbyRdkPluginDependencySolver.html
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following files:<ul>
-<li>pluginLauncher/lib/include/<a class="el" href="DobbyRdkPluginManager_8h_source.html">DobbyRdkPluginManager.h</a></li>
+<li>pluginLauncher/lib/include/<a class="el" href="pluginLauncher_2lib_2include_2DobbyRdkPluginManager_8h_source.html">DobbyRdkPluginManager.h</a></li>
 <li>pluginLauncher/lib/source/DobbyRdkPluginManager.cpp</li>
+<li>unit_tests/L1_testing/tests/DobbyManagerTest/DaemonDobbyManagerTest.cpp</li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->

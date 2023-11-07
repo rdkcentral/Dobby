@@ -1,4 +1,4 @@
 <map id="DobbyBundleMock" name="DobbyBundleMock">
 <area shape="rect" id="node1" title=" " alt="" coords="5,80,149,107"/>
-<area shape="rect" id="node2" href="$classDobbyBundle.html" title="Simple class that just creates a subdir in the bundles directory." alt="" coords="23,5,132,32"/>
+<area shape="rect" id="node2" href="$classDobbyBundleImpl.html" title=" " alt="" coords="8,5,147,32"/>
 </map>

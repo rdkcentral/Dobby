@@ -65,6 +65,8 @@ $(function() {
 <div class="header">
   <div class="summary">
 <a href="#pub-methods">Public Member Functions</a> &#124;
+<a href="#pub-static-methods">Static Public Member Functions</a> &#124;
+<a href="#pro-static-attribs">Static Protected Attributes</a> &#124;
 <a href="#pri-attribs">Private Attributes</a> &#124;
 <a href="classDobbyBundle-members.html">List of all members</a>  </div>
   <div class="headertitle">
@@ -75,14 +77,14 @@ $(function() {
 <p>Simple class that just creates a subdir in the bundles directory.  
  <a href="classDobbyBundle.html#details">More...</a></p>
 
-<p><code>#include &lt;<a class="el" href="DobbyBundle_8h_source.html">DobbyBundle.h</a>&gt;</code></p>
+<p><code>#include &lt;<a class="el" href="bundle_2lib_2include_2DobbyBundle_8h_source.html">DobbyBundle.h</a>&gt;</code></p>
 <div class="dynheader">
-Inheritance diagram for DobbyBundle:</div>
+Collaboration diagram for DobbyBundle:</div>
 <div class="dyncontent">
-<div class="center"><img src="classDobbyBundle__inherit__graph.png" border="0" usemap="#aDobbyBundle_inherit__map" alt="Inheritance graph"/></div>
-<map name="aDobbyBundle_inherit__map" id="aDobbyBundle_inherit__map">
-<area shape="rect" title="Simple class that just creates a subdir in the bundles directory." alt="" coords="23,5,132,32"/>
-<area shape="rect" href="classDobbyBundleMock.html" title=" " alt="" coords="5,80,149,107"/>
+<div class="center"><img src="classDobbyBundle__coll__graph.png" border="0" usemap="#aDobbyBundle_coll__map" alt="Collaboration graph"/></div>
+<map name="aDobbyBundle_coll__map" id="aDobbyBundle_coll__map">
+<area shape="rect" title="Simple class that just creates a subdir in the bundles directory." alt="" coords="20,95,129,121"/>
+<area shape="rect" href="classDobbyBundleImpl.html" title=" " alt="" coords="5,5,144,32"/>
 </map>
 <center><span class="legend">[<a href="graph_legend.html">legend</a>]</span></center></div>
 <table class="memberdecls">
@@ -106,6 +108,33 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>setPersistence</b> (b
 <tr class="memitem:af970fd980af847f0cc0d4d16fd11d8b9"><td class="memItemLeft" align="right" valign="top"><a id="af970fd980af847f0cc0d4d16fd11d8b9"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>getPersistence</b> () const</td></tr>
 <tr class="separator:af970fd980af847f0cc0d4d16fd11d8b9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad292755b64b2b020970fa0e64d721e86"><td class="memItemLeft" align="right" valign="top"><a id="ad292755b64b2b020970fa0e64d721e86"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>DobbyBundle</b> (const std::shared_ptr&lt; const <a class="el" href="classIDobbyUtils__v3.html">IDobbyUtils</a> &gt; &amp;utils, const std::shared_ptr&lt; const <a class="el" href="classIDobbyEnv.html">IDobbyEnv</a> &gt; &amp;env, const std::string &amp;bundlePath)</td></tr>
+<tr class="separator:ad292755b64b2b020970fa0e64d721e86"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af063663355f9150afbce2286be71dee4"><td class="memItemLeft" align="right" valign="top"><a id="af063663355f9150afbce2286be71dee4"></a>
+const std::string &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>path</b> () const</td></tr>
+<tr class="separator:af063663355f9150afbce2286be71dee4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-methods"></a>
+Static Public Member Functions</h2></td></tr>
+<tr class="memitem:a36c29ea646c7d74cae35a43b89dcf714"><td class="memItemLeft" align="right" valign="top"><a id="a36c29ea646c7d74cae35a43b89dcf714"></a>
+static void&#160;</td><td class="memItemRight" valign="bottom"><b>setImpl</b> (<a class="el" href="classDobbyBundleImpl.html">DobbyBundleImpl</a> *newImpl)</td></tr>
+<tr class="separator:a36c29ea646c7d74cae35a43b89dcf714"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3ef1c8cf4452f119366a70f86bb7c98e"><td class="memItemLeft" align="right" valign="top"><a id="a3ef1c8cf4452f119366a70f86bb7c98e"></a>
+static <a class="el" href="classDobbyBundle.html">DobbyBundle</a> *&#160;</td><td class="memItemRight" valign="bottom"><b>getInstance</b> ()</td></tr>
+<tr class="separator:a3ef1c8cf4452f119366a70f86bb7c98e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0b07c0d199a447a78c70b09fd4f2412c"><td class="memItemLeft" align="right" valign="top"><a id="a0b07c0d199a447a78c70b09fd4f2412c"></a>
+static void&#160;</td><td class="memItemRight" valign="bottom"><b>setPersistence</b> (bool persist)</td></tr>
+<tr class="separator:a0b07c0d199a447a78c70b09fd4f2412c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:adaab5d0a56c9e96047e566aaa09c953f"><td class="memItemLeft" align="right" valign="top"><a id="adaab5d0a56c9e96047e566aaa09c953f"></a>
+static bool&#160;</td><td class="memItemRight" valign="bottom"><b>isValid</b> ()</td></tr>
+<tr class="separator:adaab5d0a56c9e96047e566aaa09c953f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pro-static-attribs"></a>
+Static Protected Attributes</h2></td></tr>
+<tr class="memitem:a1b70309a675c748ee56d8ec083db32b6"><td class="memItemLeft" align="right" valign="top"><a id="a1b70309a675c748ee56d8ec083db32b6"></a>
+static <a class="el" href="classDobbyBundleImpl.html">DobbyBundleImpl</a> *&#160;</td><td class="memItemRight" valign="bottom"><b>impl</b> = nullptr</td></tr>
+<tr class="separator:a1b70309a675c748ee56d8ec083db32b6"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pri-attribs"></a>
 Private Attributes</h2></td></tr>
@@ -171,8 +200,9 @@ int&#160;</td><td class="memItemRight" valign="bottom"><b>mDirFd</b></td></tr>
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following files:<ul>
-<li>bundle/lib/include/<a class="el" href="DobbyBundle_8h_source.html">DobbyBundle.h</a></li>
+<li>bundle/lib/include/<a class="el" href="bundle_2lib_2include_2DobbyBundle_8h_source.html">DobbyBundle.h</a></li>
 <li>bundle/lib/source/DobbyBundle.cpp</li>
+<li>unit_tests/L1_testing/tests/DobbyManagerTest/DaemonDobbyManagerTest.cpp</li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->
