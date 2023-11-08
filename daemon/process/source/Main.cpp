@@ -253,8 +253,21 @@ static void parseArgs(int argc, char **argv)
  */
 static std::shared_ptr<Settings> createSettings()
 {
-    // create settings from either defaults or JSON settings file
+    // create settings from either defaults, development or JSON settings file
     std::shared_ptr<Settings> settings;
+
+#if (AI_BUILD_TYPE == AI_DEBUG)
+    // Development settings path, used only in debug builds
+    // Set to a writeable and persistent location to simplify development and debugging
+    const std::string DEV_SETTINGS_PATH{"/opt/dobby.json"};
+    if(access(DEV_SETTINGS_PATH.c_str(), R_OK) == 0)
+    {
+        AI_LOG_INFO("parsing settings from development file @ '%s'", DEV_SETTINGS_PATH.c_str());
+        settings = Settings::fromJsonFile(DEV_SETTINGS_PATH);
+    }
+    else
+#endif
+
     if (!gSettingsFilePath.empty() && (access(gSettingsFilePath.c_str(), R_OK) == 0))
     {
         AI_LOG_INFO("parsing settings from file @ '%s'", gSettingsFilePath.c_str());
