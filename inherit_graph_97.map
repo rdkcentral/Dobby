@@ -1,5 +1,5 @@
 <map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
-<area shape="rect" id="node1" href="$classIDobbyIPCUtils.html" title=" " alt="" coords="5,31,124,57"/>
-<area shape="rect" id="node2" href="$classDobbyIPCUtils.html" title="Utility methods for IPC in Dobby." alt="" coords="192,5,307,32"/>
-<area shape="rect" id="node3" href="$classIDobbyIPCUtilsMock.html" title=" " alt="" coords="172,56,327,83"/>
+<area shape="rect" id="node1" href="$classIDobbyEnv.html" title="Interface that exports the environment of the daemon to plugins." alt="" coords="5,31,97,57"/>
+<area shape="rect" id="node2" href="$classDobbyEnv.html" title="Basic class used to store the stb environment." alt="" coords="165,5,253,32"/>
+<area shape="rect" id="node3" href="$classIDobbyEnvMock.html" title=" " alt="" coords="145,56,272,83"/>
 </map>

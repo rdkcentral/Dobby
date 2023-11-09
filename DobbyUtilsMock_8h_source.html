@@ -97,7 +97,9 @@ $(function() {
 <div class="line"><a name="l00024"></a><span class="lineno"><a class="line" href="classDobbyUtilsMock.html">   24</a></span>&#160;<span class="keyword">class </span><a class="code" href="classDobbyUtilsMock.html">DobbyUtilsMock</a> : <span class="keyword">public</span> <a class="code" href="classDobbyUtilsImpl.html">DobbyUtilsImpl</a>{</div>
 <div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160;<span class="keyword">public</span>:</div>
 <div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160;    <span class="keyword">virtual</span> ~<a class="code" href="classDobbyUtilsMock.html">DobbyUtilsMock</a>() = <span class="keywordflow">default</span>;</div>
-<div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;};</div>
+<div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;    MOCK_METHOD(<span class="keywordtype">bool</span>, cancelTimer, (<span class="keywordtype">int</span> timerId), (<span class="keyword">const</span>, <span class="keyword">override</span>));</div>
+<div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;    MOCK_METHOD(<span class="keywordtype">int</span>, startTimer, (<span class="keyword">const</span> std::chrono::microseconds&amp; timeout, <span class="keywordtype">bool</span> oneShot, <span class="keyword">const</span> std::function&lt;<span class="keywordtype">bool</span>()&gt;&amp; handler), (<span class="keyword">const</span>, <span class="keyword">override</span>));</div>
+<div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;};</div>
 <div class="ttc" id="aclassDobbyUtilsImpl_html"><div class="ttname"><a href="classDobbyUtilsImpl.html">DobbyUtilsImpl</a></div><div class="ttdef"><b>Definition:</b> DobbyUtils.h:37</div></div>
 <div class="ttc" id="aclassDobbyUtilsMock_html"><div class="ttname"><a href="classDobbyUtilsMock.html">DobbyUtilsMock</a></div><div class="ttdef"><b>Definition:</b> DobbyUtilsMock.h:24</div></div>
 </div><!-- fragment --></div><!-- contents -->

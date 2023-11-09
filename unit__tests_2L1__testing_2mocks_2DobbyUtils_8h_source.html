@@ -134,28 +134,29 @@ $(function() {
 <div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;    <span class="keyword">static</span> <a class="code" href="classDobbyUtils.html">DobbyUtils</a>* getInstance()</div>
 <div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;    {</div>
 <div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;        <span class="keyword">static</span> <a class="code" href="classDobbyUtils.html">DobbyUtils</a>* instance = <span class="keyword">nullptr</span>;</div>
-<div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;        {</div>
-<div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;            instance = <span class="keyword">new</span> <a class="code" href="classDobbyUtils.html">DobbyUtils</a>();</div>
-<div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;        }</div>
-<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;        <span class="keywordflow">return</span> instance;</div>
-<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;    }</div>
-<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160; </div>
+<div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;        <span class="keywordflow">if</span>(<span class="keyword">nullptr</span> == instance)</div>
+<div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;        {</div>
+<div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;            instance = <span class="keyword">new</span> <a class="code" href="classDobbyUtils.html">DobbyUtils</a>();</div>
+<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;        }</div>
+<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;        <span class="keywordflow">return</span> instance;</div>
+<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;    }</div>
 <div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160; </div>
-<div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;    <span class="keyword">static</span> <span class="keywordtype">bool</span> <a class="code" href="classIDobbyUtils__v3.html#ada7807d22d0af211daab916d7bc2b128">cancelTimer</a>(<span class="keywordtype">int</span> timerId)</div>
-<div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;    {</div>
-<div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;        <span class="keywordflow">return</span> impl-&gt;cancelTimer(timerId);</div>
-<div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;    }</div>
-<div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160; </div>
-<div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;    <span class="keyword">static</span> <span class="keywordtype">int</span> startTimer(<span class="keyword">const</span> std::chrono::microseconds&amp; timeout,</div>
-<div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;                          <span class="keywordtype">bool</span> oneShot,</div>
-<div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;                          <span class="keyword">const</span> std::function&lt;<span class="keywordtype">bool</span>()&gt;&amp; handler)</div>
-<div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;    {</div>
-<div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;       <span class="keywordflow">return</span> impl-&gt;startTimer(timeout,oneShot,handler);</div>
-<div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;    }</div>
-<div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160; </div>
-<div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;};</div>
-<div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160; </div>
-<div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;<span class="preprocessor">#endif </span><span class="comment">// !defined(DOBBYUTILS_H)</span></div>
+<div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160; </div>
+<div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;    <span class="keyword">static</span> <span class="keywordtype">bool</span> <a class="code" href="classIDobbyUtils__v3.html#ada7807d22d0af211daab916d7bc2b128">cancelTimer</a>(<span class="keywordtype">int</span> timerId)</div>
+<div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;    {</div>
+<div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;        <span class="keywordflow">return</span> impl-&gt;cancelTimer(timerId);</div>
+<div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;    }</div>
+<div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160; </div>
+<div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;    <span class="keyword">static</span> <span class="keywordtype">int</span> startTimer(<span class="keyword">const</span> std::chrono::microseconds&amp; timeout,</div>
+<div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;                          <span class="keywordtype">bool</span> oneShot,</div>
+<div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;                          <span class="keyword">const</span> std::function&lt;<span class="keywordtype">bool</span>()&gt;&amp; handler)</div>
+<div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;    {</div>
+<div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;       <span class="keywordflow">return</span> impl-&gt;startTimer(timeout,oneShot,handler);</div>
+<div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;    }</div>
+<div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160; </div>
+<div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;};</div>
+<div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160; </div>
+<div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160;<span class="preprocessor">#endif </span><span class="comment">// !defined(DOBBYUTILS_H)</span></div>
 <div class="ttc" id="aclassDobbyTimer_html"><div class="ttname"><a href="classDobbyTimer.html">DobbyTimer</a></div><div class="ttdoc">Utility object that can be used to register a callback function to execute in the future.</div><div class="ttdef"><b>Definition:</b> DobbyTimer.h:58</div></div>
 <div class="ttc" id="aclassDobbyUtilsImpl_html"><div class="ttname"><a href="classDobbyUtilsImpl.html">DobbyUtilsImpl</a></div><div class="ttdef"><b>Definition:</b> DobbyUtils.h:37</div></div>
 <div class="ttc" id="aclassDobbyUtils_html"><div class="ttname"><a href="classDobbyUtils.html">DobbyUtils</a></div><div class="ttdoc">Utility methods for hooks and the general containiser daemon.</div><div class="ttdef"><b>Definition:</b> DobbyUtils.h:46</div></div>
