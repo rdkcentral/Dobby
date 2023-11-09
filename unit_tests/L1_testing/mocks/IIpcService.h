@@ -53,16 +53,6 @@ public:
             impl = newImpl;
         }
 
-        static IIpcService* getInstance()
-        {
-            static IIpcService* instance =  nullptr;
-            if(nullptr != instance)
-            {
-               new IIpcService();
-            }
-            return instance;
-        }
-
         static bool isValid() {
            return impl->isValid();
         }

@@ -52,7 +52,7 @@ public:
     static IpcFileDescriptor* getInstance()
     {
         static IpcFileDescriptor* instance = nullptr;
-        if(nullptr != instance)
+        if(nullptr == instance)
         {
             instance = new IpcFileDescriptor();
         }
@@ -61,12 +61,12 @@ public:
 
     bool isValid() const
     {
-        return getInstance()->impl->isValid();
+        return impl->isValid();
     }
 
     int fd() const
     {
-        return getInstance()->impl->fd();
+        return impl->fd();
     }
 
 };

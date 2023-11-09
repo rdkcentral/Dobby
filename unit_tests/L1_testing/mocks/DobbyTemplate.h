@@ -57,9 +57,9 @@ public:
     static DobbyTemplate* getInstance()
     {
         static DobbyTemplate* instance = nullptr;
-        if(nullptr != instance)
+        if(nullptr == instance)
         {
-           new DobbyTemplate();
+           instance = new DobbyTemplate();
         }
         return instance;
     }

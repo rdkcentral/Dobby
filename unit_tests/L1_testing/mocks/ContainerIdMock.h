@@ -15,40 +15,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 */
+
+#pragma once
+
 #include "ContainerId.h"
+#include <gmock/gmock.h>
 
-static bool isValidContainerId(const std::string& id)
-{
-    if (id.empty() || (id.size() > 128))
-    {
-        return false;
-    }
+class ContainerIdMock : public ContainerIdImpl {
 
-    unsigned alphaCount = 0;
-    for (const char c : id)
-    {
-        if (!isalnum(c) && (c != '.') && (c != '-') && (c != '_'))
-            return false;
-
-        if (isalpha(c))
-            alphaCount++;
-    }
-
-    if (id.find("..") != std::string::npos)
-    {
-        return false;
-    }
-
-    return (alphaCount > 0);
-}
-
-ContainerId ContainerId::create(const std::string& s)
-{
-    std::string str("dummyId");
-    ContainerId id;
-
-    if (isValidContainerId(str))
-        id.mId.swap(str);
-
-    return id;
-}
+public:
+    virtual ~ContainerIdMock() = default;
+    MOCK_METHOD(bool, isValid, (), (const, override));
+    MOCK_METHOD(const char*, c_str, (), (const, override));
+};

@@ -25,7 +25,6 @@
 #include <vector>
 #include <functional>
 #include <memory>
-#include <iostream>
 
 namespace AI_IPC
 {
@@ -45,22 +44,11 @@ protected:
    static IAsyncReplySenderApiImpl* impl;
 
 public:
-    
+
     static void setImpl(IAsyncReplySenderApiImpl* newImpl)
     {
         impl = newImpl;
     }
-
-    static IAsyncReplySender* getInstance()
-    {
-        static IAsyncReplySender* instance = nullptr;
-        if(nullptr != instance)
-        {
-            instance = new IAsyncReplySender();
-        }
-        return instance;
-    }
-
 
     static bool sendReply(const VariantList& replyArgs)
     {

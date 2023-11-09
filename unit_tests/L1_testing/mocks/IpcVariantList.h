@@ -110,7 +110,25 @@ struct _pass { template<typename ...T> _pass(T...) {} };
 template<typename... Ts>
 bool parseVariantList(const AI_IPC::VariantList& returns, Ts *...args)
 {
-  return true;
+
+    // Get an iterator and point it to the first arg
+    AI_IPC::VariantList::const_iterator it = returns.begin();
+    bool result = true;
+    // Check the number of args in the list matches the number of templated args
+    const size_t numArgs = sizeof...(args);
+    if (returns.size() != numArgs)
+    {
+        result = false;
+
+    }
+    else
+    {
+        int unused[]{(processVal(&result, it++, args), 1)...};
+        _pass{unused};
+    }
+
+    return result;
+
 }
 template <typename T>
 void processVal(bool *result, const AI_IPC::VariantList::const_iterator & it, T * arg);
@@ -148,7 +166,7 @@ inline std::ostream& operator<<(std::ostream& os, const std::vector<AI_IPC::Dbus
 
 template <typename T>
 inline std::ostream& operator<<(std::ostream& os, const T& val) {
-    os << val; 
+    os << val;
     return os;
 }
 

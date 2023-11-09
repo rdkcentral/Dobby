@@ -56,7 +56,7 @@ public:
     static DobbyEnv* getInstance()
     {
         static DobbyEnv* instance = nullptr;
-        if (nullptr != instance)
+        if(nullptr == instance)
         {
            instance = new DobbyEnv();
         }
