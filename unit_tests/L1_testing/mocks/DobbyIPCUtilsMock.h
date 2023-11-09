@@ -20,14 +20,9 @@
 #include "DobbyIPCUtils.h"
 #include <gmock/gmock.h>
 
-#include <map>
-#include <mutex>
-#include <functional>
-
-
 class DobbyIPCUtilsMock : public DobbyIPCUtilsImpl {
 public:
-    MOCK_METHOD(bool, setAIDbusAddress, 
-                (bool privateBus, const std::string& address), ());
+    MOCK_METHOD(bool, setAIDbusAddress,
+                (bool privateBus, const std::string& address), (override));
 };
 

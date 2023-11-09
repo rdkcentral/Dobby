@@ -21,6 +21,26 @@
 template <typename T>
 void AI_IPC::processVal(bool *result, const AI_IPC::VariantList::const_iterator & it, T * arg)
 {
+    #ifdef __GXX_RTTI
+    // If we have RTTI perform sanity check the type of the variant against the
+    // real type
+    if (it->type() != typeid(T))
+    {
+        *result = false;
+    }
+    else
+#endif
+    {
+        // Write the boost variant type to a real value
+        try
+        {
+            *arg = boost::get<T>(*it);
+        }
+        catch (boost::bad_get & e)
+        {
+            *result = false;
+        }
+    }
 }
 
 #define IPC_PROCESS_VAL_IMPL(T) \

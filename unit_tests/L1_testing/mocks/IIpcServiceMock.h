@@ -27,11 +27,7 @@ namespace AI_IPC
 class IpcServiceMock : public IIpcServiceImpl {
 
 public:
-    IpcServiceMock()
-    {
-      ON_CALL(*this, registerMethodHandler(::testing::_,::testing::_))
-      .WillByDefault(::testing::Return("some_method_id"));
-    }
+    IpcServiceMock(){}
     virtual ~IpcServiceMock() = default;
     MOCK_METHOD(bool, isValid, (), (const, override));
     MOCK_METHOD(std::shared_ptr<IAsyncReplyGetter>, invokeMethod, (const Method& method, const VariantList& args, int timeoutMs), (override));

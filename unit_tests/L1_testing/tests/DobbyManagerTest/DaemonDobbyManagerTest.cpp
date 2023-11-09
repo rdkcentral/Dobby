@@ -68,7 +68,6 @@ protected:
     DobbyConfig*config = DobbyConfig::getInstance();
     DobbyBundleConfig*bundleConfig = DobbyBundleConfig::getInstance();
     DobbyRdkPluginUtils*rdkPluginUtils = DobbyRdkPluginUtils::getInstance();
-    AI_IPC::IAsyncReplySender *iasyncReplySender = AI_IPC::IAsyncReplySender::getInstance();
 
     DaemonDobbyManagerTest()
     {
@@ -80,7 +79,6 @@ protected:
         config->setImpl(&configMock);
         bundleConfig->setImpl(&bundleConfigMock);
         rdkPluginUtils->setImpl(&rdkPluginUtilsMock);
-        iasyncReplySender->setImpl(&asyncReplySenderMock);
     }
 
     virtual ~DaemonDobbyManagerTest() override
@@ -93,8 +91,6 @@ protected:
         config->setImpl(nullptr);
         bundleConfig->setImpl(nullptr);
         rdkPluginUtils->setImpl(nullptr);
-        iasyncReplySender->setImpl(nullptr);
-
     }
 
 };

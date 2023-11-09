@@ -61,6 +61,7 @@ public:
     static DobbyUtils* getInstance()
     {
         static DobbyUtils* instance = nullptr;
+        if(nullptr == instance)
         {
             instance = new DobbyUtils();
         }

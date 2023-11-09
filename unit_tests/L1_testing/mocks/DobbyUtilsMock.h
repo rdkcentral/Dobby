@@ -24,4 +24,6 @@
 class DobbyUtilsMock : public DobbyUtilsImpl{
 public:
     virtual ~DobbyUtilsMock() = default;
+    MOCK_METHOD(bool, cancelTimer, (int timerId), (const, override));
+    MOCK_METHOD(int, startTimer, (const std::chrono::microseconds& timeout, bool oneShot, const std::function<bool()>& handler), (const, override));
 };

@@ -52,7 +52,7 @@ public:
     static DobbyIPCUtils* getInstance()
     {
         static DobbyIPCUtils* instance = nullptr;
-        if(nullptr != instance)
+        if(nullptr == instance)
         {
             instance = new DobbyIPCUtils();
         }
