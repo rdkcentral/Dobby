@@ -199,6 +199,585 @@ protected:
     }
 };
 
+/*Test cases for setAIDbusAddress ends here*/
+#if defined(LEGACY_COMPONENTS)
+
+/****************************************************************************************************
+ * Test functions for :startFromSpec
+ * @brief Starts a new container from the supplied json spec document.
+ * Use case coverage:
+ *                @Success :2
+ *                @Failure :2
+ ***************************************************************************************************/
+/**
+ * @brief Test starting a container from a spec with invalid arguments and parse parameter failed.
+ * Check if startFromSpec method handles the case with invalid arguments and parsing arguments failed;
+ * by sending back reply = -1
+ *
+ * @return None.
+ */
+TEST_F(DaemonDobbyTest, startFromSpecFailed_parseParamFailure)
+{
+    EXPECT_CALL(*p_asyncReplySenderMock, getMethodCallArguments())
+        .Times(2)
+        .WillOnce(::testing::Return(AI_IPC::VariantList{1}))
+        .WillOnce(::testing::Return(AI_IPC::VariantList{1,2}));
+
+    EXPECT_CALL(*p_asyncReplySenderMock, sendReply(::testing::_))
+        .Times(1)
+        .WillOnce(::testing::Invoke(
+            [](const AI_IPC::VariantList& replyArgs) {
+                int32_t expectedResult = -1;
+                int32_t actualResult;
+                if (AI_IPC::parseVariantList <int32_t>
+                         (replyArgs, &actualResult))
+                {
+                    EXPECT_EQ(actualResult, expectedResult);
+                }
+                return true;
+            }));
+
+    dobby_test->startFromSpec((std::shared_ptr<AI_IPC::IAsyncReplySender>)p_iasyncReplySender);
+}
+
+/**
+ * @brief Test starting a container from a spec with argument size 3 and postWork failure.
+ * Check if startFromSpec method handles the case when argument size is 3 and postWork fails.
+ * by sending back reply = -1
+ *
+ * @return None.
+ */
+TEST_F(DaemonDobbyTest, startFromSpecFailed_argSize_3_postWorkFail)
+{
+    AI_IPC::UnixFd fd1 = 123; // Assuming 123 is a valid file descriptor
+    AI_IPC::VariantList validArgs_set1 = {
+    std::string("1"),/*Simulate a string representing the identifier of the container*/
+    std::string("2"),/*Simulate a string representing a JSON specification.*/
+    std::vector<AI_IPC::UnixFd>{fd1},/*Simulate valid file descriptors*/
+    };
+
+
+        // Create a UnixFd object
+    EXPECT_CALL(*p_asyncReplySenderMock, getMethodCallArguments())
+            .Times(2)
+        .WillOnce(::testing::Return(validArgs_set1))
+        .WillOnce(::testing::Return(validArgs_set1));
+
+    EXPECT_CALL(*p_containerIdMock, isValid())
+        .WillOnce(::testing::Return(true));
+
+    EXPECT_CALL(*p_dobbyManagerMock, startContainerFromSpec(::testing::_,::testing::_,::testing::_,::testing::_,::testing::_,::testing::_))
+        .Times(0);
+
+    EXPECT_CALL(*p_workQueueMock, postWork(::testing::_))
+        .Times(1)
+            .WillOnce(::testing::Invoke(
+            [](const WorkFunc &work) {
+                return false;
+            }));
+
+    EXPECT_CALL(*p_asyncReplySenderMock, sendReply(::testing::_))
+        .Times(1)
+        .WillOnce(::testing::Invoke(
+            [](const AI_IPC::VariantList& replyArgs) {
+                int32_t expectedResult = -1;
+                int32_t actualResult;
+                if (AI_IPC::parseVariantList <int32_t>
+                         (replyArgs, &actualResult))
+                {
+                    EXPECT_EQ(actualResult, expectedResult);
+                }
+                return true;
+            }));
+
+    dobby_test->startFromSpec((std::shared_ptr<AI_IPC::IAsyncReplySender>)p_iasyncReplySender);
+}
+
+/**
+ * @brief Test starting a container from a spec with argument size 3 and postWork success.
+ * Check if startFromSpec method handles the case when argument size is 3 and postWork succeeds.
+ * by sending back reply returned by startContainerFromSpec
+ *
+ * @return None.
+ */
+TEST_F(DaemonDobbyTest, startFromSpecSuccess_argSize_3_postWorkSuccess)
+{
+        // Create a UnixFd object
+    AI_IPC::UnixFd fd1 = 123; // Assuming 123 is a valid file descriptor
+    AI_IPC::VariantList validArgs_set1 = {
+    std::string("1"),/*Simulate a string representing the identifier of the container*/
+    std::string("2"),/*Simulate a string representing a JSON specification.*/
+    std::vector<AI_IPC::UnixFd>{fd1},/*Simulate valid file descriptors*/
+    };
+
+    EXPECT_CALL(*p_asyncReplySenderMock, getMethodCallArguments())
+        .Times(2)
+        .WillOnce(::testing::Return(validArgs_set1))
+        .WillOnce(::testing::Return(validArgs_set1));
+
+    EXPECT_CALL(*p_containerIdMock, isValid())
+        .WillOnce(::testing::Return(true));
+
+    EXPECT_CALL(*p_dobbyManagerMock, startContainerFromSpec(::testing::_,::testing::_,::testing::_,::testing::_,::testing::_,::testing::_))
+        .WillOnce(::testing::Return(123));
+
+    EXPECT_CALL(*p_workQueueMock, postWork(::testing::_))
+        .Times(1)
+            .WillOnce(::testing::Invoke(
+            [](const WorkFunc &work) {
+                work();
+                return true;
+            }));
+
+    EXPECT_CALL(*p_asyncReplySenderMock, sendReply(::testing::_))
+        .Times(1)
+        .WillOnce(::testing::Invoke(
+            [](const AI_IPC::VariantList& replyArgs) {
+                int32_t expectedResult = 123;
+                int32_t actualResult;
+                if (AI_IPC::parseVariantList <int32_t>
+                         (replyArgs, &actualResult))
+                {
+                    EXPECT_EQ(actualResult, expectedResult);
+                }
+                return true;
+            }));
+
+    dobby_test->startFromSpec((std::shared_ptr<AI_IPC::IAsyncReplySender>)p_iasyncReplySender);
+}
+
+/**
+ * @brief Test starting a container from a spec with argument size 6 and postWork success.
+ * Check if startFromSpec method handles the case when argument size is 6 and postWork succeeds.
+ * by sending back reply returned by startContainerFromSpec
+ *
+ * @return None.
+ */
+TEST_F(DaemonDobbyTest, startFromSpecSuccess_argSize_6_postWorkSuccess)
+{
+        // Create a UnixFd object
+    AI_IPC::UnixFd fd1 = 123; // Assuming 123 is a valid file descriptor
+    AI_IPC::VariantList validArgs_set2 = {
+    std::string("1"),/*Simulate a string representing the identifier of the container*/
+    std::string("2"),/*Simulate a string representing a JSON specification.*/
+    std::vector<AI_IPC::UnixFd>{fd1},/*Simulate valid file descriptors*/
+    std::string("abc"), /*Simulate a command string*/
+    std::string("def"),/*Simulate a string representing a display socket.*/
+    std::vector<std::string>{ "ghi" }, /*Simulate a  vector of strings representing environment variables.*/
+    };
+
+    EXPECT_CALL(*p_asyncReplySenderMock, getMethodCallArguments())
+        .Times(3)
+        .WillOnce(::testing::Return(validArgs_set2))
+        .WillOnce(::testing::Return(validArgs_set2))
+        .WillOnce(::testing::Return(validArgs_set2));
+
+    EXPECT_CALL(*p_containerIdMock, isValid())
+        .WillOnce(::testing::Return(true));
+
+    /* Simulates a successful start, returning a container descriptor ,which is a unique number that identifies the container */
+    EXPECT_CALL(*p_dobbyManagerMock, startContainerFromSpec(::testing::_,::testing::_,::testing::_,::testing::_,::testing::_,::testing::_))
+        .WillOnce(::testing::Return(123));
+
+    EXPECT_CALL(*p_workQueueMock, postWork(::testing::_))
+        .Times(1)
+            .WillOnce(::testing::Invoke(
+            [](const WorkFunc &work) {
+                work();
+                return true;
+            }));
+
+    EXPECT_CALL(*p_asyncReplySenderMock, sendReply(::testing::_))
+        .Times(1)
+        .WillOnce(::testing::Invoke(
+            [](const AI_IPC::VariantList& replyArgs) {
+                int32_t expectedResult = 123;
+                int32_t actualResult;
+                if (AI_IPC::parseVariantList <int32_t>
+                         (replyArgs, &actualResult))
+                {
+                    EXPECT_EQ(actualResult, expectedResult);
+                }
+                return true;
+            }));
+
+    dobby_test->startFromSpec((std::shared_ptr<AI_IPC::IAsyncReplySender>)p_iasyncReplySender);
+}
+
+/*Test cases for startFromSpec ends here*/
+#if (AI_BUILD_TYPE == AI_DEBUG)
+/****************************************************************************************************
+ * Test functions for :createBundle
+ * @brief Debugging utility that can be used to create a bundle based on
+ * a dobby spec file
+
+ * Use case coverage:
+ *                @Success :1
+ *                @Failure :3
+ ***************************************************************************************************/
+
+/**
+ * @brief Test createBundle with invalid arguments.
+ * Check if createBundle method handles the case with invalid arguments.
+ * by sending back the reply = false
+ *
+ * @return None.
+ */
+TEST_F(DaemonDobbyTest, createBundleFailed_invalidArg)
+{
+    EXPECT_CALL(*p_asyncReplySenderMock, getMethodCallArguments())
+        .WillOnce(::testing::Return(AI_IPC::VariantList{1, 2, 3}));
+
+    EXPECT_CALL(*p_workQueueMock, postWork(::testing::_)).Times(0);
+    EXPECT_CALL(*p_dobbyManagerMock, createBundle(::testing::_, ::testing::_)).Times(0);
+
+    EXPECT_CALL(*p_asyncReplySenderMock, sendReply(::testing::_))
+        .Times(1)
+            .WillOnce(::testing::Invoke(
+            [](const AI_IPC::VariantList& replyArgs) {
+                bool expectedResult = false;
+                bool actualResult;
+                if (AI_IPC::parseVariantList <bool>
+                         (replyArgs, &actualResult))
+                {
+                    EXPECT_EQ(actualResult, expectedResult);
+                }
+                return true;
+            }));
+
+    dobby_test->createBundle((std::shared_ptr<AI_IPC::IAsyncReplySender>)p_iasyncReplySender);
+}
+
+/**
+ * @brief Test createBundle with empty arguments.
+ * Check if createBundle method handles the case with empty arguments.
+ * by sending back the reply = false
+ *
+ * @return None.
+ */
+TEST_F(DaemonDobbyTest, createBundleFailed_emptyArg)
+{
+    EXPECT_CALL(*p_asyncReplySenderMock, getMethodCallArguments())
+        .WillOnce(::testing::Return(AI_IPC::VariantList{}));
+
+    // Since there are no arguments, postWork and createBundle should not be called.
+    EXPECT_CALL(*p_workQueueMock, postWork(::testing::_)).Times(0);
+    EXPECT_CALL(*p_dobbyManagerMock, createBundle(::testing::_, ::testing::_)).Times(0);
+
+    EXPECT_CALL(*p_asyncReplySenderMock, sendReply(::testing::_))
+        .Times(1)
+        .WillOnce(::testing::Invoke(
+            [](const AI_IPC::VariantList& replyArgs) {
+                bool expectedResult = false;
+                bool actualResult;
+                if (AI_IPC::parseVariantList <bool>
+                         (replyArgs, &actualResult))
+                {
+                    EXPECT_EQ(actualResult, expectedResult);
+                }
+                return true;
+            }));
+
+    dobby_test->createBundle((std::shared_ptr<AI_IPC::IAsyncReplySender>)p_iasyncReplySender);
+}
+
+/**
+ * @brief Test createBundle with invalid containerId.
+ * Check if createBundle method handles the case invalid ocntainer id.
+ * by sending back the reply = false
+ *
+ * @return None.
+ */
+TEST_F(DaemonDobbyTest, createBundleFailed_invalidContainerId)
+{
+    AI_IPC::VariantList validArgs = {
+    std::string("1"),
+    std::string("2"),
+    };
+    EXPECT_CALL(*p_asyncReplySenderMock, getMethodCallArguments())
+        .WillOnce(::testing::Return(AI_IPC::VariantList{validArgs}));
+
+    // Since there are no arguments, postWork and createBundle should not be called.
+    EXPECT_CALL(*p_workQueueMock, postWork(::testing::_)).Times(0);
+    EXPECT_CALL(*p_dobbyManagerMock, createBundle(::testing::_, ::testing::_)).Times(0);
+
+    EXPECT_CALL(*p_containerIdMock, isValid())
+        .WillOnce(::testing::Return(false));
+
+    EXPECT_CALL(*p_asyncReplySenderMock, sendReply(::testing::_))
+        .Times(1)
+        .WillOnce(::testing::Invoke(
+            [](const AI_IPC::VariantList& replyArgs) {
+                bool expectedResult = false;
+                bool actualResult;
+                if (AI_IPC::parseVariantList <bool>
+                         (replyArgs, &actualResult))
+                {
+                    EXPECT_EQ(actualResult, expectedResult);
+                }
+                return true;
+            }));
+
+    dobby_test->createBundle((std::shared_ptr<AI_IPC::IAsyncReplySender>)p_iasyncReplySender);
+}
+
+/**
+ * @brief Test createBundle with valid arguments and failed postWork.
+ * Check if createBundle method handles the case with valid arguments and failed postWork.
+ * by sending back the reply = false
+ *
+ * @return None.
+ */
+TEST_F(DaemonDobbyTest, createBundleFailed_validArg_postWorkFailed)
+{
+    AI_IPC::VariantList validArgs = {
+    std::string("1"),
+    std::string("2"),
+    };
+
+    EXPECT_CALL(*p_asyncReplySenderMock, getMethodCallArguments())
+        .WillOnce(::testing::Return(validArgs));
+
+    EXPECT_CALL(*p_dobbyManagerMock, createBundle(::testing::_, ::testing::_))
+        .Times(0);
+
+    EXPECT_CALL(*p_containerIdMock, isValid())
+        .WillOnce(::testing::Return(true));
+
+    EXPECT_CALL(*p_workQueueMock, postWork(::testing::_))
+        .Times(1)
+            .WillOnce(::testing::Invoke(
+            [](const WorkFunc &work) {
+                return false;
+            }));
+
+    EXPECT_CALL(*p_asyncReplySenderMock, sendReply(::testing::_))
+        .Times(1)
+        .WillOnce(::testing::Invoke(
+            [](const AI_IPC::VariantList& replyArgs) {
+                bool expectedResult = false;
+                bool actualResult;
+                if (AI_IPC::parseVariantList <bool>
+                         (replyArgs, &actualResult))
+                {
+                    EXPECT_EQ(actualResult, expectedResult);
+                }
+                return true;
+            }));
+
+    dobby_test->createBundle((std::shared_ptr<AI_IPC::IAsyncReplySender>)p_iasyncReplySender);
+}
+
+/**
+ * @brief Test createBundle with valid arguments and successful postWork.
+ * Check if createBundle method handles the case with valid arguments and successful postWork.
+ * by sending back the reply = true
+ *
+ * @return None.
+ */
+TEST_F(DaemonDobbyTest,createBundleSuccess_validArg_postWorkSuccess)
+{
+    AI_IPC::VariantList validArgs = {
+    std::string("arg1"),
+    std::string("arg2"),
+    };
+
+    EXPECT_CALL(*p_asyncReplySenderMock, getMethodCallArguments())
+        .WillOnce(::testing::Return(validArgs));
+
+    EXPECT_CALL(*p_dobbyManagerMock, createBundle(::testing::_, ::testing::_))
+        .WillOnce(::testing::Return(true));
+
+    EXPECT_CALL(*p_containerIdMock, isValid())
+        .WillOnce(::testing::Return(true));
+
+    EXPECT_CALL(*p_workQueueMock, postWork(::testing::_))
+        .Times(1)
+            .WillOnce(::testing::Invoke(
+            [](const WorkFunc &work) {
+                work();
+                return true;
+            }));
+
+
+    EXPECT_CALL(*p_asyncReplySenderMock, sendReply(::testing::_))
+        .Times(1)
+            .WillOnce(::testing::Invoke(
+            [](const AI_IPC::VariantList& replyArgs) {
+                bool expectedResult = true;
+                bool actualResult;
+                if (AI_IPC::parseVariantList <bool>
+                         (replyArgs, &actualResult))
+                {
+                    EXPECT_EQ(actualResult, expectedResult);
+                }
+                return true;
+            }));
+
+    dobby_test->createBundle((std::shared_ptr<AI_IPC::IAsyncReplySender>)p_iasyncReplySender);
+}
+
+
+/****************************************************************************************************
+ * Test functions for :getSpec
+ *  @brief Debugging utility to retrieve the original spec file for a running
+ *  container (i.e. like the 'virsh dumpxml' command).
+ * Use case coverage:
+ *                @Success :1
+ *                @Failure :3
+ ***************************************************************************************************/
+
+/**
+ * @brief Test getSpec with invalid arguments.
+ * Check if getSpec method handles the case with invalid arguments.
+ * by sending back empty reply
+ *
+ * @return None.
+ */
+TEST_F(DaemonDobbyTest, getSpecFailed_invalidArg)
+{
+    EXPECT_CALL(*p_asyncReplySenderMock, getMethodCallArguments())
+        .WillOnce(::testing::Return(AI_IPC::VariantList{1, 2, 3}));
+
+    EXPECT_CALL(*p_workQueueMock, postWork(::testing::_)).Times(0);
+    EXPECT_CALL(*p_dobbyManagerMock, specOfContainer(::testing::_)).Times(0);
+
+    EXPECT_CALL(*p_asyncReplySenderMock, sendReply(::testing::_))
+        .Times(1)
+        .WillOnce(::testing::Invoke(
+            [](const AI_IPC::VariantList& replyArgs) {
+                std::string expectedResult = "";
+                std::string actualResult = "";
+                if (AI_IPC::parseVariantList <std::string>
+                         (replyArgs, &actualResult))
+                {
+                    EXPECT_EQ(actualResult, expectedResult);
+                }
+                return true;
+            }));
+
+    dobby_test->getSpec((std::shared_ptr<AI_IPC::IAsyncReplySender>)p_iasyncReplySender);
+}
+
+ /* @brief Test getSpec with empty arguments.
+ * Check if getSpec method handles the case with empty arguments.
+ * by sending back empty reply
+ *
+ * @return None.
+ */
+TEST_F(DaemonDobbyTest, getSpecFailed_emptyArg)
+{
+    EXPECT_CALL(*p_asyncReplySenderMock, getMethodCallArguments())
+        .WillOnce(::testing::Return(AI_IPC::VariantList{}));
+
+    EXPECT_CALL(*p_workQueueMock, postWork(::testing::_)).Times(0);
+    EXPECT_CALL(*p_dobbyManagerMock, specOfContainer(::testing::_)).Times(0);
+
+    EXPECT_CALL(*p_asyncReplySenderMock, sendReply(::testing::_))
+        .Times(1)
+        .WillOnce(::testing::Invoke(
+            [](const AI_IPC::VariantList& replyArgs) {
+                std::string expectedResult = "";
+                std::string actualResult = "";
+                if (AI_IPC::parseVariantList <std::string>
+                         (replyArgs, &actualResult))
+                {
+                    EXPECT_EQ(actualResult, expectedResult);
+                }
+                return true;
+            }));
+
+    dobby_test->getSpec((std::shared_ptr<AI_IPC::IAsyncReplySender>)p_iasyncReplySender);
+}
+/**
+ * @brief Test getSpec with valid arguments and failed posting specOfContainer to the  work queue
+ * Check if getSpec method handles the case with valid arguments and failed postWork.
+ * by sending back empty reply
+ * @return None.
+ */
+TEST_F(DaemonDobbyTest, getSpecFailed_validArg_postWorkFailed)
+{
+    AI_IPC::VariantList validArgs = {
+    int32_t(123), /*Simulates a valid argument 'descriptor' with a value of 123*/
+    };
+
+    EXPECT_CALL(*p_asyncReplySenderMock, getMethodCallArguments())
+        .WillOnce(::testing::Return(validArgs));
+
+    EXPECT_CALL(*p_dobbyManagerMock, specOfContainer(::testing::_))
+        .Times(0);
+
+    EXPECT_CALL(*p_workQueueMock, postWork(::testing::_))
+        .Times(1)
+            .WillOnce(::testing::Invoke(
+            [](const WorkFunc &work) {
+                return false;
+            }));
+
+    EXPECT_CALL(*p_asyncReplySenderMock, sendReply(::testing::_))
+        .Times(1)
+        .WillOnce(::testing::Invoke(
+            [](const AI_IPC::VariantList& replyArgs) {
+                std::string expectedResult = "";
+                std::string actualResult = "";
+                if (AI_IPC::parseVariantList <std::string>
+                         (replyArgs, &actualResult))
+                {
+                    EXPECT_EQ(actualResult, expectedResult);
+                }
+                return true;
+            }));
+
+    dobby_test->getSpec((std::shared_ptr<AI_IPC::IAsyncReplySender>)p_iasyncReplySender);
+}
+
+/**
+ * @brief Test getSpec with valid arguments and successful postWork.
+ * Check if getSpec method handles the case with valid arguments and successful postWork.
+ * by sending back a reply value returned by specOfContainer.
+ *
+ * @return None.
+ */
+TEST_F(DaemonDobbyTest, getSpecSuccess_validArg_postWorkSuccess)
+{
+    AI_IPC::VariantList validArgs = {
+    int32_t(123), /*Simulates a valid argument 'descriptor' with a value of 123*/
+    };
+    std::string specContainerString = "ContainerSpec123";
+
+    EXPECT_CALL(*p_asyncReplySenderMock, getMethodCallArguments())
+        .WillOnce(::testing::Return(validArgs));
+
+    EXPECT_CALL(*p_dobbyManagerMock, specOfContainer(::testing::_))
+        .WillOnce(::testing::Return(specContainerString));
+
+    EXPECT_CALL(*p_workQueueMock, postWork(::testing::_))
+        .Times(1)
+            .WillOnce(::testing::Invoke(
+            [](const WorkFunc &work) {
+                work();
+                return true;
+            }));
+
+    EXPECT_CALL(*p_asyncReplySenderMock, sendReply(::testing::_))
+        .Times(1)
+        .WillOnce(::testing::Invoke(
+            [](const AI_IPC::VariantList& replyArgs) {
+                std::string expectedResult = "ContainerSpec123";
+                std::string actualResult = "";
+                if (AI_IPC::parseVariantList <std::string>
+                         (replyArgs, &actualResult))
+                {
+                    EXPECT_EQ(actualResult, expectedResult);
+                }
+                return true;
+            }));
+
+    dobby_test->getSpec((std::shared_ptr<AI_IPC::IAsyncReplySender>)p_iasyncReplySender);
+}
+/*Test cases for getSpec ends here*/
+#endif //(AI_BUILD_TYPE == AI_DEBUG)
+#else
 /****************************************************************************************************
  * Test functions for :shutdown
  * @brief Method called from admin client requesting the daemon to shutdown
@@ -990,381 +1569,6 @@ TEST_F(DaemonDobbyTest, getInfoSuccess_validArg_postWorkSuccess)
 }
 
 /*Test cases for getInfo ends here*/
-
-#if (AI_BUILD_TYPE == AI_DEBUG) && defined(LEGACY_COMPONENTS)
-/****************************************************************************************************
- * Test functions for :createBundle
- * @brief Debugging utility that can be used to create a bundle based on
- * a dobby spec file
-
- * Use case coverage:
- *                @Success :1
- *                @Failure :3
- ***************************************************************************************************/
-
-/**
- * @brief Test createBundle with invalid arguments.
- * Check if createBundle method handles the case with invalid arguments.
- * by sending back the reply = false
- *
- * @return None.
- */
-TEST_F(DaemonDobbyTest, createBundleFailed_invalidArg)
-{
-    EXPECT_CALL(*p_asyncReplySenderMock, getMethodCallArguments())
-        .WillOnce(::testing::Return(AI_IPC::VariantList{1, 2, 3}));
-
-    EXPECT_CALL(*p_workQueueMock, postWork(::testing::_)).Times(0);
-    EXPECT_CALL(*p_dobbyManagerMock, createBundle(::testing::_, ::testing::_)).Times(0);
-
-    EXPECT_CALL(*p_asyncReplySenderMock, sendReply(::testing::_))
-        .Times(1)
-            .WillOnce(::testing::Invoke(
-            [](const AI_IPC::VariantList& replyArgs) {
-                bool expectedResult = false;
-                bool actualResult;
-                if (AI_IPC::parseVariantList <bool>
-                         (replyArgs, &actualResult))
-                {
-                    EXPECT_EQ(actualResult, expectedResult);
-                }
-                return true;
-            }));
-
-    dobby_test->createBundle((std::shared_ptr<AI_IPC::IAsyncReplySender>)p_iasyncReplySender);
-}
-
-/**
- * @brief Test createBundle with empty arguments.
- * Check if createBundle method handles the case with empty arguments.
- * by sending back the reply = false
- *
- * @return None.
- */
-TEST_F(DaemonDobbyTest, createBundleFailed_emptyArg)
-{
-    EXPECT_CALL(*p_asyncReplySenderMock, getMethodCallArguments())
-        .WillOnce(::testing::Return(AI_IPC::VariantList{}));
-
-    // Since there are no arguments, postWork and createBundle should not be called.
-    EXPECT_CALL(*p_workQueueMock, postWork(::testing::_)).Times(0);
-    EXPECT_CALL(*p_dobbyManagerMock, createBundle(::testing::_, ::testing::_)).Times(0);
-
-    EXPECT_CALL(*p_asyncReplySenderMock, sendReply(::testing::_))
-        .Times(1)
-        .WillOnce(::testing::Invoke(
-            [](const AI_IPC::VariantList& replyArgs) {
-                bool expectedResult = false;
-                bool actualResult;
-                if (AI_IPC::parseVariantList <bool>
-                         (replyArgs, &actualResult))
-                {
-                    EXPECT_EQ(actualResult, expectedResult);
-                }
-                return true;
-            }));
-
-    dobby_test->createBundle((std::shared_ptr<AI_IPC::IAsyncReplySender>)p_iasyncReplySender);
-}
-
-/**
- * @brief Test createBundle with invalid containerId.
- * Check if createBundle method handles the case invalid ocntainer id.
- * by sending back the reply = false
- *
- * @return None.
- */
-TEST_F(DaemonDobbyTest, createBundleFailed_invalidContainerId)
-{
-    AI_IPC::VariantList validArgs = {
-    std::string("1"),
-    std::string("2"),
-    };
-    EXPECT_CALL(*p_asyncReplySenderMock, getMethodCallArguments())
-        .WillOnce(::testing::Return(AI_IPC::VariantList{validArgs}));
-
-    // Since there are no arguments, postWork and createBundle should not be called.
-    EXPECT_CALL(*p_workQueueMock, postWork(::testing::_)).Times(0);
-    EXPECT_CALL(*p_dobbyManagerMock, createBundle(::testing::_, ::testing::_)).Times(0);
-
-    EXPECT_CALL(*p_containerIdMock, isValid())
-        .WillOnce(::testing::Return(false));
-
-    EXPECT_CALL(*p_asyncReplySenderMock, sendReply(::testing::_))
-        .Times(1)
-        .WillOnce(::testing::Invoke(
-            [](const AI_IPC::VariantList& replyArgs) {
-                bool expectedResult = false;
-                bool actualResult;
-                if (AI_IPC::parseVariantList <bool>
-                         (replyArgs, &actualResult))
-                {
-                    EXPECT_EQ(actualResult, expectedResult);
-                }
-                return true;
-            }));
-
-    dobby_test->createBundle((std::shared_ptr<AI_IPC::IAsyncReplySender>)p_iasyncReplySender);
-}
-
-/**
- * @brief Test createBundle with valid arguments and failed postWork.
- * Check if createBundle method handles the case with valid arguments and failed postWork.
- * by sending back the reply = false
- *
- * @return None.
- */
-TEST_F(DaemonDobbyTest, createBundleFailed_validArg_postWorkFailed)
-{
-    AI_IPC::VariantList validArgs = {
-    std::string("1"),
-    std::string("2"),
-    };
-
-    EXPECT_CALL(*p_asyncReplySenderMock, getMethodCallArguments())
-        .WillOnce(::testing::Return(validArgs));
-
-    EXPECT_CALL(*p_dobbyManagerMock, createBundle(::testing::_, ::testing::_))
-        .Times(0);
-
-    EXPECT_CALL(*p_containerIdMock, isValid())
-        .WillOnce(::testing::Return(true));
-
-    EXPECT_CALL(*p_workQueueMock, postWork(::testing::_))
-        .Times(1)
-            .WillOnce(::testing::Invoke(
-            [](const WorkFunc &work) {
-                return false;
-            }));
-
-    EXPECT_CALL(*p_asyncReplySenderMock, sendReply(::testing::_))
-        .Times(1)
-        .WillOnce(::testing::Invoke(
-            [](const AI_IPC::VariantList& replyArgs) {
-                bool expectedResult = false;
-                bool actualResult;
-                if (AI_IPC::parseVariantList <bool>
-                         (replyArgs, &actualResult))
-                {
-                    EXPECT_EQ(actualResult, expectedResult);
-                }
-                return true;
-            }));
-
-    dobby_test->createBundle((std::shared_ptr<AI_IPC::IAsyncReplySender>)p_iasyncReplySender);
-}
-
-/**
- * @brief Test createBundle with valid arguments and successful postWork.
- * Check if createBundle method handles the case with valid arguments and successful postWork.
- * by sending back the reply = true
- *
- * @return None.
- */
-TEST_F(DaemonDobbyTest,createBundleSuccess_validArg_postWorkSuccess)
-{
-    AI_IPC::VariantList validArgs = {
-    std::string("arg1"),
-    std::string("arg2"),
-    };
-
-    EXPECT_CALL(*p_asyncReplySenderMock, getMethodCallArguments())
-        .WillOnce(::testing::Return(validArgs));
-
-    EXPECT_CALL(*p_dobbyManagerMock, createBundle(::testing::_, ::testing::_))
-        .WillOnce(::testing::Return(true));
-
-    EXPECT_CALL(*p_containerIdMock, isValid())
-        .WillOnce(::testing::Return(true));
-
-    EXPECT_CALL(*p_workQueueMock, postWork(::testing::_))
-        .Times(1)
-            .WillOnce(::testing::Invoke(
-            [](const WorkFunc &work) {
-                work();
-                return true;
-            }));
-
-
-    EXPECT_CALL(*p_asyncReplySenderMock, sendReply(::testing::_))
-        .Times(1)
-            .WillOnce(::testing::Invoke(
-            [](const AI_IPC::VariantList& replyArgs) {
-                bool expectedResult = true;
-                bool actualResult;
-                if (AI_IPC::parseVariantList <bool>
-                         (replyArgs, &actualResult))
-                {
-                    EXPECT_EQ(actualResult, expectedResult);
-                }
-                return true;
-            }));
-
-    dobby_test->createBundle((std::shared_ptr<AI_IPC::IAsyncReplySender>)p_iasyncReplySender);
-}
-
-
-/****************************************************************************************************
- * Test functions for :getSpec
- *  @brief Debugging utility to retrieve the original spec file for a running
- *  container (i.e. like the 'virsh dumpxml' command).
- * Use case coverage:
- *                @Success :1
- *                @Failure :3
- ***************************************************************************************************/
-
-/**
- * @brief Test getSpec with invalid arguments.
- * Check if getSpec method handles the case with invalid arguments.
- * by sending back empty reply
- *
- * @return None.
- */
-TEST_F(DaemonDobbyTest, getSpecFailed_invalidArg)
-{
-    EXPECT_CALL(*p_asyncReplySenderMock, getMethodCallArguments())
-        .WillOnce(::testing::Return(AI_IPC::VariantList{1, 2, 3}));
-
-    EXPECT_CALL(*p_workQueueMock, postWork(::testing::_)).Times(0);
-    EXPECT_CALL(*p_dobbyManagerMock, specOfContainer(::testing::_)).Times(0);
-
-    EXPECT_CALL(*p_asyncReplySenderMock, sendReply(::testing::_))
-        .Times(1)
-        .WillOnce(::testing::Invoke(
-            [](const AI_IPC::VariantList& replyArgs) {
-                std::string expectedResult = "";
-                std::string actualResult = "";
-                if (AI_IPC::parseVariantList <std::string>
-                         (replyArgs, &actualResult))
-                {
-                    EXPECT_EQ(actualResult, expectedResult);
-                }
-                return true;
-            }));
-
-    dobby_test->getSpec((std::shared_ptr<AI_IPC::IAsyncReplySender>)p_iasyncReplySender);
-}
-
- /* @brief Test getSpec with empty arguments.
- * Check if getSpec method handles the case with empty arguments.
- * by sending back empty reply
- *
- * @return None.
- */
-TEST_F(DaemonDobbyTest, getSpecFailed_emptyArg)
-{
-    EXPECT_CALL(*p_asyncReplySenderMock, getMethodCallArguments())
-        .WillOnce(::testing::Return(AI_IPC::VariantList{}));
-
-    EXPECT_CALL(*p_workQueueMock, postWork(::testing::_)).Times(0);
-    EXPECT_CALL(*p_dobbyManagerMock, specOfContainer(::testing::_)).Times(0);
-
-    EXPECT_CALL(*p_asyncReplySenderMock, sendReply(::testing::_))
-        .Times(1)
-        .WillOnce(::testing::Invoke(
-            [](const AI_IPC::VariantList& replyArgs) {
-                std::string expectedResult = "";
-                std::string actualResult = "";
-                if (AI_IPC::parseVariantList <std::string>
-                         (replyArgs, &actualResult))
-                {
-                    EXPECT_EQ(actualResult, expectedResult);
-                }
-                return true;
-            }));
-
-    dobby_test->getSpec((std::shared_ptr<AI_IPC::IAsyncReplySender>)p_iasyncReplySender);
-}
-/**
- * @brief Test getSpec with valid arguments and failed posting specOfContainer to the  work queue
- * Check if getSpec method handles the case with valid arguments and failed postWork.
- * by sending back empty reply
- * @return None.
- */
-TEST_F(DaemonDobbyTest, getSpecFailed_validArg_postWorkFailed)
-{
-    AI_IPC::VariantList validArgs = {
-    int32_t(123), /*Simulates a valid argument 'descriptor' with a value of 123*/
-    };
-
-    EXPECT_CALL(*p_asyncReplySenderMock, getMethodCallArguments())
-        .WillOnce(::testing::Return(validArgs));
-
-    EXPECT_CALL(*p_dobbyManagerMock, specOfContainer(::testing::_))
-        .Times(0);
-
-    EXPECT_CALL(*p_workQueueMock, postWork(::testing::_))
-        .Times(1)
-            .WillOnce(::testing::Invoke(
-            [](const WorkFunc &work) {
-                return false;
-            }));
-
-    EXPECT_CALL(*p_asyncReplySenderMock, sendReply(::testing::_))
-        .Times(1)
-        .WillOnce(::testing::Invoke(
-            [](const AI_IPC::VariantList& replyArgs) {
-                std::string expectedResult = "";
-                std::string actualResult = "";
-                if (AI_IPC::parseVariantList <std::string>
-                         (replyArgs, &actualResult))
-                {
-                    EXPECT_EQ(actualResult, expectedResult);
-                }
-                return true;
-            }));
-
-    dobby_test->getSpec((std::shared_ptr<AI_IPC::IAsyncReplySender>)p_iasyncReplySender);
-}
-
-/**
- * @brief Test getSpec with valid arguments and successful postWork.
- * Check if getSpec method handles the case with valid arguments and successful postWork.
- * by sending back a reply value returned by specOfContainer.
- *
- * @return None.
- */
-TEST_F(DaemonDobbyTest, getSpecSuccess_validArg_postWorkSuccess)
-{
-    AI_IPC::VariantList validArgs = {
-    int32_t(123), /*Simulates a valid argument 'descriptor' with a value of 123*/
-    };
-    std::string specContainerString = "ContainerSpec123";
-
-    EXPECT_CALL(*p_asyncReplySenderMock, getMethodCallArguments())
-        .WillOnce(::testing::Return(validArgs));
-
-    EXPECT_CALL(*p_dobbyManagerMock, specOfContainer(::testing::_))
-        .WillOnce(::testing::Return(specContainerString));
-
-    EXPECT_CALL(*p_workQueueMock, postWork(::testing::_))
-        .Times(1)
-            .WillOnce(::testing::Invoke(
-            [](const WorkFunc &work) {
-                work();
-                return true;
-            }));
-
-    EXPECT_CALL(*p_asyncReplySenderMock, sendReply(::testing::_))
-        .Times(1)
-        .WillOnce(::testing::Invoke(
-            [](const AI_IPC::VariantList& replyArgs) {
-                std::string expectedResult = "ContainerSpec123";
-                std::string actualResult = "";
-                if (AI_IPC::parseVariantList <std::string>
-                         (replyArgs, &actualResult))
-                {
-                    EXPECT_EQ(actualResult, expectedResult);
-                }
-                return true;
-            }));
-
-    dobby_test->getSpec((std::shared_ptr<AI_IPC::IAsyncReplySender>)p_iasyncReplySender);
-}
-
-/*Test cases for getSpec ends here*/
-#endif //(AI_BUILD_TYPE == AI_DEBUG) && defined(LEGACY_COMPONENTS)
-
 #if (AI_BUILD_TYPE == AI_DEBUG)
 /****************************************************************************************************
  * Test functions for :getOCIConfig
@@ -2260,213 +2464,6 @@ TEST_F(DaemonDobbyTest, setAIDbusAddressSuccess_setAIDbusAddressSuccess)
 
     dobby_test->setAIDbusAddress((std::shared_ptr<AI_IPC::IAsyncReplySender>)p_iasyncReplySender);
 }
-/*Test cases for setAIDbusAddress ends here*/
-#if defined(LEGACY_COMPONENTS)
-
-/****************************************************************************************************
- * Test functions for :startFromSpec
- * @brief Starts a new container from the supplied json spec document.
- * Use case coverage:
- *                @Success :2
- *                @Failure :2
- ***************************************************************************************************/
-/**
- * @brief Test starting a container from a spec with invalid arguments and parse parameter failed.
- * Check if startFromSpec method handles the case with invalid arguments and parsing arguments failed;
- * by sending back reply = -1
- *
- * @return None.
- */
-TEST_F(DaemonDobbyTest, startFromSpecFailed_parseParamFailure)
-{
-    EXPECT_CALL(*p_asyncReplySenderMock, getMethodCallArguments())
-        .Times(2)
-        .WillOnce(::testing::Return(AI_IPC::VariantList{1}))
-        .WillOnce(::testing::Return(AI_IPC::VariantList{1,2}));
-
-    EXPECT_CALL(*p_asyncReplySenderMock, sendReply(::testing::_))
-        .Times(1)
-        .WillOnce(::testing::Invoke(
-            [](const AI_IPC::VariantList& replyArgs) {
-                int32_t expectedResult = -1;
-                int32_t actualResult;
-                if (AI_IPC::parseVariantList <int32_t>
-                         (replyArgs, &actualResult))
-                {
-                    EXPECT_EQ(actualResult, expectedResult);
-                }
-                return true;
-            }));
-
-    dobby_test->startFromSpec((std::shared_ptr<AI_IPC::IAsyncReplySender>)p_iasyncReplySender);
-}
-
-/**
- * @brief Test starting a container from a spec with argument size 3 and postWork failure.
- * Check if startFromSpec method handles the case when argument size is 3 and postWork fails.
- * by sending back reply = -1
- *
- * @return None.
- */
-TEST_F(DaemonDobbyTest, startFromSpecFailed_argSize_3_postWorkFail)
-{
-    AI_IPC::UnixFd fd1 = 123; // Assuming 123 is a valid file descriptor
-    AI_IPC::VariantList validArgs_set1 = {
-    std::string("1"),/*Simulate a string representing the identifier of the container*/
-    std::string("2"),/*Simulate a string representing a JSON specification.*/
-    std::vector<AI_IPC::UnixFd>{fd1},/*Simulate valid file descriptors*/
-    };
-
-
-        // Create a UnixFd object
-    EXPECT_CALL(*p_asyncReplySenderMock, getMethodCallArguments())
-            .Times(2)
-        .WillOnce(::testing::Return(validArgs_set1))
-        .WillOnce(::testing::Return(validArgs_set1));
-
-    EXPECT_CALL(*p_containerIdMock, isValid())
-        .WillOnce(::testing::Return(true));
-
-    EXPECT_CALL(*p_dobbyManagerMock, startContainerFromSpec(::testing::_,::testing::_,::testing::_,::testing::_,::testing::_,::testing::_))
-        .Times(0);
-
-    EXPECT_CALL(*p_workQueueMock, postWork(::testing::_))
-        .Times(1)
-            .WillOnce(::testing::Invoke(
-            [](const WorkFunc &work) {
-                return false;
-            }));
-
-    EXPECT_CALL(*p_asyncReplySenderMock, sendReply(::testing::_))
-        .Times(1)
-        .WillOnce(::testing::Invoke(
-            [](const AI_IPC::VariantList& replyArgs) {
-                int32_t expectedResult = -1;
-                int32_t actualResult;
-                if (AI_IPC::parseVariantList <int32_t>
-                         (replyArgs, &actualResult))
-                {
-                    EXPECT_EQ(actualResult, expectedResult);
-                }
-                return true;
-            }));
-
-    dobby_test->startFromSpec((std::shared_ptr<AI_IPC::IAsyncReplySender>)p_iasyncReplySender);
-}
-
-/**
- * @brief Test starting a container from a spec with argument size 3 and postWork success.
- * Check if startFromSpec method handles the case when argument size is 3 and postWork succeeds.
- * by sending back reply returned by startContainerFromSpec
- *
- * @return None.
- */
-TEST_F(DaemonDobbyTest, startFromSpecSuccess_argSize_3_postWorkSuccess)
-{
-        // Create a UnixFd object
-    AI_IPC::UnixFd fd1 = 123; // Assuming 123 is a valid file descriptor
-    AI_IPC::VariantList validArgs_set1 = {
-    std::string("1"),/*Simulate a string representing the identifier of the container*/
-    std::string("2"),/*Simulate a string representing a JSON specification.*/
-    std::vector<AI_IPC::UnixFd>{fd1},/*Simulate valid file descriptors*/
-    };
-
-    EXPECT_CALL(*p_asyncReplySenderMock, getMethodCallArguments())
-        .Times(2)
-        .WillOnce(::testing::Return(validArgs_set1))
-        .WillOnce(::testing::Return(validArgs_set1));
-
-    EXPECT_CALL(*p_containerIdMock, isValid())
-        .WillOnce(::testing::Return(true));
-
-    EXPECT_CALL(*p_dobbyManagerMock, startContainerFromSpec(::testing::_,::testing::_,::testing::_,::testing::_,::testing::_,::testing::_))
-        .WillOnce(::testing::Return(123));
-
-    EXPECT_CALL(*p_workQueueMock, postWork(::testing::_))
-        .Times(1)
-            .WillOnce(::testing::Invoke(
-            [](const WorkFunc &work) {
-                work();
-                return true;
-            }));
-
-    EXPECT_CALL(*p_asyncReplySenderMock, sendReply(::testing::_))
-        .Times(1)
-        .WillOnce(::testing::Invoke(
-            [](const AI_IPC::VariantList& replyArgs) {
-                int32_t expectedResult = 123;
-                int32_t actualResult;
-                if (AI_IPC::parseVariantList <int32_t>
-                         (replyArgs, &actualResult))
-                {
-                    EXPECT_EQ(actualResult, expectedResult);
-                }
-                return true;
-            }));
-
-    dobby_test->startFromSpec((std::shared_ptr<AI_IPC::IAsyncReplySender>)p_iasyncReplySender);
-}
-
-/**
- * @brief Test starting a container from a spec with argument size 6 and postWork success.
- * Check if startFromSpec method handles the case when argument size is 6 and postWork succeeds.
- * by sending back reply returned by startContainerFromSpec
- *
- * @return None.
- */
-TEST_F(DaemonDobbyTest, startFromSpecSuccess_argSize_6_postWorkSuccess)
-{
-        // Create a UnixFd object
-    AI_IPC::UnixFd fd1 = 123; // Assuming 123 is a valid file descriptor
-    AI_IPC::VariantList validArgs_set2 = {
-    std::string("1"),/*Simulate a string representing the identifier of the container*/
-    std::string("2"),/*Simulate a string representing a JSON specification.*/
-    std::vector<AI_IPC::UnixFd>{fd1},/*Simulate valid file descriptors*/
-    std::string("abc"), /*Simulate a command string*/
-    std::string("def"),/*Simulate a string representing a display socket.*/
-    std::vector<std::string>{ "ghi" }, /*Simulate a  vector of strings representing environment variables.*/
-    };
-
-    EXPECT_CALL(*p_asyncReplySenderMock, getMethodCallArguments())
-        .Times(3)
-        .WillOnce(::testing::Return(validArgs_set2))
-        .WillOnce(::testing::Return(validArgs_set2))
-        .WillOnce(::testing::Return(validArgs_set2));
-
-    EXPECT_CALL(*p_containerIdMock, isValid())
-        .WillOnce(::testing::Return(true));
-
-    /* Simulates a successful start, returning a container descriptor ,which is a unique number that identifies the container */
-    EXPECT_CALL(*p_dobbyManagerMock, startContainerFromSpec(::testing::_,::testing::_,::testing::_,::testing::_,::testing::_,::testing::_))
-        .WillOnce(::testing::Return(123));
-
-    EXPECT_CALL(*p_workQueueMock, postWork(::testing::_))
-        .Times(1)
-            .WillOnce(::testing::Invoke(
-            [](const WorkFunc &work) {
-                work();
-                return true;
-            }));
-
-    EXPECT_CALL(*p_asyncReplySenderMock, sendReply(::testing::_))
-        .Times(1)
-        .WillOnce(::testing::Invoke(
-            [](const AI_IPC::VariantList& replyArgs) {
-                int32_t expectedResult = 123;
-                int32_t actualResult;
-                if (AI_IPC::parseVariantList <int32_t>
-                         (replyArgs, &actualResult))
-                {
-                    EXPECT_EQ(actualResult, expectedResult);
-                }
-                return true;
-            }));
-
-    dobby_test->startFromSpec((std::shared_ptr<AI_IPC::IAsyncReplySender>)p_iasyncReplySender);
-}
-
-/*Test cases for startFromSpec ends here*/
-#endif //defined(LEGACY_COMPONENTS)
 
 /****************************************************************************************************
  * Test functions for :startFromBundle
@@ -2904,3 +2901,6 @@ TEST_F(DaemonDobbyTest, list_postWorkFailed_sendReplyFailed)
     dobby_test->list((std::shared_ptr<AI_IPC::IAsyncReplySender>)p_iasyncReplySender);
 }
 /*Test cases for list ends here*/
+#endif //defined(LEGACY_COMPONENTS)
+
+
