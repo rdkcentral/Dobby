@@ -82,7 +82,7 @@ jobs:
           -o filtered_coverage.info
           &&
           genhtml
-          -o coverage
+          -o coverage_${ matrix.build_type }_${ matrix.extra_flags }
           -t "dobby coverage"
           filtered_coverage.info
 
@@ -92,5 +92,5 @@ jobs:
         with:
           name: artifacts
           path: |
-            coverage
+            coverage_${ matrix.build_type }_${ matrix.extra_flags }
           if-no-files-found: warn
