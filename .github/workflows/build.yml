@@ -82,7 +82,7 @@ jobs:
           -o filtered_coverage.info
           &&
           genhtml
-          -o coverage_${ matrix.build_type }_${ matrix.extra_flags }
+          -o coverage/${matrix.build_type}/${matrix.extra_flags}/coverage
           -t "dobby coverage"
           filtered_coverage.info
 
