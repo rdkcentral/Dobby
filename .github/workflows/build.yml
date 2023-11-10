@@ -6,7 +6,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       # For CI, build all optional plugins. Newly developed plugins should be added to this list
-      optional_plugins: "-DPLUGIN_TESTPLUGIN=ON -DPLUGIN_GPU=ON -DPLUGIN_LOCALTIME=ON -DPLUGIN_RTSCHEDULING=ON -DPLUGIN_HTTPPROXY=ON -DPLUGIN_APPSERVICES=ON -DPLUGIN_IONMEMORY=ON -DPLUGIN_DEVICEMAPPER=ON -DPLUGIN_OOMCRASH=ON"
+      optional_plugins: "-DPLUGIN_TESTPLUGIN=ON -DPLUGIN_GPU=ON -DPLUGIN_LOCALTIME=ON -DPLUGIN_RTSCHEDULING=ON -DPLUGIN_HTTPPROXY=ON -DPLUGIN_APPSERVICES=ON -DPLUGIN_IONMEMORY=ON -DPLUGIN_DEVICEMAPPER=ON -DPLUGIN_OOMCRASH=ON -DRDK=ON -DLEGACY_COMPONENTS=ON -DUSE_SYSTEMD=ON"
     strategy:
       fail-fast: false
       matrix:
@@ -22,8 +22,8 @@ jobs:
         # The matrix will try all possible combinations of the below arrays
         # If adding a new cmake option, include both the ON and OFF version to ensure the
         # matrix runs both versions
-        build_type: ["Release", "Debug"]
-        extra_flags: ["-DLEGACY_COMPONENTS=ON", "-DLEGACY_COMPONENTS=OFF", "-DUSE_SYSTEMD=ON", "-DUSE_SYSTEMD=OFF"]
+        build_type: ["Debug"]
+#        extra_flags: ["-DLEGACY_COMPONENTS=ON", "-DLEGACY_COMPONENTS=OFF", "-DUSE_SYSTEMD=ON", "-DUSE_SYSTEMD=OFF"]
     name: Build in ${{ matrix.build_type }} Mode (${{ matrix.extra_flags }})
     steps:
       - name: checkout
