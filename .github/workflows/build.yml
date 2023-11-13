@@ -59,7 +59,7 @@ jobs:
          cd $GITHUB_WORKSPACE
          mkdir build
          cd build
-         if [ ${matrix.extra_flags} = "RUN_ALL_TESTS" ]
+         if [ $matrix.extra_flags = "RUN_ALL_TESTS" ]
          then
              cmake -DCMAKE_TOOLCHAIN_FILE="${{ env.TOOLCHAIN_FILE }}" -DRDK_PLATFORM=DEV_VM -DCMAKE_INSTALL_PREFIX:PATH=/usr -DENABLE_DOBBYL1TEST=ON -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} ${{ matrix.optional_flags }} ${{ env.optional_plugins }} ..
          else
