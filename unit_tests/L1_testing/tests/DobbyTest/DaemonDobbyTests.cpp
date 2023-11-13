@@ -2593,7 +2593,7 @@ TEST_F(DaemonDobbyTest, startFromBundleSuccess_argSize_3_postWorkSuccess)
                                                const std::list<int> &files,
                                                const std::string &command,
                                                const std::string &displaySocket,
-                                               const std::vector<std::string>& envVars){dobby_test->onContainerStarted(1,id)}));
+                                               const std::vector<std::string>& envVars){dobby_test->onContainerStarted(12,id);}));
 #endif
 
     /* Simulates a successful start, returning a container descriptor ,which is a unique number that identifies the container */
