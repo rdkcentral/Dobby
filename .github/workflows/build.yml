@@ -24,7 +24,7 @@ jobs:
         # If adding a new cmake option, include both the ON and OFF version to ensure the
         # matrix runs both versions
         build_type: ["Debug"]
-        extra_flags: [ "${{ env.optional_plugins }}", "-DLEGACY_COMPONENTS=ON", "-DLEGACY_COMPONENTS=OFF", "-DUSE_SYSTEMD=ON", "-DUSE_SYSTEMD=OFF"]
+        extra_flags: [ "${{ env.optional_flags }}", "-DLEGACY_COMPONENTS=ON", "-DLEGACY_COMPONENTS=OFF", "-DUSE_SYSTEMD=ON", "-DUSE_SYSTEMD=OFF"]
     name: Build in ${{ matrix.build_type }} Mode (${{ matrix.extra_flags }})
     steps:
       - name: checkout
