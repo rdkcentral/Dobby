@@ -2585,19 +2585,20 @@ TEST_F(DaemonDobbyTest, startFromBundleSuccess_argSize_3_postWorkSuccess)
         .WillOnce(::testing::Return(true));
 
 
-#if 1
+#if 0
     ON_CALL(*p_dobbyManagerMock, startContainerFromBundle(::testing::_,::testing::_,::testing::_,::testing::_,::testing::_,::testing::_))
-       .WillByDefault(::testing::Invoke(
-                          [&](const ContainerId & id,
-                                               const std::string &bundlePath,
-                                               const std::list<int> &files,
-                                               const std::string &command,
-                                               const std::string &displaySocket,
-                                               const std::vector<std::string>& envVars){dobby_test->onContainerStarted(12,id);}));
+
 #endif
 
     /* Simulates a successful start, returning a container descriptor ,which is a unique number that identifies the container */
     EXPECT_CALL(*p_dobbyManagerMock, startContainerFromBundle(::testing::_,::testing::_,::testing::_,::testing::_,::testing::_,::testing::_))
+       .WillByDefault(::testing::Invoke(
+                      [&](const ContainerId & id,
+                                           const std::string &bundlePath,
+                                           const std::list<int> &files,
+                                           const std::string &command,
+                                           const std::string &displaySocket,
+                                           const std::vector<std::string>& envVars){dobby_test->onContainerStarted(12,id);}));
         .WillOnce(::testing::Return(12));
 
     EXPECT_CALL(*p_workQueueMock, postWork(::testing::_))
