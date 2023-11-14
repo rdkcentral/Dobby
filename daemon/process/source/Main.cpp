@@ -255,6 +255,18 @@ static std::shared_ptr<Settings> createSettings()
 {
     // create settings from either defaults or JSON settings file
     std::shared_ptr<Settings> settings;
+
+#if defined(ENABLE_OPT_SETTINGS)
+    // Enable searching for settings in /opt/dobby.json
+    const std::string DEV_SETTINGS_PATH{"/opt/dobby.json"};
+    if(access(DEV_SETTINGS_PATH.c_str(), R_OK) == 0)
+    {
+        AI_LOG_INFO("parsing settings from file @ '%s'", DEV_SETTINGS_PATH.c_str());
+        settings = Settings::fromJsonFile(DEV_SETTINGS_PATH);
+    }
+    else
+#endif
+
     if (!gSettingsFilePath.empty() && (access(gSettingsFilePath.c_str(), R_OK) == 0))
     {
         AI_LOG_INFO("parsing settings from file @ '%s'", gSettingsFilePath.c_str());
