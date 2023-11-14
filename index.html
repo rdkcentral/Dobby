@@ -105,14 +105,14 @@ CMake Configuration Settings</h3>
 <tr class="markdownTableHead">
 <th class="markdownTableHeadLeft">Option   </th><th class="markdownTableHeadLeft">Valid Options   </th><th class="markdownTableHeadLeft">Description    </th></tr>
 <tr class="markdownTableRowOdd">
-<td class="markdownTableBodyLeft"><code>-CMAKE_BUILD_TYPE</code>   </td><td class="markdownTableBodyLeft">Debug/Release   </td><td class="markdownTableBodyLeft">Build the Debug or Release version    </td></tr>
+<td class="markdownTableBodyLeft"><code>-DCMAKE_BUILD_TYPE</code>   </td><td class="markdownTableBodyLeft">Debug/Release   </td><td class="markdownTableBodyLeft">Build the Debug or Release version    </td></tr>
 <tr class="markdownTableRowEven">
 <td class="markdownTableBodyLeft"><code>-DENABLE_DOBBYTOOL</code>   </td><td class="markdownTableBodyLeft">ON/OFF   </td><td class="markdownTableBodyLeft">Include DobbyTool in the build. For Debug builds, defaults to ON. For Release builds, defaults to OFF.    </td></tr>
 <tr class="markdownTableRowOdd">
 <td class="markdownTableBodyLeft"><code>-DPLUGIN_PATH</code>   </td><td class="markdownTableBodyLeft">Valid UNIX path   </td><td class="markdownTableBodyLeft">Specify a different location to load RDK plugins from. Defaults to <code>/usr/lib/plugins/dobby</code> if not set    </td></tr>
 <tr class="markdownTableRowEven">
 <td class="markdownTableBodyLeft"><code>-DRDK_PLATFORM</code>   </td><td class="markdownTableBodyLeft"><code>GENERIC</code><br  />
- <code>DEV_VM</code>   </td><td class="markdownTableBodyLeft">Specify which platform <a class="el" href="classDobby.html" title="The root Dobby object, runs the dbus loop.">Dobby</a> is running on. Defaults to <code>GENERIC</code> if none specified. DEV_VM changes some settings suitable for Vagrant    </td></tr>
+ <code>DEV_VM</code>   </td><td class="markdownTableBodyLeft">Specify which platform <a class="el" href="classDobby.html" title="The root Dobby object, runs the dbus loop.">Dobby</a> is running on. Defaults to <code>GENERIC</code> if none specified. DEV_VM changes some settings suitable for    </td></tr>
 <tr class="markdownTableRowOdd">
 <td class="markdownTableBodyLeft"><code>-DSETTINGS_FILE</code>   </td><td class="markdownTableBodyLeft">Valid UNIX path   </td><td class="markdownTableBodyLeft">Path to the settings JSON file to use for <a class="el" href="classDobby.html" title="The root Dobby object, runs the dbus loop.">Dobby</a> (will be installed to /etc/dobby.json)    </td></tr>
 <tr class="markdownTableRowEven">
@@ -132,7 +132,9 @@ CMake Configuration Settings</h3>
 <tr class="markdownTableRowOdd">
 <td class="markdownTableBodyLeft"><code>-DUSE_SYSTEMD</code>   </td><td class="markdownTableBodyLeft">ON/OFF   </td><td class="markdownTableBodyLeft">Build with systemd support (recommended). When disabled, uses libdbus API instead of sd-bus. Defaults to ON.    </td></tr>
 <tr class="markdownTableRowEven">
-<td class="markdownTableBodyLeft"><code>-DEXTERNAL_PLUGIN_SCHEMA</code>   </td><td class="markdownTableBodyLeft">Valid file path(s)   </td><td class="markdownTableBodyLeft">Path(s) to external json schema definitions for extra rdk plugins. Paths should be seperated by <code>;</code>.   </td></tr>
+<td class="markdownTableBodyLeft"><code>-DEXTERNAL_PLUGIN_SCHEMA</code>   </td><td class="markdownTableBodyLeft">Valid file path(s)   </td><td class="markdownTableBodyLeft">Path(s) to external json schema definitions for extra rdk plugins. Paths should be seperated by <code>;</code>.    </td></tr>
+<tr class="markdownTableRowOdd">
+<td class="markdownTableBodyLeft"><code>-DENABLE_OPT_SETTINGS</code>   </td><td class="markdownTableBodyLeft">ON/OFF   </td><td class="markdownTableBodyLeft">Enable searching for dobby.json settings in /opt/ directory. Defaults to OFF.   </td></tr>
 </table>
 <h4><a class="anchor" id="autotoc_md5"></a>
 Enable/Disable Plugins</h4>
