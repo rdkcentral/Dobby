@@ -19,12 +19,14 @@ To Running the tests, need to be build the Dobby source and Test codes.
 ```
    ### Build all optional plugins. Newly developed plugins should be added to this list
 ```command
-   cmake -DRDK_PLATFORM=DEV_VM -DCMAKE_TOOLCHAIN_FILE=unit_tests/L1_testing/gcc-with-coverage.cmake -DCMAKE_INSTALL_PREFIX:PATH=/usr -DENABLE_DOBBYL1TEST=ON -DCMAKE_BUILD_TYPE=Debug -DLEGACY_COMPONENTS=ON -DUSE_SYSTEMD=ON -DPLUGIN_TESTPLUGIN=ON -DPLUGIN_GPU=ON -DPLUGIN_LOCALTIME=ON -DPLUGIN_RTSCHEDULING=ON -DPLUGIN_HTTPPROXY=ON -DPLUGIN_APPSERVICES=ON -DPLUGIN_IONMEMORY=ON -DPLUGIN_DEVICEMAPPER=ON -DPLUGIN_OOMCRASH=ON ..
+   cmake -DCMAKE_TOOLCHAIN_FILE=unit_tests/L1_testing/gcc-with-coverage.cmake  -DRDK_PLATFORM=DEV_VM -DCMAKE_INSTALL_PREFIX:PATH=/usr -DENABLE_DOBBYL1TEST=ON -DCMAKE_BUILD_TYPE=Debug -DPLUGIN_TESTPLUGIN=ON -DPLUGIN_GPU=ON -DPLUGIN_LOCALTIME=ON -DPLUGIN_RTSCHEDULING=ON -DPLUGIN_HTTPPROXY=ON -DPLUGIN_APPSERVICES=ON -DPLUGIN_IONMEMORY=ON -DPLUGIN_DEVICEMAPPER=ON -DPLUGIN_OOMCRASH=ON -DLEGACY_COMPONENTS=ON -DRDK=ON -DUSE_SYSTEMD=ON .. ..
    make -j $(nproc)
 ```
    ### Run dobby L1 unit test
 ```command
-   sudo unit_tests/L1_testing/DobbyL1Test
+          sudo $GITHUB_WORKSPACE/build/unit_tests/L1_testing/tests/DobbyTest/DobbyL1Test
+          sudo $GITHUB_WORKSPACE/build/unit_tests/L1_testing/tests/DobbyUtilsTest/DobbyUtilsL1Test
+          sudo $GITHUB_WORKSPACE/build/unit_tests/L1_testing/tests/DobbyManagerTest/DobbyManagerL1Test
 ```
 ```command
    ###If want coverage report, run the below command
@@ -46,7 +48,9 @@ To Running the tests, need to be build the Dobby source and Test codes.
 ```
 ## Writing tests
 To write new test:
-1. Create new test file under the unit_tests/L1_testing/tests/XXXXTest.cpp
-2. Add the test cases using gtest framework
-3. Once added the new test, use above commands to build and run the test.
+1. Create new folder and create new test file under the unit_tests/L1_testing/tests/DobbyXXXXTest/XXXXTest.cpp
+2. Create new CMakeLists.txt under this unit_tests/L1_testing/tests/DobbyXXXXTest/ folder
+3. Add add_subdirectory(DobbyXXXXTest) in unit_tests/L1_testing/tests/CMakeLists,txt
+4. Add the test cases using gtest framework
+5. Once added the new test, use above commands to build and run the test.
    Otherwise if add the changes in github, .github/workflows/build.yml will build and run the tests then give the results with coverage report.

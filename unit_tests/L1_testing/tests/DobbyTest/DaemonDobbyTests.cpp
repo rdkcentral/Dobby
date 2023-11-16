@@ -2584,7 +2584,6 @@ TEST_F(DaemonDobbyTest, startFromBundleSuccess_argSize_3_postWorkSuccess)
     EXPECT_CALL(*p_containerIdMock, isValid())
         .WillOnce(::testing::Return(true));
 
-
     /* Simulates a successful start, returning a container descriptor ,which is a unique number that identifies the container */
     EXPECT_CALL(*p_dobbyManagerMock, startContainerFromBundle(::testing::_,::testing::_,::testing::_,::testing::_,::testing::_,::testing::_))
         .WillOnce(::testing::Return(12));
