@@ -16,7 +16,7 @@
 # limitations under the License.
 
 cmake_minimum_required(VERSION 3.7)
-project(DobbyL1Test_DobbyUtils)
+project(DobbyUtilsL1Test)
 
 set(CMAKE_CXX_STANDARD 14)
 

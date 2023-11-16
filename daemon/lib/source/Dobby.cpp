@@ -722,7 +722,6 @@ void Dobby::ping(std::shared_ptr<AI_IPC::IAsyncReplySender> replySender)
     }
 #endif
 
-
     AI_LOG_FN_EXIT();
 }
 
