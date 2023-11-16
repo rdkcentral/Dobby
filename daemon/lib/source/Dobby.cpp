@@ -689,7 +689,9 @@ void Dobby::initIpcMethods()
 void Dobby::ping(std::shared_ptr<AI_IPC::IAsyncReplySender> replySender)
 {
     AI_LOG_FN_ENTRY();
+#if defined(RDK) && defined(USE_SYSTEMD)
     bool result = true;
+#endif /* defined(RDK) && defined(USE_SYSTEMD) */
 
     // Not expecting any arguments
     // Drop Ping() log messages down to debug so we can run Dobby at INFO level
@@ -720,7 +722,7 @@ void Dobby::ping(std::shared_ptr<AI_IPC::IAsyncReplySender> replySender)
     {
         AI_LOG_ERROR("failed to send ping");
     }
-#endif
+#endif /* defined(RDK) && defined(USE_SYSTEMD) */
 
     AI_LOG_FN_EXIT();
 }
