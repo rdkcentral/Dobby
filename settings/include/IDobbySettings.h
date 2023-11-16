@@ -226,6 +226,24 @@ public:
     };
 
     virtual StraceSettings straceSettings() const = 0;
+
+    // -------------------------------------------------------------------------
+    /**
+     *  Apparmor settings
+     *
+     *      - enabled
+     *          Path to directory where strace logs will be written
+     *      - apps
+     *          A list of app names that should be run with strace.
+     *
+     */
+    struct ApparmorSettings
+    {
+        bool enabled;
+        std::string profileName;
+    };
+
+    virtual ApparmorSettings apparmorSetiings() const = 0;
 };
 
 #endif // !defined(IDOBBYSETTINGS_H)
