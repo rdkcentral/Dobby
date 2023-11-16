@@ -689,40 +689,35 @@ void Dobby::initIpcMethods()
 void Dobby::ping(std::shared_ptr<AI_IPC::IAsyncReplySender> replySender)
 {
     AI_LOG_FN_ENTRY();
-#if defined(RDK) && defined(USE_SYSTEMD)
-    bool result = true;
-#endif /* defined(RDK) && defined(USE_SYSTEMD) */
 
     // Not expecting any arguments
     // Drop Ping() log messages down to debug so we can run Dobby at INFO level
     // logging without spamming the log
     AI_LOG_DEBUG(DOBBY_ADMIN_METHOD_PING "()");
 
+    // Send an empty pong reply back
+    AI_IPC::VariantList results;
+    if (!replySender->sendReply(results))
+    {
+        AI_LOG_ERROR("failed to send pong");
+    }
+
     // If running as systemd service then also use this to wag the dog
 #if defined(RDK) && defined(USE_SYSTEMD)
-      if(true != mWorkQueue->postWork(
-          [this]()
-          {
-              if (mWatchdogTimerId >= 0)
-              {
-                  int ret = sd_notify(0, "WATCHDOG=1");
-                  if (ret < 0)
-                  {
+    mWorkQueue->postWork(
+        [this]()
+        {
+            if (mWatchdogTimerId >= 0)
+            {
+                int ret = sd_notify(0, "WATCHDOG=1");
+                if (ret < 0)
+                {
                     AI_LOG_SYS_ERROR(-ret, "failed to send watchdog notification");
-                  }
-              }
-          }
-      ))
-    {
-      AI_LOG_ERROR("failed to post to work Queue for ping");
-        result = false;
-    }
-    AI_IPC::VariantList results = { result };
-    if (!replySender->sendReply({results}))
-    {
-        AI_LOG_ERROR("failed to send ping");
-    }
-#endif /* defined(RDK) && defined(USE_SYSTEMD) */
+                }
+            }
+        }
+    );
+#endif
 
     AI_LOG_FN_EXIT();
 }

@@ -259,6 +259,7 @@ TEST_F(DaemonDobbyTest, shutdownSuccess_sendReplySuccess)
 
 /*Test cases for shutdown ends here*/
 
+#if defined(TEST_REQUIRES_MW_CHANGE)
 /****************************************************************************************************
  * Test functions for :ping
  * @brief Simple ping dbus method call
@@ -336,6 +337,7 @@ TEST_F(DaemonDobbyTest, pingSuccess_postWorkSuccess)
 }
 /*Test cases for ping ends here*/
 #endif //defined(RDK) && defined(USE_SYSTEMD)
+#endif //defined(TEST_REQUIRES_MW_CHANGE)
 
 /****************************************************************************************************
  * Test functions for :setLogMethod
