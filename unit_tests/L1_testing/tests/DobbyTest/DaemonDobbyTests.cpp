@@ -2587,7 +2587,7 @@ TEST_F(DaemonDobbyTest, startFromBundleSuccess_argSize_3_postWorkSuccess)
 
     /* Simulates a successful start, returning a container descriptor ,which is a unique number that identifies the container */
     EXPECT_CALL(*p_dobbyManagerMock, startContainerFromBundle(::testing::_,::testing::_,::testing::_,::testing::_,::testing::_,::testing::_))
-        .WillOnce();
+        .WillOnce(::testing::Return(12));
 
     EXPECT_CALL(*p_workQueueMock, postWork(::testing::_))
         .Times(1)
