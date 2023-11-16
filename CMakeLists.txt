@@ -218,6 +218,11 @@ if(USE_SYSTEMD)
     add_definitions( -DUSE_SYSTEMD )
 endif()
 
+# Enable searching for dobby.json settings in /opt/ directory (disabled by default)
+option(ENABLE_OPT_SETTINGS "Enable searching for dobby.json settings in /opt/ directory" OFF)
+if(ENABLE_OPT_SETTINGS)
+    add_definitions( -DENABLE_OPT_SETTINGS )
+endif()
 
 # Import AppInfrastructure code
 add_subdirectory( AppInfrastructure/Logging )
