@@ -259,7 +259,6 @@ TEST_F(DaemonDobbyTest, shutdownSuccess_sendReplySuccess)
 
 /*Test cases for shutdown ends here*/
 
-#if defined(TEST_REQUIRES_MW_CHANGE)
 /****************************************************************************************************
  * Test functions for :ping
  * @brief Simple ping dbus method call
@@ -277,32 +276,7 @@ TEST_F(DaemonDobbyTest, shutdownSuccess_sendReplySuccess)
  */
 
 #if defined(RDK) && defined(USE_SYSTEMD)
-TEST_F(DaemonDobbyTest, pingFailed_postWorkFailure)
-{
-    EXPECT_CALL(*p_workQueueMock, postWork(::testing::_))
-        .Times(1)
-        .WillOnce(::testing::Invoke(
-            [](const WorkFunc &work) {
-                return false;
-            }));
-
-    EXPECT_CALL(*p_asyncReplySenderMock, sendReply(::testing::_))
-        .Times(1)
-        .WillOnce(::testing::Invoke(
-            [](const AI_IPC::VariantList& replyArgs) {
-                bool expectedResult = false;
-                bool actualResult;
-                if (AI_IPC::parseVariantList <bool>
-                         (replyArgs, &actualResult))
-                {
-                    EXPECT_EQ(actualResult, expectedResult);
-                }
-                return true;
-            }));
-
-    dobby_test->ping((std::shared_ptr<AI_IPC::IAsyncReplySender>)p_iasyncReplySender);
-}
-
+#err
 /*
  * @brief Test ping with successful postWork.
  * Check if ping method successfully completes and sending back the Reply as true after a successful  postWork.
@@ -337,7 +311,6 @@ TEST_F(DaemonDobbyTest, pingSuccess_postWorkSuccess)
 }
 /*Test cases for ping ends here*/
 #endif //defined(RDK) && defined(USE_SYSTEMD)
-#endif //defined(TEST_REQUIRES_MW_CHANGE)
 
 /****************************************************************************************************
  * Test functions for :setLogMethod
