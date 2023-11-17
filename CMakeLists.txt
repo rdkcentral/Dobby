@@ -236,6 +236,10 @@ add_subdirectory(utils)
 add_subdirectory(ipcUtils)
 add_subdirectory(settings)
 
+# If ENABLE_DOBBYL1TEST avoid to compile all Dobby source code.
+if( ENABLE_DOBBYL1TEST )
+add_subdirectory( unit_tests/L1_testing )
+else() # else ENABLE_DOBBYL1TEST
 # Add Bundle Generator code
 add_subdirectory(bundle/lib)
 
@@ -276,10 +280,6 @@ option( ENABLE_DOBBYTOOL "Include DobbyTool" ${ENABLE_DOBBYTOOL_DEFAULT} )
 
 if( ENABLE_DOBBYTOOL )
     add_subdirectory( client/tool )
-endif()
-
-if( ENABLE_DOBBYL1TEST )
-    add_subdirectory( unit_tests/L1_testing )
 endif()
 
 # RDK Plugins
@@ -413,3 +413,5 @@ install( FILES
 install( EXPORT DobbyTargets
         DESTINATION "${INSTALL_CMAKE_DIR}"
 )
+endif() # End ENABLE_DOBBYL1TEST
+
