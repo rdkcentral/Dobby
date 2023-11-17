@@ -276,7 +276,6 @@ TEST_F(DaemonDobbyTest, shutdownSuccess_sendReplySuccess)
  */
 
 #if defined(RDK) && defined(USE_SYSTEMD)
-#err
 /*
  * @brief Test ping with successful postWork.
  * Check if ping method successfully completes and sending back the Reply as true after a successful  postWork.
