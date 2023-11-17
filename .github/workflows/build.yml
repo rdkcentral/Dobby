@@ -22,6 +22,7 @@ jobs:
             coverage: without-coverage
         # The matrix will try all possible combinations of the below arrays
         # If adding a new cmake option, include both the ON and OFF version to ensure the
+        # If adding a RUN_TESTS cmake option, it will build with enabling optional_flags and run the unit tests
         # matrix runs both versions
         build_type: ["Release", "Debug"]
         extra_flags: [ "RUN_TESTS", "-DLEGACY_COMPONENTS=ON", "-DLEGACY_COMPONENTS=OFF", "-DUSE_SYSTEMD=ON", "-DUSE_SYSTEMD=OFF"]
@@ -59,13 +60,12 @@ jobs:
          cd $GITHUB_WORKSPACE
          mkdir build
          cd build
-         if [ $matrix.extra_flags = "RUN_TESTS" ]
+         if [ ${{ matrix.extra_flags }} = "RUN_TESTS" ]
          then
              cmake -DCMAKE_TOOLCHAIN_FILE="${{ env.TOOLCHAIN_FILE }}" -DRDK_PLATFORM=DEV_VM -DCMAKE_INSTALL_PREFIX:PATH=/usr -DENABLE_DOBBYL1TEST=ON -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} ${{ matrix.optional_flags }} ${{ env.optional_plugins }} ..
          else
-             cmake -DCMAKE_TOOLCHAIN_FILE="${{ env.TOOLCHAIN_FILE }}" -DRDK_PLATFORM=DEV_VM -DCMAKE_INSTALL_PREFIX:PATH=/usr -DENABLE_DOBBYL1TEST=ON -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} ${{ matrix.extra_flags }} ${{ env.optional_plugins }} ..
+             cmake -DCMAKE_TOOLCHAIN_FILE="${{ env.TOOLCHAIN_FILE }}" -DRDK_PLATFORM=DEV_VM -DCMAKE_INSTALL_PREFIX:PATH=/usr -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} ${{ matrix.extra_flags }} ${{ env.optional_plugins }} ..
          fi
-
          make -j $(nproc)
 
       - name: run unit-tests
