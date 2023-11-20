@@ -29,4 +29,5 @@ public:
 
     MOCK_METHOD(void, setPersistence, (bool persist), (override));
     MOCK_METHOD(bool, isValid, (), (const,override));
+    MOCK_METHOD((const std::string&), path, (), (const,override));
 };

@@ -42,10 +42,15 @@ public:
     virtual bool writeConfigJson(const std::string& filePath) const = 0;
     virtual const std::map<std::string, Json::Value>& rdkPlugins() const = 0;
     virtual std::shared_ptr<rt_dobby_schema> config() const = 0;
+    virtual bool changeProcessArgs(const std::string& command) = 0;
+    virtual bool addWesterosMount(const std::string& socketPath) = 0;
+    virtual bool addEnvironmentVar(const std::string& envVar) = 0;
+    virtual bool enableSTrace(const std::string& logsDir) = 0;
+    virtual std::string configJson() const = 0;
+
 #if defined(LEGACY_COMPONENTS)
     virtual std::string spec() const =0;
     virtual const std::map<std::string, Json::Value>& legacyPlugins() const = 0;
-
 #endif //defined(LEGACY_COMPONENTS)
 
 };
@@ -60,56 +65,21 @@ public:
     DobbyConfig(){}
     ~DobbyConfig(){}
 
-    bool changeProcessArgs(const std::string& command);
-    bool addWesterosMount(const std::string& socketPath);
-    bool addEnvironmentVar(const std::string& envVar);
-    bool enableSTrace(const std::string& logsDir);
-    const std::string configJson() const;
-
-    static void setImpl(DobbyConfigImpl* newImpl)
-    {
-        impl = newImpl;
-    }
-
-    static DobbyConfig* getInstance()
-    {
-        static DobbyConfig* instance = nullptr;
-        if (nullptr == instance)
-        {
-           instance = new DobbyConfig();
-        }
-        return instance;
-    }
-
-    static bool writeConfigJson(const std::string& filePath)
-    {
-        return impl->writeConfigJson(filePath);
-    }
-
-    static const std::map<std::string, Json::Value>& rdkPlugins()
-    {
-        return impl->rdkPlugins();
-    }
-
-    static const std::shared_ptr<rt_dobby_schema> config()
-    {
-        return impl->config();
-    }
+    static void setImpl(DobbyConfigImpl* newImpl);
+    static DobbyConfig* getInstance();
+    static bool writeConfigJson(const std::string& filePath);
+    static const std::map<std::string, Json::Value>& rdkPlugins();
+    static const std::shared_ptr<rt_dobby_schema> config();
+    static bool changeProcessArgs(const std::string& command);
+    static bool addWesterosMount(const std::string& socketPath);
+    static bool addEnvironmentVar(const std::string& envVar);
+    static bool enableSTrace(const std::string& logsDir);
+    static std::string configJson();
 
 #if defined(LEGACY_COMPONENTS)
-
-    static const std::string spec()
-    {
-        return impl->spec();
-    }
-
-    static const std::map<std::string, Json::Value>& legacyPlugins()
-    {
-        return impl->legacyPlugins();
-    }
-
+    static const std::string spec();
+    static const std::map<std::string, Json::Value>& legacyPlugins();
 #endif //defined(LEGACY_COMPONENTS)
-
 
 };
 

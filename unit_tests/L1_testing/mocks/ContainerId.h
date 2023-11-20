@@ -45,125 +45,19 @@ public:
     ContainerId& operator=(ContainerId&&) = default;
     ~ContainerId() = default;
 
-    static void setImpl(ContainerIdImpl* newImpl)
-    {
-        impl = newImpl;
-    }
-
-    static ContainerId* getInstance()
-    {
-        static ContainerId* instance = nullptr;
-        if(nullptr == instance)
-        {
-           instance = new ContainerId();
-        }
-        return instance;
-    }
-
-    static bool isValid()
-    {
-       return impl->isValid();
-    }
-
-    const std::string& str() const
-    {
-        return mId;
-    }
-
-    static const char* c_str()
-    {
-        return impl->c_str();
-    }
-
-    static bool isValidContainerId(const std::string& id)
-    {
-        if (id.empty() || (id.size() > 128))
-        {
-            return false;
-        }
-
-        unsigned alphaCount = 0;
-        for (const char c : id)
-        {
-            if (!isalnum(c) && (c != '.') && (c != '-') && (c != '_'))
-            {
-                return false;
-            }
-
-            if (isalpha(c))
-            {
-                alphaCount++;
-            }
-        }
-
-        if (id.find("..") != std::string::npos)
-        {
-           return false;
-        }
-
-        return (alphaCount > 0);
-   }
-
-
-    static ContainerId create(const std::string& s)
-    {
-       std::string str(s);
-       ContainerId id;
-
-      if (isValidContainerId(str))
-      {
-         id.mId.swap(str);
-      }
-
-       return id;
-    }
-
-   static ContainerId create(const char* s)
-   {
-      std::string str(s);
-      ContainerId id;
-
-      if (isValidContainerId(str))
-      {
-         id.mId.swap(str);
-      }
-
-      return id;
-   }
-
-   static ContainerId create(const char* s, size_t n)
-   {
-      std::string str(s, n);
-      ContainerId id;
-
-      if (isValidContainerId(str))
-      {
-         id.mId.swap(str);
-      }
-
-     return id;
-   }
-
-    bool operator==(const ContainerId& rhs) const
-    {
-        return mId == rhs.mId;
-    }
-
-    bool operator!=(const ContainerId& rhs) const
-    {
-        return mId != rhs.mId;
-    }
-
-    bool operator<(const ContainerId& rhs) const
-    {
-        return mId < rhs.mId;
-    }
-
-    bool operator>(const ContainerId& rhs) const
-    {
-        return mId > rhs.mId;
-    }
-
+    static void setImpl(ContainerIdImpl* newImpl);
+    static ContainerId* getInstance();
+    static bool isValid();
+    const std::string& str() const;
+    static const char* c_str();
+    static bool isValidContainerId(const std::string& id);
+    static ContainerId create(const std::string& s);
+    static ContainerId create(const char* s);
+    static ContainerId create(const char* s, size_t n);
+    bool operator==(const ContainerId& rhs) const;
+    bool operator!=(const ContainerId& rhs) const;
+    bool operator<(const ContainerId& rhs) const;
+    bool operator>(const ContainerId& rhs) const;
 
  };
 

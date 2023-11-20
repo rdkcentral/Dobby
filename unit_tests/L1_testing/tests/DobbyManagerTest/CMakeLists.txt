@@ -28,7 +28,27 @@ include_directories(${GTEST_INCLUDE_DIRS})
 
 add_library(DaemonDobbyManagerTest SHARED STATIC
             ../../../../daemon/lib/source/DobbyManager.cpp
-            ../../../../AppInfrastructure/Logging/source/Logging.cpp 
+            ../../../../AppInfrastructure/Logging/source/Logging.cpp
+            ../../mocks/DobbyBundleConfigMock.cpp
+            ../../mocks/DobbyRunCMock.cpp
+            ../../mocks/ContainerIdMock.cpp
+            ../../mocks/DobbyBundleMock.cpp
+            ../../mocks/DobbyConfigMock.cpp
+            ../../mocks/DobbyContainerMock.cpp
+            ../../mocks/DobbyEnvMock.cpp
+            ../../mocks/DobbyFileAccessFixerMock.cpp
+            ../../mocks/DobbyIPCUtilsMock.cpp
+            ../../mocks/DobbyLegacyPluginManagerMock.cpp
+            ../../mocks/DobbyRdkPluginManagerMock.cpp
+            ../../mocks/DobbyRdkPluginUtilsMock.cpp
+            ../../mocks/DobbyRootfsMock.cpp
+            ../../mocks/DobbySpecConfigMock.cpp
+            ../../mocks/DobbyStreamMock.cpp
+            ../../mocks/DobbyLoggerMock.cpp
+            ../../mocks/DobbyStatsMock.cpp
+            ../../mocks/rt_dobby_schema.c
+            ../../mocks/IpcFileDescriptorMock.cpp
+            ../../mocks/DobbyStartStateMock.cpp
             )
 
 target_include_directories(DaemonDobbyManagerTest

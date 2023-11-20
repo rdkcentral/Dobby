@@ -28,10 +28,10 @@ class DobbyBundleConfigImpl {
 public:
 
     virtual std::shared_ptr<rt_dobby_schema> config() const =0;
-
     virtual bool restartOnCrash() const =0;
-
     virtual bool writeConfigJson(const std::string& filePath) const = 0;
+    virtual const std::map<std::string, Json::Value>& rdkPlugins() const = 0;
+    virtual bool isValid() const = 0;
 
 };
 
@@ -42,44 +42,17 @@ protected:
 
 public:
 
-    DobbyBundleConfig(){}
-
+    DobbyBundleConfig();
     DobbyBundleConfig(const std::shared_ptr<IDobbyUtils>& utils,const std::shared_ptr<const IDobbySettings>& settings,const ContainerId& id,const std::string& bundlePath);
-
-    ~DobbyBundleConfig(){}
+    ~DobbyBundleConfig();
 
     bool isValid() const ;
     const std::map<std::string, Json::Value>& rdkPlugins() const ;
-
-    static void setImpl(DobbyBundleConfigImpl* newImpl)
-    {
-        impl = newImpl;
-    }
-
-    static DobbyBundleConfig* getInstance()
-    {
-        static DobbyBundleConfig* instance = nullptr;
-        if (nullptr == instance)
-        {
-           instance = new DobbyBundleConfig();
-        }
-        return instance;
-    }
-
-    static std::shared_ptr<rt_dobby_schema> config()
-    {
-        return impl->config();
-    }
-
-    static bool restartOnCrash()
-    {
-        return impl->restartOnCrash();
-    }
-
-    static bool writeConfigJson(const std::string& filePath)
-    {
-        return impl->writeConfigJson(filePath);
-    }
+    static void setImpl(DobbyBundleConfigImpl* newImpl);
+    static DobbyBundleConfig* getInstance();
+    static std::shared_ptr<rt_dobby_schema> config();
+    static bool restartOnCrash();
+    static bool writeConfigJson(const std::string& filePath);
 };
 
 

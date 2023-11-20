@@ -16,29 +16,26 @@
 # limitations under the License.
 */
 
-#include "DobbyConfigMock.h" 
-
-#include "NetfilterMock.h"
-
-#include "DobbyRootfsMock.h"
-
-#include "DobbyStatsMock.h"
-
+#include "DobbyStreamMock.h"
+#include "DobbyRdkPluginUtilsMock.h"
 #include "DobbyLoggerMock.h"
-
 #include "DobbyRunCMock.h"
-
-#include "DobbyBundleMock.h"
-
+#include "DobbyManager.h"
 #include "DobbyContainerMock.h"
-
 #include "DobbyRdkPluginManagerMock.h"
-
-#include "DobbySpecConfigMock.h"
-
-#include "DobbyBundleConfigMock.h"
-
-#include "IpcFileDescriptorMock.h"
-
 #include "DobbyStartStateMock.h"
+#include "DobbyRootfsMock.h"
+#include "DobbySpecConfigMock.h"
+#include "DobbyBundleMock.h"
+#include "DobbyConfigMock.h"
+#include "DobbyBundleConfigMock.h"
+#include "IDobbySettingsMock.h"
+#include "IDobbyIPCUtilsMock.h"
+#include "IDobbyUtilsMock.h"
+#include "IDobbyEnvMock.h"
+#include "IAsyncReplySenderMock.h"
+#include "ContainerIdMock.h"
+#include "DobbyFileAccessFixerMock.h"
+#include "DobbyLegacyPluginManagerMock.h"
+#include "DobbyStats.h"
 

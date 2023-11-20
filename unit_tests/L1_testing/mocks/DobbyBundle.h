@@ -31,6 +31,7 @@ public:
 
     virtual void setPersistence(bool persist) = 0;
     virtual bool isValid() const = 0;
+    virtual const std::string& path() const = 0;
 
 };
 
@@ -54,30 +55,10 @@ public:
     const std::string& path() const;
 
 
-    static void setImpl(DobbyBundleImpl* newImpl)
-    {
-        impl = newImpl;
-    }
-
-    static DobbyBundle* getInstance()
-    {
-        static DobbyBundle* instance = nullptr;
-        if (nullptr == instance)
-        {
-           instance = new DobbyBundle();
-        }
-        return instance;
-    }
-
-    static void setPersistence(bool persist)
-    {
-        return impl->setPersistence(persist);
-    }
-
-    static bool isValid()
-    {
-        return impl->isValid();
-    }
+    static void setImpl(DobbyBundleImpl* newImpl);
+    static DobbyBundle* getInstance();
+    static void setPersistence(bool persist);
+    static bool isValid();
 };
 
 #endif // !defined(DOBBYBUNDLE_H)

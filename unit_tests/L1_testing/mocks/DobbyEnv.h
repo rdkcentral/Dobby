@@ -43,46 +43,15 @@ protected:
 
 public:
 
-    DobbyEnv() {}
-    ~DobbyEnv() {}
-
-    DobbyEnv(const std::shared_ptr<const IDobbySettings>& settings){}
-    
-    static void setImpl(DobbyEnvImpl* newImpl)
-    {
-        impl = newImpl;
-    }
-
-    static DobbyEnv* getInstance()
-    {
-        static DobbyEnv* instance = nullptr;
-        if(nullptr == instance)
-        {
-           instance = new DobbyEnv();
-        }
-        return instance;
-    }
-
-    static std::string workspaceMountPath()
-    {
-       return impl->workspaceMountPath();
-    }
-
-    static std::string flashMountPath()
-    {
-       return impl->flashMountPath();
-    }
-
-    static std::string pluginsWorkspacePath()
-    {
-       return impl->pluginsWorkspacePath();
-    }
-
-    static uint16_t platformIdent()
-    {
-       return impl->platformIdent();
-    }
-
+    DobbyEnv();
+    ~DobbyEnv();
+    DobbyEnv(const std::shared_ptr<const IDobbySettings>& settings);
+    static void setImpl(DobbyEnvImpl* newImpl);
+    static DobbyEnv* getInstance();
+    static std::string workspaceMountPath();
+    static std::string flashMountPath();
+    static std::string pluginsWorkspacePath();
+    static uint16_t platformIdent();
 };
 
 #endif // !defined(DOBBYENV_H)

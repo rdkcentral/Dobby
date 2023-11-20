@@ -20,15 +20,13 @@
 #pragma once
 
 #include <gmock/gmock.h>
-#include <IDobbyStartState.h>
+#include "DobbyStartState.h"
 
-class DobbyStartStateMock : public IDobbyStartState{
+
+class DobbyStartStateMock : public DobbyStartStateImpl{
 public:
 
     MOCK_METHOD(std::list<int>, files, (), (const,override));
-    MOCK_METHOD(int, addFileDescriptor, (const std::string& pluginName, int fd), (override));
-    MOCK_METHOD(bool, addEnvironmentVariable, (const std::string& envVar), (override));
-    MOCK_METHOD(bool, addMount, (const std::string& source,const std::string& target,const std::string& fsType,unsigned long mountFlags,const std::list<std::string>& mountOptions), (override));
-    MOCK_METHOD(std::list<int>, files, (const std::string& pluginName), (const,override));
+    MOCK_METHOD(bool, isValid, (), (const,override));
 
 };
