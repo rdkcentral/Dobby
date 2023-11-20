@@ -21,7 +21,7 @@
 #include <gmock/gmock.h>
 #include "DobbyLogger.h"
 
-class DobbyLoggerMock : public DobbyLogger {
+class DobbyLoggerMock : public DobbyLoggerImpl {
 public:
 
     virtual ~DobbyLoggerMock() = default;
@@ -29,6 +29,8 @@ public:
     MOCK_METHOD(bool, StartContainerLogging, (std::string containerId,
                                pid_t runtimePid,
                                pid_t containerPid,
-                               std::shared_ptr<IDobbyRdkLoggingPlugin> loggingPlugin), ());
+                               std::shared_ptr<IDobbyRdkLoggingPlugin> loggingPlugin), (override));
+
+    MOCK_METHOD(bool, DumpBuffer, (int bufferMemFd,pid_t containerPid,std::shared_ptr<IDobbyRdkLoggingPlugin> loggingPlugin), (override));
 };
 

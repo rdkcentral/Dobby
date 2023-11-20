@@ -30,6 +30,16 @@ include_directories(${GTEST_INCLUDE_DIRS})
 add_library(DaemonDobbyTests SHARED STATIC
             ../../../../daemon/lib/source/Dobby.cpp
             ../../../../AppInfrastructure/Logging/source/Logging.cpp
+            ../../mocks/ContainerIdMock.cpp
+            ../../mocks/DobbyContainerMock.cpp
+            ../../mocks/DobbyEnvMock.cpp
+            ../../mocks/DobbyIPCUtilsMock.cpp
+            ../../mocks/DobbyManagerMock.cpp
+            ../../mocks/DobbyTemplateMock.cpp
+            ../../mocks/DobbyUtilsMock.cpp
+            ../../mocks/DobbyWorkQueueMock.cpp
+            ../../mocks/IIpcServiceMock.cpp
+            ../../mocks/IpcFileDescriptorMock.cpp
             )
 
 

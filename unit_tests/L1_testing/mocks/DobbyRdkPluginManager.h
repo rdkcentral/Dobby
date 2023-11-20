@@ -30,8 +30,10 @@ class DobbyRdkPluginManagerImpl {
 
 public:
 
+    virtual bool runPlugins(const IDobbyRdkPlugin::HintFlags &hookPoint,const uint timeoutMs ) const = 0;
+    virtual bool runPlugins(const IDobbyRdkPlugin::HintFlags &hookPoint) const = 0;
+    virtual void setExitStatus(int status) = 0;
     virtual const std::vector<std::string> listLoadedPlugins() const = 0;
-
     virtual std::shared_ptr<IDobbyRdkLoggingPlugin> getContainerLogger() const = 0;
 
 };
@@ -43,43 +45,17 @@ protected:
 
 public:
 
-    DobbyRdkPluginManager(){}
-
-    DobbyRdkPluginManager(std::shared_ptr<rt_dobby_schema> containerConfig,const std::string &rootfsPath,const std::string &pluginPath,const std::shared_ptr<DobbyRdkPluginUtils> &utils){}
-
+    DobbyRdkPluginManager();
+    DobbyRdkPluginManager(std::shared_ptr<rt_dobby_schema> containerConfig,const std::string &rootfsPath,const std::string &pluginPath,const std::shared_ptr<DobbyRdkPluginUtils> &utils);
     ~DobbyRdkPluginManager();
 
-    virtual bool runPlugins(const IDobbyRdkPlugin::HintFlags &hookPoint,const uint timeoutMs ) const ;
-
-    virtual bool runPlugins(const IDobbyRdkPlugin::HintFlags &hookPoint) const ;
-
-    void setExitStatus(int status) const;
-
-    static void setImpl(DobbyRdkPluginManagerImpl* newImpl)
-    {
-        impl = newImpl;
-    }
-
-    static DobbyRdkPluginManager* getInstance()
-    {
-        static DobbyRdkPluginManager* instance = nullptr;
-        if (nullptr == instance)
-        {
-           instance = new DobbyRdkPluginManager();
-        }
-        return instance;
-    }
-
-    static const std::vector<std::string> listLoadedPlugins()
-    {
-        return impl->listLoadedPlugins();
-    }
-
-    static std::shared_ptr<IDobbyRdkLoggingPlugin> getContainerLogger()
-    {
-        return impl->getContainerLogger();
-    }
-
+    static void setImpl(DobbyRdkPluginManagerImpl* newImpl);
+    static DobbyRdkPluginManager* getInstance();
+    static bool runPlugins(const IDobbyRdkPlugin::HintFlags &hookPoint,const uint timeoutMs );
+    static bool runPlugins(const IDobbyRdkPlugin::HintFlags &hookPoint);
+    static void setExitStatus(int status);
+    static const std::vector<std::string> listLoadedPlugins();
+    static std::shared_ptr<IDobbyRdkLoggingPlugin> getContainerLogger();
 
 };
 

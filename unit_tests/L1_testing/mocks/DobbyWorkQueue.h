@@ -39,37 +39,11 @@ protected:
 
 public:
 
-    static void setImpl(DobbyWorkQueueImpl* newImpl)
-    {
-        impl = newImpl;
-    }
-
-    static DobbyWorkQueue* getInstance()
-    {
-        static DobbyWorkQueue* instance = nullptr;
-        if(nullptr == instance)
-        {
-            instance =  new DobbyWorkQueue();
-        }
-        return instance;
-    }
-
-
-    static bool runFor(const std::chrono::milliseconds &msecs)
-    {
-        return impl->runFor(msecs);
-    }
-
-    static void exit()
-    {
-        impl->exit();
-    }
-
-    static bool postWork(WorkFunc &&work)
-    {
-        return impl->postWork(work);
-    }
-
+    static void setImpl(DobbyWorkQueueImpl* newImpl);
+    static DobbyWorkQueue* getInstance();
+    static bool runFor(const std::chrono::milliseconds &msecs);
+    static void exit();
+    static bool postWork(WorkFunc &&work);
 };
 
 #endif // DOBBYWORKQUEUE_H

@@ -48,45 +48,16 @@ static IIpcServiceImpl* impl;
 
 public:
 
-        static void setImpl(IIpcServiceImpl* newImpl)
-        {
-            impl = newImpl;
-        }
-
-        static bool isValid() {
-           return impl->isValid();
-        }
-        static std::shared_ptr<IAsyncReplyGetter> invokeMethod(const Method& method, const VariantList& args, int timeoutMs = -1) {
-            return impl->invokeMethod(method, args, timeoutMs);
-        }
-
-        static bool invokeMethod(const Method& method, const VariantList& args, VariantList& replyArgs, int timeoutMs = -1) {
-            return impl->invokeMethod(method, args, replyArgs, timeoutMs);
-        }
-
-        static bool emitSignal(const Signal& signal, const VariantList& args) {
-            return impl->emitSignal(signal, args);
-        }
-
-        static std::string registerMethodHandler(const Method& method, const MethodHandler& handler) {
-            return impl->registerMethodHandler(method, handler);
-        }
-
-        static std::string registerSignalHandler(const Signal& signal, const SignalHandler& handler) {
-            return impl->registerSignalHandler(signal, handler);
-        }
-
-        static bool unregisterHandler(const std::string& regId) {
-            return impl->unregisterHandler(regId);
-        }
-
-        static bool enableMonitor(const std::set<std::string>& matchRules, const MonitorHandler& handler) {
-            return impl->enableMonitor(matchRules, handler);
-        }
-
-        static void flush() {
-            impl->flush();
-        }
+        static void setImpl(IIpcServiceImpl* newImpl);
+        static bool isValid();
+        static std::shared_ptr<IAsyncReplyGetter> invokeMethod(const Method& method, const VariantList& args, int timeoutMs = -1);
+        static bool invokeMethod(const Method& method, const VariantList& args, VariantList& replyArgs, int timeoutMs = -1);
+        static bool emitSignal(const Signal& signal, const VariantList& args);
+        static std::string registerMethodHandler(const Method& method, const MethodHandler& handler);
+        static std::string registerSignalHandler(const Signal& signal, const SignalHandler& handler);
+        static bool unregisterHandler(const std::string& regId);
+        static bool enableMonitor(const std::set<std::string>& matchRules, const MonitorHandler& handler);
+        static void flush();
 };
 
 }

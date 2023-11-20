@@ -85,7 +85,7 @@ protected:
 
 public:
 
-    DobbyRdkPluginUtils(){}
+    DobbyRdkPluginUtils();
 
     DobbyRdkPluginUtils(const std::shared_ptr<rt_dobby_schema> &cfg,
                         const std::string &containerId);
@@ -100,92 +100,24 @@ public:
                         const std::shared_ptr<IDobbyStartState> &startState,
                         const std::string &containerId);
 
-    ~DobbyRdkPluginUtils(){}
+    ~DobbyRdkPluginUtils();
 
-    static void setImpl(DobbyRdkPluginUtilsImpl* newImpl)
-    {
-        impl = newImpl;
-    }
-
-    static DobbyRdkPluginUtils* getInstance()
-    {
-        static DobbyRdkPluginUtils* instance = nullptr;
-        if (nullptr == instance)
-        {
-           instance = new DobbyRdkPluginUtils();
-        }
-        return instance;
-    }
-
-    static bool callInNamespaceImpl(pid_t pid, int nsType,const std::function<bool()>& func)
-    {
-        return impl->callInNamespaceImpl(pid,nsType,func);
-    }
-
-    static void nsThread(int newNsFd, int nsType, bool* success,std::function<bool()>& func)
-    {
-        return impl->nsThread(newNsFd,nsType,success,func);
-    }
-
-    static pid_t getContainerPid()
-    {
-        return impl->getContainerPid();
-    }
-
-    static std::string getContainerId()
-    {
-        return impl->getContainerId();
-    }
-
-    static bool getContainerNetworkInfo(ContainerNetworkInfo &networkInfo)
-    {
-        return impl->getContainerNetworkInfo(networkInfo);
-    }
-
-    static bool getTakenVeths(std::vector<std::string> &takenVeths)
-    {
-        return impl->getTakenVeths(takenVeths);
-    }
-
-    static bool writeTextFile(const std::string &path,const std::string &str,int flags,mode_t mode)
-    {
-        return impl->writeTextFile(path,str,flags,mode);
-    }
-
-    static std::string readTextFile(const std::string &path)
-    {
-        return impl->readTextFile(path);
-    }
-
-    static bool addMount(const std::string &source,const std::string &target,const std::string &fsType,const std::list<std::string> &mountOptions)
-    {
-        return impl->addMount(source,target,fsType,mountOptions);
-    }
-
-    static bool mkdirRecursive(const std::string& path, mode_t mode)
-    {
-        return impl->mkdirRecursive(path,mode);
-    }
-
-    static bool addEnvironmentVar(const std::string& envVar)
-    {
-        return impl->addEnvironmentVar(envVar);
-    }
-
-    static int addFileDescriptor(const std::string& pluginName, int fd)
-    {
-        return impl->addFileDescriptor(pluginName,fd);
-    }
-
-    static std::list<int> files()
-    {
-        return impl->files();
-    }
-
-    static std::list<int> files(const std::string& pluginName)
-    {
-        return impl->files(pluginName);
-    }
+    static void setImpl(DobbyRdkPluginUtilsImpl* newImpl);
+    static DobbyRdkPluginUtils* getInstance();
+    static bool callInNamespaceImpl(pid_t pid, int nsType,const std::function<bool()>& func);
+    static void nsThread(int newNsFd, int nsType, bool* success,std::function<bool()>& func);
+    static pid_t getContainerPid();
+    static std::string getContainerId();
+    static bool getContainerNetworkInfo(ContainerNetworkInfo &networkInfo);
+    static bool getTakenVeths(std::vector<std::string> &takenVeths);
+    static bool writeTextFile(const std::string &path,const std::string &str,int flags,mode_t mode);
+    static std::string readTextFile(const std::string &path);
+    static bool addMount(const std::string &source,const std::string &target,const std::string &fsType,const std::list<std::string> &mountOptions);
+    static bool mkdirRecursive(const std::string& path, mode_t mode);
+    static bool addEnvironmentVar(const std::string& envVar);
+    static int addFileDescriptor(const std::string& pluginName, int fd);
+    static std::list<int> files();
+    static std::list<int> files(const std::string& pluginName);
 };
 
 

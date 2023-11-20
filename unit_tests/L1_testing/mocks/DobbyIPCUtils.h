@@ -40,30 +40,13 @@ protected:
 
 public:
     DobbyIPCUtils(const std::string &systemDbusAddress,
-               const std::shared_ptr<AI_IPC::IIpcService> &systemIpcService){}
-    DobbyIPCUtils(){}
-    ~DobbyIPCUtils(){}
+               const std::shared_ptr<AI_IPC::IIpcService> &systemIpcService);
+    DobbyIPCUtils();
+    ~DobbyIPCUtils();
 
-    static void setImpl(DobbyIPCUtilsImpl* newImpl)
-    {
-        impl = newImpl;
-    }
-
-    static DobbyIPCUtils* getInstance()
-    {
-        static DobbyIPCUtils* instance = nullptr;
-        if(nullptr == instance)
-        {
-            instance = new DobbyIPCUtils();
-        }
-        return instance;
-    }
-
-    static bool setAIDbusAddress(bool privateBus, const std::string &address)
-    {
-        return impl->setAIDbusAddress(privateBus,address);
-    }
-
+    static void setImpl(DobbyIPCUtilsImpl* newImpl);
+    static DobbyIPCUtils* getInstance();
+    static bool setAIDbusAddress(bool privateBus, const std::string &address);
 };
 
 #endif

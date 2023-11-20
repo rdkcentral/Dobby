@@ -34,11 +34,11 @@ class DobbyRdkPluginManager;
 
 class DobbyContainerImpl {
 public:
-
     virtual ~DobbyContainerImpl() = default;
-
     virtual void setRestartOnCrash(const std::list<int>& files) = 0;
     virtual void clearRestartOnCrash() = 0;
+    virtual bool shouldRestart(int statusCode) = 0;
+    virtual const std::list<int>& files() const = 0;
 };
 
 class DobbyContainer {
@@ -53,14 +53,6 @@ public:
     DobbyContainer(DobbyContainer&&) = delete;
     friend class DobbyManager;
 
-    DobbyContainer(): descriptor(0){}
-
-    DobbyContainer(const std::shared_ptr<const DobbyBundle>& _bundle,const std::shared_ptr<const DobbyConfig>& _config,const std::shared_ptr<const DobbyRootfs>& _rootfs):descriptor(0){}
-
-    DobbyContainer(const std::shared_ptr<const DobbyBundle>& _bundle,const std::shared_ptr<const DobbyConfig>& _config,const std::shared_ptr<const DobbyRootfs>& _rootfs,const std::shared_ptr<const DobbyRdkPluginManager>& _rdkPluginManager):descriptor(0){}
-
-    ~DobbyContainer(){}
-
     enum class State { Starting, Running, Stopping, Paused, Unknown } state;
     pid_t containerPid;
     const int32_t descriptor;
@@ -70,36 +62,21 @@ public:
     std::list<int> mFiles;
     bool hasCurseOfDeath;
     const std::shared_ptr<const DobbyRootfs> rootfs;
-    const std::list<int>& files() const;
 
-    bool shouldRestart(int statusCode);
+    DobbyContainer();
+    DobbyContainer(const std::shared_ptr<const DobbyBundle>& _bundle,const std::shared_ptr<const DobbyConfig>& _config,const std::shared_ptr<const DobbyRootfs>& _rootfs);
+    DobbyContainer(const std::shared_ptr<const DobbyBundle>& _bundle,const std::shared_ptr<const DobbyConfig>& _config,const std::shared_ptr<const DobbyRootfs>& _rootfs,const std::shared_ptr<const DobbyRdkPluginManager>& _rdkPluginManager);
+    ~DobbyContainer();
+
+    static bool shouldRestart(int statusCode);
 
     std::string customConfigFilePath;
 
-    static void setImpl(DobbyContainerImpl* newImpl)
-    {
-         impl = newImpl;
-    }
-
-    static DobbyContainer* getInstance()
-    {
-        static DobbyContainer* instance = nullptr;
-        if (nullptr == instance)
-        {
-            instance = new DobbyContainer();
-        }
-        return instance;
-    }
-
-    static void setRestartOnCrash(const std::list<int>& files)
-    {
-        return impl->setRestartOnCrash(files);
-    }
-
-    static void clearRestartOnCrash()
-    {
-        return impl->clearRestartOnCrash();
-    }
+    static void setImpl(DobbyContainerImpl* newImpl);
+    static DobbyContainer* getInstance();
+    static void setRestartOnCrash(const std::list<int>& files);
+    static void clearRestartOnCrash();
+    static const std::list<int>& files();
 };
 
 #endif // DOBBYCONTAINER_H

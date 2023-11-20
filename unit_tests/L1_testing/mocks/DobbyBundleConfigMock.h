@@ -30,5 +30,7 @@ public:
     MOCK_METHOD(std::shared_ptr<rt_dobby_schema>, config, (), (const,override));
     MOCK_METHOD(bool, restartOnCrash, (), (const,override));
     MOCK_METHOD(bool, writeConfigJson, (const std::string& filePath), (const,override));
+    MOCK_METHOD(bool, isValid, (), (const,override));
+    MOCK_METHOD((const std::map<std::string, Json::Value>&), rdkPlugins, (), (const,override));
 };
 

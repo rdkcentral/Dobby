@@ -25,6 +25,7 @@
 #include <vector>
 #include <functional>
 #include <memory>
+#include <gmock/gmock.h>
 
 namespace AI_IPC
 {
@@ -52,14 +53,27 @@ public:
 
     static bool sendReply(const VariantList& replyArgs)
     {
+        EXPECT_NE(impl, nullptr);
+
         return impl->sendReply(replyArgs);
     }
 
     static VariantList getMethodCallArguments()
     {
+        EXPECT_NE(impl, nullptr);
+
         return impl->getMethodCallArguments();
     }
 
+    static IAsyncReplySender* getInstance()
+    {
+        static IAsyncReplySender* instance = nullptr;
+        if(nullptr == instance)
+        {
+            instance = new IAsyncReplySender();
+        }
+        return instance;
+    }
 };
 
 

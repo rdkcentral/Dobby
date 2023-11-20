@@ -49,43 +49,19 @@ protected:
 
 public:
 
-    DobbyRootfs(){}
+    DobbyRootfs();
 #if defined(LEGACY_COMPONENTS)
-    DobbyRootfs(const std::shared_ptr<IDobbyUtils>& utils,const std::shared_ptr<const DobbyBundle>& bundle,const std::shared_ptr<const DobbySpecConfig>& config){}
+    DobbyRootfs(const std::shared_ptr<IDobbyUtils>& utils,const std::shared_ptr<const DobbyBundle>& bundle,const std::shared_ptr<const DobbySpecConfig>& config);
 #endif // LEGACY_COMPONENTS
 
-    DobbyRootfs(const std::shared_ptr<IDobbyUtils>& utils,const std::shared_ptr<const DobbyBundle>& bundle,const std::shared_ptr<const DobbyBundleConfig>& config){}
-    ~DobbyRootfs(){}
+    DobbyRootfs(const std::shared_ptr<IDobbyUtils>& utils,const std::shared_ptr<const DobbyBundle>& bundle,const std::shared_ptr<const DobbyBundleConfig>& config);
+    ~DobbyRootfs();
 
-    static void setImpl(DobbyRootfsImpl* newImpl)
-    {
-        impl = newImpl;
-    }
-
-    static DobbyRootfs* getInstance()
-    {
-        static DobbyRootfs* instance = nullptr;
-        if (nullptr == instance)
-        {
-           instance = new DobbyRootfs();
-        }
-        return instance;
-    }
-
-    static void setPersistence(bool persist)
-    {
-        return impl->setPersistence(persist);
-    }
-
-    static const std::string& path()
-    {
-        return impl->path();
-    }
-
-    static bool isValid()
-    {
-        return impl->isValid();
-    }
+    static void setImpl(DobbyRootfsImpl* newImpl);
+    static DobbyRootfs* getInstance();
+    static void setPersistence(bool persist);
+    static const std::string& path();
+    static bool isValid();
 };
 
 #endif // !defined(DOBBYROOTFS_H)
