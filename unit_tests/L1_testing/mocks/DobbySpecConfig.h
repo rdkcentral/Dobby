@@ -44,7 +44,6 @@ public:
     virtual bool restartOnCrash() const =0;
     virtual bool writeConfigJson(const std::string& filePath) const = 0;
 
-
 };
 
 class DobbySpecConfig :public DobbyConfig {
@@ -61,16 +60,16 @@ public:
 
     static void setImpl(DobbySpecConfigImpl* newImpl);
     static DobbySpecConfig* getInstance();
-    static bool isValid();
-    static const std::map<std::string, Json::Value>& rdkPlugins();
+    bool isValid() const;
+    const std::map<std::string, Json::Value>& rdkPlugins() const;
 #if defined(LEGACY_COMPONENTS)
 
-    static const std::string spec();
+    const std::string spec() const;
 #endif //defined(LEGACY_COMPONENTS)
 
-    static std::shared_ptr<rt_dobby_schema> config();
-    static bool restartOnCrash();
-    static bool writeConfigJson(const std::string& filePath);
+    std::shared_ptr<rt_dobby_schema> config() const;
+    bool restartOnCrash() const;
+    bool writeConfigJson(const std::string& filePath) const;
 };
 
 #endif // !defined(DOBBYSPECCONFIG_H)

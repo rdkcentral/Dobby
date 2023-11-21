@@ -83,7 +83,7 @@ void DobbyContainer::clearRestartOnCrash()
     return impl->clearRestartOnCrash();
 }
 
-const std::list<int>& DobbyContainer::files()
+const std::list<int>& DobbyContainer::files() const
 {
    EXPECT_NE(impl, nullptr);
 

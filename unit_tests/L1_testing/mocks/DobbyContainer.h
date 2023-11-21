@@ -68,15 +68,15 @@ public:
     DobbyContainer(const std::shared_ptr<const DobbyBundle>& _bundle,const std::shared_ptr<const DobbyConfig>& _config,const std::shared_ptr<const DobbyRootfs>& _rootfs,const std::shared_ptr<const DobbyRdkPluginManager>& _rdkPluginManager);
     ~DobbyContainer();
 
-    static bool shouldRestart(int statusCode);
+    bool shouldRestart(int statusCode);
 
     std::string customConfigFilePath;
 
     static void setImpl(DobbyContainerImpl* newImpl);
     static DobbyContainer* getInstance();
-    static void setRestartOnCrash(const std::list<int>& files);
-    static void clearRestartOnCrash();
-    static const std::list<int>& files();
+    void setRestartOnCrash(const std::list<int>& files);
+    void clearRestartOnCrash();
+    const std::list<int>& files() const;
 };
 
 #endif // DOBBYCONTAINER_H

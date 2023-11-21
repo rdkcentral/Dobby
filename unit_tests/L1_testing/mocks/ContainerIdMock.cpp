@@ -33,7 +33,7 @@ ContainerId* ContainerId::getInstance()
     return instance;
 }
 
-bool ContainerId::isValid()
+bool ContainerId::isValid() const
 {
    EXPECT_NE(impl, nullptr);
 
@@ -45,7 +45,7 @@ const std::string& ContainerId::str() const
     return mId;
 }
 
-const char* ContainerId::c_str()
+const char* ContainerId::c_str() const
 {
    EXPECT_NE(impl, nullptr);
 

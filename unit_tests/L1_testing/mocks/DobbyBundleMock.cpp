@@ -41,7 +41,7 @@ void DobbyBundle::setPersistence(bool persist)
     return impl->setPersistence(persist);
 }
 
-bool DobbyBundle::isValid()
+bool DobbyBundle::isValid() const
 {
    EXPECT_NE(impl, nullptr);
 

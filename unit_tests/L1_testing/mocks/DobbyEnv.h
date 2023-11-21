@@ -48,10 +48,10 @@ public:
     DobbyEnv(const std::shared_ptr<const IDobbySettings>& settings);
     static void setImpl(DobbyEnvImpl* newImpl);
     static DobbyEnv* getInstance();
-    static std::string workspaceMountPath();
-    static std::string flashMountPath();
-    static std::string pluginsWorkspacePath();
-    static uint16_t platformIdent();
+    std::string workspaceMountPath() const;
+    std::string flashMountPath() const;
+    std::string pluginsWorkspacePath() const;
+    uint16_t platformIdent() const;
 };
 
 #endif // !defined(DOBBYENV_H)

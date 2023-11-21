@@ -46,7 +46,7 @@ public:
 
     static void setImpl(DobbyIPCUtilsImpl* newImpl);
     static DobbyIPCUtils* getInstance();
-    static bool setAIDbusAddress(bool privateBus, const std::string &address);
+    bool setAIDbusAddress(bool privateBus, const std::string &address);
 };
 
 #endif

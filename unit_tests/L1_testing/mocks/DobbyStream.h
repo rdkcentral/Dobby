@@ -89,8 +89,8 @@ public:
 public:
     static void setImpl(DobbyBufferStreamImpl* newImpl);
     static DobbyBufferStream* getInstance();
-    static std::vector<char> getBuffer();
-    static int getMemFd();
+    std::vector<char> getBuffer() const;
+    int getMemFd() const;
 
 };
 

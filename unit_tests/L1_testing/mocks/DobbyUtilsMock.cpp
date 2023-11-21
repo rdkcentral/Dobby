@@ -41,7 +41,7 @@ DobbyUtils* DobbyUtils::getInstance()
     return instance;
 }
 
-bool DobbyUtils::cancelTimer(int timerId)
+bool DobbyUtils::cancelTimer(int timerId) const
 {
    EXPECT_NE(impl, nullptr);
 
@@ -50,7 +50,7 @@ bool DobbyUtils::cancelTimer(int timerId)
 
 int DobbyUtils::startTimer(const std::chrono::microseconds& timeout,
                       bool oneShot,
-                      const std::function<bool()>& handler)
+                      const std::function<bool()>& handler) const
 {
    EXPECT_NE(impl, nullptr);
 

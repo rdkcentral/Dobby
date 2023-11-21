@@ -55,10 +55,10 @@ public:
 
     static void setImpl(DobbyUtilsImpl* newImpl);
     static DobbyUtils* getInstance();
-    static bool cancelTimer(int timerId);
-    static int startTimer(const std::chrono::microseconds& timeout,
+    bool cancelTimer(int timerId) const;
+    int startTimer(const std::chrono::microseconds& timeout,
                           bool oneShot,
-                          const std::function<bool()>& handler);
+                          const std::function<bool()>& handler) const;
 
 };
 

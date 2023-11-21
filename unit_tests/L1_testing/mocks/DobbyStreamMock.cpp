@@ -46,14 +46,14 @@ DobbyBufferStream* DobbyBufferStream::getInstance()
     return instance;
 }
 
-std::vector<char> DobbyBufferStream::getBuffer()
+std::vector<char> DobbyBufferStream::getBuffer() const
 {
    EXPECT_NE(impl, nullptr);
 
     return impl->getBuffer();
 }
 
-int DobbyBufferStream::getMemFd()
+int DobbyBufferStream::getMemFd() const
 {
    EXPECT_NE(impl, nullptr);
 

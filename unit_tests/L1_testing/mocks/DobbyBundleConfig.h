@@ -46,13 +46,13 @@ public:
     DobbyBundleConfig(const std::shared_ptr<IDobbyUtils>& utils,const std::shared_ptr<const IDobbySettings>& settings,const ContainerId& id,const std::string& bundlePath);
     ~DobbyBundleConfig();
 
-    bool isValid() const ;
+    bool isValid() const;
     const std::map<std::string, Json::Value>& rdkPlugins() const ;
     static void setImpl(DobbyBundleConfigImpl* newImpl);
     static DobbyBundleConfig* getInstance();
-    static std::shared_ptr<rt_dobby_schema> config();
-    static bool restartOnCrash();
-    static bool writeConfigJson(const std::string& filePath);
+    std::shared_ptr<rt_dobby_schema> config();
+    bool restartOnCrash() const;
+    bool writeConfigJson(const std::string& filePath) const;
 };
 
 

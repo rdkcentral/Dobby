@@ -36,7 +36,7 @@ DobbyConfig* DobbyConfig::getInstance()
     return instance;
 }
 
-bool DobbyConfig::writeConfigJson(const std::string& filePath)
+bool DobbyConfig::writeConfigJson(const std::string& filePath) const
 {
    EXPECT_NE(impl, nullptr);
 
@@ -101,7 +101,7 @@ bool DobbyConfig::enableSTrace(const std::string& logsDir)
     return impl->enableSTrace(logsDir);
 }
 
-std::string DobbyConfig::configJson()
+const std::string DobbyConfig::configJson() const
 {
    EXPECT_NE(impl, nullptr);
 

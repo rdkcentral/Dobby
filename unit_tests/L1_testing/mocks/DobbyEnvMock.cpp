@@ -47,28 +47,28 @@ DobbyEnv* DobbyEnv::getInstance()
     return instance;
 }
 
-std::string DobbyEnv::workspaceMountPath()
+std::string DobbyEnv::workspaceMountPath() const
 {
    EXPECT_NE(impl, nullptr);
 
    return impl->workspaceMountPath();
 }
 
-std::string DobbyEnv::flashMountPath()
+std::string DobbyEnv::flashMountPath() const
 {
    EXPECT_NE(impl, nullptr);
 
    return impl->flashMountPath();
 }
 
-std::string DobbyEnv::pluginsWorkspacePath()
+std::string DobbyEnv::pluginsWorkspacePath() const
 {
    EXPECT_NE(impl, nullptr);
 
    return impl->pluginsWorkspacePath();
 }
 
-uint16_t DobbyEnv::platformIdent()
+uint16_t DobbyEnv::platformIdent() const
 {
    EXPECT_NE(impl, nullptr);
 

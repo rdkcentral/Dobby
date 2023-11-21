@@ -67,14 +67,14 @@ public:
 
     static void setImpl(DobbyConfigImpl* newImpl);
     static DobbyConfig* getInstance();
-    static bool writeConfigJson(const std::string& filePath);
+    bool writeConfigJson(const std::string& filePath) const;
     static const std::map<std::string, Json::Value>& rdkPlugins();
-    static const std::shared_ptr<rt_dobby_schema> config();
-    static bool changeProcessArgs(const std::string& command);
-    static bool addWesterosMount(const std::string& socketPath);
-    static bool addEnvironmentVar(const std::string& envVar);
-    static bool enableSTrace(const std::string& logsDir);
-    static std::string configJson();
+    const std::shared_ptr<rt_dobby_schema> config();
+    bool changeProcessArgs(const std::string& command);
+    bool addWesterosMount(const std::string& socketPath);
+    bool addEnvironmentVar(const std::string& envVar);
+    bool enableSTrace(const std::string& logsDir);
+    const std::string configJson() const;
 
 #if defined(LEGACY_COMPONENTS)
     static const std::string spec();

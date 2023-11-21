@@ -47,9 +47,9 @@ public:
 
     static void setImpl(ContainerIdImpl* newImpl);
     static ContainerId* getInstance();
-    static bool isValid();
+    bool isValid() const;
     const std::string& str() const;
-    static const char* c_str();
+    const char* c_str() const;
     static bool isValidContainerId(const std::string& id);
     static ContainerId create(const std::string& s);
     static ContainerId create(const char* s);

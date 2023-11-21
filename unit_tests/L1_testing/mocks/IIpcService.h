@@ -49,15 +49,15 @@ static IIpcServiceImpl* impl;
 public:
 
         static void setImpl(IIpcServiceImpl* newImpl);
-        static bool isValid();
-        static std::shared_ptr<IAsyncReplyGetter> invokeMethod(const Method& method, const VariantList& args, int timeoutMs = -1);
-        static bool invokeMethod(const Method& method, const VariantList& args, VariantList& replyArgs, int timeoutMs = -1);
-        static bool emitSignal(const Signal& signal, const VariantList& args);
-        static std::string registerMethodHandler(const Method& method, const MethodHandler& handler);
-        static std::string registerSignalHandler(const Signal& signal, const SignalHandler& handler);
-        static bool unregisterHandler(const std::string& regId);
-        static bool enableMonitor(const std::set<std::string>& matchRules, const MonitorHandler& handler);
-        static void flush();
+        bool isValid() const;
+        std::shared_ptr<IAsyncReplyGetter> invokeMethod(const Method& method, const VariantList& args, int timeoutMs = -1);
+        bool invokeMethod(const Method& method, const VariantList& args, VariantList& replyArgs, int timeoutMs = -1);
+        bool emitSignal(const Signal& signal, const VariantList& args);
+        std::string registerMethodHandler(const Method& method, const MethodHandler& handler);
+        std::string registerSignalHandler(const Signal& signal, const SignalHandler& handler);
+        bool unregisterHandler(const std::string& regId);
+        bool enableMonitor(const std::set<std::string>& matchRules, const MonitorHandler& handler);
+        void flush();
 };
 
 }

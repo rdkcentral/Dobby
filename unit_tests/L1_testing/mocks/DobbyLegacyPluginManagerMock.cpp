@@ -45,7 +45,7 @@ void DobbyLegacyPluginManager::refreshPlugins(const std::string& path /*= std::s
 bool DobbyLegacyPluginManager::executePostConstructionHooks(const std::map<std::string, Json::Value>& plugins,
                                   const ContainerId& id,
                                   const std::shared_ptr<IDobbyStartState>& startupState,
-                                  const std::string& rootfsPath)
+                                  const std::string& rootfsPath) const
 {
    EXPECT_NE(impl, nullptr);
 
@@ -55,7 +55,7 @@ bool DobbyLegacyPluginManager::executePostConstructionHooks(const std::map<std::
 bool DobbyLegacyPluginManager::executePreStartHooks(const std::map<std::string, Json::Value>& plugins,
                           const ContainerId& id,
                           pid_t pid,
-                          const std::string& rootfsPath)
+                          const std::string& rootfsPath) const
 {
    EXPECT_NE(impl, nullptr);
 
@@ -65,7 +65,7 @@ bool DobbyLegacyPluginManager::executePreStartHooks(const std::map<std::string, 
 bool DobbyLegacyPluginManager::executePostStartHooks(const std::map<std::string, Json::Value>& plugins,
                            const ContainerId& id,
                            pid_t pid,
-                           const std::string& rootfsPath)
+                           const std::string& rootfsPath) const
 {
    EXPECT_NE(impl, nullptr);
 
@@ -74,7 +74,7 @@ bool DobbyLegacyPluginManager::executePostStartHooks(const std::map<std::string,
 
 bool DobbyLegacyPluginManager::executePostStopHooks(const std::map<std::string, Json::Value>& plugins,
                           const ContainerId& id,
-                          const std::string& rootfsPath)
+                          const std::string& rootfsPath) const
 {
    EXPECT_NE(impl, nullptr);
 
@@ -83,7 +83,7 @@ bool DobbyLegacyPluginManager::executePostStopHooks(const std::map<std::string, 
 
 bool DobbyLegacyPluginManager::executePreDestructionHooks(const std::map<std::string, Json::Value>& plugins,
                                 const ContainerId& id,
-                                const std::string& rootfsPath)
+                                const std::string& rootfsPath) const
 {
    EXPECT_NE(impl, nullptr);
 

@@ -66,28 +66,28 @@ DobbyRdkPluginUtils* DobbyRdkPluginUtils::getInstance()
     return instance;
 }
 
-bool DobbyRdkPluginUtils::callInNamespaceImpl(pid_t pid, int nsType,const std::function<bool()>& func)
+bool DobbyRdkPluginUtils::callInNamespaceImpl(pid_t pid, int nsType,const std::function<bool()>& func) const
 {
    EXPECT_NE(impl, nullptr);
 
     return impl->callInNamespaceImpl(pid,nsType,func);
 }
 
-void DobbyRdkPluginUtils::nsThread(int newNsFd, int nsType, bool* success,std::function<bool()>& func)
+void DobbyRdkPluginUtils::nsThread(int newNsFd, int nsType, bool* success,std::function<bool()>& func) const
 {
    EXPECT_NE(impl, nullptr);
 
     return impl->nsThread(newNsFd,nsType,success,func);
 }
 
-pid_t DobbyRdkPluginUtils::getContainerPid()
+pid_t DobbyRdkPluginUtils::getContainerPid() const
 {
    EXPECT_NE(impl, nullptr);
 
     return impl->getContainerPid();
 }
 
-std::string DobbyRdkPluginUtils::getContainerId()
+std::string DobbyRdkPluginUtils::getContainerId() const
 {
    EXPECT_NE(impl, nullptr);
 
@@ -108,21 +108,21 @@ bool DobbyRdkPluginUtils::getTakenVeths(std::vector<std::string> &takenVeths)
     return impl->getTakenVeths(takenVeths);
 }
 
-bool DobbyRdkPluginUtils::writeTextFile(const std::string &path,const std::string &str,int flags,mode_t mode)
+bool DobbyRdkPluginUtils::writeTextFile(const std::string &path,const std::string &str,int flags,mode_t mode) const
 {
    EXPECT_NE(impl, nullptr);
 
     return impl->writeTextFile(path,str,flags,mode);
 }
 
-std::string DobbyRdkPluginUtils::readTextFile(const std::string &path)
+std::string DobbyRdkPluginUtils::readTextFile(const std::string &path) const
 {
    EXPECT_NE(impl, nullptr);
 
     return impl->readTextFile(path);
 }
 
-bool DobbyRdkPluginUtils::addMount(const std::string &source,const std::string &target,const std::string &fsType,const std::list<std::string> &mountOptions)
+bool DobbyRdkPluginUtils::addMount(const std::string &source,const std::string &target,const std::string &fsType,const std::list<std::string> &mountOptions) const
 {
    EXPECT_NE(impl, nullptr);
 
@@ -136,7 +136,7 @@ bool DobbyRdkPluginUtils::mkdirRecursive(const std::string& path, mode_t mode)
     return impl->mkdirRecursive(path,mode);
 }
 
-bool DobbyRdkPluginUtils::addEnvironmentVar(const std::string& envVar)
+bool DobbyRdkPluginUtils::addEnvironmentVar(const std::string& envVar) const
 {
    EXPECT_NE(impl, nullptr);
 

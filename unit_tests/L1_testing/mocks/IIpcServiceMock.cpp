@@ -23,7 +23,7 @@ void AI_IPC::IIpcService::setImpl(IIpcServiceImpl* newImpl)
     impl = newImpl;
 }
 
-bool AI_IPC::IIpcService::isValid()
+bool AI_IPC::IIpcService::isValid() const
 {
    EXPECT_NE(impl, nullptr);
 
