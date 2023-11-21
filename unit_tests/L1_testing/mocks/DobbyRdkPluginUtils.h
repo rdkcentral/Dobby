@@ -104,32 +104,21 @@ public:
 
     static void setImpl(DobbyRdkPluginUtilsImpl* newImpl);
     static DobbyRdkPluginUtils* getInstance();
-    static bool callInNamespaceImpl(pid_t pid, int nsType,const std::function<bool()>& func);
-    static void nsThread(int newNsFd, int nsType, bool* success,std::function<bool()>& func);
-    static pid_t getContainerPid();
-    static std::string getContainerId();
-    static bool getContainerNetworkInfo(ContainerNetworkInfo &networkInfo);
-    static bool getTakenVeths(std::vector<std::string> &takenVeths);
-    static bool writeTextFile(const std::string &path,const std::string &str,int flags,mode_t mode);
-    static std::string readTextFile(const std::string &path);
-    static bool addMount(const std::string &source,const std::string &target,const std::string &fsType,const std::list<std::string> &mountOptions);
+    bool callInNamespaceImpl(pid_t pid, int nsType,const std::function<bool()>& func) const;
+    void nsThread(int newNsFd, int nsType, bool* success,std::function<bool()>& func) const;
+    pid_t getContainerPid() const;
+    std::string getContainerId() const;
+    bool getContainerNetworkInfo(ContainerNetworkInfo &networkInfo);
+    bool getTakenVeths(std::vector<std::string> &takenVeths);
+    bool writeTextFile(const std::string &path,const std::string &str,int flags,mode_t mode) const;
+    std::string readTextFile(const std::string &path) const;
+    bool addMount(const std::string &source,const std::string &target,const std::string &fsType,const std::list<std::string> &mountOptions) const;
     static bool mkdirRecursive(const std::string& path, mode_t mode);
-    static bool addEnvironmentVar(const std::string& envVar);
-    static int addFileDescriptor(const std::string& pluginName, int fd);
-    static std::list<int> files();
-    static std::list<int> files(const std::string& pluginName);
+    bool addEnvironmentVar(const std::string& envVar) const;
+    int addFileDescriptor(const std::string& pluginName, int fd);
+    std::list<int> files();
+    std::list<int> files(const std::string& pluginName);
 };
 
 
 #endif // !defined(DOBBYRDKPLUGINUTILS_H)
-
-
-
-
-
-
-
-
-
-
-

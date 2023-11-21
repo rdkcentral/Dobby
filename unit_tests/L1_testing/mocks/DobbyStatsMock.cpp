@@ -45,7 +45,7 @@ DobbyStats* DobbyStats::getInstance()
     return instance;
 }
 
-const Json::Value & DobbyStats::stats()
+const Json::Value & DobbyStats::stats() const
 {
    EXPECT_NE(impl, nullptr);
 

@@ -58,14 +58,14 @@ void DobbyRootfs::setPersistence(bool persist)
     return impl->setPersistence(persist);
 }
 
-const std::string& DobbyRootfs::path()
+const std::string& DobbyRootfs::path() const
 {
    EXPECT_NE(impl, nullptr);
 
     return impl->path();
 }
 
-bool DobbyRootfs::isValid()
+bool DobbyRootfs::isValid() const
 {
    EXPECT_NE(impl, nullptr);
 

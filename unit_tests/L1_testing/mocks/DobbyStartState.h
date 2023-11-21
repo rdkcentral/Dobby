@@ -49,7 +49,7 @@ public:
     ~DobbyStartState();
     static void setImpl(DobbyStartStateImpl* newImpl);
     static DobbyStartState* getInstance();
-    static bool isValid();
+    bool isValid() const;
     std::list<int> files() const;
 
 };

@@ -104,25 +104,25 @@ public:
 public:
     static DobbyLegacyPluginManager* getInstance();
     static void setImpl(DobbyLegacyPluginManagerImpl* newImpl);
-    static void refreshPlugins(const std::string& path = std::string(DEFAULT_PLUGIN_PATH));
-    static bool executePostConstructionHooks(const std::map<std::string, Json::Value>& plugins,
+    void refreshPlugins(const std::string& path = std::string(DEFAULT_PLUGIN_PATH));
+    bool executePostConstructionHooks(const std::map<std::string, Json::Value>& plugins,
                                       const ContainerId& id,
                                       const std::shared_ptr<IDobbyStartState>& startupState,
-                                      const std::string& rootfsPath);
-    static bool executePreStartHooks(const std::map<std::string, Json::Value>& plugins,
+                                      const std::string& rootfsPath) const;
+    bool executePreStartHooks(const std::map<std::string, Json::Value>& plugins,
                               const ContainerId& id,
                               pid_t pid,
-                              const std::string& rootfsPath);
-    static bool executePostStartHooks(const std::map<std::string, Json::Value>& plugins,
+                              const std::string& rootfsPath) const;
+    bool executePostStartHooks(const std::map<std::string, Json::Value>& plugins,
                                const ContainerId& id,
                                pid_t pid,
-                               const std::string& rootfsPath);
-    static bool executePostStopHooks(const std::map<std::string, Json::Value>& plugins,
+                               const std::string& rootfsPath) const;
+    bool executePostStopHooks(const std::map<std::string, Json::Value>& plugins,
                               const ContainerId& id,
-                              const std::string& rootfsPath);
-    static bool executePreDestructionHooks(const std::map<std::string, Json::Value>& plugins,
+                              const std::string& rootfsPath) const;
+    bool executePreDestructionHooks(const std::map<std::string, Json::Value>& plugins,
                                     const ContainerId& id,
-                                    const std::string& rootfsPath);
+                                    const std::string& rootfsPath) const;
 };
 
 

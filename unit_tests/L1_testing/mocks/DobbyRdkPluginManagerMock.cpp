@@ -46,35 +46,35 @@ DobbyRdkPluginManager* DobbyRdkPluginManager::getInstance()
     return instance;
 }
 
-bool DobbyRdkPluginManager::runPlugins(const IDobbyRdkPlugin::HintFlags &hookPoint,const uint timeoutMs )
+bool DobbyRdkPluginManager::runPlugins(const IDobbyRdkPlugin::HintFlags &hookPoint,const uint timeoutMs ) const
 {
    EXPECT_NE(impl, nullptr);
 
     return impl->runPlugins(hookPoint,timeoutMs);
 }
 
-bool DobbyRdkPluginManager::runPlugins(const IDobbyRdkPlugin::HintFlags &hookPoint)
+bool DobbyRdkPluginManager::runPlugins(const IDobbyRdkPlugin::HintFlags &hookPoint) const
 {
    EXPECT_NE(impl, nullptr);
 
     return impl->runPlugins(hookPoint);
 }
 
-void DobbyRdkPluginManager::setExitStatus(int status)
+void DobbyRdkPluginManager::setExitStatus(int status) const
 {
    EXPECT_NE(impl, nullptr);
 
     return impl->setExitStatus(status);
 }
 
-const std::vector<std::string> DobbyRdkPluginManager::listLoadedPlugins()
+const std::vector<std::string> DobbyRdkPluginManager::listLoadedPlugins() const
 {
    EXPECT_NE(impl, nullptr);
 
     return impl->listLoadedPlugins();
 }
 
-std::shared_ptr<IDobbyRdkLoggingPlugin> DobbyRdkPluginManager::getContainerLogger()
+std::shared_ptr<IDobbyRdkLoggingPlugin> DobbyRdkPluginManager::getContainerLogger() const
 {
    EXPECT_NE(impl, nullptr);
 

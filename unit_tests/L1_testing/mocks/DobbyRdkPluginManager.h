@@ -51,11 +51,11 @@ public:
 
     static void setImpl(DobbyRdkPluginManagerImpl* newImpl);
     static DobbyRdkPluginManager* getInstance();
-    static bool runPlugins(const IDobbyRdkPlugin::HintFlags &hookPoint,const uint timeoutMs );
-    static bool runPlugins(const IDobbyRdkPlugin::HintFlags &hookPoint);
-    static void setExitStatus(int status);
-    static const std::vector<std::string> listLoadedPlugins();
-    static std::shared_ptr<IDobbyRdkLoggingPlugin> getContainerLogger();
+    bool runPlugins(const IDobbyRdkPlugin::HintFlags &hookPoint,const uint timeoutMs ) const;
+    bool runPlugins(const IDobbyRdkPlugin::HintFlags &hookPoint) const;
+    void setExitStatus(int status) const;
+    const std::vector<std::string> listLoadedPlugins() const;
+    std::shared_ptr<IDobbyRdkLoggingPlugin> getContainerLogger() const;
 
 };
 

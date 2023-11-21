@@ -59,7 +59,7 @@ public:
 
     static void setImpl(DobbyStatsImpl* newImpl);
     static DobbyStats* getInstance();
-    static const Json::Value & stats();
+    const Json::Value & stats() const;
 };
 
 #endif // !defined(DOBBYSTATS_H)

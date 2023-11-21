@@ -53,14 +53,14 @@ std::shared_ptr<rt_dobby_schema> DobbyBundleConfig::config()
     return impl->config();
 }
 
-bool DobbyBundleConfig::restartOnCrash()
+bool DobbyBundleConfig::restartOnCrash() const
 {
     EXPECT_NE(impl, nullptr);
 
     return impl->restartOnCrash();
 }
 
-bool DobbyBundleConfig::writeConfigJson(const std::string& filePath)
+bool DobbyBundleConfig::writeConfigJson(const std::string& filePath) const
 {
     EXPECT_NE(impl, nullptr);
 

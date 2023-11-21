@@ -61,7 +61,7 @@ std::list<int> DobbyStartState::files() const
     return impl->files();
 }
 
-bool DobbyStartState::isValid()
+bool DobbyStartState::isValid() const
 {
    EXPECT_NE(impl, nullptr);
 

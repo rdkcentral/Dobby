@@ -49,14 +49,14 @@ DobbySpecConfig* DobbySpecConfig::getInstance()
     return instance;
 }
 
-bool DobbySpecConfig::isValid()
+bool DobbySpecConfig::isValid() const
 {
    EXPECT_NE(impl, nullptr);
 
     return impl->isValid();
 }
 
-const std::map<std::string, Json::Value>& DobbySpecConfig::rdkPlugins()
+const std::map<std::string, Json::Value>& DobbySpecConfig::rdkPlugins() const
 {
    EXPECT_NE(impl, nullptr);
 
@@ -65,7 +65,7 @@ const std::map<std::string, Json::Value>& DobbySpecConfig::rdkPlugins()
 
 #if defined(LEGACY_COMPONENTS)
 
-const std::string DobbySpecConfig::spec()
+const std::string DobbySpecConfig::spec() const
 {
    EXPECT_NE(impl, nullptr);
 
@@ -73,24 +73,23 @@ const std::string DobbySpecConfig::spec()
 }
 #endif //defined(LEGACY_COMPONENTS)
 
-std::shared_ptr<rt_dobby_schema> DobbySpecConfig::config()
+std::shared_ptr<rt_dobby_schema> DobbySpecConfig::config() const
 {
    EXPECT_NE(impl, nullptr);
 
     return impl->config();
 }
 
-bool DobbySpecConfig::restartOnCrash()
+bool DobbySpecConfig::restartOnCrash() const
 {
    EXPECT_NE(impl, nullptr);
 
     return impl->restartOnCrash();
 }
 
-bool DobbySpecConfig::writeConfigJson(const std::string& filePath)
+bool DobbySpecConfig::writeConfigJson(const std::string& filePath) const
 {
-   EXPECT_NE(impl, nullptr);
+    EXPECT_NE(impl, nullptr);
 
     return impl->writeConfigJson(filePath);
 }
-

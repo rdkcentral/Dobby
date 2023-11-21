@@ -59,9 +59,9 @@ public:
 
     static void setImpl(DobbyRootfsImpl* newImpl);
     static DobbyRootfs* getInstance();
-    static void setPersistence(bool persist);
-    static const std::string& path();
-    static bool isValid();
+    void setPersistence(bool persist);
+    const std::string& path() const;
+    bool isValid() const;
 };
 
 #endif // !defined(DOBBYROOTFS_H)

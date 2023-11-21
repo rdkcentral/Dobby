@@ -57,8 +57,8 @@ public:
 
     static void setImpl(DobbyBundleImpl* newImpl);
     static DobbyBundle* getInstance();
-    static void setPersistence(bool persist);
-    static bool isValid();
+    void setPersistence(bool persist);
+    bool isValid() const;
 };
 
 #endif // !defined(DOBBYBUNDLE_H)
