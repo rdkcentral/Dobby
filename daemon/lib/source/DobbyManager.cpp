@@ -135,8 +135,6 @@ DobbyManager::~DobbyManager()
  *
  *      echo "1" > /proc/sys/net/ipv4/ip_forward
  *
- *      echo "-1" > /proc/sys/kernel/sched_rt_runtime_us
- *      echo "-1" > /sys/fs/cgroup/cpu/cpu.rt_runtime_us
  *
  *  See the comments in the code for why each step is needed
  */
@@ -170,32 +168,6 @@ void DobbyManager::setupSystem()
     {
         AI_LOG_FATAL("failed to write to ip_forward file, you may have issues"
                      " with container networking");
-    }
-
-    // the following restores the old skool RT scheduling behaviour, and it's
-    // needed to ensure that containered apps can start in RT scheduling mode
-    if (!mUtilities->writeTextFile("/proc/sys/kernel/sched_rt_runtime_us", "-1\n",
-                                   O_TRUNC | O_WRONLY, 0))
-    {
-        AI_LOG_FATAL("failed to write to sched_rt_runtime_us file, you may have"
-                     " issues starting containers");
-    }
-
-    // if we have cgroup RT scheduling enabled in the kernel then also set that
-    // to defaults
-    std::string cgrpCpuPath = mEnvironment->cgroupMountPath(IDobbyEnv::Cgroup::Cpu);
-    if (!cgrpCpuPath.empty())
-    {
-        cgrpCpuPath += "/cpu.rt_runtime_us";
-        if (access(cgrpCpuPath.c_str(), F_OK) == 0)
-        {
-            if (!mUtilities->writeTextFile(cgrpCpuPath, "-1\n", O_TRUNC | O_WRONLY, 0))
-            {
-                AI_LOG_FATAL("failed to write to '%s', you may have issues "
-                             "starting containers",
-                             cgrpCpuPath.c_str());
-            }
-        }
     }
 
     // finally cisco, in their infinite hardening wisdom, keep monkeying around
