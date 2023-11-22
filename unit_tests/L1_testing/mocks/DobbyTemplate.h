@@ -34,7 +34,7 @@ class DobbyTemplateImpl {
 public:
 
     virtual ~DobbyTemplateImpl() = default;
-    virtual void setSettings(const std::shared_ptr<const IDobbySettings>& settings) = 0;
+    virtual void setSettings(const std::shared_ptr<const IDobbySettings>& settings) const = 0;
     virtual std::string apply(const ctemplate::TemplateDictionaryInterface* dictionary, bool prettyPrint) = 0;
     virtual bool applyAt(int dirFd, const std::string& fileName, const ctemplate::TemplateDictionaryInterface* dictionary, bool prettyPrint) = 0;
 };
@@ -47,34 +47,12 @@ protected:
 
 public:
 
-    DobbyTemplate(){}
-
-    static void setImpl(DobbyTemplateImpl* newImpl)
-    {
-        impl = newImpl;
-    }
-
-    static DobbyTemplate* getInstance()
-    {
-        static DobbyTemplate* instance = nullptr;
-        if(nullptr == instance)
-        {
-           instance = new DobbyTemplate();
-        }
-        return instance;
-    }
-
-    static void setSettings(const std::shared_ptr<const IDobbySettings>& settings) {
-        impl->setSettings(settings);
-    }
-
-    static std::string apply(const ctemplate::TemplateDictionaryInterface* dictionary, bool prettyPrint) {
-        return impl->apply(dictionary, prettyPrint);
-    }
-
-    static bool applyAt(int dirFd, const std::string& fileName, const ctemplate::TemplateDictionaryInterface* dictionary, bool prettyPrint) {
-        return impl->applyAt(dirFd, fileName, dictionary, prettyPrint);
-    }
+    DobbyTemplate();
+    static void setImpl(DobbyTemplateImpl* newImpl);
+    static DobbyTemplate* getInstance();
+    static void setSettings(const std::shared_ptr<const IDobbySettings>& settings);
+    static std::string apply(const ctemplate::TemplateDictionaryInterface* dictionary, bool prettyPrint);
+    static bool applyAt(int dirFd, const std::string& fileName, const ctemplate::TemplateDictionaryInterface* dictionary, bool prettyPrint);
 
   };
 #endif // !defined(DOBBYTEMPLATE_H)

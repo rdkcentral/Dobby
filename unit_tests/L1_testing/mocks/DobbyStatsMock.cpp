@@ -16,29 +16,38 @@
 # limitations under the License.
 */
 
-#include "DobbyConfigMock.h" 
-
-#include "NetfilterMock.h"
-
-#include "DobbyRootfsMock.h"
-
 #include "DobbyStatsMock.h"
 
-#include "DobbyLoggerMock.h"
+DobbyStats::DobbyStats()
+{
+}
 
-#include "DobbyRunCMock.h"
+DobbyStats::DobbyStats(const ContainerId &id,const std::shared_ptr<IDobbyEnv> &env,const std::shared_ptr<IDobbyUtils> &utils)
+{
+}
 
-#include "DobbyBundleMock.h"
+DobbyStats::~DobbyStats()
+{
+}
 
-#include "DobbyContainerMock.h"
+void DobbyStats::setImpl(DobbyStatsImpl* newImpl)
+{
+    impl = newImpl;
+}
 
-#include "DobbyRdkPluginManagerMock.h"
+DobbyStats* DobbyStats::getInstance()
+{
+    static DobbyStats* instance = nullptr;
+    if (nullptr == instance)
+    {
+       instance = new DobbyStats();
+    }
+    return instance;
+}
 
-#include "DobbySpecConfigMock.h"
+const Json::Value & DobbyStats::stats() const
+{
+   EXPECT_NE(impl, nullptr);
 
-#include "DobbyBundleConfigMock.h"
-
-#include "IpcFileDescriptorMock.h"
-
-#include "DobbyStartStateMock.h"
-
+    return impl->stats();
+}
