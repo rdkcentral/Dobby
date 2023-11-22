@@ -1,3 +1,3 @@
 <map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
-<area shape="rect" id="node1" href="$classDobbyManager.html" title="The main object which starts / stops / manages the containers." alt="" coords="5,5,127,32"/>
+<area shape="rect" id="node1" href="$classDobbyLegacyPluginManager.html" title="Class that manages all the plugin hook libraries." alt="" coords="5,5,212,32"/>
 </map>

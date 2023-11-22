@@ -91,6 +91,21 @@ virtual const std::map&lt; std::string, Json::Value &gt; &amp;&#160;</td><td cla
 <tr class="memitem:aa2350db23d79d9bc74fca0bef35875fc"><td class="memItemLeft" align="right" valign="top"><a id="aa2350db23d79d9bc74fca0bef35875fc"></a>
 virtual std::shared_ptr&lt; rt_dobby_schema &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>config</b> () const =0</td></tr>
 <tr class="separator:aa2350db23d79d9bc74fca0bef35875fc"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aeb4de5bd2721bf22cea16f96eda8b005"><td class="memItemLeft" align="right" valign="top"><a id="aeb4de5bd2721bf22cea16f96eda8b005"></a>
+virtual bool&#160;</td><td class="memItemRight" valign="bottom"><b>changeProcessArgs</b> (const std::string &amp;command)=0</td></tr>
+<tr class="separator:aeb4de5bd2721bf22cea16f96eda8b005"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aeaaf8067a93c1c69495f382f98abe568"><td class="memItemLeft" align="right" valign="top"><a id="aeaaf8067a93c1c69495f382f98abe568"></a>
+virtual bool&#160;</td><td class="memItemRight" valign="bottom"><b>addWesterosMount</b> (const std::string &amp;socketPath)=0</td></tr>
+<tr class="separator:aeaaf8067a93c1c69495f382f98abe568"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae091c88be698e57fb0f420866e0e5371"><td class="memItemLeft" align="right" valign="top"><a id="ae091c88be698e57fb0f420866e0e5371"></a>
+virtual bool&#160;</td><td class="memItemRight" valign="bottom"><b>addEnvironmentVar</b> (const std::string &amp;envVar)=0</td></tr>
+<tr class="separator:ae091c88be698e57fb0f420866e0e5371"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a21fb128c96723d00bc8c76b048a9fb17"><td class="memItemLeft" align="right" valign="top"><a id="a21fb128c96723d00bc8c76b048a9fb17"></a>
+virtual bool&#160;</td><td class="memItemRight" valign="bottom"><b>enableSTrace</b> (const std::string &amp;logsDir)=0</td></tr>
+<tr class="separator:a21fb128c96723d00bc8c76b048a9fb17"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a37ccda0e255750d5186a483422a2cebc"><td class="memItemLeft" align="right" valign="top"><a id="a37ccda0e255750d5186a483422a2cebc"></a>
+virtual std::string&#160;</td><td class="memItemRight" valign="bottom"><b>configJson</b> () const =0</td></tr>
+<tr class="separator:a37ccda0e255750d5186a483422a2cebc"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <hr/>The documentation for this class was generated from the following file:<ul>
 <li>unit_tests/L1_testing/mocks/<a class="el" href="unit__tests_2L1__testing_2mocks_2DobbyConfig_8h_source.html">DobbyConfig.h</a></li>

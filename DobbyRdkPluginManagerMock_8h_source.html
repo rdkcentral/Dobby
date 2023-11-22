@@ -100,14 +100,16 @@ $(function() {
 <div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;<span class="keyword">public</span>:</div>
 <div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160; </div>
 <div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;    <span class="keyword">virtual</span> ~<a class="code" href="classDobbyRdkPluginManagerMock.html">DobbyRdkPluginManagerMock</a>() = <span class="keywordflow">default</span>;</div>
-<div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160; </div>
+<div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;    MOCK_METHOD(<span class="keywordtype">void</span>, setExitStatus, (<span class="keywordtype">int</span> status), (<span class="keyword">override</span>));</div>
 <div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;    MOCK_METHOD(<span class="keyword">const</span> std::vector&lt;std::string&gt;, listLoadedPlugins, (), (<span class="keyword">const</span>,<span class="keyword">override</span>));</div>
 <div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;    MOCK_METHOD(std::shared_ptr&lt;IDobbyRdkLoggingPlugin&gt;, getContainerLogger, (), (<span class="keyword">const</span>,<span class="keyword">override</span>));</div>
-<div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160; </div>
-<div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;};</div>
-<div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160; </div>
+<div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;    MOCK_METHOD(<span class="keywordtype">bool</span>, runPlugins,(<span class="keyword">const</span> <a class="code" href="classIDobbyRdkPlugin.html#a2d3635518c5ee88a5d3fb8c9acdc0e8f">IDobbyRdkPlugin::HintFlags</a> &amp;hookPoint,<span class="keyword">const</span> uint timeoutMs ),( <span class="keyword">const</span>,<span class="keyword">override</span>));</div>
+<div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;    MOCK_METHOD(<span class="keywordtype">bool</span>, runPlugins,(<span class="keyword">const</span> <a class="code" href="classIDobbyRdkPlugin.html#a2d3635518c5ee88a5d3fb8c9acdc0e8f">IDobbyRdkPlugin::HintFlags</a> &amp;hookPoint),( <span class="keyword">const</span>,<span class="keyword">override</span>));</div>
+<div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;};</div>
+<div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160; </div>
 <div class="ttc" id="aclassDobbyRdkPluginManagerImpl_html"><div class="ttname"><a href="classDobbyRdkPluginManagerImpl.html">DobbyRdkPluginManagerImpl</a></div><div class="ttdef"><b>Definition:</b> DobbyRdkPluginManager.h:29</div></div>
 <div class="ttc" id="aclassDobbyRdkPluginManagerMock_html"><div class="ttname"><a href="classDobbyRdkPluginManagerMock.html">DobbyRdkPluginManagerMock</a></div><div class="ttdef"><b>Definition:</b> DobbyRdkPluginManagerMock.h:25</div></div>
+<div class="ttc" id="aclassIDobbyRdkPlugin_html_a2d3635518c5ee88a5d3fb8c9acdc0e8f"><div class="ttname"><a href="classIDobbyRdkPlugin.html#a2d3635518c5ee88a5d3fb8c9acdc0e8f">IDobbyRdkPlugin::HintFlags</a></div><div class="ttdeci">HintFlags</div><div class="ttdoc">Bit flags that should be returned by hookHints.</div><div class="ttdef"><b>Definition:</b> IDobbyRdkPlugin.h:70</div></div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>

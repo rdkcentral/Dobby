@@ -94,20 +94,21 @@ $(function() {
 <div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160;<span class="preprocessor">#include &lt;gmock/gmock.h&gt;</span></div>
 <div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;<span class="preprocessor">#include &quot;DobbyLogger.h&quot;</span></div>
 <div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160; </div>
-<div class="line"><a name="l00024"></a><span class="lineno"><a class="line" href="classDobbyLoggerMock.html">   24</a></span>&#160;<span class="keyword">class </span><a class="code" href="classDobbyLoggerMock.html">DobbyLoggerMock</a> : <span class="keyword">public</span> <a class="code" href="classDobbyLogger.html">DobbyLogger</a> {</div>
+<div class="line"><a name="l00024"></a><span class="lineno"><a class="line" href="classDobbyLoggerMock.html">   24</a></span>&#160;<span class="keyword">class </span><a class="code" href="classDobbyLoggerMock.html">DobbyLoggerMock</a> : <span class="keyword">public</span> <a class="code" href="classDobbyLoggerImpl.html">DobbyLoggerImpl</a> {</div>
 <div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160;<span class="keyword">public</span>:</div>
 <div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160; </div>
 <div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;    <span class="keyword">virtual</span> ~<a class="code" href="classDobbyLoggerMock.html">DobbyLoggerMock</a>() = <span class="keywordflow">default</span>;</div>
 <div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160; </div>
-<div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;    MOCK_METHOD(<span class="keywordtype">bool</span>, <a class="code" href="classDobbyLogger.html#a813e8b6b7033adaf237c51e5cf20e3bc">StartContainerLogging</a>, (std::string containerId,</div>
+<div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;    MOCK_METHOD(<span class="keywordtype">bool</span>, StartContainerLogging, (std::string containerId,</div>
 <div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;                               pid_t runtimePid,</div>
 <div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;                               pid_t containerPid,</div>
-<div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;                               std::shared_ptr&lt;IDobbyRdkLoggingPlugin&gt; loggingPlugin), ());</div>
-<div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;};</div>
-<div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160; </div>
+<div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;                               std::shared_ptr&lt;IDobbyRdkLoggingPlugin&gt; loggingPlugin), (<span class="keyword">override</span>));</div>
+<div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160; </div>
+<div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;    MOCK_METHOD(<span class="keywordtype">bool</span>, DumpBuffer, (<span class="keywordtype">int</span> bufferMemFd,pid_t containerPid,std::shared_ptr&lt;IDobbyRdkLoggingPlugin&gt; loggingPlugin), (<span class="keyword">override</span>));</div>
+<div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;};</div>
+<div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160; </div>
+<div class="ttc" id="aclassDobbyLoggerImpl_html"><div class="ttname"><a href="classDobbyLoggerImpl.html">DobbyLoggerImpl</a></div><div class="ttdef"><b>Definition:</b> DobbyLogger.h:33</div></div>
 <div class="ttc" id="aclassDobbyLoggerMock_html"><div class="ttname"><a href="classDobbyLoggerMock.html">DobbyLoggerMock</a></div><div class="ttdef"><b>Definition:</b> DobbyLoggerMock.h:24</div></div>
-<div class="ttc" id="aclassDobbyLogger_html"><div class="ttname"><a href="classDobbyLogger.html">DobbyLogger</a></div><div class="ttdef"><b>Definition:</b> DobbyLogger.h:41</div></div>
-<div class="ttc" id="aclassDobbyLogger_html_a813e8b6b7033adaf237c51e5cf20e3bc"><div class="ttname"><a href="classDobbyLogger.html#a813e8b6b7033adaf237c51e5cf20e3bc">DobbyLogger::StartContainerLogging</a></div><div class="ttdeci">bool StartContainerLogging(std::string containerId, pid_t runtimePid, pid_t containerPid, std::shared_ptr&lt; IDobbyRdkLoggingPlugin &gt; loggingPlugin)</div><div class="ttdoc">Public method that should be called once a container has been created to match the container PID with...</div><div class="ttdef"><b>Definition:</b> DobbyLogger.cpp:337</div></div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>

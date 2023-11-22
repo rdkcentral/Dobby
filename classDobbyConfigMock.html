@@ -100,6 +100,21 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:aefaf287dc3d6f8cbda8487dd0cf32cb4"><td class="memItemLeft" align="right" valign="top"><a id="aefaf287dc3d6f8cbda8487dd0cf32cb4"></a>
 &#160;</td><td class="memItemRight" valign="bottom"><b>MOCK_METHOD</b> ((std::shared_ptr&lt; rt_dobby_schema &gt;), config,(),(const, override))</td></tr>
 <tr class="separator:aefaf287dc3d6f8cbda8487dd0cf32cb4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8cfd7c2df79b98d95543ca47004f84e6"><td class="memItemLeft" align="right" valign="top"><a id="a8cfd7c2df79b98d95543ca47004f84e6"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>MOCK_METHOD</b> (bool, changeProcessArgs,(const std::string &amp;command),(override))</td></tr>
+<tr class="separator:a8cfd7c2df79b98d95543ca47004f84e6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3be54eefcbbe1cf84b49b40c6dcb1b40"><td class="memItemLeft" align="right" valign="top"><a id="a3be54eefcbbe1cf84b49b40c6dcb1b40"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>MOCK_METHOD</b> (bool, addWesterosMount,(const std::string &amp;socketPath),(override))</td></tr>
+<tr class="separator:a3be54eefcbbe1cf84b49b40c6dcb1b40"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a422c31b96db5f2f3ad88f58336949a22"><td class="memItemLeft" align="right" valign="top"><a id="a422c31b96db5f2f3ad88f58336949a22"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>MOCK_METHOD</b> (bool, addEnvironmentVar,(const std::string &amp;envVar),(override))</td></tr>
+<tr class="separator:a422c31b96db5f2f3ad88f58336949a22"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:abbc073f83ae47f20b05e603613ad9bc4"><td class="memItemLeft" align="right" valign="top"><a id="abbc073f83ae47f20b05e603613ad9bc4"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>MOCK_METHOD</b> (bool, enableSTrace,(const std::string &amp;logsDir),(override))</td></tr>
+<tr class="separator:abbc073f83ae47f20b05e603613ad9bc4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a04647df21359bef480d68c7791a469cf"><td class="memItemLeft" align="right" valign="top"><a id="a04647df21359bef480d68c7791a469cf"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>MOCK_METHOD</b> (std::string, configJson,(),(const, override))</td></tr>
+<tr class="separator:a04647df21359bef480d68c7791a469cf"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pub_methods_classDobbyConfigImpl"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_classDobbyConfigImpl')"><img src="closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="classDobbyConfigImpl.html">DobbyConfigImpl</a></td></tr>
 <tr class="memitem:a93c85c42cac070941ea07e1d4f48ea38 inherit pub_methods_classDobbyConfigImpl"><td class="memItemLeft" align="right" valign="top"><a id="a93c85c42cac070941ea07e1d4f48ea38"></a>
 virtual bool&#160;</td><td class="memItemRight" valign="bottom"><b>writeConfigJson</b> (const std::string &amp;filePath) const =0</td></tr>
@@ -110,6 +125,21 @@ virtual const std::map&lt; std::string, Json::Value &gt; &amp;&#160;</td><td cla
 <tr class="memitem:aa2350db23d79d9bc74fca0bef35875fc inherit pub_methods_classDobbyConfigImpl"><td class="memItemLeft" align="right" valign="top"><a id="aa2350db23d79d9bc74fca0bef35875fc"></a>
 virtual std::shared_ptr&lt; rt_dobby_schema &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>config</b> () const =0</td></tr>
 <tr class="separator:aa2350db23d79d9bc74fca0bef35875fc inherit pub_methods_classDobbyConfigImpl"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aeb4de5bd2721bf22cea16f96eda8b005 inherit pub_methods_classDobbyConfigImpl"><td class="memItemLeft" align="right" valign="top"><a id="aeb4de5bd2721bf22cea16f96eda8b005"></a>
+virtual bool&#160;</td><td class="memItemRight" valign="bottom"><b>changeProcessArgs</b> (const std::string &amp;command)=0</td></tr>
+<tr class="separator:aeb4de5bd2721bf22cea16f96eda8b005 inherit pub_methods_classDobbyConfigImpl"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aeaaf8067a93c1c69495f382f98abe568 inherit pub_methods_classDobbyConfigImpl"><td class="memItemLeft" align="right" valign="top"><a id="aeaaf8067a93c1c69495f382f98abe568"></a>
+virtual bool&#160;</td><td class="memItemRight" valign="bottom"><b>addWesterosMount</b> (const std::string &amp;socketPath)=0</td></tr>
+<tr class="separator:aeaaf8067a93c1c69495f382f98abe568 inherit pub_methods_classDobbyConfigImpl"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae091c88be698e57fb0f420866e0e5371 inherit pub_methods_classDobbyConfigImpl"><td class="memItemLeft" align="right" valign="top"><a id="ae091c88be698e57fb0f420866e0e5371"></a>
+virtual bool&#160;</td><td class="memItemRight" valign="bottom"><b>addEnvironmentVar</b> (const std::string &amp;envVar)=0</td></tr>
+<tr class="separator:ae091c88be698e57fb0f420866e0e5371 inherit pub_methods_classDobbyConfigImpl"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a21fb128c96723d00bc8c76b048a9fb17 inherit pub_methods_classDobbyConfigImpl"><td class="memItemLeft" align="right" valign="top"><a id="a21fb128c96723d00bc8c76b048a9fb17"></a>
+virtual bool&#160;</td><td class="memItemRight" valign="bottom"><b>enableSTrace</b> (const std::string &amp;logsDir)=0</td></tr>
+<tr class="separator:a21fb128c96723d00bc8c76b048a9fb17 inherit pub_methods_classDobbyConfigImpl"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a37ccda0e255750d5186a483422a2cebc inherit pub_methods_classDobbyConfigImpl"><td class="memItemLeft" align="right" valign="top"><a id="a37ccda0e255750d5186a483422a2cebc"></a>
+virtual std::string&#160;</td><td class="memItemRight" valign="bottom"><b>configJson</b> () const =0</td></tr>
+<tr class="separator:a37ccda0e255750d5186a483422a2cebc inherit pub_methods_classDobbyConfigImpl"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <hr/>The documentation for this class was generated from the following file:<ul>
 <li>unit_tests/L1_testing/mocks/<a class="el" href="DobbyConfigMock_8h_source.html">DobbyConfigMock.h</a></li>

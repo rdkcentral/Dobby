@@ -76,7 +76,7 @@ Inheritance diagram for DobbyRunCMock:</div>
 <div class="center"><img src="classDobbyRunCMock__inherit__graph.png" border="0" usemap="#aDobbyRunCMock_inherit__map" alt="Inheritance graph"/></div>
 <map name="aDobbyRunCMock_inherit__map" id="aDobbyRunCMock_inherit__map">
 <area shape="rect" title=" " alt="" coords="5,80,139,107"/>
-<area shape="rect" href="classDobbyRunC.html" title="Wrapper around the runc command line app." alt="" coords="23,5,121,32"/>
+<area shape="rect" href="classDobbyRunCImpl.html" title=" " alt="" coords="9,5,135,32"/>
 </map>
 <center><span class="legend">[<a href="graph_legend.html">legend</a>]</span></center></div>
 <div class="dynheader">
@@ -85,76 +85,73 @@ Collaboration diagram for DobbyRunCMock:</div>
 <div class="center"><img src="classDobbyRunCMock__coll__graph.png" border="0" usemap="#aDobbyRunCMock_coll__map" alt="Collaboration graph"/></div>
 <map name="aDobbyRunCMock_coll__map" id="aDobbyRunCMock_coll__map">
 <area shape="rect" title=" " alt="" coords="5,80,139,107"/>
-<area shape="rect" href="classDobbyRunC.html" title="Wrapper around the runc command line app." alt="" coords="23,5,121,32"/>
+<area shape="rect" href="classDobbyRunCImpl.html" title=" " alt="" coords="9,5,135,32"/>
 </map>
 <center><span class="legend">[<a href="graph_legend.html">legend</a>]</span></center></div>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a327c3015b5b048482f852c2bc3cb6999"><td class="memItemLeft" align="right" valign="top"><a id="a327c3015b5b048482f852c2bc3cb6999"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><b>MOCK_METHOD</b> (bool, <a class="el" href="classDobbyRunC.html#a2215bee2d785483c5225671b24beada3">killCont</a>,(const <a class="el" href="classContainerId.html">ContainerId</a> &amp;id, int signal, bool all),(const))</td></tr>
-<tr class="separator:a327c3015b5b048482f852c2bc3cb6999"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a41792178a0287b4412432c4da25acb8e"><td class="memItemLeft" align="right" valign="top"><a id="a41792178a0287b4412432c4da25acb8e"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><b>MOCK_METHOD</b> (bool, <a class="el" href="classDobbyRunC.html#ab4353e59e4db26bad9d48bb59de3f1fe">resume</a>,(const <a class="el" href="classContainerId.html">ContainerId</a> &amp;id),(const))</td></tr>
-<tr class="separator:a41792178a0287b4412432c4da25acb8e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a7d6f6e90374425af57ffb398396e78ce"><td class="memItemLeft" align="right" valign="top"><a id="a7d6f6e90374425af57ffb398396e78ce"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><b>MOCK_METHOD</b> (bool, <a class="el" href="classDobbyRunC.html#a9786887de4f52b7ca793d378f97e77e5">pause</a>,(const <a class="el" href="classContainerId.html">ContainerId</a> &amp;id),(const))</td></tr>
-<tr class="separator:a7d6f6e90374425af57ffb398396e78ce"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a041d5b3487dad9ca9d23aeb8204bffd7"><td class="memItemLeft" align="right" valign="top"><a id="a041d5b3487dad9ca9d23aeb8204bffd7"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><b>MOCK_METHOD</b> ((std::pair&lt; pid_t, pid_t &gt;), <a class="el" href="classDobbyRunC.html#ac126f92e4fff7226ccf309977b8932df">exec</a>,(const <a class="el" href="classContainerId.html">ContainerId</a> &amp;id, const std::string &amp;options, const std::string &amp;command),(const))</td></tr>
-<tr class="separator:a041d5b3487dad9ca9d23aeb8204bffd7"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="inherit_header pub_methods_classDobbyRunC"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_classDobbyRunC')"><img src="closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="classDobbyRunC.html">DobbyRunC</a></td></tr>
-<tr class="memitem:a593ddded678131b12ca9083807802f39 inherit pub_methods_classDobbyRunC"><td class="memItemLeft" align="right" valign="top"><a id="a593ddded678131b12ca9083807802f39"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><b>DobbyRunC</b> (const std::shared_ptr&lt; <a class="el" href="classIDobbyUtils__v3.html">IDobbyUtils</a> &gt; &amp;utils, const std::shared_ptr&lt; const <a class="el" href="classIDobbySettings.html">IDobbySettings</a> &gt; &amp;settings)</td></tr>
-<tr class="separator:a593ddded678131b12ca9083807802f39 inherit pub_methods_classDobbyRunC"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a9e5cdaef2fe100fa18f291c9cb809723 inherit pub_methods_classDobbyRunC"><td class="memItemLeft" align="right" valign="top">std::pair&lt; pid_t, pid_t &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classDobbyRunC.html#a9e5cdaef2fe100fa18f291c9cb809723">create</a> (const <a class="el" href="classContainerId.html">ContainerId</a> &amp;id, const std::shared_ptr&lt; const <a class="el" href="classDobbyBundle.html">DobbyBundle</a> &gt; &amp;bundle, const std::shared_ptr&lt; const <a class="el" href="classIDobbyStream.html">IDobbyStream</a> &gt; &amp;console, const std::list&lt; int &gt; &amp;files=std::list&lt; int &gt;(), const std::string &amp;customConfigPath=&quot;&quot;) const</td></tr>
-<tr class="memdesc:a9e5cdaef2fe100fa18f291c9cb809723 inherit pub_methods_classDobbyRunC"><td class="mdescLeft">&#160;</td><td class="mdescRight">Creates the container but doesn't start the init process.  <a href="classDobbyRunC.html#a9e5cdaef2fe100fa18f291c9cb809723">More...</a><br /></td></tr>
-<tr class="separator:a9e5cdaef2fe100fa18f291c9cb809723 inherit pub_methods_classDobbyRunC"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a061a2f219117f2545b32848b30fda254 inherit pub_methods_classDobbyRunC"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classDobbyRunC.html#a061a2f219117f2545b32848b30fda254">destroy</a> (const <a class="el" href="classContainerId.html">ContainerId</a> &amp;id, const std::shared_ptr&lt; const <a class="el" href="classIDobbyStream.html">IDobbyStream</a> &gt; &amp;console, bool force=false) const</td></tr>
-<tr class="memdesc:a061a2f219117f2545b32848b30fda254 inherit pub_methods_classDobbyRunC"><td class="mdescLeft">&#160;</td><td class="mdescRight">Runs the runc command line tool with the 'delete' command.  <a href="classDobbyRunC.html#a061a2f219117f2545b32848b30fda254">More...</a><br /></td></tr>
-<tr class="separator:a061a2f219117f2545b32848b30fda254 inherit pub_methods_classDobbyRunC"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a42581f202bddd15bca1166a164984510 inherit pub_methods_classDobbyRunC"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classDobbyRunC.html#a42581f202bddd15bca1166a164984510">start</a> (const <a class="el" href="classContainerId.html">ContainerId</a> &amp;id, const std::shared_ptr&lt; const <a class="el" href="classIDobbyStream.html">IDobbyStream</a> &gt; &amp;console) const</td></tr>
-<tr class="memdesc:a42581f202bddd15bca1166a164984510 inherit pub_methods_classDobbyRunC"><td class="mdescLeft">&#160;</td><td class="mdescRight">Starts a container created with <em>create</em> command.  <a href="classDobbyRunC.html#a42581f202bddd15bca1166a164984510">More...</a><br /></td></tr>
-<tr class="separator:a42581f202bddd15bca1166a164984510 inherit pub_methods_classDobbyRunC"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a2215bee2d785483c5225671b24beada3 inherit pub_methods_classDobbyRunC"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classDobbyRunC.html#a2215bee2d785483c5225671b24beada3">killCont</a> (const <a class="el" href="classContainerId.html">ContainerId</a> &amp;id, int signal, bool all=false) const</td></tr>
-<tr class="memdesc:a2215bee2d785483c5225671b24beada3 inherit pub_methods_classDobbyRunC"><td class="mdescLeft">&#160;</td><td class="mdescRight">Runs the runc command line tool with the 'kill' command.  <a href="classDobbyRunC.html#a2215bee2d785483c5225671b24beada3">More...</a><br /></td></tr>
-<tr class="separator:a2215bee2d785483c5225671b24beada3 inherit pub_methods_classDobbyRunC"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a9786887de4f52b7ca793d378f97e77e5 inherit pub_methods_classDobbyRunC"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classDobbyRunC.html#a9786887de4f52b7ca793d378f97e77e5">pause</a> (const <a class="el" href="classContainerId.html">ContainerId</a> &amp;id) const</td></tr>
-<tr class="memdesc:a9786887de4f52b7ca793d378f97e77e5 inherit pub_methods_classDobbyRunC"><td class="mdescLeft">&#160;</td><td class="mdescRight">Runs the runc command line tool with the 'pause' command.  <a href="classDobbyRunC.html#a9786887de4f52b7ca793d378f97e77e5">More...</a><br /></td></tr>
-<tr class="separator:a9786887de4f52b7ca793d378f97e77e5 inherit pub_methods_classDobbyRunC"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab4353e59e4db26bad9d48bb59de3f1fe inherit pub_methods_classDobbyRunC"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classDobbyRunC.html#ab4353e59e4db26bad9d48bb59de3f1fe">resume</a> (const <a class="el" href="classContainerId.html">ContainerId</a> &amp;id) const</td></tr>
-<tr class="memdesc:ab4353e59e4db26bad9d48bb59de3f1fe inherit pub_methods_classDobbyRunC"><td class="mdescLeft">&#160;</td><td class="mdescRight">Runs the runc command line tool with the 'resume' command.  <a href="classDobbyRunC.html#ab4353e59e4db26bad9d48bb59de3f1fe">More...</a><br /></td></tr>
-<tr class="separator:ab4353e59e4db26bad9d48bb59de3f1fe inherit pub_methods_classDobbyRunC"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ac126f92e4fff7226ccf309977b8932df inherit pub_methods_classDobbyRunC"><td class="memItemLeft" align="right" valign="top">std::pair&lt; pid_t, pid_t &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classDobbyRunC.html#ac126f92e4fff7226ccf309977b8932df">exec</a> (const <a class="el" href="classContainerId.html">ContainerId</a> &amp;id, const std::string &amp;options, const std::string &amp;command) const</td></tr>
-<tr class="memdesc:ac126f92e4fff7226ccf309977b8932df inherit pub_methods_classDobbyRunC"><td class="mdescLeft">&#160;</td><td class="mdescRight">Runs the crun command line tool with the 'exec' command.  <a href="classDobbyRunC.html#ac126f92e4fff7226ccf309977b8932df">More...</a><br /></td></tr>
-<tr class="separator:ac126f92e4fff7226ccf309977b8932df inherit pub_methods_classDobbyRunC"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a8e10ced10e2ddd397379a4a93468085d inherit pub_methods_classDobbyRunC"><td class="memItemLeft" align="right" valign="top">ContainerStatus&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classDobbyRunC.html#a8e10ced10e2ddd397379a4a93468085d">state</a> (const <a class="el" href="classContainerId.html">ContainerId</a> &amp;id) const</td></tr>
-<tr class="memdesc:a8e10ced10e2ddd397379a4a93468085d inherit pub_methods_classDobbyRunC"><td class="mdescLeft">&#160;</td><td class="mdescRight">Runs the runc command line tool with the 'state' command.  <a href="classDobbyRunC.html#a8e10ced10e2ddd397379a4a93468085d">More...</a><br /></td></tr>
-<tr class="separator:a8e10ced10e2ddd397379a4a93468085d inherit pub_methods_classDobbyRunC"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a386478adb4467dc95c108e9e1c155f00 inherit pub_methods_classDobbyRunC"><td class="memItemLeft" align="right" valign="top">std::list&lt; <a class="el" href="structDobbyRunC_1_1ContainerListItem.html">ContainerListItem</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classDobbyRunC.html#a386478adb4467dc95c108e9e1c155f00">list</a> () const</td></tr>
-<tr class="memdesc:a386478adb4467dc95c108e9e1c155f00 inherit pub_methods_classDobbyRunC"><td class="mdescLeft">&#160;</td><td class="mdescRight">Runs the runc command line tool with the 'list' command.  <a href="classDobbyRunC.html#a386478adb4467dc95c108e9e1c155f00">More...</a><br /></td></tr>
-<tr class="separator:a386478adb4467dc95c108e9e1c155f00 inherit pub_methods_classDobbyRunC"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:afddb9167812aa2aca4318660e635b3b3 inherit pub_methods_classDobbyRunC"><td class="memItemLeft" align="right" valign="top">pid_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classDobbyRunC.html#afddb9167812aa2aca4318660e635b3b3">run</a> (const <a class="el" href="classContainerId.html">ContainerId</a> &amp;id, const std::shared_ptr&lt; const <a class="el" href="classDobbyBundle.html">DobbyBundle</a> &gt; &amp;bundle, const std::shared_ptr&lt; const <a class="el" href="classIDobbyStream.html">IDobbyStream</a> &gt; &amp;console, const std::list&lt; int &gt; &amp;files=std::list&lt; int &gt;()) const</td></tr>
-<tr class="memdesc:afddb9167812aa2aca4318660e635b3b3 inherit pub_methods_classDobbyRunC"><td class="mdescLeft">&#160;</td><td class="mdescRight">Runs the runc command line tool with the 'run' command.  <a href="classDobbyRunC.html#afddb9167812aa2aca4318660e635b3b3">More...</a><br /></td></tr>
-<tr class="separator:afddb9167812aa2aca4318660e635b3b3 inherit pub_methods_classDobbyRunC"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a39c087c63547fe4efe9ef99a6d33967d inherit pub_methods_classDobbyRunC"><td class="memItemLeft" align="right" valign="top"><a id="a39c087c63547fe4efe9ef99a6d33967d"></a>
-const std::string&#160;</td><td class="memItemRight" valign="bottom"><b>getWorkingDir</b> () const</td></tr>
-<tr class="separator:a39c087c63547fe4efe9ef99a6d33967d inherit pub_methods_classDobbyRunC"><td class="memSeparator" colspan="2">&#160;</td></tr>
-</table><table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="inherited"></a>
-Additional Inherited Members</h2></td></tr>
-<tr class="inherit_header pub_types_classDobbyRunC"><td colspan="2" onclick="javascript:toggleInherit('pub_types_classDobbyRunC')"><img src="closed.png" alt="-"/>&#160;Public Types inherited from <a class="el" href="classDobbyRunC.html">DobbyRunC</a></td></tr>
-<tr class="memitem:afad0ba02323c06a39e1343533d2bf5b0 inherit pub_types_classDobbyRunC"><td class="memItemLeft" align="right" valign="top"><a id="afad0ba02323c06a39e1343533d2bf5b0"></a>enum class &#160;</td><td class="memItemRight" valign="bottom"><b>ContainerStatus</b> { <br />
-&#160;&#160;<b>Unknown</b>
-, <b>Created</b>
-, <b>Running</b>
-, <b>Pausing</b>
-, <br />
-&#160;&#160;<b>Paused</b>
-, <b>Stopped</b>
-<br />
- }</td></tr>
-<tr class="separator:afad0ba02323c06a39e1343533d2bf5b0 inherit pub_types_classDobbyRunC"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4ba25f1052ea54bbc3cb390d9e924f0d"><td class="memItemLeft" align="right" valign="top"><a id="a4ba25f1052ea54bbc3cb390d9e924f0d"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>MOCK_METHOD</b> ((std::pair&lt; pid_t, pid_t &gt;), create,((const <a class="el" href="classContainerId.html">ContainerId</a> &amp;id),(const std::shared_ptr&lt; const <a class="el" href="classDobbyBundle.html">DobbyBundle</a> &gt; &amp;bundle),(const std::shared_ptr&lt; const <a class="el" href="classIDobbyStream.html">IDobbyStream</a> &gt; &amp;console),(const std::list&lt; int &gt; &amp;files),(const std::string &amp;customConfigPath)),(const, override))</td></tr>
+<tr class="separator:a4ba25f1052ea54bbc3cb390d9e924f0d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aedf262819e21bd00d35ee5a4807a2064"><td class="memItemLeft" align="right" valign="top"><a id="aedf262819e21bd00d35ee5a4807a2064"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>MOCK_METHOD</b> (bool, destroy,(const <a class="el" href="classContainerId.html">ContainerId</a> &amp;id, const std::shared_ptr&lt; const <a class="el" href="classIDobbyStream.html">IDobbyStream</a> &gt; &amp;console, bool force),(const, override))</td></tr>
+<tr class="separator:aedf262819e21bd00d35ee5a4807a2064"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4dbad4bb09f9a7a959759d8a1cd697d3"><td class="memItemLeft" align="right" valign="top"><a id="a4dbad4bb09f9a7a959759d8a1cd697d3"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>MOCK_METHOD</b> (bool, start,(const <a class="el" href="classContainerId.html">ContainerId</a> &amp;id, const std::shared_ptr&lt; const <a class="el" href="classIDobbyStream.html">IDobbyStream</a> &gt; &amp;console),(const, override))</td></tr>
+<tr class="separator:a4dbad4bb09f9a7a959759d8a1cd697d3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aac75e9afd03256e4d8eee720cb6755b0"><td class="memItemLeft" align="right" valign="top"><a id="aac75e9afd03256e4d8eee720cb6755b0"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>MOCK_METHOD</b> (bool, killCont,(const <a class="el" href="classContainerId.html">ContainerId</a> &amp;id, int signal, bool all),(const, override))</td></tr>
+<tr class="separator:aac75e9afd03256e4d8eee720cb6755b0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1620ad89bfca060abed562fbe5593ad1"><td class="memItemLeft" align="right" valign="top"><a id="a1620ad89bfca060abed562fbe5593ad1"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>MOCK_METHOD</b> (bool, resume,(const <a class="el" href="classContainerId.html">ContainerId</a> &amp;id),(const, override))</td></tr>
+<tr class="separator:a1620ad89bfca060abed562fbe5593ad1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a387d882cd3ac15e01689ae2a9d7f694f"><td class="memItemLeft" align="right" valign="top"><a id="a387d882cd3ac15e01689ae2a9d7f694f"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>MOCK_METHOD</b> (bool, pause,(const <a class="el" href="classContainerId.html">ContainerId</a> &amp;id),(const, override))</td></tr>
+<tr class="separator:a387d882cd3ac15e01689ae2a9d7f694f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a563b18ab13313ef683a0441bfdc52806"><td class="memItemLeft" align="right" valign="top"><a id="a563b18ab13313ef683a0441bfdc52806"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>MOCK_METHOD</b> ((std::pair&lt; pid_t, pid_t &gt;), exec,((const <a class="el" href="classContainerId.html">ContainerId</a> &amp;id),(const std::string &amp;options),(const std::string &amp;command)),(const, override))</td></tr>
+<tr class="separator:a563b18ab13313ef683a0441bfdc52806"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a04f51178e7213681bf11825eabc199dd"><td class="memItemLeft" align="right" valign="top"><a id="a04f51178e7213681bf11825eabc199dd"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>MOCK_METHOD</b> (DobbyRunC::ContainerStatus, state,(const <a class="el" href="classContainerId.html">ContainerId</a> &amp;id),(const, override))</td></tr>
+<tr class="separator:a04f51178e7213681bf11825eabc199dd"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac6f0951cddd1dc8f1668e8d0521bed13"><td class="memItemLeft" align="right" valign="top"><a id="ac6f0951cddd1dc8f1668e8d0521bed13"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>MOCK_METHOD</b> (std::list&lt; <a class="el" href="structDobbyRunC_1_1ContainerListItem.html">DobbyRunC::ContainerListItem</a> &gt;, list,(),(const, override))</td></tr>
+<tr class="separator:ac6f0951cddd1dc8f1668e8d0521bed13"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af1d06704c8b5fed5fd1dc4de2065fe93"><td class="memItemLeft" align="right" valign="top"><a id="af1d06704c8b5fed5fd1dc4de2065fe93"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>MOCK_METHOD</b> (const std::string, getWorkingDir,(),(const, override))</td></tr>
+<tr class="separator:af1d06704c8b5fed5fd1dc4de2065fe93"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="inherit_header pub_methods_classDobbyRunCImpl"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_classDobbyRunCImpl')"><img src="closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="classDobbyRunCImpl.html">DobbyRunCImpl</a></td></tr>
+<tr class="memitem:acf5926cf85e97c693379d75d425d8d90 inherit pub_methods_classDobbyRunCImpl"><td class="memItemLeft" align="right" valign="top"><a id="acf5926cf85e97c693379d75d425d8d90"></a>
+virtual std::pair&lt; pid_t, pid_t &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>create</b> (const <a class="el" href="classContainerId.html">ContainerId</a> &amp;id, const std::shared_ptr&lt; const <a class="el" href="classDobbyBundle.html">DobbyBundle</a> &gt; &amp;bundle, const std::shared_ptr&lt; const <a class="el" href="classIDobbyStream.html">IDobbyStream</a> &gt; &amp;console, const std::list&lt; int &gt; &amp;files=std::list&lt; int &gt;(), const std::string &amp;customConfigPath=&quot;&quot;) const =0</td></tr>
+<tr class="separator:acf5926cf85e97c693379d75d425d8d90 inherit pub_methods_classDobbyRunCImpl"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac6b8f46465446c6e4290e1c3f82eee88 inherit pub_methods_classDobbyRunCImpl"><td class="memItemLeft" align="right" valign="top"><a id="ac6b8f46465446c6e4290e1c3f82eee88"></a>
+virtual bool&#160;</td><td class="memItemRight" valign="bottom"><b>destroy</b> (const <a class="el" href="classContainerId.html">ContainerId</a> &amp;id, const std::shared_ptr&lt; const <a class="el" href="classIDobbyStream.html">IDobbyStream</a> &gt; &amp;console, bool force=false) const =0</td></tr>
+<tr class="separator:ac6b8f46465446c6e4290e1c3f82eee88 inherit pub_methods_classDobbyRunCImpl"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6c36b51c7fd0ee714443f6d77f679954 inherit pub_methods_classDobbyRunCImpl"><td class="memItemLeft" align="right" valign="top"><a id="a6c36b51c7fd0ee714443f6d77f679954"></a>
+virtual bool&#160;</td><td class="memItemRight" valign="bottom"><b>start</b> (const <a class="el" href="classContainerId.html">ContainerId</a> &amp;id, const std::shared_ptr&lt; const <a class="el" href="classIDobbyStream.html">IDobbyStream</a> &gt; &amp;console) const =0</td></tr>
+<tr class="separator:a6c36b51c7fd0ee714443f6d77f679954 inherit pub_methods_classDobbyRunCImpl"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a079c96cf735e3b6429a073b521771545 inherit pub_methods_classDobbyRunCImpl"><td class="memItemLeft" align="right" valign="top"><a id="a079c96cf735e3b6429a073b521771545"></a>
+virtual bool&#160;</td><td class="memItemRight" valign="bottom"><b>killCont</b> (const <a class="el" href="classContainerId.html">ContainerId</a> &amp;id, int signal, bool all=false) const =0</td></tr>
+<tr class="separator:a079c96cf735e3b6429a073b521771545 inherit pub_methods_classDobbyRunCImpl"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a04762a9139354a4f89820a42be57b15d inherit pub_methods_classDobbyRunCImpl"><td class="memItemLeft" align="right" valign="top"><a id="a04762a9139354a4f89820a42be57b15d"></a>
+virtual bool&#160;</td><td class="memItemRight" valign="bottom"><b>pause</b> (const <a class="el" href="classContainerId.html">ContainerId</a> &amp;id) const =0</td></tr>
+<tr class="separator:a04762a9139354a4f89820a42be57b15d inherit pub_methods_classDobbyRunCImpl"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a42876a601ff62b78341ad0d84b656947 inherit pub_methods_classDobbyRunCImpl"><td class="memItemLeft" align="right" valign="top"><a id="a42876a601ff62b78341ad0d84b656947"></a>
+virtual bool&#160;</td><td class="memItemRight" valign="bottom"><b>resume</b> (const <a class="el" href="classContainerId.html">ContainerId</a> &amp;id) const =0</td></tr>
+<tr class="separator:a42876a601ff62b78341ad0d84b656947 inherit pub_methods_classDobbyRunCImpl"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a76b7d2073daec70ddd8416e6aea12ba0 inherit pub_methods_classDobbyRunCImpl"><td class="memItemLeft" align="right" valign="top"><a id="a76b7d2073daec70ddd8416e6aea12ba0"></a>
+virtual std::pair&lt; pid_t, pid_t &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>exec</b> (const <a class="el" href="classContainerId.html">ContainerId</a> &amp;id, const std::string &amp;options, const std::string &amp;command) const =0</td></tr>
+<tr class="separator:a76b7d2073daec70ddd8416e6aea12ba0 inherit pub_methods_classDobbyRunCImpl"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0be5c5b9cf066521d0b2242f075a4e92 inherit pub_methods_classDobbyRunCImpl"><td class="memItemLeft" align="right" valign="top"><a id="a0be5c5b9cf066521d0b2242f075a4e92"></a>
+virtual DobbyRunC::ContainerStatus&#160;</td><td class="memItemRight" valign="bottom"><b>state</b> (const <a class="el" href="classContainerId.html">ContainerId</a> &amp;id) const =0</td></tr>
+<tr class="separator:a0be5c5b9cf066521d0b2242f075a4e92 inherit pub_methods_classDobbyRunCImpl"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a14f0f831808910453e06cd6a20ee5493 inherit pub_methods_classDobbyRunCImpl"><td class="memItemLeft" align="right" valign="top"><a id="a14f0f831808910453e06cd6a20ee5493"></a>
+virtual std::list&lt; <a class="el" href="structDobbyRunC_1_1ContainerListItem.html">DobbyRunC::ContainerListItem</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>list</b> () const =0</td></tr>
+<tr class="separator:a14f0f831808910453e06cd6a20ee5493 inherit pub_methods_classDobbyRunCImpl"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aaf0d08c399f0d6ff3ae2513171e420c2 inherit pub_methods_classDobbyRunCImpl"><td class="memItemLeft" align="right" valign="top"><a id="aaf0d08c399f0d6ff3ae2513171e420c2"></a>
+virtual const std::string&#160;</td><td class="memItemRight" valign="bottom"><b>getWorkingDir</b> () const =0</td></tr>
+<tr class="separator:aaf0d08c399f0d6ff3ae2513171e420c2 inherit pub_methods_classDobbyRunCImpl"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <hr/>The documentation for this class was generated from the following file:<ul>
 <li>unit_tests/L1_testing/mocks/<a class="el" href="DobbyRunCMock_8h_source.html">DobbyRunCMock.h</a></li>

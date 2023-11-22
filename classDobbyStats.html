@@ -66,6 +66,8 @@ $(function() {
   <div class="summary">
 <a href="#nested-classes">Classes</a> &#124;
 <a href="#pub-methods">Public Member Functions</a> &#124;
+<a href="#pub-static-methods">Static Public Member Functions</a> &#124;
+<a href="#pro-static-attribs">Static Protected Attributes</a> &#124;
 <a href="#pri-types">Private Types</a> &#124;
 <a href="#pri-static-methods">Static Private Member Functions</a> &#124;
 <a href="#pri-attribs">Private Attributes</a> &#124;
@@ -78,14 +80,14 @@ $(function() {
 <p>Small utility class used to get the stats of a container.  
  <a href="classDobbyStats.html#details">More...</a></p>
 
-<p><code>#include &lt;<a class="el" href="DobbyStats_8h_source.html">DobbyStats.h</a>&gt;</code></p>
+<p><code>#include &lt;<a class="el" href="daemon_2lib_2source_2include_2DobbyStats_8h_source.html">DobbyStats.h</a>&gt;</code></p>
 <div class="dynheader">
-Inheritance diagram for DobbyStats:</div>
+Collaboration diagram for DobbyStats:</div>
 <div class="dyncontent">
-<div class="center"><img src="classDobbyStats__inherit__graph.png" border="0" usemap="#aDobbyStats_inherit__map" alt="Inheritance graph"/></div>
-<map name="aDobbyStats_inherit__map" id="aDobbyStats_inherit__map">
-<area shape="rect" title="Small utility class used to get the stats of a container." alt="" coords="23,5,120,32"/>
-<area shape="rect" href="classDobbyStatsMock.html" title=" " alt="" coords="5,80,137,107"/>
+<div class="center"><img src="classDobbyStats__coll__graph.png" border="0" usemap="#aDobbyStats_coll__map" alt="Collaboration graph"/></div>
+<map name="aDobbyStats_coll__map" id="aDobbyStats_coll__map">
+<area shape="rect" title="Small utility class used to get the stats of a container." alt="" coords="20,95,117,121"/>
+<area shape="rect" href="classDobbyStatsImpl.html" title=" " alt="" coords="5,5,132,32"/>
 </map>
 <center><span class="legend">[<a href="graph_legend.html">legend</a>]</span></center></div>
 <table class="memberdecls">
@@ -102,6 +104,27 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a126121c1b6a70fae66606a321586e698"><td class="memItemLeft" align="right" valign="top"><a id="a126121c1b6a70fae66606a321586e698"></a>
 const Json::Value &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>stats</b> () const</td></tr>
 <tr class="separator:a126121c1b6a70fae66606a321586e698"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a71b01d8f55b3ea854a26b51067bdb3dc"><td class="memItemLeft" align="right" valign="top"><a id="a71b01d8f55b3ea854a26b51067bdb3dc"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>DobbyStats</b> (const <a class="el" href="classContainerId.html">ContainerId</a> &amp;id, const std::shared_ptr&lt; <a class="el" href="classIDobbyEnv.html">IDobbyEnv</a> &gt; &amp;env, const std::shared_ptr&lt; <a class="el" href="classIDobbyUtils__v3.html">IDobbyUtils</a> &gt; &amp;utils)</td></tr>
+<tr class="separator:a71b01d8f55b3ea854a26b51067bdb3dc"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac000e3932bb211a287e15d17a141dcc2"><td class="memItemLeft" align="right" valign="top"><a id="ac000e3932bb211a287e15d17a141dcc2"></a>
+const Json::Value &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>stats</b> () const</td></tr>
+<tr class="separator:ac000e3932bb211a287e15d17a141dcc2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-methods"></a>
+Static Public Member Functions</h2></td></tr>
+<tr class="memitem:a6d6527120a8bf56e21d2eaef5f0b71fb"><td class="memItemLeft" align="right" valign="top"><a id="a6d6527120a8bf56e21d2eaef5f0b71fb"></a>
+static void&#160;</td><td class="memItemRight" valign="bottom"><b>setImpl</b> (<a class="el" href="classDobbyStatsImpl.html">DobbyStatsImpl</a> *newImpl)</td></tr>
+<tr class="separator:a6d6527120a8bf56e21d2eaef5f0b71fb"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:adf95a32c12af5622815f1a0ae28db916"><td class="memItemLeft" align="right" valign="top"><a id="adf95a32c12af5622815f1a0ae28db916"></a>
+static <a class="el" href="classDobbyStats.html">DobbyStats</a> *&#160;</td><td class="memItemRight" valign="bottom"><b>getInstance</b> ()</td></tr>
+<tr class="separator:adf95a32c12af5622815f1a0ae28db916"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pro-static-attribs"></a>
+Static Protected Attributes</h2></td></tr>
+<tr class="memitem:a1858f9efa7b0ce01e1f8513d3c611471"><td class="memItemLeft" align="right" valign="top"><a id="a1858f9efa7b0ce01e1f8513d3c611471"></a>
+static <a class="el" href="classDobbyStatsImpl.html">DobbyStatsImpl</a> *&#160;</td><td class="memItemRight" valign="bottom"><b>impl</b> = nullptr</td></tr>
+<tr class="separator:a1858f9efa7b0ce01e1f8513d3c611471"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pri-types"></a>
 Private Types</h2></td></tr>
@@ -539,8 +562,10 @@ const Json::Value&#160;</td><td class="memItemRight" valign="bottom"><b>mStats</
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following files:<ul>
-<li>daemon/lib/source/include/<a class="el" href="DobbyStats_8h_source.html">DobbyStats.h</a></li>
+<li>daemon/lib/source/include/<a class="el" href="daemon_2lib_2source_2include_2DobbyStats_8h_source.html">DobbyStats.h</a></li>
 <li>daemon/lib/source/DobbyStats.cpp</li>
+<li>unit_tests/L1_testing/mocks/DobbyStatsMock.cpp</li>
+<li>unit_tests/L1_testing/tests/DobbyManagerTest/DaemonDobbyManagerTest.cpp</li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->

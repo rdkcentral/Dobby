@@ -158,6 +158,34 @@ bool&#160;</td><td class="memItemRight" valign="bottom"><b>isRegisteredObjectPat
 <tr class="memitem:a4b3063972628f711f9c06110a46df3cd"><td class="memItemLeft" align="right" valign="top">std::string&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classIpcService.html#a4b3063972628f711f9c06110a46df3cd">getBusAddress</a> () const override</td></tr>
 <tr class="memdesc:a4b3063972628f711f9c06110a46df3cd"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the dbus address the service is using.  <a href="classIpcService.html#a4b3063972628f711f9c06110a46df3cd">More...</a><br /></td></tr>
 <tr class="separator:a4b3063972628f711f9c06110a46df3cd"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="inherit_header pub_methods_classAI__IPC_1_1IIpcService"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_classAI__IPC_1_1IIpcService')"><img src="closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="classAI__IPC_1_1IIpcService.html">AI_IPC::IIpcService</a></td></tr>
+<tr class="memitem:a0421869ee524514174c6774c01ba16f0 inherit pub_methods_classAI__IPC_1_1IIpcService"><td class="memItemLeft" align="right" valign="top"><a id="a0421869ee524514174c6774c01ba16f0"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>isValid</b> () const</td></tr>
+<tr class="separator:a0421869ee524514174c6774c01ba16f0 inherit pub_methods_classAI__IPC_1_1IIpcService"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a28b9f64b8d99fc55074b1d6a585cb20b inherit pub_methods_classAI__IPC_1_1IIpcService"><td class="memItemLeft" align="right" valign="top"><a id="a28b9f64b8d99fc55074b1d6a585cb20b"></a>
+std::shared_ptr&lt; <a class="el" href="classAI__IPC_1_1IAsyncReplyGetter.html">IAsyncReplyGetter</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>invokeMethod</b> (const <a class="el" href="structAI__IPC_1_1Method.html">Method</a> &amp;method, const VariantList &amp;args, int timeoutMs=-1)</td></tr>
+<tr class="separator:a28b9f64b8d99fc55074b1d6a585cb20b inherit pub_methods_classAI__IPC_1_1IIpcService"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac67152d4652a3dfb844ca3888805f458 inherit pub_methods_classAI__IPC_1_1IIpcService"><td class="memItemLeft" align="right" valign="top"><a id="ac67152d4652a3dfb844ca3888805f458"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>invokeMethod</b> (const <a class="el" href="structAI__IPC_1_1Method.html">Method</a> &amp;method, const VariantList &amp;args, VariantList &amp;replyArgs, int timeoutMs=-1)</td></tr>
+<tr class="separator:ac67152d4652a3dfb844ca3888805f458 inherit pub_methods_classAI__IPC_1_1IIpcService"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9be2f8fda8eb17b1a95942c7f48622e2 inherit pub_methods_classAI__IPC_1_1IIpcService"><td class="memItemLeft" align="right" valign="top"><a id="a9be2f8fda8eb17b1a95942c7f48622e2"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>emitSignal</b> (const <a class="el" href="structAI__IPC_1_1Signal.html">Signal</a> &amp;signal, const VariantList &amp;args)</td></tr>
+<tr class="separator:a9be2f8fda8eb17b1a95942c7f48622e2 inherit pub_methods_classAI__IPC_1_1IIpcService"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aaaf88d4d68d2039fe6c0b6a18a445359 inherit pub_methods_classAI__IPC_1_1IIpcService"><td class="memItemLeft" align="right" valign="top"><a id="aaaf88d4d68d2039fe6c0b6a18a445359"></a>
+std::string&#160;</td><td class="memItemRight" valign="bottom"><b>registerMethodHandler</b> (const <a class="el" href="structAI__IPC_1_1Method.html">Method</a> &amp;method, const MethodHandler &amp;handler)</td></tr>
+<tr class="separator:aaaf88d4d68d2039fe6c0b6a18a445359 inherit pub_methods_classAI__IPC_1_1IIpcService"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad71009cda607f4e9d1d4d498d737d1d7 inherit pub_methods_classAI__IPC_1_1IIpcService"><td class="memItemLeft" align="right" valign="top"><a id="ad71009cda607f4e9d1d4d498d737d1d7"></a>
+std::string&#160;</td><td class="memItemRight" valign="bottom"><b>registerSignalHandler</b> (const <a class="el" href="structAI__IPC_1_1Signal.html">Signal</a> &amp;signal, const SignalHandler &amp;handler)</td></tr>
+<tr class="separator:ad71009cda607f4e9d1d4d498d737d1d7 inherit pub_methods_classAI__IPC_1_1IIpcService"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a127d609b229cdc27c71c7e3058e3892e inherit pub_methods_classAI__IPC_1_1IIpcService"><td class="memItemLeft" align="right" valign="top"><a id="a127d609b229cdc27c71c7e3058e3892e"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>unregisterHandler</b> (const std::string &amp;regId)</td></tr>
+<tr class="separator:a127d609b229cdc27c71c7e3058e3892e inherit pub_methods_classAI__IPC_1_1IIpcService"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab734589fb71ad2dea3433eeb3b85e6ff inherit pub_methods_classAI__IPC_1_1IIpcService"><td class="memItemLeft" align="right" valign="top"><a id="ab734589fb71ad2dea3433eeb3b85e6ff"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>enableMonitor</b> (const std::set&lt; std::string &gt; &amp;matchRules, const MonitorHandler &amp;handler)</td></tr>
+<tr class="separator:ab734589fb71ad2dea3433eeb3b85e6ff inherit pub_methods_classAI__IPC_1_1IIpcService"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa8c03fac00d527b591f39d19eea365a4 inherit pub_methods_classAI__IPC_1_1IIpcService"><td class="memItemLeft" align="right" valign="top"><a id="aa8c03fac00d527b591f39d19eea365a4"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>flush</b> ()</td></tr>
+<tr class="separator:aa8c03fac00d527b591f39d19eea365a4 inherit pub_methods_classAI__IPC_1_1IIpcService"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pri-methods"></a>
 Private Member Functions</h2></td></tr>
@@ -243,36 +271,9 @@ std::set&lt; std::string &gt;&#160;</td><td class="memItemRight" valign="bottom"
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="inherited"></a>
 Additional Inherited Members</h2></td></tr>
 <tr class="inherit_header pub_static_methods_classAI__IPC_1_1IIpcService"><td colspan="2" onclick="javascript:toggleInherit('pub_static_methods_classAI__IPC_1_1IIpcService')"><img src="closed.png" alt="-"/>&#160;Static Public Member Functions inherited from <a class="el" href="classAI__IPC_1_1IIpcService.html">AI_IPC::IIpcService</a></td></tr>
-<tr class="memitem:a1022d45e5a62d861db0f594e9424fce3 inherit pub_static_methods_classAI__IPC_1_1IIpcService"><td class="memItemLeft" align="right" valign="top"><a id="a1022d45e5a62d861db0f594e9424fce3"></a>
+<tr class="memitem:a493a3e25deae37aa8f4359d4881a5425 inherit pub_static_methods_classAI__IPC_1_1IIpcService"><td class="memItemLeft" align="right" valign="top"><a id="a493a3e25deae37aa8f4359d4881a5425"></a>
 static void&#160;</td><td class="memItemRight" valign="bottom"><b>setImpl</b> (<a class="el" href="classAI__IPC_1_1IIpcServiceImpl.html">IIpcServiceImpl</a> *newImpl)</td></tr>
-<tr class="separator:a1022d45e5a62d861db0f594e9424fce3 inherit pub_static_methods_classAI__IPC_1_1IIpcService"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aadff93164061a2386f2c68d577924fb0 inherit pub_static_methods_classAI__IPC_1_1IIpcService"><td class="memItemLeft" align="right" valign="top"><a id="aadff93164061a2386f2c68d577924fb0"></a>
-static bool&#160;</td><td class="memItemRight" valign="bottom"><b>isValid</b> ()</td></tr>
-<tr class="separator:aadff93164061a2386f2c68d577924fb0 inherit pub_static_methods_classAI__IPC_1_1IIpcService"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a7cf720d81a9d27f7d0471e82bcf2026d inherit pub_static_methods_classAI__IPC_1_1IIpcService"><td class="memItemLeft" align="right" valign="top"><a id="a7cf720d81a9d27f7d0471e82bcf2026d"></a>
-static std::shared_ptr&lt; <a class="el" href="classAI__IPC_1_1IAsyncReplyGetter.html">IAsyncReplyGetter</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>invokeMethod</b> (const <a class="el" href="structAI__IPC_1_1Method.html">Method</a> &amp;method, const VariantList &amp;args, int timeoutMs=-1)</td></tr>
-<tr class="separator:a7cf720d81a9d27f7d0471e82bcf2026d inherit pub_static_methods_classAI__IPC_1_1IIpcService"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a544399223a5d83c75a7da2cf16352f66 inherit pub_static_methods_classAI__IPC_1_1IIpcService"><td class="memItemLeft" align="right" valign="top"><a id="a544399223a5d83c75a7da2cf16352f66"></a>
-static bool&#160;</td><td class="memItemRight" valign="bottom"><b>invokeMethod</b> (const <a class="el" href="structAI__IPC_1_1Method.html">Method</a> &amp;method, const VariantList &amp;args, VariantList &amp;replyArgs, int timeoutMs=-1)</td></tr>
-<tr class="separator:a544399223a5d83c75a7da2cf16352f66 inherit pub_static_methods_classAI__IPC_1_1IIpcService"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a45f358a0a986514a24cfcd46173d751d inherit pub_static_methods_classAI__IPC_1_1IIpcService"><td class="memItemLeft" align="right" valign="top"><a id="a45f358a0a986514a24cfcd46173d751d"></a>
-static bool&#160;</td><td class="memItemRight" valign="bottom"><b>emitSignal</b> (const <a class="el" href="structAI__IPC_1_1Signal.html">Signal</a> &amp;signal, const VariantList &amp;args)</td></tr>
-<tr class="separator:a45f358a0a986514a24cfcd46173d751d inherit pub_static_methods_classAI__IPC_1_1IIpcService"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a84a10799b7e3a9e5795ae26263b9b3fd inherit pub_static_methods_classAI__IPC_1_1IIpcService"><td class="memItemLeft" align="right" valign="top"><a id="a84a10799b7e3a9e5795ae26263b9b3fd"></a>
-static std::string&#160;</td><td class="memItemRight" valign="bottom"><b>registerMethodHandler</b> (const <a class="el" href="structAI__IPC_1_1Method.html">Method</a> &amp;method, const MethodHandler &amp;handler)</td></tr>
-<tr class="separator:a84a10799b7e3a9e5795ae26263b9b3fd inherit pub_static_methods_classAI__IPC_1_1IIpcService"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:abb52d295c013f0cde57fe7641582f225 inherit pub_static_methods_classAI__IPC_1_1IIpcService"><td class="memItemLeft" align="right" valign="top"><a id="abb52d295c013f0cde57fe7641582f225"></a>
-static std::string&#160;</td><td class="memItemRight" valign="bottom"><b>registerSignalHandler</b> (const <a class="el" href="structAI__IPC_1_1Signal.html">Signal</a> &amp;signal, const SignalHandler &amp;handler)</td></tr>
-<tr class="separator:abb52d295c013f0cde57fe7641582f225 inherit pub_static_methods_classAI__IPC_1_1IIpcService"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aba085b604d2a6b2233e6d33865a6154f inherit pub_static_methods_classAI__IPC_1_1IIpcService"><td class="memItemLeft" align="right" valign="top"><a id="aba085b604d2a6b2233e6d33865a6154f"></a>
-static bool&#160;</td><td class="memItemRight" valign="bottom"><b>unregisterHandler</b> (const std::string &amp;regId)</td></tr>
-<tr class="separator:aba085b604d2a6b2233e6d33865a6154f inherit pub_static_methods_classAI__IPC_1_1IIpcService"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a0bf0a494df9a08da0e151cec27548ba0 inherit pub_static_methods_classAI__IPC_1_1IIpcService"><td class="memItemLeft" align="right" valign="top"><a id="a0bf0a494df9a08da0e151cec27548ba0"></a>
-static bool&#160;</td><td class="memItemRight" valign="bottom"><b>enableMonitor</b> (const std::set&lt; std::string &gt; &amp;matchRules, const MonitorHandler &amp;handler)</td></tr>
-<tr class="separator:a0bf0a494df9a08da0e151cec27548ba0 inherit pub_static_methods_classAI__IPC_1_1IIpcService"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:afa5624b8d90d7d9b584c9fb1ba5955d7 inherit pub_static_methods_classAI__IPC_1_1IIpcService"><td class="memItemLeft" align="right" valign="top"><a id="afa5624b8d90d7d9b584c9fb1ba5955d7"></a>
-static void&#160;</td><td class="memItemRight" valign="bottom"><b>flush</b> ()</td></tr>
-<tr class="separator:afa5624b8d90d7d9b584c9fb1ba5955d7 inherit pub_static_methods_classAI__IPC_1_1IIpcService"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="separator:a493a3e25deae37aa8f4359d4881a5425 inherit pub_static_methods_classAI__IPC_1_1IIpcService"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pro_static_attribs_classAI__IPC_1_1IIpcService"><td colspan="2" onclick="javascript:toggleInherit('pro_static_attribs_classAI__IPC_1_1IIpcService')"><img src="closed.png" alt="-"/>&#160;Static Protected Attributes inherited from <a class="el" href="classAI__IPC_1_1IIpcService.html">AI_IPC::IIpcService</a></td></tr>
 <tr class="memitem:a7679a303501861668297b34a76a0cd96 inherit pro_static_attribs_classAI__IPC_1_1IIpcService"><td class="memItemLeft" align="right" valign="top"><a id="a7679a303501861668297b34a76a0cd96"></a>
 static <a class="el" href="classAI__IPC_1_1IIpcServiceImpl.html">IIpcServiceImpl</a> *&#160;</td><td class="memItemRight" valign="bottom"><b>impl</b> = nullptr</td></tr>
@@ -349,7 +350,7 @@ static <a class="el" href="classAI__IPC_1_1IIpcServiceImpl.html">IIpcServiceImpl
 <dd>
 On failure: False. </dd></dl>
 
-<p>Implements <a class="el" href="classAI__IPC_1_1IIpcService.html#a978d4b9b348675a36ea6f3b52b5c4ddc">AI_IPC::IIpcService</a>.</p>
+<p>Implements <a class="el" href="classAI__IPC_1_1IIpcService.html#abb557975292ce9aff71e1aa5defd5618">AI_IPC::IIpcService</a>.</p>
 
 </div>
 </div>
@@ -392,7 +393,7 @@ On failure: False. </dd></dl>
 <p>For production builds this function always returns false.</p>
 <dl class="section note"><dt>Note</dt><dd>As of dbus version 1.9.10 a new API was added to the daemon; org.freedesktop.DBus.Monitoring.BecomeMonitor, this is more convenient than using the magic eavesdrop=true match pattern. However currently we're still on an old dbus version that doesn't have that support. </dd></dl>
 
-<p>Implements <a class="el" href="classAI__IPC_1_1IIpcService.html#a86e1d81176c9c69d0c4078345b8eaf69">AI_IPC::IIpcService</a>.</p>
+<p>Implements <a class="el" href="classAI__IPC_1_1IIpcService.html#a64ed1576fe9b426e7fb55beab8c99665">AI_IPC::IIpcService</a>.</p>
 
 </div>
 </div>
@@ -423,7 +424,7 @@ On failure: False. </dd></dl>
 <p>This method ensures that any message or signal handlers queued before this function was called are processed before the function returns.</p>
 <p>For obvious reasons do not hold any lock that a handler might need while calling this function. </p>
 
-<p>Implements <a class="el" href="classAI__IPC_1_1IIpcService.html#a498461ed015c331ea10ec1bb68724aa6">AI_IPC::IIpcService</a>.</p>
+<p>Implements <a class="el" href="classAI__IPC_1_1IIpcService.html#a667170454192de5a1493a57d6df58b51">AI_IPC::IIpcService</a>.</p>
 
 </div>
 </div>
@@ -510,7 +511,7 @@ On failure: False. </dd></dl>
 <dd>
 On failure: False. </dd></dl>
 
-<p>Implements <a class="el" href="classAI__IPC_1_1IIpcService.html#ac165426012fc609627410bba146d7b75">AI_IPC::IIpcService</a>.</p>
+<p>Implements <a class="el" href="classAI__IPC_1_1IIpcService.html#a06ec4a473c9393bd6d63b8691f621f74">AI_IPC::IIpcService</a>.</p>
 
 </div>
 </div>
@@ -560,7 +561,7 @@ On failure: False. </dd></dl>
 <dd>
 On failure: Empty shared pointer. </dd></dl>
 
-<p>Implements <a class="el" href="classAI__IPC_1_1IIpcService.html#afc594ab5e4901c867bbf4406b0ad7310">AI_IPC::IIpcService</a>.</p>
+<p>Implements <a class="el" href="classAI__IPC_1_1IIpcService.html#a862166df24ed7cba3f31d6a1da4f4fcf">AI_IPC::IIpcService</a>.</p>
 
 </div>
 </div>
@@ -629,7 +630,7 @@ On failure: Empty shared pointer. </dd></dl>
 <p>Returns true if we initialised ourselves successfully. </p>
 <dl class="section return"><dt>Returns</dt><dd>True if the service was initialised successfully. False if we failed to initialise </dd></dl>
 
-<p>Implements <a class="el" href="classAI__IPC_1_1IIpcService.html#a7d3732611d03cdcb087a7cae159c5bec">AI_IPC::IIpcService</a>.</p>
+<p>Implements <a class="el" href="classAI__IPC_1_1IIpcService.html#a898e18893fb2a299071dedfa5ab845a1">AI_IPC::IIpcService</a>.</p>
 
 </div>
 </div>
@@ -673,7 +674,7 @@ On failure: Empty shared pointer. </dd></dl>
 <dd>
 On failure: Empty string. </dd></dl>
 
-<p>Implements <a class="el" href="classAI__IPC_1_1IIpcService.html#a1691c3775a36c6176a6f2048bac542e0">AI_IPC::IIpcService</a>.</p>
+<p>Implements <a class="el" href="classAI__IPC_1_1IIpcService.html#a1fcd953cd26b545499b2e9e323479046">AI_IPC::IIpcService</a>.</p>
 
 </div>
 </div>
@@ -717,7 +718,7 @@ On failure: Empty string. </dd></dl>
 <dd>
 On failure: Empty string. </dd></dl>
 
-<p>Implements <a class="el" href="classAI__IPC_1_1IIpcService.html#af4460211de8c7a7b0dff13c7a6d3246c">AI_IPC::IIpcService</a>.</p>
+<p>Implements <a class="el" href="classAI__IPC_1_1IIpcService.html#a0387b8b2cd49c4e7ce97b620e6d70e1c">AI_IPC::IIpcService</a>.</p>
 
 </div>
 </div>
@@ -817,7 +818,7 @@ On failure: False. </dd></dl>
 <dd>
 On failure: False. </dd></dl>
 
-<p>Implements <a class="el" href="classAI__IPC_1_1IIpcService.html#a6ac0fec32ad8d21a5295a7c1df51fc42">AI_IPC::IIpcService</a>.</p>
+<p>Implements <a class="el" href="classAI__IPC_1_1IIpcService.html#a68a68d3e3b942d062f7d322005c20930">AI_IPC::IIpcService</a>.</p>
 
 </div>
 </div>

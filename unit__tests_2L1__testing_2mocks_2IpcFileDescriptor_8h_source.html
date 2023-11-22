@@ -110,42 +110,22 @@ $(function() {
 <div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;    <span class="keyword">static</span> <a class="code" href="classAI__IPC_1_1IpcFileDescriptorApiImpl.html">IpcFileDescriptorApiImpl</a>* impl;</div>
 <div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160; </div>
 <div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;<span class="keyword">public</span>:</div>
-<div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;    <a class="code" href="classAI__IPC_1_1IpcFileDescriptor.html#aef3f1ec4e9e80b0801863014a8b3cf95">IpcFileDescriptor</a>(){}</div>
-<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;    <a class="code" href="classAI__IPC_1_1IpcFileDescriptor.html#aef3f1ec4e9e80b0801863014a8b3cf95">IpcFileDescriptor</a>(<span class="keywordtype">int</span> <a class="code" href="classAI__IPC_1_1IpcFileDescriptor.html#a34bdb72eedfc9c595ee9d8ed1f0fd64f">fd</a>){}</div>
-<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;    <a class="code" href="classAI__IPC_1_1IpcFileDescriptor.html#aef3f1ec4e9e80b0801863014a8b3cf95">IpcFileDescriptor</a>(<span class="keyword">const</span> <a class="code" href="classIpcFileDescriptor.html">IpcFileDescriptor</a> &amp;other){}</div>
-<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;    <a class="code" href="classIpcFileDescriptor.html">IpcFileDescriptor</a> &amp;<a class="code" href="classAI__IPC_1_1IpcFileDescriptor.html#a4dfa0f0cbab355054829385f80411fbc">operator=</a>(<a class="code" href="classIpcFileDescriptor.html">IpcFileDescriptor</a> &amp;&amp;other){<span class="keywordflow">return</span> *<span class="keyword">this</span>;}</div>
-<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;    <a class="code" href="classIpcFileDescriptor.html">IpcFileDescriptor</a> &amp;<a class="code" href="classAI__IPC_1_1IpcFileDescriptor.html#a4dfa0f0cbab355054829385f80411fbc">operator=</a>(<span class="keyword">const</span> <a class="code" href="classIpcFileDescriptor.html">IpcFileDescriptor</a> &amp;other){<span class="keywordflow">return</span> *<span class="keyword">this</span>;}</div>
-<div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;    <a class="code" href="classAI__IPC_1_1IpcFileDescriptor.html#ae142301ed424a04e364c98297a3eaf8f">~IpcFileDescriptor</a>(){}</div>
+<div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;    <a class="code" href="classAI__IPC_1_1IpcFileDescriptor.html#aef3f1ec4e9e80b0801863014a8b3cf95">IpcFileDescriptor</a>();</div>
+<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;    <a class="code" href="classAI__IPC_1_1IpcFileDescriptor.html#aef3f1ec4e9e80b0801863014a8b3cf95">IpcFileDescriptor</a>(<span class="keywordtype">int</span> <a class="code" href="classAI__IPC_1_1IpcFileDescriptor.html#a34bdb72eedfc9c595ee9d8ed1f0fd64f">fd</a>);</div>
+<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;    <a class="code" href="classAI__IPC_1_1IpcFileDescriptor.html#aef3f1ec4e9e80b0801863014a8b3cf95">IpcFileDescriptor</a>(<span class="keyword">const</span> <a class="code" href="classAI__IPC_1_1IpcFileDescriptor.html">IpcFileDescriptor</a> &amp;other);</div>
+<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;    <a class="code" href="classAI__IPC_1_1IpcFileDescriptor.html">IpcFileDescriptor</a> &amp;<a class="code" href="classAI__IPC_1_1IpcFileDescriptor.html#a4dfa0f0cbab355054829385f80411fbc">operator=</a>(<a class="code" href="classAI__IPC_1_1IpcFileDescriptor.html">IpcFileDescriptor</a> &amp;&amp;other);</div>
+<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;    <a class="code" href="classAI__IPC_1_1IpcFileDescriptor.html">IpcFileDescriptor</a> &amp;<a class="code" href="classAI__IPC_1_1IpcFileDescriptor.html#a4dfa0f0cbab355054829385f80411fbc">operator=</a>(<span class="keyword">const</span> <a class="code" href="classAI__IPC_1_1IpcFileDescriptor.html">IpcFileDescriptor</a> &amp;other);</div>
+<div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;    <a class="code" href="classAI__IPC_1_1IpcFileDescriptor.html#ae142301ed424a04e364c98297a3eaf8f">~IpcFileDescriptor</a>();</div>
 <div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160; </div>
-<div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;    <span class="keyword">static</span> <span class="keywordtype">void</span> setImpl(IpcFileDescriptorApiImpl* newImpl)</div>
-<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;    {</div>
-<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;        impl = newImpl;</div>
-<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;    }</div>
+<div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;    <span class="keyword">static</span> <span class="keywordtype">void</span> setImpl(<a class="code" href="classAI__IPC_1_1IpcFileDescriptorApiImpl.html">IpcFileDescriptorApiImpl</a>* newImpl);</div>
+<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;    <span class="keyword">static</span> <a class="code" href="classAI__IPC_1_1IpcFileDescriptor.html">IpcFileDescriptor</a>* getInstance();</div>
+<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;    <span class="keywordtype">bool</span> <a class="code" href="classAI__IPC_1_1IpcFileDescriptor.html#a277cf70b19cf221c34fb561b063352e3">isValid</a>() <span class="keyword">const</span>;</div>
+<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;    <span class="keywordtype">int</span> <a class="code" href="classAI__IPC_1_1IpcFileDescriptor.html#a34bdb72eedfc9c595ee9d8ed1f0fd64f">fd</a>() <span class="keyword">const</span>;</div>
 <div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160; </div>
-<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;    <span class="keyword">static</span> <a class="code" href="classIpcFileDescriptor.html">IpcFileDescriptor</a>* getInstance()</div>
-<div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;    {</div>
-<div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;        <span class="keyword">static</span> <a class="code" href="classIpcFileDescriptor.html">IpcFileDescriptor</a>* instance = <span class="keyword">nullptr</span>;</div>
-<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;        <span class="keywordflow">if</span>(<span class="keyword">nullptr</span> == instance)</div>
-<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;        {</div>
-<div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;            instance = <span class="keyword">new</span> <a class="code" href="classAI__IPC_1_1IpcFileDescriptor.html#aef3f1ec4e9e80b0801863014a8b3cf95">IpcFileDescriptor</a>();</div>
-<div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;        }</div>
-<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;        <span class="keywordflow">return</span> instance;</div>
-<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;    }</div>
-<div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160; </div>
-<div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;    <span class="keywordtype">bool</span> <a class="code" href="classAI__IPC_1_1IpcFileDescriptor.html#a277cf70b19cf221c34fb561b063352e3">isValid</a>()<span class="keyword"> const</span></div>
-<div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;<span class="keyword">    </span>{</div>
-<div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;        <span class="keywordflow">return</span> impl-&gt;isValid();</div>
-<div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;    }</div>
-<div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160; </div>
-<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;    <span class="keywordtype">int</span> <a class="code" href="classAI__IPC_1_1IpcFileDescriptor.html#a34bdb72eedfc9c595ee9d8ed1f0fd64f">fd</a>()<span class="keyword"> const</span></div>
-<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;<span class="keyword">    </span>{</div>
-<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;        <span class="keywordflow">return</span> impl-&gt;fd();</div>
-<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;    }</div>
-<div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160; </div>
-<div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;};</div>
-<div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;}</div>
-<div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160; </div>
-<div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* AI_IPC_IPCFILEDESCRIPTOR_H */</span><span class="preprocessor"></span></div>
+<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;};</div>
+<div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;}</div>
+<div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160; </div>
+<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* AI_IPC_IPCFILEDESCRIPTOR_H */</span><span class="preprocessor"></span></div>
 <div class="ttc" id="aclassAI__IPC_1_1IpcFileDescriptorApiImpl_html"><div class="ttname"><a href="classAI__IPC_1_1IpcFileDescriptorApiImpl.html">AI_IPC::IpcFileDescriptorApiImpl</a></div><div class="ttdef"><b>Definition:</b> IpcFileDescriptor.h:25</div></div>
 <div class="ttc" id="aclassAI__IPC_1_1IpcFileDescriptor_html"><div class="ttname"><a href="classAI__IPC_1_1IpcFileDescriptor.html">AI_IPC::IpcFileDescriptor</a></div><div class="ttdef"><b>Definition:</b> IpcFileDescriptor.h:33</div></div>
 <div class="ttc" id="aclassAI__IPC_1_1IpcFileDescriptor_html_a277cf70b19cf221c34fb561b063352e3"><div class="ttname"><a href="classAI__IPC_1_1IpcFileDescriptor.html#a277cf70b19cf221c34fb561b063352e3">AI_IPC::IpcFileDescriptor::isValid</a></div><div class="ttdeci">bool isValid() const</div><div class="ttdef"><b>Definition:</b> IpcFileDescriptor.cpp:166</div></div>
@@ -153,7 +133,6 @@ $(function() {
 <div class="ttc" id="aclassAI__IPC_1_1IpcFileDescriptor_html_a4dfa0f0cbab355054829385f80411fbc"><div class="ttname"><a href="classAI__IPC_1_1IpcFileDescriptor.html#a4dfa0f0cbab355054829385f80411fbc">AI_IPC::IpcFileDescriptor::operator=</a></div><div class="ttdeci">IpcFileDescriptor &amp; operator=(IpcFileDescriptor &amp;&amp;other)</div><div class="ttdef"><b>Definition:</b> IpcFileDescriptor.cpp:112</div></div>
 <div class="ttc" id="aclassAI__IPC_1_1IpcFileDescriptor_html_ae142301ed424a04e364c98297a3eaf8f"><div class="ttname"><a href="classAI__IPC_1_1IpcFileDescriptor.html#ae142301ed424a04e364c98297a3eaf8f">AI_IPC::IpcFileDescriptor::~IpcFileDescriptor</a></div><div class="ttdeci">~IpcFileDescriptor()</div><div class="ttdef"><b>Definition:</b> IpcFileDescriptor.cpp:154</div></div>
 <div class="ttc" id="aclassAI__IPC_1_1IpcFileDescriptor_html_aef3f1ec4e9e80b0801863014a8b3cf95"><div class="ttname"><a href="classAI__IPC_1_1IpcFileDescriptor.html#aef3f1ec4e9e80b0801863014a8b3cf95">AI_IPC::IpcFileDescriptor::IpcFileDescriptor</a></div><div class="ttdeci">IpcFileDescriptor()</div><div class="ttdef"><b>Definition:</b> IpcFileDescriptor.cpp:62</div></div>
-<div class="ttc" id="aclassIpcFileDescriptor_html"><div class="ttname"><a href="classIpcFileDescriptor.html">IpcFileDescriptor</a></div><div class="ttdoc">Light wrapper around a file descriptor so it can be used safely with dbus.</div></div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>

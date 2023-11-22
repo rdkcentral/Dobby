@@ -116,30 +116,30 @@ const std::vector&lt; std::string &gt;&#160;</td><td class="memItemRight" valign
 <tr class="memitem:a85b5125a31ea006b1a81a8c80b4f5b1b"><td class="memItemLeft" align="right" valign="top"><a id="a85b5125a31ea006b1a81a8c80b4f5b1b"></a>
 &#160;</td><td class="memItemRight" valign="bottom"><b>DobbyRdkPluginManager</b> (std::shared_ptr&lt; rt_dobby_schema &gt; containerConfig, const std::string &amp;rootfsPath, const std::string &amp;pluginPath, const std::shared_ptr&lt; <a class="el" href="classDobbyRdkPluginUtils.html">DobbyRdkPluginUtils</a> &gt; &amp;utils)</td></tr>
 <tr class="separator:a85b5125a31ea006b1a81a8c80b4f5b1b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad1fde2c4c9f5295f9a650f831f4f70aa"><td class="memItemLeft" align="right" valign="top"><a id="ad1fde2c4c9f5295f9a650f831f4f70aa"></a>
-virtual bool&#160;</td><td class="memItemRight" valign="bottom"><b>runPlugins</b> (const <a class="el" href="classIDobbyRdkPlugin.html#a2d3635518c5ee88a5d3fb8c9acdc0e8f">IDobbyRdkPlugin::HintFlags</a> &amp;hookPoint, const uint timeoutMs) const</td></tr>
-<tr class="separator:ad1fde2c4c9f5295f9a650f831f4f70aa"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a3e3b847530e8547d1b1dd04e2f0a0a0b"><td class="memItemLeft" align="right" valign="top"><a id="a3e3b847530e8547d1b1dd04e2f0a0a0b"></a>
-virtual bool&#160;</td><td class="memItemRight" valign="bottom"><b>runPlugins</b> (const <a class="el" href="classIDobbyRdkPlugin.html#a2d3635518c5ee88a5d3fb8c9acdc0e8f">IDobbyRdkPlugin::HintFlags</a> &amp;hookPoint) const</td></tr>
-<tr class="separator:a3e3b847530e8547d1b1dd04e2f0a0a0b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa174cfb58f119552f3445bd4f887026e"><td class="memItemLeft" align="right" valign="top"><a id="aa174cfb58f119552f3445bd4f887026e"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>runPlugins</b> (const <a class="el" href="classIDobbyRdkPlugin.html#a2d3635518c5ee88a5d3fb8c9acdc0e8f">IDobbyRdkPlugin::HintFlags</a> &amp;hookPoint, const uint timeoutMs) const</td></tr>
+<tr class="separator:aa174cfb58f119552f3445bd4f887026e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa9ad2c209a0ef8bc919a553bbf0023c4"><td class="memItemLeft" align="right" valign="top"><a id="aa9ad2c209a0ef8bc919a553bbf0023c4"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>runPlugins</b> (const <a class="el" href="classIDobbyRdkPlugin.html#a2d3635518c5ee88a5d3fb8c9acdc0e8f">IDobbyRdkPlugin::HintFlags</a> &amp;hookPoint) const</td></tr>
+<tr class="separator:aa9ad2c209a0ef8bc919a553bbf0023c4"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad86ab60fff19426d2f7489d6825600cc"><td class="memItemLeft" align="right" valign="top"><a id="ad86ab60fff19426d2f7489d6825600cc"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>setExitStatus</b> (int status) const</td></tr>
 <tr class="separator:ad86ab60fff19426d2f7489d6825600cc"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:adf07f093f22407cc7bcfa0263a4c7fc2"><td class="memItemLeft" align="right" valign="top"><a id="adf07f093f22407cc7bcfa0263a4c7fc2"></a>
+const std::vector&lt; std::string &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>listLoadedPlugins</b> () const</td></tr>
+<tr class="separator:adf07f093f22407cc7bcfa0263a4c7fc2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3a6e32a46ac7034deb9102175fc51c66"><td class="memItemLeft" align="right" valign="top"><a id="a3a6e32a46ac7034deb9102175fc51c66"></a>
+std::shared_ptr&lt; <a class="el" href="classIDobbyRdkLoggingPlugin.html">IDobbyRdkLoggingPlugin</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>getContainerLogger</b> () const</td></tr>
+<tr class="separator:a3a6e32a46ac7034deb9102175fc51c66"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-methods"></a>
 Static Public Member Functions</h2></td></tr>
-<tr class="memitem:aba6801cfb0e66dd4a962c1f78fda2c41"><td class="memItemLeft" align="right" valign="top"><a id="aba6801cfb0e66dd4a962c1f78fda2c41"></a>
+<tr class="memitem:acf6007fedbdc9d40f1dc9d9b8901992a"><td class="memItemLeft" align="right" valign="top"><a id="acf6007fedbdc9d40f1dc9d9b8901992a"></a>
 static void&#160;</td><td class="memItemRight" valign="bottom"><b>setImpl</b> (<a class="el" href="classDobbyRdkPluginManagerImpl.html">DobbyRdkPluginManagerImpl</a> *newImpl)</td></tr>
-<tr class="separator:aba6801cfb0e66dd4a962c1f78fda2c41"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a3e6d1424c4a7d34f48a125176e98c1b1"><td class="memItemLeft" align="right" valign="top"><a id="a3e6d1424c4a7d34f48a125176e98c1b1"></a>
+<tr class="separator:acf6007fedbdc9d40f1dc9d9b8901992a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4d13cd9cd570fb8b8c1ab38c8d65ba73"><td class="memItemLeft" align="right" valign="top"><a id="a4d13cd9cd570fb8b8c1ab38c8d65ba73"></a>
 static <a class="el" href="classDobbyRdkPluginManager.html">DobbyRdkPluginManager</a> *&#160;</td><td class="memItemRight" valign="bottom"><b>getInstance</b> ()</td></tr>
-<tr class="separator:a3e6d1424c4a7d34f48a125176e98c1b1"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab03780fc1c28e82d703a240764fd2142"><td class="memItemLeft" align="right" valign="top"><a id="ab03780fc1c28e82d703a240764fd2142"></a>
-static const std::vector&lt; std::string &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>listLoadedPlugins</b> ()</td></tr>
-<tr class="separator:ab03780fc1c28e82d703a240764fd2142"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a7f6d49fecf9fe7898287c7ad4f2f5bc5"><td class="memItemLeft" align="right" valign="top"><a id="a7f6d49fecf9fe7898287c7ad4f2f5bc5"></a>
-static std::shared_ptr&lt; <a class="el" href="classIDobbyRdkLoggingPlugin.html">IDobbyRdkLoggingPlugin</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>getContainerLogger</b> ()</td></tr>
-<tr class="separator:a7f6d49fecf9fe7898287c7ad4f2f5bc5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="separator:a4d13cd9cd570fb8b8c1ab38c8d65ba73"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pro-static-attribs"></a>
 Static Protected Attributes</h2></td></tr>
@@ -753,6 +753,7 @@ std::unique_ptr&lt; <a class="el" href="classDobbyRdkPluginDependencySolver.html
 <hr/>The documentation for this class was generated from the following files:<ul>
 <li>pluginLauncher/lib/include/<a class="el" href="pluginLauncher_2lib_2include_2DobbyRdkPluginManager_8h_source.html">DobbyRdkPluginManager.h</a></li>
 <li>pluginLauncher/lib/source/DobbyRdkPluginManager.cpp</li>
+<li>unit_tests/L1_testing/mocks/DobbyRdkPluginManagerMock.cpp</li>
 <li>unit_tests/L1_testing/tests/DobbyManagerTest/DaemonDobbyManagerTest.cpp</li>
 </ul>
 </div><!-- contents -->

@@ -103,12 +103,18 @@ $(function() {
 <div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;    MOCK_METHOD(<span class="keywordtype">bool</span>, writeConfigJson, (<span class="keyword">const</span> std::string&amp; filePath), (<span class="keyword">const</span>,<span class="keyword">override</span>));</div>
 <div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;    MOCK_METHOD((std::map&lt;std::string, Json::Value&gt;&amp;), rdkPlugins, (), (<span class="keyword">const</span>,<span class="keyword">override</span>));</div>
 <div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;    MOCK_METHOD((std::shared_ptr&lt;rt_dobby_schema&gt;), config, (), (<span class="keyword">const</span>,<span class="keyword">override</span>));</div>
-<div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;<span class="preprocessor">#if defined(LEGACY_COMPONENTS)</span></div>
-<div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;    MOCK_METHOD(std::string, spec, (), (<span class="keyword">const</span>,<span class="keyword">override</span>));</div>
-<div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;    MOCK_METHOD((std::map&lt;std::string, Json::Value&gt;&amp;), legacyPlugins, (), (<span class="keyword">const</span>,<span class="keyword">override</span>));</div>
-<div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;<span class="preprocessor">#endif </span><span class="comment">//defined(LEGACY_COMPONENTS)</span></div>
-<div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160; </div>
-<div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;};</div>
+<div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;    MOCK_METHOD(<span class="keywordtype">bool</span>, changeProcessArgs, (<span class="keyword">const</span> std::string&amp; command), (<span class="keyword">override</span>));</div>
+<div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;    MOCK_METHOD(<span class="keywordtype">bool</span>, addWesterosMount, (<span class="keyword">const</span> std::string&amp; socketPath), (<span class="keyword">override</span>));</div>
+<div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;    MOCK_METHOD(<span class="keywordtype">bool</span>, addEnvironmentVar, (<span class="keyword">const</span> std::string&amp; envVar), (<span class="keyword">override</span>));</div>
+<div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;    MOCK_METHOD(<span class="keywordtype">bool</span>, enableSTrace, (<span class="keyword">const</span> std::string&amp; logsDir), (<span class="keyword">override</span>));</div>
+<div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;    MOCK_METHOD(std::string, configJson, (), (<span class="keyword">const</span>,<span class="keyword">override</span>));</div>
+<div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160; </div>
+<div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;<span class="preprocessor">#if defined(LEGACY_COMPONENTS)</span></div>
+<div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;    MOCK_METHOD(std::string, spec, (), (<span class="keyword">const</span>,<span class="keyword">override</span>));</div>
+<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;    MOCK_METHOD((std::map&lt;std::string, Json::Value&gt;&amp;), legacyPlugins, (), (<span class="keyword">const</span>,<span class="keyword">override</span>));</div>
+<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;<span class="preprocessor">#endif </span><span class="comment">//defined(LEGACY_COMPONENTS)</span></div>
+<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160; </div>
+<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;};</div>
 <div class="ttc" id="aclassDobbyConfigImpl_html"><div class="ttname"><a href="classDobbyConfigImpl.html">DobbyConfigImpl</a></div><div class="ttdef"><b>Definition:</b> DobbyConfig.h:36</div></div>
 <div class="ttc" id="aclassDobbyConfigMock_html"><div class="ttname"><a href="classDobbyConfigMock.html">DobbyConfigMock</a></div><div class="ttdef"><b>Definition:</b> DobbyConfigMock.h:26</div></div>
 </div><!-- fragment --></div><!-- contents -->

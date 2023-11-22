@@ -106,6 +106,12 @@ Collaboration diagram for DobbyUtils:</div>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
+<tr class="memitem:a4af42c5118f4bb245403822465abce7e"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classDobbyUtils.html#a4af42c5118f4bb245403822465abce7e">cancelTimer</a> (int timerId) const</td></tr>
+<tr class="memdesc:a4af42c5118f4bb245403822465abce7e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Removes the given timer from the timer queue.  <a href="classDobbyUtils.html#a4af42c5118f4bb245403822465abce7e">More...</a><br /></td></tr>
+<tr class="separator:a4af42c5118f4bb245403822465abce7e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a35da431a186798e86e152a1214223e61"><td class="memItemLeft" align="right" valign="top"><a id="a35da431a186798e86e152a1214223e61"></a>
+int&#160;</td><td class="memItemRight" valign="bottom"><b>startTimer</b> (const std::chrono::microseconds &amp;timeout, bool oneShot, const std::function&lt; bool()&gt; &amp;handler) const</td></tr>
+<tr class="separator:a35da431a186798e86e152a1214223e61"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af53933ebb0864b5a1e1acf90d6848799"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classDobbyUtils.html#af53933ebb0864b5a1e1acf90d6848799">loopDeviceAssociate</a> (int fileFd, std::string *loopDevPath) const override</td></tr>
 <tr class="memdesc:af53933ebb0864b5a1e1acf90d6848799"><td class="mdescLeft">&#160;</td><td class="mdescRight">Associates a give file descriptor with a loop device.  <a href="classDobbyUtils.html#af53933ebb0864b5a1e1acf90d6848799">More...</a><br /></td></tr>
 <tr class="separator:af53933ebb0864b5a1e1acf90d6848799"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -360,18 +366,12 @@ bool&#160;</td><td class="memItemRight" valign="bottom"><b>deviceAllowed</b> (un
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-methods"></a>
 Static Public Member Functions</h2></td></tr>
-<tr class="memitem:a927175d829958ffdfe0f5f04f2d9d69b"><td class="memItemLeft" align="right" valign="top"><a id="a927175d829958ffdfe0f5f04f2d9d69b"></a>
+<tr class="memitem:a92735a18db39b8a80d53a6f09339f62c"><td class="memItemLeft" align="right" valign="top"><a id="a92735a18db39b8a80d53a6f09339f62c"></a>
 static void&#160;</td><td class="memItemRight" valign="bottom"><b>setImpl</b> (<a class="el" href="classDobbyUtilsImpl.html">DobbyUtilsImpl</a> *newImpl)</td></tr>
-<tr class="separator:a927175d829958ffdfe0f5f04f2d9d69b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a922c293d7a4cf9f2a7720f9ae449b8e4"><td class="memItemLeft" align="right" valign="top"><a id="a922c293d7a4cf9f2a7720f9ae449b8e4"></a>
+<tr class="separator:a92735a18db39b8a80d53a6f09339f62c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a658a417e7484aca14efaa40f978d8bed"><td class="memItemLeft" align="right" valign="top"><a id="a658a417e7484aca14efaa40f978d8bed"></a>
 static <a class="el" href="classDobbyUtils.html">DobbyUtils</a> *&#160;</td><td class="memItemRight" valign="bottom"><b>getInstance</b> ()</td></tr>
-<tr class="separator:a922c293d7a4cf9f2a7720f9ae449b8e4"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a4a2adc68dde378c03675f45346d19c34"><td class="memItemLeft" align="right" valign="top"><a id="a4a2adc68dde378c03675f45346d19c34"></a>
-static bool&#160;</td><td class="memItemRight" valign="bottom"><b>cancelTimer</b> (int timerId)</td></tr>
-<tr class="separator:a4a2adc68dde378c03675f45346d19c34"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a295b77d3b6688602f6a1f7282fd7767e"><td class="memItemLeft" align="right" valign="top"><a id="a295b77d3b6688602f6a1f7282fd7767e"></a>
-static int&#160;</td><td class="memItemRight" valign="bottom"><b>startTimer</b> (const std::chrono::microseconds &amp;timeout, bool oneShot, const std::function&lt; bool()&gt; &amp;handler)</td></tr>
-<tr class="separator:a295b77d3b6688602f6a1f7282fd7767e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="separator:a658a417e7484aca14efaa40f978d8bed"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pro-static-attribs"></a>
 Static Protected Attributes</h2></td></tr>
@@ -622,8 +622,47 @@ Additional Inherited Members</h2></td></tr>
 
 </div>
 </div>
+<a id="a4af42c5118f4bb245403822465abce7e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a4af42c5118f4bb245403822465abce7e">&#9670;&nbsp;</a></span>cancelTimer() <span class="overload">[1/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool DobbyUtils::cancelTimer </td>
+          <td>(</td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>timerId</em></td><td>)</td>
+          <td> const</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Removes the given timer from the timer queue. </p>
+<p>Once this method returns (successfully) you are guaranteed that the timer handler will not be called, i.e. this is synchronisation point.</p>
+<p>This method will fail if called from the context of a timer handler, if you want to cancel a repeating timer then just return false in the handler.</p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">timerId</td><td>The id of the timer to cancel as returned by the startTimer() method.</td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>true if the timer was found and was removed from the queue, otherwise false </dd></dl>
+
+<p>Implements <a class="el" href="classIDobbyUtils__v1.html#ad15039e696d59220b0aa2f381361b18b">IDobbyUtils_v1</a>.</p>
+
+</div>
+</div>
 <a id="a4ec95adc8de4a99cc4d3ca42f4c6d6a2"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a4ec95adc8de4a99cc4d3ca42f4c6d6a2">&#9670;&nbsp;</a></span>cancelTimer()</h2>
+<h2 class="memtitle"><span class="permalink"><a href="#a4ec95adc8de4a99cc4d3ca42f4c6d6a2">&#9670;&nbsp;</a></span>cancelTimer() <span class="overload">[2/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -1952,6 +1991,7 @@ Additional Inherited Members</h2></td></tr>
 </div>
 <hr/>The documentation for this class was generated from the following files:<ul>
 <li>unit_tests/L1_testing/mocks/<a class="el" href="unit__tests_2L1__testing_2mocks_2DobbyUtils_8h_source.html">DobbyUtils.h</a></li>
+<li>unit_tests/L1_testing/mocks/DobbyUtilsMock.cpp</li>
 <li>unit_tests/L1_testing/tests/DobbyTest/DaemonDobbyTests.cpp</li>
 <li>utils/source/DobbyUtils.cpp</li>
 </ul>
