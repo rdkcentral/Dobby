@@ -975,10 +975,7 @@ int&#160;</td><td class="memItemRight" valign="bottom"><b>mCleanupTaskTimerId</b
 <p>This method is equivalent to performing the following on the cmdline </p><pre class="fragment">ulimit -c unlimited
 
 echo "1" &gt; /proc/sys/net/ipv4/ip_forward
-
-echo "-1" &gt; /proc/sys/kernel/sched_rt_runtime_us
-echo "-1" &gt; /sys/fs/cgroup/cpu/cpu.rt_runtime_us
-</pre><p> See the comments in the code for why each step is needed </p>
+</pre><p>See the comments in the code for why each step is needed </p>
 
 </div>
 </div>
