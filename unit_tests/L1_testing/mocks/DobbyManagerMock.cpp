@@ -25,7 +25,14 @@ DobbyManager::DobbyManager()
 {
 }
 
-DobbyManager::DobbyManager(std::shared_ptr<DobbyEnv>&, std::shared_ptr<DobbyUtils>&, std::shared_ptr<DobbyIPCUtils>&, const std::shared_ptr<const IDobbySettings>&, std::function<void(int, const ContainerId&)>&, std::function<void(int, const ContainerId&, int)>&)
+DobbyManager::DobbyManager(std::shared_ptr<DobbyEnv>&,
+                                                    std::shared_ptr<DobbyUtils>&,
+                                                    std::shared_ptr<DobbyIPCUtils>&,
+                                                    const std::shared_ptr<const IDobbySettings>&,
+                                                    std::function<void(int, const ContainerId&)>& StartedFunc,
+                                                    std::function<void(int, const ContainerId&, int)>& StoppedFunc)
+: mContainerStartedCb(StartedFunc)
+, mContainerStoppedCb(StoppedFunc)
 {
 }
 
@@ -59,7 +66,7 @@ int32_t DobbyManager::startContainerFromSpec(const ContainerId& id,
 {
    EXPECT_NE(impl, nullptr);
 
-    return impl->startContainerFromSpec(id, jsonSpec, files, command, displaySocket, envVars);
+   return impl->startContainerFromSpec(id, jsonSpec, files, command, displaySocket, envVars, mContainerStartedCb);
 }
 
 std::string DobbyManager::specOfContainer(int32_t cd)
@@ -86,14 +93,14 @@ int32_t DobbyManager::startContainerFromBundle(const ContainerId& id,
 {
    EXPECT_NE(impl, nullptr);
 
-    return impl->startContainerFromBundle(id, bundlePath, files, command, displaySocket, envVars);
+   return impl->startContainerFromBundle(id, bundlePath, files, command, displaySocket, envVars, mContainerStartedCb);
 }
 
 bool DobbyManager::stopContainer(int32_t cd, bool withPrejudice)
 {
    EXPECT_NE(impl, nullptr);
 
-    return impl->stopContainer(cd, withPrejudice);
+   return impl->stopContainer(cd, withPrejudice, mContainerStoppedCb);
 }
 
 bool DobbyManager::pauseContainer(int32_t cd)
