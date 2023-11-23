@@ -1553,7 +1553,7 @@ TEST_F(DaemonDobbyTest, stopFailed_emptyArg)
         .WillOnce(::testing::Return(AI_IPC::VariantList{}));
 
     EXPECT_CALL(*p_workQueueMock, postWork(::testing::_)).Times(0);
-    EXPECT_CALL(*p_dobbyManagerMock, stopContainer(::testing::_,::testing::_)).Times(0);
+    EXPECT_CALL(*p_dobbyManagerMock, stopContainer(::testing::_,::testing::_,::testing::_)).Times(0);
 
     EXPECT_CALL(*p_asyncReplySenderMock, sendReply(::testing::_))
         .Times(1)
@@ -1589,7 +1589,7 @@ TEST_F(DaemonDobbyTest, stopFailed_validArg_postWorkFailed)
     EXPECT_CALL(*p_asyncReplySenderMock, getMethodCallArguments())
         .WillOnce(::testing::Return(validArgs));
 
-    EXPECT_CALL(*p_dobbyManagerMock, stopContainer(::testing::_,::testing::_))
+    EXPECT_CALL(*p_dobbyManagerMock, stopContainer(::testing::_,::testing::_,::testing::_))
         .Times(0);
 
     EXPECT_CALL(*p_workQueueMock, postWork(::testing::_))
@@ -1633,8 +1633,13 @@ TEST_F(DaemonDobbyTest, stopSuccess_validArg_postWorkSuccess)
     EXPECT_CALL(*p_asyncReplySenderMock, getMethodCallArguments())
         .WillOnce(::testing::Return(validArgs));
 
-    EXPECT_CALL(*p_dobbyManagerMock, stopContainer(::testing::_,::testing::_))
-        .WillOnce(::testing::Return(true));
+    EXPECT_CALL(*p_dobbyManagerMock, stopContainer(::testing::_,::testing::_,::testing::_))
+        .WillOnce(::testing::Invoke(
+                 [&](int32_t cd, bool withPrejudice, const std::function<void(int32_t cd, const ContainerId& id,  int32_t status)> containnerStopCb) {
+                     ContainerId *p_containerId = ContainerId::getInstance();;
+                     containnerStopCb(cd, *p_containerId, 2/*DobbyContainer::State:Stopping*/);
+                     return cd;
+                 }));
 
     EXPECT_CALL(*p_workQueueMock, postWork(::testing::_))
         .Times(1)
@@ -2302,7 +2307,7 @@ TEST_F(DaemonDobbyTest, startFromSpecFailed_argSize_3_postWorkFail)
     EXPECT_CALL(*p_containerIdMock, isValid())
         .WillOnce(::testing::Return(true));
 
-    EXPECT_CALL(*p_dobbyManagerMock, startContainerFromSpec(::testing::_,::testing::_,::testing::_,::testing::_,::testing::_,::testing::_))
+    EXPECT_CALL(*p_dobbyManagerMock, startContainerFromSpec(::testing::_,::testing::_,::testing::_,::testing::_,::testing::_,::testing::_,::testing::_))
         .Times(0);
 
     EXPECT_CALL(*p_workQueueMock, postWork(::testing::_))
@@ -2354,8 +2359,15 @@ TEST_F(DaemonDobbyTest, startFromSpecSuccess_argSize_3_postWorkSuccess)
     EXPECT_CALL(*p_containerIdMock, isValid())
         .WillOnce(::testing::Return(true));
 
-    EXPECT_CALL(*p_dobbyManagerMock, startContainerFromSpec(::testing::_,::testing::_,::testing::_,::testing::_,::testing::_,::testing::_))
-        .WillOnce(::testing::Return(123));
+    EXPECT_CALL(*p_dobbyManagerMock, startContainerFromSpec(::testing::_,::testing::_,::testing::_,::testing::_,::testing::_,::testing::_,::testing::_))
+        .WillOnce(::testing::Invoke(
+            [&](const ContainerId& id, const std::string& jsonSpec,
+                  const std::list<int>& files, const std::string& command,
+                  const std::string& displaySocket, const std::vector<std::string>& envVars,
+                  const std::function<void(int32_t cd, const ContainerId& id)> containnerStartCb) {
+                containnerStartCb(123, id);
+                return 123;
+            }));
 
     EXPECT_CALL(*p_workQueueMock, postWork(::testing::_))
         .Times(1)
@@ -2412,8 +2424,15 @@ TEST_F(DaemonDobbyTest, startFromSpecSuccess_argSize_6_postWorkSuccess)
         .WillOnce(::testing::Return(true));
 
     /* Simulates a successful start, returning a container descriptor ,which is a unique number that identifies the container */
-    EXPECT_CALL(*p_dobbyManagerMock, startContainerFromSpec(::testing::_,::testing::_,::testing::_,::testing::_,::testing::_,::testing::_))
-        .WillOnce(::testing::Return(123));
+    EXPECT_CALL(*p_dobbyManagerMock, startContainerFromSpec(::testing::_,::testing::_,::testing::_,::testing::_,::testing::_,::testing::_,::testing::_))
+        .WillOnce(::testing::Invoke(
+            [&](const ContainerId& id, const std::string& jsonSpec,
+                  const std::list<int>& files, const std::string& command,
+                  const std::string& displaySocket, const std::vector<std::string>& envVars,
+                  const std::function<void(int32_t cd, const ContainerId& id)> containnerStartCb) {
+                containnerStartCb(123, id);
+                return 123;
+            }));
 
     EXPECT_CALL(*p_workQueueMock, postWork(::testing::_))
         .Times(1)
@@ -2506,7 +2525,7 @@ TEST_F(DaemonDobbyTest, startFromBundleFailed_argSize_3_postWorkFail)
     EXPECT_CALL(*p_containerIdMock, isValid())
         .WillOnce(::testing::Return(true));
 
-    EXPECT_CALL(*p_dobbyManagerMock, startContainerFromBundle(::testing::_,::testing::_,::testing::_,::testing::_,::testing::_,::testing::_))
+    EXPECT_CALL(*p_dobbyManagerMock, startContainerFromBundle(::testing::_,::testing::_,::testing::_,::testing::_,::testing::_,::testing::_,::testing::_))
         .Times(0);
 
     EXPECT_CALL(*p_workQueueMock, postWork(::testing::_))
@@ -2559,8 +2578,18 @@ TEST_F(DaemonDobbyTest, startFromBundleSuccess_argSize_3_postWorkSuccess)
         .WillOnce(::testing::Return(true));
 
     /* Simulates a successful start, returning a container descriptor ,which is a unique number that identifies the container */
-    EXPECT_CALL(*p_dobbyManagerMock, startContainerFromBundle(::testing::_,::testing::_,::testing::_,::testing::_,::testing::_,::testing::_))
-        .WillOnce(::testing::Return(12));
+    EXPECT_CALL(*p_dobbyManagerMock, startContainerFromBundle(::testing::_,::testing::_,::testing::_,::testing::_,::testing::_,::testing::_,::testing::_))
+        .WillOnce(::testing::Invoke(
+            [&](const ContainerId& id,
+            const std::string& bundlePath,
+            const std::list<int>& files,
+            const std::string& command,
+            const std::string& displaySocket,
+            const std::vector<std::string>& envVars,
+            const std::function<void(int32_t cd, const ContainerId& id)> containnerStartCb) {
+                containnerStartCb(12, id);
+                return 12;
+            }));
 
     EXPECT_CALL(*p_workQueueMock, postWork(::testing::_))
         .Times(1)
@@ -2616,8 +2645,18 @@ TEST_F(DaemonDobbyTest, startFromBundleSuccess_argSize_6_postWorkSuccess)
     EXPECT_CALL(*p_containerIdMock, isValid())
         .WillOnce(::testing::Return(true));
 
-    EXPECT_CALL(*p_dobbyManagerMock, startContainerFromBundle(::testing::_,::testing::_,::testing::_,::testing::_,::testing::_,::testing::_))
-        .WillOnce(::testing::Return(12));
+    EXPECT_CALL(*p_dobbyManagerMock, startContainerFromBundle(::testing::_,::testing::_,::testing::_,::testing::_,::testing::_,::testing::_,::testing::_))
+        .WillOnce(::testing::Invoke(
+            [&](const ContainerId& id,
+                const std::string& bundlePath,
+                const std::list<int>& files,
+                const std::string& command,
+                const std::string& displaySocket,
+                const std::vector<std::string>& envVars,
+                const std::function<void(int32_t cd, const ContainerId& id)> containnerStartCb) {
+                containnerStartCb(12, id);
+                return 12;
+            }));
 
     EXPECT_CALL(*p_workQueueMock, postWork(::testing::_))
         .Times(1)
