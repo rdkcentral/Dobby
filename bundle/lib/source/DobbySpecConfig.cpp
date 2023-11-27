@@ -2538,12 +2538,12 @@ bool DobbySpecConfig::processCapabilities(const Json::Value& value,
                                            EXTRA_CAPS_SECTION);
     }
 
-#if !defined(RDK)
+//#if !defined(RDK)
     // allow the containered apps to inherit any file base capabilities, this
     // is needed if wanting to execute programs that have the file capabilities
     // that match the capabilities we've given the container
     dictionary->SetValue(NO_NEW_PRIVS, "false");
-#endif // !defined(RDK)
+//#endif // !defined(RDK)
 
     return true;
 }
