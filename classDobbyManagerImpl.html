@@ -82,12 +82,12 @@ Inheritance diagram for DobbyManagerImpl:</div>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a3335fa0dd441104fbbcd9eb03b09721d"><td class="memItemLeft" align="right" valign="top"><a id="a3335fa0dd441104fbbcd9eb03b09721d"></a>
-virtual int32_t&#160;</td><td class="memItemRight" valign="bottom"><b>startContainerFromBundle</b> (const <a class="el" href="classContainerId.html">ContainerId</a> &amp;id, const std::string &amp;bundlePath, const std::list&lt; int &gt; &amp;files, const std::string &amp;command, const std::string &amp;displaySocket, const std::vector&lt; std::string &gt; &amp;envVars)=0</td></tr>
-<tr class="separator:a3335fa0dd441104fbbcd9eb03b09721d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:afe172a21be2cfcf8b6c39fa1b0542cd5"><td class="memItemLeft" align="right" valign="top"><a id="afe172a21be2cfcf8b6c39fa1b0542cd5"></a>
-virtual bool&#160;</td><td class="memItemRight" valign="bottom"><b>stopContainer</b> (int32_t cd, bool withPrejudice)=0</td></tr>
-<tr class="separator:afe172a21be2cfcf8b6c39fa1b0542cd5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a358f3d318dd0c2a0c3ce970c19128bd9"><td class="memItemLeft" align="right" valign="top"><a id="a358f3d318dd0c2a0c3ce970c19128bd9"></a>
+virtual int32_t&#160;</td><td class="memItemRight" valign="bottom"><b>startContainerFromBundle</b> (const <a class="el" href="classContainerId.html">ContainerId</a> &amp;id, const std::string &amp;bundlePath, const std::list&lt; int &gt; &amp;files, const std::string &amp;command, const std::string &amp;displaySocket, const std::vector&lt; std::string &gt; &amp;envVars, const std::function&lt; void(int32_t cd, const <a class="el" href="classContainerId.html">ContainerId</a> &amp;id)&gt; containnerStartCb)=0</td></tr>
+<tr class="separator:a358f3d318dd0c2a0c3ce970c19128bd9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad051a2d18374fafbdfd757b9a64e4cd4"><td class="memItemLeft" align="right" valign="top"><a id="ad051a2d18374fafbdfd757b9a64e4cd4"></a>
+virtual bool&#160;</td><td class="memItemRight" valign="bottom"><b>stopContainer</b> (int32_t cd, bool withPrejudice, std::function&lt; void(int32_t cd, const <a class="el" href="classContainerId.html">ContainerId</a> &amp;id, int32_t status)&gt; containnerStopCb)=0</td></tr>
+<tr class="separator:ad051a2d18374fafbdfd757b9a64e4cd4"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a76b220b9b2191a50ec75ec7db422870d"><td class="memItemLeft" align="right" valign="top"><a id="a76b220b9b2191a50ec75ec7db422870d"></a>
 virtual bool&#160;</td><td class="memItemRight" valign="bottom"><b>pauseContainer</b> (int32_t cd)=0</td></tr>
 <tr class="separator:a76b220b9b2191a50ec75ec7db422870d"><td class="memSeparator" colspan="2">&#160;</td></tr>
