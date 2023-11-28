@@ -47,10 +47,23 @@ To Running the tests, need to be build the Dobby source and Test codes.
           filtered_coverage.info
 ```
 ## Writing tests
-To write new test:
+### To write new test:
 1. Create new folder and create new test file under the unit_tests/L1_testing/tests/DobbyXXXXTest/XXXXTest.cpp
 2. Create new CMakeLists.txt under this unit_tests/L1_testing/tests/DobbyXXXXTest/ folder
 3. Add add_subdirectory(DobbyXXXXTest) in unit_tests/L1_testing/tests/CMakeLists,txt
 4. Add the test cases using gtest framework
-5. Once added the new test, use above commands to build and run the test.
+### To write the mock
+1. Instead of incuding actual header file. Create a new heade file with same name in unit_tests/L1_testing/mocks/XXXX.h
+    #### Example:
+     If test requires DobbyContainer.h header file.
+     - Create [DobbyContainer.h](https://github.com/rdkcentral/Dobby/blob/master/unit_tests/L1_testing/mocks/DobbyContainer.h) file in [unit_tests/L1_testing/mocks/](https://github.com/rdkcentral/Dobby/blob/master/unit_tests/L1_testing/mocks/)
+     - Add the [DobbyContainer class](https://github.com/rdkcentral/Dobby/blob/master/unit_tests/L1_testing/mocks/DobbyContainer.h#L44) and required function methods.
+     - Create new class [DobbyContainerImpl](https://github.com/rdkcentral/Dobby/blob/master/unit_tests/L1_testing/mocks/DobbyContainer.h#L35) in this file and declared all methods as virtual
+     - Create an object for this Dobby container mock class and store it in [static member varaible(impl)](https://github.com/rdkcentral/Dobby/blob/master/unit_tests/L1_testing/mocks/DobbyContainer.h#L48) of DobbyContainer
+     - Create [DobbyContainerMock.h](https://github.com/rdkcentral/Dobby/blob/master/unit_tests/L1_testing/mocks/DobbyContainerMock.h#L26) for creating the mock functions using gmock (MOCK_METHOD). so gmock will create the definition for those methods
+     - [From test file](https://github.com/rdkcentral/Dobby/blob/master/unit_tests/L1_testing/tests/DobbyTest/DaemonDobbyTests.cpp#L114) need to create the object for mock and assign that value to impl member variable.
+     - Create [DobbyContainerMock.cpp](https://github.com/rdkcentral/Dobby/blob/master/unit_tests/L1_testing/mocks/DobbyContainerMock.cpp) and add definition for DobbyContainer class. Here need to call DobbyContainerImpl class methods using [impl](https://github.com/rdkcentral/Dobby/blob/master/unit_tests/L1_testing/mocks/DobbyContainerMock.cpp#L76) member variable
+
+Once added the new test, use above commands to build and run the test.
    Otherwise if add the changes in github, .github/workflows/build.yml will build and run the tests then give the results with coverage report.
+

@@ -32,7 +32,8 @@ public:
                                               const std::list<int>& files,
                                               const std::string& command,
                                               const std::string& displaySocket,
-                                              const std::vector<std::string>& envVars),(override));
+                                              const std::vector<std::string>& envVars,
+                                              const std::function<void(int32_t cd, const ContainerId& id)> containnerStartCb),(override));
 
     MOCK_METHOD(std::string, specOfContainer, (int32_t cd), (const,override));
 
@@ -45,9 +46,10 @@ public:
                                                 const std::list<int>& files,
                                                 const std::string& command,
                                                 const std::string& displaySocket,
-                                                const std::vector<std::string>& envVars), (override));
+                                                const std::vector<std::string>& envVars,
+                                                const std::function<void(int32_t cd, const ContainerId& id)> containnerStartCb), (override));
 
-    MOCK_METHOD(bool, stopContainer, (int32_t cd, bool withPrejudice), (override));
+    MOCK_METHOD(bool, stopContainer, (int32_t cd, bool withPrejudice, const std::function<void(int32_t cd, const ContainerId& id, int32_t status)> containnerStopCb), (override));
 
     MOCK_METHOD(bool, pauseContainer, (int32_t cd), (override));
 
