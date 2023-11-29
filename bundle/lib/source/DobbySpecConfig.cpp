@@ -622,10 +622,10 @@ bool DobbySpecConfig::parseSpec(ctemplate::TemplateDictionary* dictionary,
         dictionary->SetIntValue(RLIMIT_RTPRIO, 0);
     }
 
-    if (!(flags & JSON_FLAG_CAPABILITIES))
-    {
-        dictionary->SetValue(NO_NEW_PRIVS, "true");
-    }
+//    if (!(flags & JSON_FLAG_CAPABILITIES))
+//    {
+        dictionary->SetValue(NO_NEW_PRIVS, "false");
+//    }
 
     // step 6 - enable the RDK plugins section
     dictionary->ShowSection(ENABLE_RDK_PLUGINS);
