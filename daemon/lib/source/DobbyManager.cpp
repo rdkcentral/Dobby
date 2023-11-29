@@ -35,6 +35,7 @@
 #include "DobbyStats.h"
 #include "DobbyFileAccessFixer.h"
 #include "DobbyAsync.h"
+#include "DobbyHibernate.h"
 
 #if defined(LEGACY_COMPONENTS)
 #  include "DobbySpecConfig.h"
@@ -83,9 +84,13 @@ DobbyManager::DobbyManager(const std::shared_ptr<IDobbyEnv> &env,
                            const std::shared_ptr<IDobbyIPCUtils> &ipcUtils,
                            const std::shared_ptr<const IDobbySettings> &settings,
                            const ContainerStartedFunc &containerStartedCb,
-                           const ContainerStoppedFunc &containerStoppedCb)
+                           const ContainerStoppedFunc &containerStoppedCb,
+                           const ContainerHibernatedFunc& containerHibernatedCb,
+                           const ContainerHibernatedFunc& containerAwokenCb)
     : mContainerStartedCb(containerStartedCb)
     , mContainerStoppedCb(containerStoppedCb)
+    , mContainerHibernatedCb(containerHibernatedCb)
+    , mContainerAwokenCb(containerAwokenCb)
     , mEnvironment(env)
     , mUtilities(utils)
     , mIPCUtilities(ipcUtils)
@@ -1336,10 +1341,13 @@ bool DobbyManager::stopContainer(int32_t cd, bool withPrejudice)
         container->hasCurseOfDeath = true;
     }
 
-    // if in Running state then use runc to send the container's process a
-    // signal.  We could just send a kill signal ourselves, but this way
-    // we are consistent with the tools
-    else if (container->state == DobbyContainer::State::Running)
+    // if in Running/Hibernated/Hibernating/Awakening state then use runc to send
+    // the container's process a signal.  We could just send a kill
+    // signal ourselves, but this way we are consistent with the tools
+    else if (container->state == DobbyContainer::State::Running ||
+             container->state == DobbyContainer::State::Hibernating ||
+             container->state == DobbyContainer::State::Hibernated ||
+             container->state == DobbyContainer::State::Awakening)
     {
         if (!mRunc->killCont(id, withPrejudice ? SIGKILL : SIGTERM))
         {
@@ -1516,6 +1524,240 @@ bool DobbyManager::resumeContainer(int32_t cd)
 
 // -----------------------------------------------------------------------------
 /**
+ *  @brief Dumps a running container's processes
+ *
+ *  @param[in]  cd      The descriptor of the container to checkpoint.
+ *  @param[in]  options Additional options
+ *
+ *  @return true if a container with a matching descriptor was found and its
+ *  processes were dumped.
+ */
+bool DobbyManager::hibernateContainer(int32_t cd, const std::string& options)
+{
+    AI_LOG_FN_ENTRY();
+
+    std::lock_guard<std::mutex> locker(mLock);
+
+    // find the container
+    auto it = mContainers.cbegin();
+    for (; it != mContainers.cend(); ++it)
+    {
+        if (it->second && (it->second->descriptor == cd))
+            break;
+    }
+
+    if (it == mContainers.end())
+    {
+        AI_LOG_WARN("failed to find container with descriptor %d", cd);
+        AI_LOG_FN_EXIT();
+        return false;
+    }
+
+    const ContainerId &id = it->first;
+
+    // only 'running' container can be hibernated
+    if (it->second->state != DobbyContainer::State::Running)
+    {
+        AI_LOG_WARN("Container '%s' is not running so could not be hibernated", id.c_str());
+        AI_LOG_FN_EXIT();
+        return false;
+    }
+
+    // create a stats object for the container to get list of PIDs
+    DobbyStats stats(it->first, mEnvironment, mUtilities);
+    Json::Value jsonPids = DobbyStats(it->first, mEnvironment, mUtilities).stats()["pids"];
+
+    std::thread hibernateThread =
+        std::thread([=]()
+        {
+            //TODO: --delay support is temporary and should be removed
+            int delayMs = 0;
+            size_t delayMsPos = options.find("--delay=");
+            if (delayMsPos != std::string::npos)
+            {
+                delayMs = std::stoi(&options[delayMsPos + std::string("--delay=").length()], nullptr, 10);
+            }
+            DobbyHibernate::Error ret = DobbyHibernate::Error::ErrorNone;
+
+            int delayChunkMs = 100;
+            while (delayMs > 0)
+            {
+                int sleepTime = delayMs > delayChunkMs? delayChunkMs : delayMs;
+                delayMs -= sleepTime;
+                std::this_thread::sleep_for(std::chrono::milliseconds(sleepTime));
+                {
+                    std::lock_guard<std::mutex> locker(mLock);
+                    if (mContainers.find(id) == mContainers.end() ||
+                        mContainers[id]->descriptor != cd ||
+                        mContainers[id]->state != DobbyContainer::State::Hibernating)
+                    {
+                        AI_LOG_WARN("Hibernation of: %s with descriptor %d aborted", id.c_str(), cd);
+                        AI_LOG_FN_EXIT();
+                        return;
+                    }
+                }
+            }
+            //TODO: --delay support end
+
+            for (auto pidIt = jsonPids.begin(); pidIt != jsonPids.end(); ++pidIt)
+            {
+                {
+                    std::lock_guard<std::mutex> locker(mLock);
+                    if (mContainers.find(id) == mContainers.end() ||
+                        mContainers[id]->descriptor != cd ||
+                        mContainers[id]->state != DobbyContainer::State::Hibernating)
+                    {
+                        AI_LOG_WARN("Hibernation of: %s with descriptor %d aborted", id.c_str(), cd);
+                        AI_LOG_FN_EXIT();
+                        return;
+                    }
+                }
+
+                uint32_t pid = pidIt->asUInt();
+                ret  = DobbyHibernate::HibernateProcess(pid);
+                if (ret != DobbyHibernate::Error::ErrorNone)
+                {
+                    AI_LOG_WARN("Error hibernating pid: '%d'", pid);
+                    // revert previous Hibernations and break
+                    while (pidIt != jsonPids.begin())
+                    {
+                        --pidIt;
+                        pid = pidIt->asUInt();
+                        DobbyHibernate::WakeupProcess(pid);
+                    }
+
+                    break;
+                }
+            }
+
+            // update state
+            std::lock_guard<std::mutex> locker(mLock);
+            if (mContainers.find(id) == mContainers.end() ||
+                mContainers[id]->descriptor != cd)
+            {
+                AI_LOG_WARN("failed to find container: %s with descriptor %d", id.c_str(), cd);
+                AI_LOG_FN_EXIT();
+                return;
+            }
+
+            if (mContainers[id]->state != DobbyContainer::State::Hibernating)
+            {
+                AI_LOG_WARN("container state (%s) is not hibernating", id.c_str());
+                AI_LOG_FN_EXIT();
+                return;
+            }
+
+            if (ret == DobbyHibernate::Error::ErrorNone)
+            {
+                mContainers[id]->state = DobbyContainer::State::Hibernated;
+            }
+            else
+            {
+                mContainers[id]->state = DobbyContainer::State::Running;
+            }
+            AI_LOG_FN_EXIT();
+        });
+
+    it->second->state = DobbyContainer::State::Hibernating;
+    hibernateThread.detach();
+    AI_LOG_INFO("Hibernation of: %s triggered", id.c_str());
+    AI_LOG_FN_EXIT();
+    return true;
+}
+
+// -----------------------------------------------------------------------------
+/**
+ *  @brief Wakeup a checkpointed container from existing dump.
+ *
+ *  @param[in]  cd      The descriptor of the container to checkpoint.
+ *
+ *  @return true if a container was successfully restored.
+ */
+bool DobbyManager::wakeupContainer(int32_t cd)
+{
+     AI_LOG_FN_ENTRY();
+
+    std::lock_guard<std::mutex> locker(mLock);
+
+    // find the container
+    auto it = mContainers.cbegin();
+    for (; it != mContainers.cend(); ++it)
+    {
+        if (it->second && (it->second->descriptor == cd))
+            break;
+    }
+
+    if (it == mContainers.cend())
+    {
+        AI_LOG_WARN("failed to find container with descriptor %d", cd);
+        AI_LOG_FN_EXIT();
+        return false;
+    }
+
+    const ContainerId &id = it->first;
+
+    // only 'hibernated/hibernating' container can be woke up
+    if (it->second->state != DobbyContainer::State::Hibernated &&
+        it->second->state != DobbyContainer::State::Hibernating)
+    {
+        AI_LOG_WARN("Container '%s' is not hibernated/hibernating so could not be wakeup", id.c_str());
+        AI_LOG_FN_EXIT();
+        return false;
+    }
+
+    // Awakening state will abort hibernation thread if still running
+    it->second->state = DobbyContainer::State::Awakening;
+
+    // create a stats object for the container to get list of PIDs
+    DobbyStats stats(it->first, mEnvironment, mUtilities);
+    Json::Value jsonPids = DobbyStats(it->first, mEnvironment, mUtilities).stats()["pids"];
+
+    std::thread wakeupThread =
+    std::thread([=]()
+    {
+        // try to Wakeup all processes to be sure all is cleaned up
+        // and wakeup in revers order
+        auto pidIt = jsonPids.end();
+        while (pidIt != jsonPids.begin())
+        {
+            --pidIt;
+            uint32_t pid = pidIt->asUInt();
+            DobbyHibernate::WakeupProcess(pid);
+        }
+
+        // update state
+        std::lock_guard<std::mutex> locker(mLock);
+        if (mContainers.find(id) == mContainers.end() ||
+            mContainers[id]->descriptor != cd)
+        {
+            AI_LOG_WARN("failed to find container: %s with descriptor %d", id.c_str(), cd);
+            AI_LOG_FN_EXIT();
+            return;
+        }
+
+        if (mContainers[id]->state != DobbyContainer::State::Awakening)
+        {
+            AI_LOG_WARN("container state (%s) is not awakening", id.c_str());
+            AI_LOG_FN_EXIT();
+            return;
+        }
+
+        mContainers[id]->state = DobbyContainer::State::Running;
+        if (mContainerAwokenCb)
+        {
+            mContainerAwokenCb(cd, id);
+        }
+        AI_LOG_FN_EXIT();
+    });
+
+    wakeupThread.detach();
+    AI_LOG_INFO("Wakeup of: %s triggered", id.c_str());
+    AI_LOG_FN_EXIT();
+    return true;
+}
+
+// -----------------------------------------------------------------------------
+/**
  *  @brief Executes a command in a running container
  *
  *  @param[in]  cd          The descriptor of the container to execute the command in.
@@ -1657,6 +1899,12 @@ int32_t DobbyManager::stateOfContainer(int32_t cd) const
                 return CONTAINER_STATE_RUNNING;
             case DobbyContainer::State::Paused:
                 return CONTAINER_STATE_PAUSED;
+            case DobbyContainer::State::Hibernated:
+                return CONTAINER_STATE_HIBERNATED;
+            case DobbyContainer::State::Hibernating:
+                return CONTAINER_STATE_HIBERNATING;
+            case DobbyContainer::State::Awakening:
+                return CONTAINER_STATE_AWAKENING;
             case DobbyContainer::State::Stopping:
                 return CONTAINER_STATE_STOPPING;
             default:
@@ -1752,6 +2000,15 @@ std::string DobbyManager::statsOfContainer(int32_t cd) const
                 break;
             case DobbyContainer::State::Unknown:
                 jsonStats["state"] = "unknown";
+                break;
+            case DobbyContainer::State::Hibernating:
+                jsonStats["state"] = "hibernating";
+                break;
+            case DobbyContainer::State::Hibernated:
+                jsonStats["state"] = "hibernated";
+                break;
+            case DobbyContainer::State::Awakening:
+                jsonStats["state"] = "awakening";
                 break;
         }
 

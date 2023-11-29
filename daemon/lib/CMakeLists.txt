@@ -15,6 +15,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+option(DOBBY_HIBERNATE_MEMCR_IMPL "Hibernate containers using Memcr tool" OFF)
+
 if (LEGACY_COMPONENTS)
         list(APPEND ADDITIONAL_SOURCES
                 "source/DobbyLegacyPluginManager.cpp"
@@ -37,6 +39,7 @@ add_library( DobbyDaemonLib
         source/DobbyWorkQueue.cpp
         source/DobbyLogger.cpp
         source/DobbyLogRelay.cpp
+        source/DobbyHibernate.cpp
 
         ${ADDITIONAL_SOURCES}
         )
@@ -93,6 +96,10 @@ if( BUILDING_WITH_RDK_SDK )
             JsonCpp::JsonCpp
             CTemplate::libctemplate )
 
+endif()
+
+if(DOBBY_HIBERNATE_MEMCR_IMPL)
+    add_definitions( -DDOBBY_HIBERNATE_MEMCR_IMPL=1 )
 endif()
 
 # Install public headers for external use

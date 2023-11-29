@@ -28,6 +28,7 @@ include_directories(${GTEST_INCLUDE_DIRS})
 
 add_library(DaemonDobbyManagerTest SHARED STATIC
             ../../../../daemon/lib/source/DobbyManager.cpp
+            ../../../../daemon/lib/source/DobbyHibernate.cpp
             ../../../../AppInfrastructure/Logging/source/Logging.cpp
             ../../mocks/DobbyBundleConfigMock.cpp
             ../../mocks/DobbyRunCMock.cpp

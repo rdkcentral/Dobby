@@ -56,6 +56,10 @@ public:
 
     MOCK_METHOD(bool, resumeContainer, (int32_t cd), (override));
 
+    MOCK_METHOD(bool, hibernateContainer, (int32_t cd, const std::string& options), (override));
+
+    MOCK_METHOD(bool, wakeupContainer, (int32_t cd), (override));
+
     MOCK_METHOD(bool, execInContainer, (int32_t cd,
                                    const std::string& options,
                                    const std::string& command), (override));

@@ -100,7 +100,7 @@ Dobby::Dobby(const std::string& dbusAddress,
 #endif //defined(LEGACY_COMPONENTS)
 
     // create the two callback function objects for notifying when a container
-    // has start and stopped
+    // has start, stopped and hibernated
     DobbyManager::ContainerStartedFunc startedCb =
         std::bind(&Dobby::onContainerStarted, this,
                   std::placeholders::_1, std::placeholders::_2);
@@ -109,10 +109,18 @@ Dobby::Dobby(const std::string& dbusAddress,
         std::bind(&Dobby::onContainerStopped, this,
                   std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
 
+    DobbyManager::ContainerHibernatedFunc hibernatedCb =
+        std::bind(&Dobby::onContainerHibernated, this,
+                  std::placeholders::_1, std::placeholders::_2);
+
+    DobbyManager::ContainerHibernatedFunc awokenCb =
+        std::bind(&Dobby::onContainerAwoken, this,
+                  std::placeholders::_1, std::placeholders::_2);
+
 
     // create the container manager which does all the heavy lifting
     mManager = std::make_shared<DobbyManager>(mEnvironment, mUtilities,
-                            mIPCUtilities, settings, startedCb, stoppedCb);
+                            mIPCUtilities, settings, startedCb, stoppedCb, hibernatedCb, awokenCb);
     if (!mManager)
     {
         AI_LOG_FATAL("failed to create manager");
@@ -640,6 +648,8 @@ void Dobby::initIpcMethods()
         {   DOBBY_CTRL_INTERFACE,        DOBBY_CTRL_METHOD_STOP,                    &Dobby::stop                   },
         {   DOBBY_CTRL_INTERFACE,        DOBBY_CTRL_METHOD_PAUSE,                   &Dobby::pause                  },
         {   DOBBY_CTRL_INTERFACE,        DOBBY_CTRL_METHOD_RESUME,                  &Dobby::resume                 },
+        {   DOBBY_CTRL_INTERFACE,        DOBBY_CTRL_METHOD_HIBERNATE,               &Dobby::hibernate              },
+        {   DOBBY_CTRL_INTERFACE,        DOBBY_CTRL_METHOD_WAKEUP,                  &Dobby::wakeup                 },
         {   DOBBY_CTRL_INTERFACE,        DOBBY_CTRL_METHOD_EXEC,                    &Dobby::exec                   },
         {   DOBBY_CTRL_INTERFACE,        DOBBY_CTRL_METHOD_GETSTATE,                &Dobby::getState               },
         {   DOBBY_CTRL_INTERFACE,        DOBBY_CTRL_METHOD_GETINFO,                 &Dobby::getInfo                },
@@ -1315,6 +1325,119 @@ void Dobby::resume(std::shared_ptr<AI_IPC::IAsyncReplySender> replySender)
 
 // -----------------------------------------------------------------------------
 /**
+ *  @brief Hibernate (dumps) container processes
+ *
+ *
+ *
+ *
+ */
+void Dobby::hibernate(std::shared_ptr<AI_IPC::IAsyncReplySender> replySender)
+{
+    AI_LOG_FN_ENTRY();
+    // Expecting two args:  (int32_t cd, string options)
+    int32_t descriptor;
+    std::string options;
+
+    if (!AI_IPC::parseVariantList
+            <int32_t, std::string>
+            (replySender->getMethodCallArguments(), &descriptor, &options))
+    {
+        AI_LOG_ERROR("error getting the args");
+    }
+    else
+    {
+        AI_LOG_INFO(DOBBY_CTRL_METHOD_EXEC "(%d)", descriptor);
+
+        auto doHibernateLambda =
+            [manager = mManager,
+             descriptor,
+             options,
+             replySender]()
+            {
+                // Try and hibernate
+                bool result = manager->hibernateContainer(descriptor, options);
+
+                // Fire off the reply
+                if (!replySender->sendReply({ result }))
+                {
+                    AI_LOG_ERROR("failed to send reply");
+                }
+            };
+
+        // Queue the work, if successful then we're done
+        if (mWorkQueue->postWork(std::move(doHibernateLambda)))
+        {
+            AI_LOG_FN_EXIT();
+            return;
+        }
+    }
+
+    // Fire off the reply
+    AI_IPC::VariantList results = { false };
+    if (!replySender->sendReply(results))
+    {
+        AI_LOG_ERROR("failed to send reply");
+    }
+
+    AI_LOG_FN_EXIT();
+}
+
+// -----------------------------------------------------------------------------
+/**
+ *  @brief Wakeup a hibernated containers processes
+ *
+ *
+ *
+ *
+ */
+void Dobby::wakeup(std::shared_ptr<AI_IPC::IAsyncReplySender> replySender)
+{
+    AI_LOG_FN_ENTRY();
+
+    // Expecting one argument:  (int32_t cd)
+    int32_t descriptor;
+
+    if (!AI_IPC::parseVariantList
+            <int32_t>
+            (replySender->getMethodCallArguments(), &descriptor))
+    {
+        AI_LOG_ERROR("error getting the args");
+    }
+    else
+    {
+        auto doWakeupLambda =
+            [manager = mManager, descriptor, replySender]()
+            {
+                // Try and wakeup the container
+                bool result = manager->wakeupContainer(descriptor);
+
+                // Fire off the reply
+                if (!replySender->sendReply({ result }))
+                {
+                    AI_LOG_ERROR("failed to send reply");
+                }
+            };
+
+        // Queue the work, if successful then we're done
+        if (mWorkQueue->postWork(std::move(doWakeupLambda)))
+        {
+            AI_LOG_FN_EXIT();
+            return;
+        }
+    }
+
+    // Fire off the reply
+    AI_IPC::VariantList results = { false };
+    if (!replySender->sendReply(results))
+    {
+        AI_LOG_ERROR("failed to send reply");
+    }
+
+    AI_LOG_FN_EXIT();
+}
+
+// -----------------------------------------------------------------------------
+/**
  *  @brief Executes a command in a container
  *
  *
@@ -1879,6 +2002,57 @@ void Dobby::onContainerStopped(int32_t cd, const ContainerId& id, int status)
 
     AI_LOG_MILESTONE("container '%s'(%d) stopped (status 0x%04x)", id.c_str(),
                      cd, status);
+
+    AI_LOG_FN_EXIT();
+}
+
+// -----------------------------------------------------------------------------
+/**
+ *  @brief Called by the DobbyManager code when a container gets hibernated
+ *
+ *  @param[in]  cd          The container unique descriptor.
+ *  @param[in]  id          The string id / name of the container.
+ */
+void Dobby::onContainerHibernated(int32_t cd, const ContainerId& id)
+{
+    AI_LOG_FN_ENTRY();
+
+    if (!mIpcService->emitSignal(AI_IPC::Signal(mObjectPath,
+                                                DOBBY_CTRL_INTERFACE,
+                                                DOBBY_CTRL_EVENT_HIBERNATED),
+                                 { cd, id.str() }))
+    {
+        AI_LOG_ERROR("failed to emit '%s' signal",
+                     DOBBY_CTRL_EVENT_HIBERNATED);
+    }
+
+    AI_LOG_MILESTONE("container '%s'(%d) hibernated", id.c_str(), cd);
+
+    AI_LOG_FN_EXIT();
+}
+
+// -----------------------------------------------------------------------------
+/**
+ *  @brief Called by the DobbyManager code when a container returns back
+ *          from hibernated
+ *
+ *  @param[in]  cd          The container unique descriptor.
+ *  @param[in]  id          The string id / name of the container.
+ */
+void Dobby::onContainerAwoken(int32_t cd, const ContainerId& id)
+{
+    AI_LOG_FN_ENTRY();
+
+    if (!mIpcService->emitSignal(AI_IPC::Signal(mObjectPath,
+                                                DOBBY_CTRL_INTERFACE,
+                                                DOBBY_CTRL_EVENT_AWOKEN),
+                                 { cd, id.str() }))
+    {
+        AI_LOG_ERROR("failed to emit '%s' signal",
+                     DOBBY_CTRL_EVENT_AWOKEN);
+    }
+
+    AI_LOG_MILESTONE("container '%s'(%d) awoken", id.c_str(), cd);
 
     AI_LOG_FN_EXIT();
 }

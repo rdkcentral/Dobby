@@ -89,6 +89,8 @@ private:
     DOBBY_DBUS_METHOD(stop);
     DOBBY_DBUS_METHOD(pause);
     DOBBY_DBUS_METHOD(resume);
+    DOBBY_DBUS_METHOD(hibernate);
+    DOBBY_DBUS_METHOD(wakeup);
     DOBBY_DBUS_METHOD(exec);
     DOBBY_DBUS_METHOD(list);
     DOBBY_DBUS_METHOD(getState);
@@ -122,6 +124,8 @@ private:
 private:
     void onContainerStarted(int32_t cd, const ContainerId& id);
     void onContainerStopped(int32_t cd, const ContainerId& id, int status);
+    void onContainerHibernated(int32_t cd, const ContainerId& id);
+    void onContainerAwoken(int32_t cd, const ContainerId& id);
 
 private:
     void runWorkQueue() const;

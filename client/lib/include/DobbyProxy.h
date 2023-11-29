@@ -99,6 +99,10 @@ public:
 
     bool resumeContainer(int32_t cd) const override;
 
+    bool hibernateContainer(int32_t descriptor, const std::string& options) const override;
+
+    bool wakeupContainer(int32_t descriptor) const override;
+
     bool execInContainer(int32_t cd,
                          const std::string& options,
                          const std::string& command) const override;
@@ -136,6 +140,8 @@ public:
 private:
     void onContainerStartedEvent(const AI_IPC::VariantList& args);
     void onContainerStoppedEvent(const AI_IPC::VariantList& args);
+    void onContainerHibernatedEvent(const AI_IPC::VariantList& args);
+    void onContainerAwokenEvent(const AI_IPC::VariantList& args);
 
 private:
     bool invokeMethod(const char *interface_, const char *method_,
@@ -160,7 +166,7 @@ private:
 
     struct StateChangeEvent
     {
-        enum Type { Terminate, ContainerStarted, ContainerStopped };
+        enum Type { Terminate, ContainerStarted, ContainerStopped, ContainerHibernated, ContainerAwoken };
 
         explicit StateChangeEvent(Type type_)
             : type(type_), descriptor(-1)

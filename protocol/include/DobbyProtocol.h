@@ -52,6 +52,8 @@
 #define DOBBY_CTRL_METHOD_STOP                      "Stop"
 #define DOBBY_CTRL_METHOD_PAUSE                     "Pause"
 #define DOBBY_CTRL_METHOD_RESUME                    "Resume"
+#define DOBBY_CTRL_METHOD_HIBERNATE                 "Hibernate"
+#define DOBBY_CTRL_METHOD_WAKEUP                    "Wakeup"
 #define DOBBY_CTRL_METHOD_EXEC                      "Exec"
 #define DOBBY_CTRL_METHOD_GETSTATE                  "GetState"
 #define DOBBY_CTRL_METHOD_GETINFO                   "GetInfo"
@@ -59,6 +61,8 @@
 #define DOBBY_CTRL_EVENT_STARTED                    "Started"
 #define DOBBY_CTRL_EVENT_STOPPED                    "Stopped"
 #define DOBBY_CTRL_EVENT_STOPPED_WITH_STATUS        "StoppedWithStatus"
+#define DOBBY_CTRL_EVENT_HIBERNATED                 "Hibernated"
+#define DOBBY_CTRL_EVENT_AWOKEN                     "Awoken"
 
 #define DOBBY_DEBUG_INTERFACE                   DOBBY_SERVICE ".debug1"
 #define DOBBY_DEBUG_METHOD_CREATE_BUNDLE            "CreateBundle"
@@ -72,6 +76,9 @@
 #define CONTAINER_STATE_RUNNING                 2
 #define CONTAINER_STATE_STOPPING                3
 #define CONTAINER_STATE_PAUSED                  4
+#define CONTAINER_STATE_HIBERNATING             5
+#define CONTAINER_STATE_HIBERNATED              6
+#define CONTAINER_STATE_AWAKENING               7
 
 #define DOBBY_LOG_NULL                          0
 #define DOBBY_LOG_SYSLOG                        1
