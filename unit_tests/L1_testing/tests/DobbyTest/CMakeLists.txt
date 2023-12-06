@@ -78,12 +78,10 @@ add_executable(${PROJECT_NAME} ${TESTS})
 
 target_link_libraries(${PROJECT_NAME}
     PRIVATE
-    gmock_main
     DaemonDobbyTests
-    ${GTEST_LIBRARIES}
+    GTest::gmock
     GTest::GTest
     GTest::Main
-    gmock
     ctemplate
     pthread
     jsoncpp

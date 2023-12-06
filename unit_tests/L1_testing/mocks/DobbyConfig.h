@@ -46,6 +46,7 @@ public:
     virtual bool addWesterosMount(const std::string& socketPath) = 0;
     virtual bool addEnvironmentVar(const std::string& envVar) = 0;
     virtual bool enableSTrace(const std::string& logsDir) = 0;
+    virtual void setApparmorProfile(const std::string& profileName) = 0;
     virtual std::string configJson() const = 0;
 
 #if defined(LEGACY_COMPONENTS)
@@ -74,6 +75,7 @@ public:
     bool addWesterosMount(const std::string& socketPath);
     bool addEnvironmentVar(const std::string& envVar);
     bool enableSTrace(const std::string& logsDir);
+    void setApparmorProfile(const std::string& profileName);
     const std::string configJson() const;
 
 #if defined(LEGACY_COMPONENTS)
