@@ -24,5 +24,7 @@ class DobbyIPCUtilsMock : public DobbyIPCUtilsImpl {
 public:
     MOCK_METHOD(bool, setAIDbusAddress,
                 (bool privateBus, const std::string& address), (override));
+    
+    virtual ~DobbyIPCUtilsMock() {}
 };
 

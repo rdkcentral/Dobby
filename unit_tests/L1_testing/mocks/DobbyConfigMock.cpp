@@ -101,6 +101,13 @@ bool DobbyConfig::enableSTrace(const std::string& logsDir)
     return impl->enableSTrace(logsDir);
 }
 
+void DobbyConfig::setApparmorProfile(const std::string& profileName)
+{
+   EXPECT_NE(impl, nullptr);
+
+    return impl->setApparmorProfile(profileName);
+}
+
 const std::string DobbyConfig::configJson() const
 {
    EXPECT_NE(impl, nullptr);
