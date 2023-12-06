@@ -30,5 +30,6 @@ public:
     virtual ~DobbyContainerMock() = default;
     MOCK_METHOD(void, setRestartOnCrash, (const std::list<int>& files), (override));
     MOCK_METHOD(void, clearRestartOnCrash, (), (override));
-
+    MOCK_METHOD(bool, shouldRestart, (int statusCode), (override));
+    MOCK_METHOD((const std::list<int>&), files, (), (const, override));
 };

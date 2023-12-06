@@ -44,7 +44,6 @@ public:
     virtual bool restartOnCrash() const =0;
     virtual bool writeConfigJson(const std::string& filePath) const = 0;
 
-
 };
 
 class DobbySpecConfig :public DobbyConfig {
@@ -54,60 +53,23 @@ protected:
 
 public:
 
-    DobbySpecConfig(){}
+    DobbySpecConfig();
+    DobbySpecConfig(const std::shared_ptr<IDobbyUtils>& utils,const std::shared_ptr<const IDobbySettings>& settings,const ContainerId& id,const std::shared_ptr<const DobbyBundle>& bundle,const std::string& specJson);
+    DobbySpecConfig(const std::shared_ptr<IDobbyUtils>& utils,const std::shared_ptr<const IDobbySettings>& settings,const std::shared_ptr<const DobbyBundle>& bundle,const std::string& specJson);
+    ~DobbySpecConfig();
 
-    DobbySpecConfig(const std::shared_ptr<IDobbyUtils>& utils,const std::shared_ptr<const IDobbySettings>& settings,const ContainerId& id,const std::shared_ptr<const DobbyBundle>& bundle,const std::string& specJson){}
-    DobbySpecConfig(const std::shared_ptr<IDobbyUtils>& utils,const std::shared_ptr<const IDobbySettings>& settings,const std::shared_ptr<const DobbyBundle>& bundle,const std::string& specJson){}
-
-    ~DobbySpecConfig(){}
-
-    static void setImpl(DobbySpecConfigImpl* newImpl)
-    {
-        impl = newImpl;
-    }
-
-    static DobbySpecConfig* getInstance()
-    {
-        static DobbySpecConfig* instance = nullptr;
-        if (nullptr == instance)
-        {
-           instance = new DobbySpecConfig();
-        }
-        return instance;
-    }
-
-    static bool isValid()
-    {
-        return impl->isValid();
-    }
-
-    static const std::map<std::string, Json::Value>& rdkPlugins()
-    {
-        return impl->rdkPlugins();
-    }
-
+    static void setImpl(DobbySpecConfigImpl* newImpl);
+    static DobbySpecConfig* getInstance();
+    bool isValid() const;
+    const std::map<std::string, Json::Value>& rdkPlugins() const;
 #if defined(LEGACY_COMPONENTS)
 
-    static const std::string spec()
-    {
-        return impl->spec();
-    }
+    const std::string spec() const;
 #endif //defined(LEGACY_COMPONENTS)
 
-    static std::shared_ptr<rt_dobby_schema> config()
-    {
-        return impl->config();
-    }
-
-    static bool restartOnCrash()
-    {
-        return impl->restartOnCrash();
-    }
-
-    static bool writeConfigJson(const std::string& filePath)
-    {
-        return impl->writeConfigJson(filePath);
-    }
+    std::shared_ptr<rt_dobby_schema> config() const;
+    bool restartOnCrash() const;
+    bool writeConfigJson(const std::string& filePath) const;
 };
 
 #endif // !defined(DOBBYSPECCONFIG_H)

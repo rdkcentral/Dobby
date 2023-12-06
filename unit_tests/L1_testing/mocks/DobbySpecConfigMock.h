@@ -31,9 +31,8 @@ public:
     MOCK_METHOD((const std::string) ,spec, (), (const,override));
 #endif //defined(LEGACY_COMPONENTS)    MOCK_METHOD(bool ,isValid, (), (const));
     MOCK_METHOD(bool ,isValid, (), (const,override));
-
     MOCK_METHOD(std::shared_ptr<rt_dobby_schema> ,config, (), (const));
     MOCK_METHOD(bool ,restartOnCrash, (), (const));
-    MOCK_METHOD(bool ,writeConfigJson, (const std::string& filePath), (const,override));
+    MOCK_METHOD(bool, writeConfigJson, (const std::string& filePath), (const,override));
 
 };

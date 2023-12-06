@@ -37,37 +37,17 @@ protected:
     static IpcFileDescriptorApiImpl* impl;
 
 public:
-    IpcFileDescriptor(){}
-    IpcFileDescriptor(int fd){}
-    IpcFileDescriptor(const IpcFileDescriptor &other){}
-    IpcFileDescriptor &operator=(IpcFileDescriptor &&other){return *this;}
-    IpcFileDescriptor &operator=(const IpcFileDescriptor &other){return *this;}
-    ~IpcFileDescriptor(){}
+    IpcFileDescriptor();
+    IpcFileDescriptor(int fd);
+    IpcFileDescriptor(const IpcFileDescriptor &other);
+    IpcFileDescriptor &operator=(IpcFileDescriptor &&other);
+    IpcFileDescriptor &operator=(const IpcFileDescriptor &other);
+    ~IpcFileDescriptor();
 
-    static void setImpl(IpcFileDescriptorApiImpl* newImpl)
-    {
-        impl = newImpl;
-    }
-
-    static IpcFileDescriptor* getInstance()
-    {
-        static IpcFileDescriptor* instance = nullptr;
-        if(nullptr == instance)
-        {
-            instance = new IpcFileDescriptor();
-        }
-        return instance;
-    }
-
-    bool isValid() const
-    {
-        return impl->isValid();
-    }
-
-    int fd() const
-    {
-        return impl->fd();
-    }
+    static void setImpl(IpcFileDescriptorApiImpl* newImpl);
+    static IpcFileDescriptor* getInstance();
+    bool isValid() const;
+    int fd() const;
 
 };
 }

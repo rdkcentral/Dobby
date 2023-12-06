@@ -50,36 +50,15 @@ protected:
 
 public:
 
-     DobbyUtils(){}
-    ~DobbyUtils(){}
+     DobbyUtils();
+    ~DobbyUtils();
 
-    static void setImpl(DobbyUtilsImpl* newImpl)
-    {
-        impl = newImpl;
-    }
-
-    static DobbyUtils* getInstance()
-    {
-        static DobbyUtils* instance = nullptr;
-        if(nullptr == instance)
-        {
-            instance = new DobbyUtils();
-        }
-        return instance;
-    }
-
-
-    static bool cancelTimer(int timerId)
-    {
-        return impl->cancelTimer(timerId);
-    }
-
-    static int startTimer(const std::chrono::microseconds& timeout,
+    static void setImpl(DobbyUtilsImpl* newImpl);
+    static DobbyUtils* getInstance();
+    bool cancelTimer(int timerId) const;
+    int startTimer(const std::chrono::microseconds& timeout,
                           bool oneShot,
-                          const std::function<bool()>& handler)
-    {
-       return impl->startTimer(timeout,oneShot,handler);
-    }
+                          const std::function<bool()>& handler) const;
 
 };
 

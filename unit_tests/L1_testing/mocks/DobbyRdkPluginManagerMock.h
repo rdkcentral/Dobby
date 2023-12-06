@@ -27,9 +27,10 @@ class DobbyRdkPluginManagerMock : public DobbyRdkPluginManagerImpl {
 public:
 
     virtual ~DobbyRdkPluginManagerMock() = default;
-
+    MOCK_METHOD(void, setExitStatus, (int status), (override));
     MOCK_METHOD(const std::vector<std::string>, listLoadedPlugins, (), (const,override));
     MOCK_METHOD(std::shared_ptr<IDobbyRdkLoggingPlugin>, getContainerLogger, (), (const,override));
-
+    MOCK_METHOD(bool, runPlugins,(const IDobbyRdkPlugin::HintFlags &hookPoint,const uint timeoutMs ),( const,override));
+    MOCK_METHOD(bool, runPlugins,(const IDobbyRdkPlugin::HintFlags &hookPoint),( const,override));
 };
 

@@ -26,7 +26,7 @@ public:
 
      virtual ~DobbyTemplateMock() = default;
 
-     MOCK_METHOD(void, setSettings, (const std::shared_ptr<const IDobbySettings>& settings), (override));
+     MOCK_METHOD(void, setSettings, (const std::shared_ptr<const IDobbySettings>& settings), (const,override));
      MOCK_METHOD(std::string, apply, (const ctemplate::TemplateDictionaryInterface* dictionary, bool prettyPrint), (override));
      MOCK_METHOD(bool, applyAt, (int dirFd, const std::string& fileName, const ctemplate::TemplateDictionaryInterface* dictionary, bool prettyPrint), (override));
 };

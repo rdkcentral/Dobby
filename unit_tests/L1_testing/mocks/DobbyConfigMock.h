@@ -30,6 +30,12 @@ public:
     MOCK_METHOD(bool, writeConfigJson, (const std::string& filePath), (const,override));
     MOCK_METHOD((std::map<std::string, Json::Value>&), rdkPlugins, (), (const,override));
     MOCK_METHOD((std::shared_ptr<rt_dobby_schema>), config, (), (const,override));
+    MOCK_METHOD(bool, changeProcessArgs, (const std::string& command), (override));
+    MOCK_METHOD(bool, addWesterosMount, (const std::string& socketPath), (override));
+    MOCK_METHOD(bool, addEnvironmentVar, (const std::string& envVar), (override));
+    MOCK_METHOD(bool, enableSTrace, (const std::string& logsDir), (override));
+    MOCK_METHOD(std::string, configJson, (), (const,override));
+
 #if defined(LEGACY_COMPONENTS)
     MOCK_METHOD(std::string, spec, (), (const,override));
     MOCK_METHOD((std::map<std::string, Json::Value>&), legacyPlugins, (), (const,override));

@@ -21,7 +21,7 @@
 #include <gmock/gmock.h>
 #include "DobbyStats.h"
 
-class DobbyStatsMock : public DobbyStats {
+class DobbyStatsMock : public DobbyStatsImpl {
 public:
 
     virtual ~DobbyStatsMock() = default;

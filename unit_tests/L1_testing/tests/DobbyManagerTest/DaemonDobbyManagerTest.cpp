@@ -18,7 +18,10 @@
 */
 
 #include <gtest/gtest.h>
+#include "DobbyStreamMock.h"
 #include "DobbyRdkPluginUtilsMock.h"
+#include "DobbyLoggerMock.h"
+#include "DobbyRunCMock.h"
 #include "DobbyManager.h"
 #include "DobbyContainerMock.h"
 #include "DobbyRdkPluginManagerMock.h"
@@ -33,6 +36,10 @@
 #include "IDobbyUtilsMock.h"
 #include "IDobbyEnvMock.h"
 #include "IAsyncReplySenderMock.h"
+#include "ContainerIdMock.h"
+#include "DobbyFileAccessFixerMock.h"
+#include "DobbyLegacyPluginManagerMock.h"
+#include "DobbyStats.h"
 
 DobbyContainerImpl* DobbyContainer::impl = nullptr;
 DobbyRdkPluginManagerImpl* DobbyRdkPluginManager::impl = nullptr;
@@ -43,6 +50,15 @@ DobbyConfigImpl* DobbyConfig::impl = nullptr;
 DobbyBundleConfigImpl* DobbyBundleConfig::impl = nullptr;
 DobbyRdkPluginUtilsImpl* DobbyRdkPluginUtils::impl = nullptr;
 AI_IPC::IAsyncReplySenderApiImpl* AI_IPC::IAsyncReplySender::impl = nullptr;
+DobbyLegacyPluginManagerImpl* DobbyLegacyPluginManager::impl = nullptr;
+ContainerIdImpl* ContainerId::impl = nullptr;
+DobbyBufferStreamImpl *DobbyBufferStream::impl = nullptr;
+DobbyFileAccessFixerImpl *DobbyFileAccessFixer::impl = nullptr;
+DobbyRunCImpl *DobbyRunC::impl = nullptr;
+DobbyStatsImpl *DobbyStats::impl = nullptr;
+DobbyLoggerImpl *DobbyLogger::impl = nullptr;
+AI_IPC::IpcFileDescriptorApiImpl* AI_IPC::IpcFileDescriptor::impl = nullptr;
+DobbyStartStateImpl *DobbyStartState::impl = nullptr;
 using ::testing::NiceMock;
 
 class DaemonDobbyManagerTest : public ::testing::Test {

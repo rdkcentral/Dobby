@@ -7,6 +7,7 @@ jobs:
     env:
       # For CI, build all optional plugins. Newly developed plugins should be added to this list
       optional_plugins: "-DPLUGIN_TESTPLUGIN=ON -DPLUGIN_GPU=ON -DPLUGIN_LOCALTIME=ON -DPLUGIN_RTSCHEDULING=ON -DPLUGIN_HTTPPROXY=ON -DPLUGIN_APPSERVICES=ON -DPLUGIN_IONMEMORY=ON -DPLUGIN_DEVICEMAPPER=ON -DPLUGIN_OOMCRASH=ON"
+      optional_flags: "-DLEGACY_COMPONENTS=ON -DRDK=ON -DUSE_SYSTEMD=ON"
     strategy:
       fail-fast: false
       matrix:
@@ -21,9 +22,10 @@ jobs:
             coverage: without-coverage
         # The matrix will try all possible combinations of the below arrays
         # If adding a new cmake option, include both the ON and OFF version to ensure the
+        # If adding a RUN_TESTS cmake option, it will build with enabling optional_flags and run the unit tests
         # matrix runs both versions
         build_type: ["Release", "Debug"]
-        extra_flags: ["-DLEGACY_COMPONENTS=ON", "-DLEGACY_COMPONENTS=OFF", "-DUSE_SYSTEMD=ON", "-DUSE_SYSTEMD=OFF"]
+        extra_flags: [ "RUN_TESTS", "-DLEGACY_COMPONENTS=ON", "-DLEGACY_COMPONENTS=OFF", "-DUSE_SYSTEMD=ON", "-DUSE_SYSTEMD=OFF"]
     name: Build in ${{ matrix.build_type }} Mode (${{ matrix.extra_flags }})
     steps:
       - name: checkout
@@ -58,17 +60,23 @@ jobs:
          cd $GITHUB_WORKSPACE
          mkdir build
          cd build
-         cmake -DCMAKE_TOOLCHAIN_FILE="${{ env.TOOLCHAIN_FILE }}" -DRDK_PLATFORM=DEV_VM -DCMAKE_INSTALL_PREFIX:PATH=/usr -DENABLE_DOBBYL1TEST=ON -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} ${{ matrix.extra_flags }} ${{ env.optional_plugins }} ..
+         if [ ${{ matrix.extra_flags }} = "RUN_TESTS" ]
+         then
+             cmake -DCMAKE_TOOLCHAIN_FILE="${{ env.TOOLCHAIN_FILE }}" -DRDK_PLATFORM=DEV_VM -DCMAKE_INSTALL_PREFIX:PATH=/usr -DENABLE_DOBBYL1TEST=ON -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} ${{ env.optional_flags }} ${{ env.optional_plugins }} ..
+         else
+             cmake -DCMAKE_TOOLCHAIN_FILE="${{ env.TOOLCHAIN_FILE }}" -DRDK_PLATFORM=DEV_VM -DCMAKE_INSTALL_PREFIX:PATH=/usr -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} ${{ matrix.extra_flags }} ${{ env.optional_plugins }} ..
+         fi
          make -j $(nproc)
 
       - name: run unit-tests
+        if: ${{ matrix.extra_flags == 'RUN_TESTS' && matrix.build_type == 'Debug' }}
         run: |
           sudo $GITHUB_WORKSPACE/build/unit_tests/L1_testing/tests/DobbyTest/DobbyL1Test
-          sudo $GITHUB_WORKSPACE/build/unit_tests/L1_testing/tests/DobbyUtilsTest/DobbyL1Test_DobbyUtils
+          sudo $GITHUB_WORKSPACE/build/unit_tests/L1_testing/tests/DobbyUtilsTest/DobbyUtilsL1Test
           sudo $GITHUB_WORKSPACE/build/unit_tests/L1_testing/tests/DobbyManagerTest/DobbyManagerL1Test
 
       - name: Generate coverage
-        if: ${{ matrix.coverage == 'with-coverage'}}
+        if: ${{ matrix.coverage == 'with-coverage' && matrix.extra_flags == 'RUN_TESTS' && matrix.build_type == 'Debug' }}
         run: >
           lcov -c
           -o coverage.info
@@ -82,12 +90,12 @@ jobs:
           -o filtered_coverage.info
           &&
           genhtml
-          -o coverage
+          -o coverage/${{ matrix.build_type }}/${{ matrix.extra_flags }}/coverage
           -t "dobby coverage"
           filtered_coverage.info
 
       - name: Upload artifacts
-        if: ${{ !env.ACT }}
+        if: ${{ !env.ACT && matrix.coverage == 'with-coverage' && matrix.extra_flags == 'RUN_TESTS' && matrix.build_type == 'Debug' }}
         uses: actions/upload-artifact@v3
         with:
           name: artifacts
