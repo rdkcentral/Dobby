@@ -1019,9 +1019,9 @@ int32_t DobbyManager::startContainerFromBundle(const ContainerId &id,
     }
 
     // Set Apparmor profile
-    if (mSettings->apparmorSetiings().enabled)
+    if (mSettings->apparmorSettings().enabled)
     {
-        config->setApparmorProfile(mSettings->apparmorSetiings().profileName);
+        config->setApparmorProfile(mSettings->apparmorSettings().profileName);
     }
 
     // Load the RDK plugins from disk (if necessary)

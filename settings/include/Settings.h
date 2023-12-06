@@ -78,7 +78,7 @@ public:
 
     LogRelaySettings logRelaySettings() const override;
     StraceSettings straceSettings() const override;
-    ApparmorSettings apparmorSetiings() const override;
+    ApparmorSettings apparmorSettings() const override;
 
     void dump(int aiLogLevel = -1) const;
 

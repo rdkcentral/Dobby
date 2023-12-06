@@ -508,7 +508,7 @@ IDobbySettings::StraceSettings Settings::straceSettings() const
     return mStraceSettings;
 }
 
-IDobbySettings::ApparmorSettings Settings::apparmorSetiings() const
+IDobbySettings::ApparmorSettings Settings::apparmorSettings() const
 {
     return mApparmorSettings;
 }

@@ -232,9 +232,9 @@ public:
      *  Apparmor settings
      *
      *      - enabled
-     *          Path to directory where strace logs will be written
-     *      - apps
-     *          A list of app names that should be run with strace.
+     *          Specifies if apparmor profile should be set for containered apps
+     *      - profileName
+     *          A name of default apparmor profile used for containered apps
      *
      */
     struct ApparmorSettings
@@ -243,7 +243,7 @@ public:
         std::string profileName;
     };
 
-    virtual ApparmorSettings apparmorSetiings() const = 0;
+    virtual ApparmorSettings apparmorSettings() const = 0;
 };
 
 #endif // !defined(IDOBBYSETTINGS_H)
