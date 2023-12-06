@@ -132,6 +132,8 @@ public:
     void printCommand() const;
     bool enableSTrace(const std::string& logsDir);
 
+    void setApparmorProfile(const std::string& profileName);
+
 // protected methods for derived classes to use
 protected:
     bool writeConfigJsonImpl(const std::string& filePath) const;
@@ -144,8 +146,7 @@ protected:
     bool convertToCompliant(const ContainerId& id,
                             std::shared_ptr<rt_dobby_schema> cfg,
                             const std::string& bundlePath);
-    bool isApparmorProfileLoaded(char *profile);
-    bool setDobbyDefaultApparmorProfile(std::shared_ptr<rt_dobby_schema> cfg);
+    bool isApparmorProfileLoaded(const char *profile) const;
 
     struct DevNode
     {
