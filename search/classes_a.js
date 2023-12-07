@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['journaldsink_1006',['JournaldSink',['../classJournaldSink.html',1,'']]]
+  ['journaldsink_1009',['JournaldSink',['../classJournaldSink.html',1,'']]]
 ];

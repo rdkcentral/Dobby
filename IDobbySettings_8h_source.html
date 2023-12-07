@@ -188,9 +188,18 @@ $(function() {
 <div class="line"><a name="l00226"></a><span class="lineno">  226</span>&#160;    };</div>
 <div class="line"><a name="l00227"></a><span class="lineno">  227</span>&#160; </div>
 <div class="line"><a name="l00228"></a><span class="lineno">  228</span>&#160;    <span class="keyword">virtual</span> <a class="code" href="structIDobbySettings_1_1StraceSettings.html">StraceSettings</a> straceSettings() <span class="keyword">const</span> = 0;</div>
-<div class="line"><a name="l00229"></a><span class="lineno">  229</span>&#160;};</div>
-<div class="line"><a name="l00230"></a><span class="lineno">  230</span>&#160; </div>
-<div class="line"><a name="l00231"></a><span class="lineno">  231</span>&#160;<span class="preprocessor">#endif </span><span class="comment">// !defined(IDOBBYSETTINGS_H)</span></div>
+<div class="line"><a name="l00229"></a><span class="lineno">  229</span>&#160; </div>
+<div class="line"><a name="l00230"></a><span class="lineno">  230</span>&#160;    <span class="comment">// -------------------------------------------------------------------------</span></div>
+<div class="line"><a name="l00240"></a><span class="lineno"><a class="line" href="structIDobbySettings_1_1ApparmorSettings.html">  240</a></span>&#160;<span class="comment"></span>    <span class="keyword">struct </span><a class="code" href="structIDobbySettings_1_1ApparmorSettings.html">ApparmorSettings</a></div>
+<div class="line"><a name="l00241"></a><span class="lineno">  241</span>&#160;    {</div>
+<div class="line"><a name="l00242"></a><span class="lineno">  242</span>&#160;        <span class="keywordtype">bool</span> enabled;</div>
+<div class="line"><a name="l00243"></a><span class="lineno">  243</span>&#160;        std::string profileName;</div>
+<div class="line"><a name="l00244"></a><span class="lineno">  244</span>&#160;    };</div>
+<div class="line"><a name="l00245"></a><span class="lineno">  245</span>&#160; </div>
+<div class="line"><a name="l00246"></a><span class="lineno">  246</span>&#160;    <span class="keyword">virtual</span> <a class="code" href="structIDobbySettings_1_1ApparmorSettings.html">ApparmorSettings</a> apparmorSettings() <span class="keyword">const</span> = 0;</div>
+<div class="line"><a name="l00247"></a><span class="lineno">  247</span>&#160;};</div>
+<div class="line"><a name="l00248"></a><span class="lineno">  248</span>&#160; </div>
+<div class="line"><a name="l00249"></a><span class="lineno">  249</span>&#160;<span class="preprocessor">#endif </span><span class="comment">// !defined(IDOBBYSETTINGS_H)</span></div>
 <div class="ttc" id="aclassIDobbySettings_html"><div class="ttname"><a href="classIDobbySettings.html">IDobbySettings</a></div><div class="ttdoc">Interface provided to the library at startup, contains the configuration options for Dobby.</div><div class="ttdef"><b>Definition:</b> IDobbySettings.h:50</div></div>
 <div class="ttc" id="aclassIDobbySettings_html_a021a6f9309f0f09f9c95150be3477ed4"><div class="ttname"><a href="classIDobbySettings.html#a021a6f9309f0f09f9c95150be3477ed4">IDobbySettings::addressRangeStr</a></div><div class="ttdeci">virtual std::string addressRangeStr() const =0</div><div class="ttdoc">Returns the Dobby network address range in string format.</div></div>
 <div class="ttc" id="aclassIDobbySettings_html_a14ccca410e5a741ed194a315721d62cf"><div class="ttname"><a href="classIDobbySettings.html#a14ccca410e5a741ed194a315721d62cf">IDobbySettings::gpuAccessSettings</a></div><div class="ttdeci">virtual std::shared_ptr&lt; HardwareAccessSettings &gt; gpuAccessSettings() const =0</div><div class="ttdoc">Returns any extra details needed to access the GPU inside the container.</div></div>
@@ -202,6 +211,7 @@ $(function() {
 <div class="ttc" id="aclassIDobbySettings_html_a9f4d6f1ccd1ba9c04d268ce28e573c31"><div class="ttname"><a href="classIDobbySettings.html#a9f4d6f1ccd1ba9c04d268ce28e573c31">IDobbySettings::workspaceDir</a></div><div class="ttdeci">virtual std::string workspaceDir() const =0</div><div class="ttdoc">Should return the path to a directory used to store temporary data like runc bundles.</div></div>
 <div class="ttc" id="aclassIDobbySettings_html_aa066f045cc7a8a4de6b7ef64510f6e90"><div class="ttname"><a href="classIDobbySettings.html#aa066f045cc7a8a4de6b7ef64510f6e90">IDobbySettings::extraEnvVariables</a></div><div class="ttdeci">virtual std::map&lt; std::string, std::string &gt; extraEnvVariables() const =0</div><div class="ttdoc">A list of extra environment variables that will be set for all containers.</div></div>
 <div class="ttc" id="aclassIDobbySettings_html_ae350ffa8f42db1af7a6f59ecddb8d13a"><div class="ttname"><a href="classIDobbySettings.html#ae350ffa8f42db1af7a6f59ecddb8d13a">IDobbySettings::persistentDir</a></div><div class="ttdeci">virtual std::string persistentDir() const =0</div><div class="ttdoc">Should return a path to a directory on a persistent storage mount.</div></div>
+<div class="ttc" id="astructIDobbySettings_1_1ApparmorSettings_html"><div class="ttname"><a href="structIDobbySettings_1_1ApparmorSettings.html">IDobbySettings::ApparmorSettings</a></div><div class="ttdef"><b>Definition:</b> IDobbySettings.h:241</div></div>
 <div class="ttc" id="astructIDobbySettings_1_1ExtraMount_html"><div class="ttname"><a href="structIDobbySettings_1_1ExtraMount.html">IDobbySettings::ExtraMount</a></div><div class="ttdef"><b>Definition:</b> IDobbySettings.h:107</div></div>
 <div class="ttc" id="astructIDobbySettings_1_1HardwareAccessSettings_html"><div class="ttname"><a href="structIDobbySettings_1_1HardwareAccessSettings.html">IDobbySettings::HardwareAccessSettings</a></div><div class="ttdef"><b>Definition:</b> IDobbySettings.h:137</div></div>
 <div class="ttc" id="astructIDobbySettings_1_1LogRelaySettings_html"><div class="ttname"><a href="structIDobbySettings_1_1LogRelaySettings.html">IDobbySettings::LogRelaySettings</a></div><div class="ttdef"><b>Definition:</b> IDobbySettings.h:201</div></div>
