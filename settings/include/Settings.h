@@ -77,8 +77,8 @@ public:
     Json::Value rdkPluginsData() const override;
 
     LogRelaySettings logRelaySettings() const override;
-
     StraceSettings straceSettings() const override;
+    ApparmorSettings apparmorSettings() const override;
 
     void dump(int aiLogLevel = -1) const;
 
@@ -130,6 +130,7 @@ private:
 
     LogRelaySettings mLogRelaySettings;
     StraceSettings mStraceSettings;
+    ApparmorSettings mApparmorSettings;
 };
 
 #endif // !defined(SETTINGS_H)

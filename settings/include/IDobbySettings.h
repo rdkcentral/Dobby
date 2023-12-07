@@ -226,6 +226,24 @@ public:
     };
 
     virtual StraceSettings straceSettings() const = 0;
+
+    // -------------------------------------------------------------------------
+    /**
+     *  Apparmor settings
+     *
+     *      - enabled
+     *          Specifies if apparmor profile should be set for containered apps
+     *      - profileName
+     *          A name of default apparmor profile used for containered apps
+     *
+     */
+    struct ApparmorSettings
+    {
+        bool enabled;
+        std::string profileName;
+    };
+
+    virtual ApparmorSettings apparmorSettings() const = 0;
 };
 
 #endif // !defined(IDOBBYSETTINGS_H)

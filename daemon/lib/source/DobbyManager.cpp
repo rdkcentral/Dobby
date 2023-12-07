@@ -651,6 +651,9 @@ bool DobbyManager::customiseConfig(const std::shared_ptr<DobbyConfig> &config,
 
     if (shouldEnableSTrace(config))
     {
+        // Start container with strace.
+        // It should be done in customiseConfig so that change in strace params
+        // would not require to reinstall container bundle.
         config->enableSTrace(mSettings->straceSettings().logsDir);
         changesMade = true;
     }
@@ -1013,6 +1016,12 @@ int32_t DobbyManager::startContainerFromBundle(const ContainerId &id,
     {
         AI_LOG_ERROR_EXIT("failed to create 'start state' object");
         return -1;
+    }
+
+    // Set Apparmor profile
+    if (mSettings->apparmorSettings().enabled)
+    {
+        config->setApparmorProfile(mSettings->apparmorSettings().profileName);
     }
 
     // Load the RDK plugins from disk (if necessary)

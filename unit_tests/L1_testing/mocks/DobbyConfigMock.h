@@ -34,6 +34,7 @@ public:
     MOCK_METHOD(bool, addWesterosMount, (const std::string& socketPath), (override));
     MOCK_METHOD(bool, addEnvironmentVar, (const std::string& envVar), (override));
     MOCK_METHOD(bool, enableSTrace, (const std::string& logsDir), (override));
+    MOCK_METHOD(void, setApparmorProfile, (const std::string& profileName), (override));
     MOCK_METHOD(std::string, configJson, (), (const,override));
 
 #if defined(LEGACY_COMPONENTS)

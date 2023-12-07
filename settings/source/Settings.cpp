@@ -333,6 +333,32 @@ Settings::Settings(const Json::Value& settings)
             }
         }
     }
+
+    // Process apparmor settings
+    {
+        Json::Value apparmorSettings = Json::Path(".apparmor").resolve(settings);
+        if (!apparmorSettings.isNull())
+        {
+            if (apparmorSettings.isObject())
+            {
+                const Json::Value enabled = apparmorSettings["enabled"];
+                if (enabled.isBool())
+                    mApparmorSettings.enabled = enabled.asBool();
+                else
+                    AI_LOG_ERROR("Invalid entry in apparmor.enabled in JSON settings file");
+
+                const Json::Value profile = apparmorSettings["defaultProfile"];
+                if (profile.isString())
+                    mApparmorSettings.profileName = profile.asString();
+                else
+                    AI_LOG_ERROR("Invalid entry in apparmor.defaultProfile in JSON settings file");
+            }
+            else
+            {
+                AI_LOG_ERROR("Invalid apparmor type in settings file, should be object");
+            }
+        }
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -348,9 +374,12 @@ void Settings::setDefaults()
 #if defined(RDK)
     mWorkspaceDir = getPathFromEnv("AI_WORKSPACE_PATH", "/var/volatile/rdk");
     mPersistentDir = getPathFromEnv("AI_PERSISTENT_PATH", "/opt/persistent/rdk");
+    mApparmorSettings.enabled = true;
+    mApparmorSettings.profileName = "dobby_default";
 #else
     mWorkspaceDir = getPathFromEnv("AI_WORKSPACE_PATH", "/tmp/ai-workspace-fallback");
     mPersistentDir = getPathFromEnv("AI_PERSISTENT_PATH", "/tmp/ai-flash-fallback");
+    mApparmorSettings.enabled = false;
 #endif
 }
 
@@ -479,6 +508,11 @@ IDobbySettings::StraceSettings Settings::straceSettings() const
     return mStraceSettings;
 }
 
+IDobbySettings::ApparmorSettings Settings::apparmorSettings() const
+{
+    return mApparmorSettings;
+}
+
 // -----------------------------------------------------------------------------
 /**
  *  @brief Debugging function to dump the settings to the log - info level.
@@ -514,6 +548,9 @@ void Settings::dump(int aiLogLevel) const
     {
         __AI_LOG_PRINTF(aiLogLevel, "settings.straceSettings.apps[%u]='%s'", i++, app.c_str());
     }
+
+    __AI_LOG_PRINTF(aiLogLevel, "settings.apparmorSettings.enabled='%s'", mApparmorSettings.enabled ? "true" : "false");
+    __AI_LOG_PRINTF(aiLogLevel, "settings.apparmorSettings.defaultProfile='%s'", mApparmorSettings.profileName.c_str());
 
     dumpHardwareAccess(aiLogLevel, "gpu", mGpuHardwareAccess);
     dumpHardwareAccess(aiLogLevel, "vpu", mVpuHardwareAccess);

@@ -37,5 +37,6 @@ class IDobbySettingsMock : public IDobbySettings {
     MOCK_METHOD(Json::Value, rdkPluginsData, (), (const, override));
     MOCK_METHOD(LogRelaySettings, logRelaySettings, (), (const, override));
     MOCK_METHOD(StraceSettings, straceSettings, (), (const, override));
+    MOCK_METHOD(ApparmorSettings, apparmorSettings, (), (const, override));
 };
 

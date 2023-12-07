@@ -772,20 +772,18 @@ bool DobbyConfig::updateBundleConfig(const ContainerId& id, std::shared_ptr<rt_d
 
 // -----------------------------------------------------------------------------
 /**
- *  @brief Verify and Write bundle config apparmorProfile string to a file.
+ *  @brief Check if apparmor profile is loaded
  *
- *  @param[in]  profile  The name of apparmor profile to write to.
+ *  @param[in]  profile  The name of apparmor profile.
  *
  *  @return true if the apparmor profile was loaded in kernel space, otherwise false.
  */
 
-bool DobbyConfig::isApparmorProfileLoaded(char *profile)
+bool DobbyConfig::isApparmorProfileLoaded(const char *profile) const
 {
     FILE *fp = nullptr;
     char line[256];
     bool status = false;
-    char* ptr;
-    std::string str;
 
     fp = fopen("/sys/kernel/security/apparmor/profiles", "r");
 
@@ -795,17 +793,9 @@ bool DobbyConfig::isApparmorProfileLoaded(char *profile)
         return status;
     }
 
-    while (!feof(fp))
+    while (fgets(line, sizeof(line), fp))
     {
-        fgets (line, sizeof(line), fp);
-        ptr = strchr(line,'\n');
-
-        if (ptr)
-            *ptr = '\0';
-
-            str = line;
-
-        if (str.find(profile) != -1)
+        if (strstr(line, profile))
         {
             status = true;
             AI_LOG_INFO("Apparmor profile [%s] is loaded", profile);
@@ -817,8 +807,24 @@ bool DobbyConfig::isApparmorProfileLoaded(char *profile)
     return status;
 }
 
-bool DobbyConfig::setDobbyDefaultApparmorProfile(std::shared_ptr<rt_dobby_schema> cfg)
+// -----------------------------------------------------------------------------
+/**
+ *  @brief Set apparmor profile in config.
+ *
+ *  Checks if profile from config is loaded. If not uses default profile if it
+ *  is loaded.
+ *
+ *  @param[in]  defaultProfileName  The name of the default apparmor profile.
+ */
+void DobbyConfig::setApparmorProfile(const std::string& defaultProfileName)
 {
+    std::shared_ptr<rt_dobby_schema> cfg = config();
+    if (cfg == nullptr)
+    {
+        AI_LOG_ERROR("Invalid bundle config");
+        return;
+    }
+
     bool status = false;
 
     if (cfg->process->apparmor_profile)
@@ -828,11 +834,15 @@ bool DobbyConfig::setDobbyDefaultApparmorProfile(std::shared_ptr<rt_dobby_schema
 
     if (!status)
     {
-        cfg->process->apparmor_profile = strdup("dobby_default");
+        cfg->process->apparmor_profile = strdup(defaultProfileName.c_str());
         status = isApparmorProfileLoaded(cfg->process->apparmor_profile);
     }
 
-    return status;
+    if (!status)
+    {
+        cfg->process->apparmor_profile = nullptr;
+        AI_LOG_INFO("No apparmor profile is loaded");
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -855,12 +865,6 @@ bool DobbyConfig::convertToCompliant(const ContainerId& id, std::shared_ptr<rt_d
     {
         AI_LOG_ERROR_EXIT("Invalid bundle config");
         return false;
-    }
-
-    if (!setDobbyDefaultApparmorProfile(cfg))
-    {
-       cfg->process->apparmor_profile = nullptr;
-       AI_LOG_INFO("No apparmor profile is loaded");
     }
 
     // check config version and process as needed
