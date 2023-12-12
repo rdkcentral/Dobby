@@ -88,7 +88,7 @@ Vagrant.configure("2") do |config|
     config.vm.provision "shell", inline: <<-SHELL
         figlet DEPENDENCIES  # ASCII banner
 
-        apt install -y build-essential cmake make git gcc pkgconf libtool libctemplate-dev libjsoncpp-dev libjsoncpp1 libdbus-1-dev libsystemd-dev libyajl-dev libcap-dev go-md2man autoconf automake libseccomp-dev libboost-dev valgrind libcunit1-dev liblog4c-dev libfreetype6-dev libjpeg-dev xorg-dev python3 python3-pip libarchive-dev libcurl4 libcurl4-gnutls-dev libssl-dev libgpgme11-dev libtool-bin libarchive13 bison flex
+        apt install -y build-essential cmake make git gcc pkgconf libtool libctemplate-dev libjsoncpp-dev libjsoncpp1 libdbus-1-dev libsystemd-dev libyajl-dev libcap-dev go-md2man autoconf automake libseccomp-dev libboost-dev valgrind libcunit1-dev liblog4c-dev libfreetype6-dev libjpeg-dev xorg-dev python3 python3-pip libarchive-dev libcurl4 libcurl4-gnutls-dev libssl-dev libgpgme11-dev libtool-bin libarchive13 bison flex clang
         #
         # Create build folders, links etc...
         #
@@ -143,6 +143,22 @@ Vagrant.configure("2") do |config|
         ./autogen.sh
         ./configure --prefix=/usr --sysconfdir=/etc --disable-static
         sudo make install -j$(nproc)
+    SHELL
+
+    ##################################################
+    #
+    # Clone googletest repo and install
+    #
+    config.vm.provision "shell", privileged: false, inline: <<-SHELL
+	figlet googletest  # ASCII banner
+	mkdir ~/googletest
+	cd ~/googletest
+	git clone https://github.com/google/googletest.git .
+	mkdir build
+	cd build
+	cmake ..
+	make -j$(nproc)
+	sudo make install
     SHELL
 
     ##################################################
