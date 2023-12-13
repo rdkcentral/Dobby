@@ -40,7 +40,6 @@ public:
     virtual ~DobbyConfigImpl() =default;
 
     virtual bool writeConfigJson(const std::string& filePath) const = 0;
-    virtual const std::map<std::string, Json::Value>& rdkPlugins() const = 0;
     virtual std::shared_ptr<rt_dobby_schema> config() const = 0;
     virtual bool changeProcessArgs(const std::string& command) = 0;
     virtual bool addWesterosMount(const std::string& socketPath) = 0;
@@ -48,11 +47,6 @@ public:
     virtual bool enableSTrace(const std::string& logsDir) = 0;
     virtual void setApparmorProfile(const std::string& profileName) = 0;
     virtual std::string configJson() const = 0;
-
-#if defined(LEGACY_COMPONENTS)
-    virtual std::string spec() const =0;
-    virtual const std::map<std::string, Json::Value>& legacyPlugins() const = 0;
-#endif //defined(LEGACY_COMPONENTS)
 
 };
 
@@ -67,9 +61,8 @@ public:
     ~DobbyConfig(){}
 
     static void setImpl(DobbyConfigImpl* newImpl);
-    static DobbyConfig* getInstance();
     bool writeConfigJson(const std::string& filePath) const;
-    static const std::map<std::string, Json::Value>& rdkPlugins();
+    virtual const std::map<std::string, Json::Value>& rdkPlugins() const = 0;
     const std::shared_ptr<rt_dobby_schema> config();
     bool changeProcessArgs(const std::string& command);
     bool addWesterosMount(const std::string& socketPath);
@@ -79,8 +72,9 @@ public:
     const std::string configJson() const;
 
 #if defined(LEGACY_COMPONENTS)
-    static const std::string spec();
-    static const std::map<std::string, Json::Value>& legacyPlugins();
+    virtual const std::string spec() const
+    { return std::string(); }
+    virtual const std::map<std::string, Json::Value>& legacyPlugins() const = 0;
 #endif //defined(LEGACY_COMPONENTS)
 
 };

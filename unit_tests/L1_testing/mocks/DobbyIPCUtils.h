@@ -20,7 +20,7 @@
 #define DOBBYIPCUTILS_H
 
 #include <IIpcService.h>
-
+#include "IDobbyIPCUtils.h"
 #include <map>
 #include <mutex>
 #include <functional>
@@ -28,11 +28,21 @@
 
 class DobbyIPCUtilsImpl
 {
-  public:
-  virtual bool setAIDbusAddress(bool privateBus, const std::string &address) = 0;
+    public:
+    virtual bool setAIDbusAddress(bool privateBus, const std::string &address) = 0;
+    virtual std::shared_ptr<AI_IPC::IAsyncReplyGetter> ipcInvokeMethod(const IDobbyIPCUtils::BusType &bus,const AI_IPC::Method &method,const AI_IPC::VariantList &args,int timeoutMs) const = 0;
+    virtual bool ipcInvokeMethod(const IDobbyIPCUtils::BusType &bus,const AI_IPC::Method &method,const AI_IPC::VariantList &args,AI_IPC::VariantList &replyArgs) const = 0;
+    virtual bool ipcEmitSignal(const IDobbyIPCUtils::BusType &bus,const AI_IPC::Signal &signal,const AI_IPC::VariantList &args) const = 0;
+    virtual bool ipcServiceAvailable(const IDobbyIPCUtils::BusType &bus,const std::string &serviceName) const = 0;
+    virtual int ipcRegisterServiceHandler(const IDobbyIPCUtils::BusType &bus,const std::string &serviceName,const std::function<void(bool)> &handlerFunc) = 0;
+    virtual int ipcRegisterSignalHandler(const IDobbyIPCUtils::BusType &bus,const AI_IPC::Signal &signal,const AI_IPC::SignalHandler &handlerFunc) = 0;
+    virtual void ipcUnregisterHandler(const IDobbyIPCUtils::BusType &bus, int handlerId) = 0;
+    virtual std::string ipcDbusAddress(const IDobbyIPCUtils::BusType &bus) const = 0;
+    virtual std::string ipcDbusSocketPath(const IDobbyIPCUtils::BusType &bus) const = 0;
+
 };
 
-class DobbyIPCUtils
+class DobbyIPCUtils : public IDobbyIPCUtils
 {
 
 protected:
@@ -47,6 +57,15 @@ public:
     static void setImpl(DobbyIPCUtilsImpl* newImpl);
     static DobbyIPCUtils* getInstance();
     bool setAIDbusAddress(bool privateBus, const std::string &address);
+    std::shared_ptr<AI_IPC::IAsyncReplyGetter> ipcInvokeMethod(const BusType &bus,const AI_IPC::Method &method,const AI_IPC::VariantList &args,int timeoutMs) const override;
+    bool ipcInvokeMethod(const BusType &bus,const AI_IPC::Method &method,const AI_IPC::VariantList &args,AI_IPC::VariantList &replyArgs) const override;
+    bool ipcEmitSignal(const BusType &bus,const AI_IPC::Signal &signal,const AI_IPC::VariantList &args) const override;
+    bool ipcServiceAvailable(const BusType &bus,const std::string &serviceName) const override;
+    int ipcRegisterServiceHandler(const BusType &bus,const std::string &serviceName,const std::function<void(bool)> &handlerFunc) override;
+    int ipcRegisterSignalHandler(const BusType &bus,const AI_IPC::Signal &signal,const AI_IPC::SignalHandler &handlerFunc) override;
+    void ipcUnregisterHandler(const BusType &bus, int handlerId) override;
+    std::string ipcDbusAddress(const BusType &bus) const override;
+    std::string ipcDbusSocketPath(const BusType &bus) const override;
 };
 
 #endif

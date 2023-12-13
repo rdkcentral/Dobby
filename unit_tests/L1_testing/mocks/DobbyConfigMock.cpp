@@ -26,16 +26,6 @@ void DobbyConfig::setImpl(DobbyConfigImpl* newImpl)
     impl = newImpl;
 }
 
-DobbyConfig* DobbyConfig::getInstance()
-{
-    static DobbyConfig* instance = nullptr;
-    if (nullptr == instance)
-    {
-       instance = new DobbyConfig();
-    }
-    return instance;
-}
-
 bool DobbyConfig::writeConfigJson(const std::string& filePath) const
 {
    EXPECT_NE(impl, nullptr);
@@ -43,34 +33,11 @@ bool DobbyConfig::writeConfigJson(const std::string& filePath) const
     return impl->writeConfigJson(filePath);
 }
 
-const std::map<std::string, Json::Value>& DobbyConfig::rdkPlugins()
-{
-   EXPECT_NE(impl, nullptr);
-
-    return impl->rdkPlugins();
-}
-
 const std::shared_ptr<rt_dobby_schema> DobbyConfig::config()
 {
    EXPECT_NE(impl, nullptr);
 
     return impl->config();
-}
-
-#if defined(LEGACY_COMPONENTS)
-
-const std::string DobbyConfig::spec()
-{
-   EXPECT_NE(impl, nullptr);
-
-    return impl->spec();
-}
-
-const std::map<std::string, Json::Value>& DobbyConfig::legacyPlugins()
-{
-   EXPECT_NE(impl, nullptr);
-
-    return impl->legacyPlugins();
 }
 
 bool DobbyConfig::changeProcessArgs(const std::string& command) 
@@ -114,8 +81,3 @@ const std::string DobbyConfig::configJson() const
 
     return impl->configJson();
 }
-
-
-#endif //defined(LEGACY_COMPONENTS)
-
-

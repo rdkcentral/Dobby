@@ -47,9 +47,7 @@ const std::string& ContainerId::str() const
 
 const char* ContainerId::c_str() const
 {
-   EXPECT_NE(impl, nullptr);
-
-    return impl->c_str();
+        return mId.c_str();
 }
 
 bool ContainerId::isValidContainerId(const std::string& id)

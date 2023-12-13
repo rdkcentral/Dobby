@@ -24,7 +24,16 @@ DobbyContainer::DobbyContainer(): descriptor(0)
 {
 }
 
-DobbyContainer::DobbyContainer(const std::shared_ptr<const DobbyBundle>& _bundle,const std::shared_ptr<const DobbyConfig>& _config,const std::shared_ptr<const DobbyRootfs>& _rootfs):descriptor(0)
+DobbyContainer::DobbyContainer(const std::shared_ptr<const DobbyBundle>& _bundle,
+                               const std::shared_ptr<const DobbyConfig>& _config,
+                               const std::shared_ptr<const DobbyRootfs>& _rootfs)
+    : descriptor(allocDescriptor())
+    , bundle(_bundle)
+    , config(_config)
+    , rootfs(_rootfs)
+    , containerPid(-1)
+    , hasCurseOfDeath(false)
+    , state(State::Starting)
 {
 }
 
@@ -32,7 +41,7 @@ DobbyContainer::DobbyContainer(const std::shared_ptr<const DobbyBundle>& _bundle
                                const std::shared_ptr<const DobbyConfig>& _config,
                                const std::shared_ptr<const DobbyRootfs>& _rootfs,
                                const std::shared_ptr<const DobbyRdkPluginManager>& _rdkPluginManager)
-    : descriptor(0)
+    : descriptor(allocDescriptor())
     , bundle(_bundle)
     , config(_config)
     , rootfs(_rootfs)
@@ -90,3 +99,9 @@ const std::list<int>& DobbyContainer::files() const
     return impl->files();
 }
 
+int32_t DobbyContainer::allocDescriptor()
+{
+   EXPECT_NE(impl, nullptr);
+
+    return impl->allocDescriptor();
+}

@@ -60,12 +60,13 @@ bool DobbyBundleConfig::restartOnCrash() const
     return impl->restartOnCrash();
 }
 
-bool DobbyBundleConfig::writeConfigJson(const std::string& filePath) const
+#ifdef LEGACY_COMPONENTS
+const std::map<std::string, Json::Value>& DobbyBundleConfig::legacyPlugins() const
 {
-    EXPECT_NE(impl, nullptr);
-
-    return impl->writeConfigJson(filePath);
+   EXPECT_NE(impl, nullptr);
+    return impl->legacyPlugins();
 }
+#endif /* LEGACY_COMPONENTS */
 
 const std::map<std::string, Json::Value>& DobbyBundleConfig::rdkPlugins() const
 {

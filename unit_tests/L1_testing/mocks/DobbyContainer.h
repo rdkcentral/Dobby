@@ -39,6 +39,7 @@ public:
     virtual void clearRestartOnCrash() = 0;
     virtual bool shouldRestart(int statusCode) = 0;
     virtual const std::list<int>& files() const = 0;
+    virtual int32_t allocDescriptor() = 0;
 };
 
 class DobbyContainer {
@@ -77,6 +78,7 @@ public:
     void setRestartOnCrash(const std::list<int>& files);
     void clearRestartOnCrash();
     const std::list<int>& files() const;
+    static int32_t allocDescriptor();
 };
 
 #endif // DOBBYCONTAINER_H

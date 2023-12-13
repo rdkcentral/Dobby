@@ -33,16 +33,16 @@ public:
 
     virtual ~DobbySpecConfigImpl() =default;
 
-    virtual const std::map<std::string, Json::Value>& rdkPlugins() const =0;
-
 #if defined(LEGACY_COMPONENTS)
+    virtual const std::map<std::string, Json::Value>& legacyPlugins() const =0;
     virtual const std::string spec() const =0;
 #endif //defined(LEGACY_COMPONENTS)
+
+    virtual const std::map<std::string, Json::Value>& rdkPlugins() const =0;
 
     virtual bool isValid() const =0;
     virtual std::shared_ptr<rt_dobby_schema> config() const =0;
     virtual bool restartOnCrash() const =0;
-    virtual bool writeConfigJson(const std::string& filePath) const = 0;
 
 };
 
@@ -61,15 +61,16 @@ public:
     static void setImpl(DobbySpecConfigImpl* newImpl);
     static DobbySpecConfig* getInstance();
     bool isValid() const;
-    const std::map<std::string, Json::Value>& rdkPlugins() const;
-#if defined(LEGACY_COMPONENTS)
 
+#if defined(LEGACY_COMPONENTS)
+    const std::map<std::string, Json::Value>& legacyPlugins() const;
     const std::string spec() const;
 #endif //defined(LEGACY_COMPONENTS)
 
+    const std::map<std::string, Json::Value>& rdkPlugins() const;
+
     std::shared_ptr<rt_dobby_schema> config() const;
     bool restartOnCrash() const;
-    bool writeConfigJson(const std::string& filePath) const;
 };
 
 #endif // !defined(DOBBYSPECCONFIG_H)

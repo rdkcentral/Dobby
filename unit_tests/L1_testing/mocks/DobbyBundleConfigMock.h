@@ -27,10 +27,12 @@ class DobbyBundleConfigMock : public DobbyBundleConfigImpl {
 public:
     virtual ~DobbyBundleConfigMock() = default;
 
-    MOCK_METHOD(bool, writeConfigJson, (const std::string& filePath), (const,override));
     MOCK_METHOD(std::shared_ptr<rt_dobby_schema>, config, (), (const,override));
     MOCK_METHOD(bool, restartOnCrash, (), (const,override));
     MOCK_METHOD(bool, isValid, (), (const,override));
+#ifdef LEGACY_COMPONENTS
+    MOCK_METHOD((const std::map<std::string, Json::Value>&), legacyPlugins, (), (const));
+#endif /* LEGACY_COMPONENTS */
     MOCK_METHOD((const std::map<std::string, Json::Value>&), rdkPlugins, (), (const,override));
 };
 
