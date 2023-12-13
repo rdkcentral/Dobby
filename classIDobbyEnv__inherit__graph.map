@@ -1,5 +1,4 @@
 <map id="IDobbyEnv" name="IDobbyEnv">
-<area shape="rect" id="node1" title="Interface that exports the environment of the daemon to plugins." alt="" coords="69,5,161,32"/>
-<area shape="rect" id="node2" href="$classDobbyEnv.html" title="Basic class used to store the stb environment." alt="" coords="5,80,93,107"/>
-<area shape="rect" id="node3" href="$classIDobbyEnvMock.html" title=" " alt="" coords="118,80,245,107"/>
+<area shape="rect" id="node1" title="Interface that exports the environment of the daemon to plugins." alt="" coords="5,5,97,32"/>
+<area shape="rect" id="node2" href="$classDobbyEnv.html" title="Basic class used to store the stb environment." alt="" coords="7,80,95,107"/>
 </map>

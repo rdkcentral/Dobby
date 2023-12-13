@@ -1,4 +1,0 @@
-<map id="IDobbyEnvMock" name="IDobbyEnvMock">
-<area shape="rect" id="node1" title=" " alt="" coords="5,80,132,107"/>
-<area shape="rect" id="node2" href="$classIDobbyEnv.html" title="Interface that exports the environment of the daemon to plugins." alt="" coords="23,5,115,32"/>
-</map>

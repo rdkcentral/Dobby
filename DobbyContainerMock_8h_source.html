@@ -105,7 +105,8 @@ $(function() {
 <div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;    MOCK_METHOD(<span class="keywordtype">void</span>, clearRestartOnCrash, (), (<span class="keyword">override</span>));</div>
 <div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;    MOCK_METHOD(<span class="keywordtype">bool</span>, shouldRestart, (<span class="keywordtype">int</span> statusCode), (<span class="keyword">override</span>));</div>
 <div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;    MOCK_METHOD((<span class="keyword">const</span> std::list&lt;int&gt;&amp;), files, (), (<span class="keyword">const</span>, <span class="keyword">override</span>));</div>
-<div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;};</div>
+<div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;    MOCK_METHOD(int32_t, allocDescriptor, (), (<span class="keyword">override</span>));</div>
+<div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;};</div>
 <div class="ttc" id="aclassDobbyContainerImpl_html"><div class="ttname"><a href="classDobbyContainerImpl.html">DobbyContainerImpl</a></div><div class="ttdef"><b>Definition:</b> DobbyContainer.h:35</div></div>
 <div class="ttc" id="aclassDobbyContainerMock_html"><div class="ttname"><a href="classDobbyContainerMock.html">DobbyContainerMock</a></div><div class="ttdef"><b>Definition:</b> DobbyContainerMock.h:26</div></div>
 </div><!-- fragment --></div><!-- contents -->

@@ -85,10 +85,11 @@ Inheritance diagram for DobbyUtils:</div>
 <div class="dyncontent">
 <div class="center"><img src="classDobbyUtils__inherit__graph.png" border="0" usemap="#aDobbyUtils_inherit__map" alt="Inheritance graph"/></div>
 <map name="aDobbyUtils_inherit__map" id="aDobbyUtils_inherit__map">
-<area shape="rect" title="Utility methods for hooks and the general containiser daemon." alt="" coords="19,229,113,256"/>
-<area shape="rect" href="classIDobbyUtils__v3.html" title="Third version of the interface containing extra functions for working with ebtables." alt="" coords="17,155,115,181"/>
-<area shape="rect" href="classIDobbyUtils__v2.html" title="Second version of the interface containing extra functions for working with iptables." alt="" coords="5,80,127,107"/>
-<area shape="rect" href="classIDobbyUtils__v1.html" title="Interface that exports some utilities that plugins may find useful." alt="" coords="5,5,127,32"/>
+<area shape="rect" title="Utility methods for hooks and the general containiser daemon." alt="" coords="85,229,180,256"/>
+<area shape="rect" href="classIDobbyUtils__v3.html" title="Third version of the interface containing extra functions for working with ebtables." alt="" coords="5,155,127,181"/>
+<area shape="rect" href="classIDobbyUtils__v2.html" title="Second version of the interface containing extra functions for working with iptables." alt="" coords="72,80,193,107"/>
+<area shape="rect" href="classIDobbyUtils__v3.html" title="Third version of the interface containing extra functions for working with ebtables." alt="" coords="151,155,250,181"/>
+<area shape="rect" href="classIDobbyUtils__v1.html" title="Interface that exports some utilities that plugins may find useful." alt="" coords="72,5,193,32"/>
 </map>
 <center><span class="legend">[<a href="graph_legend.html">legend</a>]</span></center></div>
 <div class="dynheader">
@@ -96,22 +97,20 @@ Collaboration diagram for DobbyUtils:</div>
 <div class="dyncontent">
 <div class="center"><img src="classDobbyUtils__coll__graph.png" border="0" usemap="#aDobbyUtils_coll__map" alt="Collaboration graph"/></div>
 <map name="aDobbyUtils_coll__map" id="aDobbyUtils_coll__map">
-<area shape="rect" title="Utility methods for hooks and the general containiser daemon." alt="" coords="119,247,213,273"/>
-<area shape="rect" href="classIDobbyUtils__v3.html" title="Third version of the interface containing extra functions for working with ebtables." alt="" coords="17,157,115,184"/>
-<area shape="rect" href="classIDobbyUtils__v2.html" title="Second version of the interface containing extra functions for working with iptables." alt="" coords="5,81,127,108"/>
-<area shape="rect" href="classIDobbyUtils__v1.html" title="Interface that exports some utilities that plugins may find useful." alt="" coords="5,5,127,32"/>
-<area shape="rect" href="classDobbyUtilsImpl.html" title=" " alt="" coords="139,157,262,184"/>
+<area shape="rect" title="Utility methods for hooks and the general containiser daemon." alt="" coords="153,247,248,273"/>
+<area shape="rect" href="classIDobbyUtils__v3.html" title="Third version of the interface containing extra functions for working with ebtables." alt="" coords="5,157,127,184"/>
+<area shape="rect" href="classIDobbyUtils__v2.html" title="Second version of the interface containing extra functions for working with iptables." alt="" coords="72,81,193,108"/>
+<area shape="rect" href="classIDobbyUtils__v3.html" title="Third version of the interface containing extra functions for working with ebtables." alt="" coords="151,157,250,184"/>
+<area shape="rect" href="classIDobbyUtils__v1.html" title="Interface that exports some utilities that plugins may find useful." alt="" coords="72,5,193,32"/>
+<area shape="rect" href="classDobbyUtilsImpl.html" title=" " alt="" coords="274,157,397,184"/>
 </map>
 <center><span class="legend">[<a href="graph_legend.html">legend</a>]</span></center></div>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a4af42c5118f4bb245403822465abce7e"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classDobbyUtils.html#a4af42c5118f4bb245403822465abce7e">cancelTimer</a> (int timerId) const</td></tr>
-<tr class="memdesc:a4af42c5118f4bb245403822465abce7e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Removes the given timer from the timer queue.  <a href="classDobbyUtils.html#a4af42c5118f4bb245403822465abce7e">More...</a><br /></td></tr>
-<tr class="separator:a4af42c5118f4bb245403822465abce7e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a35da431a186798e86e152a1214223e61"><td class="memItemLeft" align="right" valign="top"><a id="a35da431a186798e86e152a1214223e61"></a>
-int&#160;</td><td class="memItemRight" valign="bottom"><b>startTimer</b> (const std::chrono::microseconds &amp;timeout, bool oneShot, const std::function&lt; bool()&gt; &amp;handler) const</td></tr>
-<tr class="separator:a35da431a186798e86e152a1214223e61"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4ec95adc8de4a99cc4d3ca42f4c6d6a2"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classDobbyUtils.html#a4ec95adc8de4a99cc4d3ca42f4c6d6a2">cancelTimer</a> (int timerId) const override</td></tr>
+<tr class="memdesc:a4ec95adc8de4a99cc4d3ca42f4c6d6a2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Removes the given timer from the timer queue.  <a href="classDobbyUtils.html#a4ec95adc8de4a99cc4d3ca42f4c6d6a2">More...</a><br /></td></tr>
+<tr class="separator:a4ec95adc8de4a99cc4d3ca42f4c6d6a2"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af53933ebb0864b5a1e1acf90d6848799"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classDobbyUtils.html#af53933ebb0864b5a1e1acf90d6848799">loopDeviceAssociate</a> (int fileFd, std::string *loopDevPath) const override</td></tr>
 <tr class="memdesc:af53933ebb0864b5a1e1acf90d6848799"><td class="mdescLeft">&#160;</td><td class="mdescRight">Associates a give file descriptor with a loop device.  <a href="classDobbyUtils.html#af53933ebb0864b5a1e1acf90d6848799">More...</a><br /></td></tr>
 <tr class="separator:af53933ebb0864b5a1e1acf90d6848799"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -160,6 +159,90 @@ bool&#160;</td><td class="memItemRight" valign="bottom"><b>rmdirContents</b> (in
 <tr class="memitem:a9ec402b2d0fd1452c2e6789d1fe34959"><td class="memItemLeft" align="right" valign="top">std::string&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classDobbyUtils.html#a9ec402b2d0fd1452c2e6789d1fe34959">readTextFileAt</a> (int dirFd, const std::string &amp;path, size_t maxLen) const override</td></tr>
 <tr class="memdesc:a9ec402b2d0fd1452c2e6789d1fe34959"><td class="mdescLeft">&#160;</td><td class="mdescRight">Simply read a string from a file.  <a href="classDobbyUtils.html#a9ec402b2d0fd1452c2e6789d1fe34959">More...</a><br /></td></tr>
 <tr class="separator:a9ec402b2d0fd1452c2e6789d1fe34959"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:afb4af2e445814b2003c0b880c22cfaf0"><td class="memItemLeft" align="right" valign="top">unsigned int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classDobbyUtils.html#afb4af2e445814b2003c0b880c22cfaf0">getDriverMajorNumber</a> (const std::string &amp;driverName) const override</td></tr>
+<tr class="memdesc:afb4af2e445814b2003c0b880c22cfaf0"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the major number assigned to a given driver.  <a href="classDobbyUtils.html#afb4af2e445814b2003c0b880c22cfaf0">More...</a><br /></td></tr>
+<tr class="separator:afb4af2e445814b2003c0b880c22cfaf0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa753c68c6770f2900b75690f13ae2351"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classDobbyUtils.html#aa753c68c6770f2900b75690f13ae2351">deviceAllowed</a> (dev_t device) const override</td></tr>
+<tr class="memdesc:aa753c68c6770f2900b75690f13ae2351"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns true if the given device is allowed in the container.  <a href="classDobbyUtils.html#aa753c68c6770f2900b75690f13ae2351">More...</a><br /></td></tr>
+<tr class="separator:aa753c68c6770f2900b75690f13ae2351"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a23fd9a987ebd196d222526690134eadc"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classDobbyUtils.html#a23fd9a987ebd196d222526690134eadc">setIntegerMetaData</a> (const <a class="el" href="classContainerId.html">ContainerId</a> &amp;id, const std::string &amp;key, int value) override</td></tr>
+<tr class="memdesc:a23fd9a987ebd196d222526690134eadc"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sets / Gets integer meta data for the given container.  <a href="classDobbyUtils.html#a23fd9a987ebd196d222526690134eadc">More...</a><br /></td></tr>
+<tr class="separator:a23fd9a987ebd196d222526690134eadc"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a121631584092e82acd0575be3ad78179"><td class="memItemLeft" align="right" valign="top"><a id="a121631584092e82acd0575be3ad78179"></a>
+int&#160;</td><td class="memItemRight" valign="bottom"><b>getIntegerMetaData</b> (const <a class="el" href="classContainerId.html">ContainerId</a> &amp;id, const std::string &amp;key, int defaultValue) const override</td></tr>
+<tr class="separator:a121631584092e82acd0575be3ad78179"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a121da4f1b6e7972f5e014cc5bd76e82f"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classDobbyUtils.html#a121da4f1b6e7972f5e014cc5bd76e82f">setStringMetaData</a> (const <a class="el" href="classContainerId.html">ContainerId</a> &amp;id, const std::string &amp;key, const std::string &amp;value) override</td></tr>
+<tr class="memdesc:a121da4f1b6e7972f5e014cc5bd76e82f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sets / Gets string meta data for the given container.  <a href="classDobbyUtils.html#a121da4f1b6e7972f5e014cc5bd76e82f">More...</a><br /></td></tr>
+<tr class="separator:a121da4f1b6e7972f5e014cc5bd76e82f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8406ae127361fcd2cea0644eddba696d"><td class="memItemLeft" align="right" valign="top"><a id="a8406ae127361fcd2cea0644eddba696d"></a>
+std::string&#160;</td><td class="memItemRight" valign="bottom"><b>getStringMetaData</b> (const <a class="el" href="classContainerId.html">ContainerId</a> &amp;id, const std::string &amp;key, const std::string &amp;defaultValue) const override</td></tr>
+<tr class="separator:a8406ae127361fcd2cea0644eddba696d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a94cba518ab80a1b354dd1134491acbd3"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classDobbyUtils.html#a94cba518ab80a1b354dd1134491acbd3">clearContainerMetaData</a> (const <a class="el" href="classContainerId.html">ContainerId</a> &amp;id) override</td></tr>
+<tr class="memdesc:a94cba518ab80a1b354dd1134491acbd3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Clears all the meta data stored for a given container.  <a href="classDobbyUtils.html#a94cba518ab80a1b354dd1134491acbd3">More...</a><br /></td></tr>
+<tr class="separator:a94cba518ab80a1b354dd1134491acbd3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae944dcf9c7f553bfc9e82b13a8a9b8dc"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classDobbyUtils.html#ae944dcf9c7f553bfc9e82b13a8a9b8dc">insertEbtablesRule</a> (const std::string &amp;args) const override</td></tr>
+<tr class="memdesc:ae944dcf9c7f553bfc9e82b13a8a9b8dc"><td class="mdescLeft">&#160;</td><td class="mdescRight">Inserts the given ebtables rule to the existing set.  <a href="classDobbyUtils.html#ae944dcf9c7f553bfc9e82b13a8a9b8dc">More...</a><br /></td></tr>
+<tr class="separator:ae944dcf9c7f553bfc9e82b13a8a9b8dc"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a091f6ebb80d344852268167793046013"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classDobbyUtils.html#a091f6ebb80d344852268167793046013">deleteEbtablesRule</a> (const std::string &amp;args) const override</td></tr>
+<tr class="memdesc:a091f6ebb80d344852268167793046013"><td class="mdescLeft">&#160;</td><td class="mdescRight">Deletes the given ebtables rule from the existing set.  <a href="classDobbyUtils.html#a091f6ebb80d344852268167793046013">More...</a><br /></td></tr>
+<tr class="separator:a091f6ebb80d344852268167793046013"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a03933ab8451367a0558abe667bf931e7"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classDobbyUtils.html#a03933ab8451367a0558abe667bf931e7">callInNamespaceImpl</a> (pid_t pid, int nsType, const std::function&lt; void()&gt; &amp;func) const override</td></tr>
+<tr class="memdesc:a03933ab8451367a0558abe667bf931e7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Utility function to run some code in a specific namespace of the container.  <a href="classDobbyUtils.html#a03933ab8451367a0558abe667bf931e7">More...</a><br /></td></tr>
+<tr class="separator:a03933ab8451367a0558abe667bf931e7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a86d4c37109273abc67f74de3fecac8c4"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classDobbyUtils.html#a86d4c37109273abc67f74de3fecac8c4">callInNamespaceImpl</a> (int namespaceFd, const std::function&lt; void()&gt; &amp;func) const override</td></tr>
+<tr class="memdesc:a86d4c37109273abc67f74de3fecac8c4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Utility function to run some code in a specific namespace of the container.  <a href="classDobbyUtils.html#a86d4c37109273abc67f74de3fecac8c4">More...</a><br /></td></tr>
+<tr class="separator:a86d4c37109273abc67f74de3fecac8c4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3902be9babf0947712ec8a597742bd6b"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classDobbyUtils.html#a3902be9babf0947712ec8a597742bd6b">startTimerImpl</a> (const std::chrono::milliseconds &amp;timeout, bool oneShot, const std::function&lt; bool()&gt; &amp;handler) const override</td></tr>
+<tr class="memdesc:a3902be9babf0947712ec8a597742bd6b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Adds a new timer to the timer queue.  <a href="classDobbyUtils.html#a3902be9babf0947712ec8a597742bd6b">More...</a><br /></td></tr>
+<tr class="separator:a3902be9babf0947712ec8a597742bd6b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af53933ebb0864b5a1e1acf90d6848799"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classDobbyUtils.html#af53933ebb0864b5a1e1acf90d6848799">loopDeviceAssociate</a> (int fileFd, std::string *loopDevPath) const override</td></tr>
+<tr class="memdesc:af53933ebb0864b5a1e1acf90d6848799"><td class="mdescLeft">&#160;</td><td class="mdescRight">Associates a give file descriptor with a loop device.  <a href="classDobbyUtils.html#af53933ebb0864b5a1e1acf90d6848799">More...</a><br /></td></tr>
+<tr class="separator:af53933ebb0864b5a1e1acf90d6848799"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a04d4c51777f0e057feac12c158847c8b"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classDobbyUtils.html#a04d4c51777f0e057feac12c158847c8b">checkExtImageFile</a> (int dirFd, const std::string &amp;imageFileName, bool repair) const override</td></tr>
+<tr class="memdesc:a04d4c51777f0e057feac12c158847c8b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Runs the e2fsck tool on a file system image to check it's integrity.  <a href="classDobbyUtils.html#a04d4c51777f0e057feac12c158847c8b">More...</a><br /></td></tr>
+<tr class="separator:a04d4c51777f0e057feac12c158847c8b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7ecc2d141a16040faca39c3150b58f70"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classDobbyUtils.html#a7ecc2d141a16040faca39c3150b58f70">formatExtImageFile</a> (int dirFd, const std::string &amp;imageFileName, const std::string &amp;fsType) const override</td></tr>
+<tr class="memdesc:a7ecc2d141a16040faca39c3150b58f70"><td class="mdescLeft">&#160;</td><td class="mdescRight">Runs the mke2fs tool to format a file system image.  <a href="classDobbyUtils.html#a7ecc2d141a16040faca39c3150b58f70">More...</a><br /></td></tr>
+<tr class="separator:a7ecc2d141a16040faca39c3150b58f70"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a881f8d1c342d6c887a6db0a7a0ba3112"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classDobbyUtils.html#a881f8d1c342d6c887a6db0a7a0ba3112">mkdirRecursive</a> (const std::string &amp;path, mode_t mode) const override</td></tr>
+<tr class="memdesc:a881f8d1c342d6c887a6db0a7a0ba3112"><td class="mdescLeft">&#160;</td><td class="mdescRight">Makes a directory and all parent directories as needed.  <a href="classDobbyUtils.html#a881f8d1c342d6c887a6db0a7a0ba3112">More...</a><br /></td></tr>
+<tr class="separator:a881f8d1c342d6c887a6db0a7a0ba3112"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aea841dd2249499e46d5a610328be5698"><td class="memItemLeft" align="right" valign="top"><a id="aea841dd2249499e46d5a610328be5698"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>mkdirRecursive</b> (int dirFd, const std::string &amp;path, mode_t mode) const override</td></tr>
+<tr class="separator:aea841dd2249499e46d5a610328be5698"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4ef58044baea510ce498eb19f5dd6c1e"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classDobbyUtils.html#a4ef58044baea510ce498eb19f5dd6c1e">rmdirRecursive</a> (const std::string &amp;path) const override</td></tr>
+<tr class="memdesc:a4ef58044baea510ce498eb19f5dd6c1e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Removes a directory and all it's contents.  <a href="classDobbyUtils.html#a4ef58044baea510ce498eb19f5dd6c1e">More...</a><br /></td></tr>
+<tr class="separator:a4ef58044baea510ce498eb19f5dd6c1e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aca5c20e4ee5b99a35300469fba3556c3"><td class="memItemLeft" align="right" valign="top"><a id="aca5c20e4ee5b99a35300469fba3556c3"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>rmdirRecursive</b> (int dirFd, const std::string &amp;path) const override</td></tr>
+<tr class="separator:aca5c20e4ee5b99a35300469fba3556c3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2134906151eb7e6b9e4300ab5b8f20ef"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classDobbyUtils.html#a2134906151eb7e6b9e4300ab5b8f20ef">rmdirContents</a> (const std::string &amp;path) const override</td></tr>
+<tr class="memdesc:a2134906151eb7e6b9e4300ab5b8f20ef"><td class="mdescLeft">&#160;</td><td class="mdescRight">Removes the contents of a directory but leave the actual directory in place.  <a href="classDobbyUtils.html#a2134906151eb7e6b9e4300ab5b8f20ef">More...</a><br /></td></tr>
+<tr class="separator:a2134906151eb7e6b9e4300ab5b8f20ef"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab3d68994783455a05cff68e3c9c0e131"><td class="memItemLeft" align="right" valign="top"><a id="ab3d68994783455a05cff68e3c9c0e131"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>rmdirContents</b> (int dirFd, const std::string &amp;path) const override</td></tr>
+<tr class="separator:ab3d68994783455a05cff68e3c9c0e131"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af7a34fc77d3164723abe8be5bbde12ca"><td class="memItemLeft" align="right" valign="top"><a id="af7a34fc77d3164723abe8be5bbde12ca"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>rmdirContents</b> (int dirFd) const override</td></tr>
+<tr class="separator:af7a34fc77d3164723abe8be5bbde12ca"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae720f3883de1fe932bc12f97601b5ec1"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classDobbyUtils.html#ae720f3883de1fe932bc12f97601b5ec1">cleanMountLostAndFound</a> (const std::string &amp;mountPoint, const std::string &amp;logTag) const override</td></tr>
+<tr class="memdesc:ae720f3883de1fe932bc12f97601b5ec1"><td class="mdescLeft">&#160;</td><td class="mdescRight">Logs and deletes any files found in the lost+found directory of the mount point.  <a href="classDobbyUtils.html#ae720f3883de1fe932bc12f97601b5ec1">More...</a><br /></td></tr>
+<tr class="separator:ae720f3883de1fe932bc12f97601b5ec1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a94ab2a74e77d1bcb86c896830b5b98b6"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classDobbyUtils.html#a94ab2a74e77d1bcb86c896830b5b98b6">getNamespaceFd</a> (pid_t pid, int nsType) const override</td></tr>
+<tr class="memdesc:a94ab2a74e77d1bcb86c896830b5b98b6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns a file descriptor to the given namespace of the process.  <a href="classDobbyUtils.html#a94ab2a74e77d1bcb86c896830b5b98b6">More...</a><br /></td></tr>
+<tr class="separator:a94ab2a74e77d1bcb86c896830b5b98b6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9209146a91170fad8b62b91e53004d93"><td class="memItemLeft" align="right" valign="top"><a id="a9209146a91170fad8b62b91e53004d93"></a>
+bool&#160;</td><td class="memItemRight" valign="bottom"><b>writeTextFileAt</b> (int dirFd, const std::string &amp;path, const std::string &amp;str, int flags, mode_t mode) const override</td></tr>
+<tr class="separator:a9209146a91170fad8b62b91e53004d93"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ada13dac7e387faad2024c716e90e2d70"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classDobbyUtils.html#ada13dac7e387faad2024c716e90e2d70">writeTextFile</a> (const std::string &amp;path, const std::string &amp;str, int flags, mode_t mode) const override</td></tr>
+<tr class="memdesc:ada13dac7e387faad2024c716e90e2d70"><td class="mdescLeft">&#160;</td><td class="mdescRight">Simply writes a string into a file.  <a href="classDobbyUtils.html#ada13dac7e387faad2024c716e90e2d70">More...</a><br /></td></tr>
+<tr class="separator:ada13dac7e387faad2024c716e90e2d70"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a36712d5edf8f7a660c1fb28c8c6bc658"><td class="memItemLeft" align="right" valign="top">std::string&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classDobbyUtils.html#a36712d5edf8f7a660c1fb28c8c6bc658">readTextFile</a> (const std::string &amp;path, size_t maxLen) const override</td></tr>
+<tr class="memdesc:a36712d5edf8f7a660c1fb28c8c6bc658"><td class="mdescLeft">&#160;</td><td class="mdescRight">Simply read a string from a file.  <a href="classDobbyUtils.html#a36712d5edf8f7a660c1fb28c8c6bc658">More...</a><br /></td></tr>
+<tr class="separator:a36712d5edf8f7a660c1fb28c8c6bc658"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9ec402b2d0fd1452c2e6789d1fe34959"><td class="memItemLeft" align="right" valign="top"><a id="a9ec402b2d0fd1452c2e6789d1fe34959"></a>
+std::string&#160;</td><td class="memItemRight" valign="bottom"><b>readTextFileAt</b> (int dirFd, const std::string &amp;path, size_t maxLen) const override</td></tr>
+<tr class="separator:a9ec402b2d0fd1452c2e6789d1fe34959"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4ec95adc8de4a99cc4d3ca42f4c6d6a2"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classDobbyUtils.html#a4ec95adc8de4a99cc4d3ca42f4c6d6a2">cancelTimer</a> (int timerId) const override</td></tr>
 <tr class="memdesc:a4ec95adc8de4a99cc4d3ca42f4c6d6a2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Removes the given timer from the timer queue.  <a href="classDobbyUtils.html#a4ec95adc8de4a99cc4d3ca42f4c6d6a2">More...</a><br /></td></tr>
 <tr class="separator:a4ec95adc8de4a99cc4d3ca42f4c6d6a2"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -181,8 +264,8 @@ int&#160;</td><td class="memItemRight" valign="bottom"><b>getIntegerMetaData</b>
 <tr class="memitem:a8406ae127361fcd2cea0644eddba696d"><td class="memItemLeft" align="right" valign="top"><a id="a8406ae127361fcd2cea0644eddba696d"></a>
 std::string&#160;</td><td class="memItemRight" valign="bottom"><b>getStringMetaData</b> (const <a class="el" href="classContainerId.html">ContainerId</a> &amp;id, const std::string &amp;key, const std::string &amp;defaultValue) const override</td></tr>
 <tr class="separator:a8406ae127361fcd2cea0644eddba696d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a94cba518ab80a1b354dd1134491acbd3"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classDobbyUtils.html#a94cba518ab80a1b354dd1134491acbd3">clearContainerMetaData</a> (const <a class="el" href="classContainerId.html">ContainerId</a> &amp;id) override</td></tr>
-<tr class="memdesc:a94cba518ab80a1b354dd1134491acbd3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Clears all the meta data stored for a given container.  <a href="classDobbyUtils.html#a94cba518ab80a1b354dd1134491acbd3">More...</a><br /></td></tr>
+<tr class="memitem:a94cba518ab80a1b354dd1134491acbd3"><td class="memItemLeft" align="right" valign="top"><a id="a94cba518ab80a1b354dd1134491acbd3"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>clearContainerMetaData</b> (const <a class="el" href="classContainerId.html">ContainerId</a> &amp;id) override</td></tr>
 <tr class="separator:a94cba518ab80a1b354dd1134491acbd3"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ae944dcf9c7f553bfc9e82b13a8a9b8dc"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classDobbyUtils.html#ae944dcf9c7f553bfc9e82b13a8a9b8dc">insertEbtablesRule</a> (const std::string &amp;args) const override</td></tr>
 <tr class="memdesc:ae944dcf9c7f553bfc9e82b13a8a9b8dc"><td class="mdescLeft">&#160;</td><td class="mdescRight">Inserts the given ebtables rule to the existing set.  <a href="classDobbyUtils.html#ae944dcf9c7f553bfc9e82b13a8a9b8dc">More...</a><br /></td></tr>
@@ -391,10 +474,10 @@ Private Member Functions</h2></td></tr>
 <tr class="memdesc:abb215d57f040bbac85aa15db3db96ab3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Run the E2FS tool inside the given directory with given args.  <a href="classDobbyUtils.html#abb215d57f040bbac85aa15db3db96ab3">More...</a><br /></td></tr>
 <tr class="separator:abb215d57f040bbac85aa15db3db96ab3"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a03933ab8451367a0558abe667bf931e7"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classDobbyUtils.html#a03933ab8451367a0558abe667bf931e7">callInNamespaceImpl</a> (pid_t pid, int nsType, const std::function&lt; void()&gt; &amp;func) const override</td></tr>
-<tr class="memdesc:a03933ab8451367a0558abe667bf931e7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Utility function to run some code in a specific namespace of the container.  <a href="classDobbyUtils.html#a03933ab8451367a0558abe667bf931e7">More...</a><br /></td></tr>
+<tr class="memdesc:a03933ab8451367a0558abe667bf931e7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Implementation of the callInNamespace public interface.  <a href="classDobbyUtils.html#a03933ab8451367a0558abe667bf931e7">More...</a><br /></td></tr>
 <tr class="separator:a03933ab8451367a0558abe667bf931e7"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a86d4c37109273abc67f74de3fecac8c4"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classDobbyUtils.html#a86d4c37109273abc67f74de3fecac8c4">callInNamespaceImpl</a> (int namespaceFd, const std::function&lt; void()&gt; &amp;func) const override</td></tr>
-<tr class="memdesc:a86d4c37109273abc67f74de3fecac8c4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Utility function to run some code in a specific namespace of the container.  <a href="classDobbyUtils.html#a86d4c37109273abc67f74de3fecac8c4">More...</a><br /></td></tr>
+<tr class="memdesc:a86d4c37109273abc67f74de3fecac8c4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Implementation of the callInNamespace public interface.  <a href="classDobbyUtils.html#a86d4c37109273abc67f74de3fecac8c4">More...</a><br /></td></tr>
 <tr class="separator:a86d4c37109273abc67f74de3fecac8c4"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af92f68a698c306e0de0f93211d5c51ff"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classDobbyUtils.html#af92f68a698c306e0de0f93211d5c51ff">nsThread</a> (int newNsFd, int nsType, bool *success, std::function&lt; void()&gt; &amp;func) const</td></tr>
 <tr class="memdesc:af92f68a698c306e0de0f93211d5c51ff"><td class="mdescLeft">&#160;</td><td class="mdescRight">Thread helper function that implements the setns syscall.  <a href="classDobbyUtils.html#af92f68a698c306e0de0f93211d5c51ff">More...</a><br /></td></tr>
@@ -516,7 +599,57 @@ Additional Inherited Members</h2></td></tr>
 </div>
 </div>
 <a id="a86d4c37109273abc67f74de3fecac8c4"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a86d4c37109273abc67f74de3fecac8c4">&#9670;&nbsp;</a></span>callInNamespaceImpl() <span class="overload">[1/2]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#a86d4c37109273abc67f74de3fecac8c4">&#9670;&nbsp;</a></span>callInNamespaceImpl() <span class="overload">[1/4]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool DobbyUtils::callInNamespaceImpl </td>
+          <td>(</td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>namespaceFd</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const std::function&lt; void()&gt; &amp;&#160;</td>
+          <td class="paramname"><em>func</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td> const</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">override</span><span class="mlabel">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Utility function to run some code in a specific namespace of the container. </p>
+<p>This function uses the setns syscall and therefore it must spawn a thread to run the callback in. However this function blocks until the thread completes, so although it is multi-threaded it's API is blocking, i.e. effectively single threaded.</p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">namespaceFd</td><td>The fd of the namespace to enter. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">nsType</td><td>The namespace to run the function in, see above. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">func</td><td>The function to execute.</td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>true if successifully entered the namespace, otherwise false. </dd></dl>
+
+<p>Implements <a class="el" href="classIDobbyUtils__v1.html#a2124b51aa00a4e133f22a87d31ecee15">IDobbyUtils_v1</a>.</p>
+
+</div>
+</div>
+<a id="a86d4c37109273abc67f74de3fecac8c4"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a86d4c37109273abc67f74de3fecac8c4">&#9670;&nbsp;</a></span>callInNamespaceImpl() <span class="overload">[2/4]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -549,11 +682,67 @@ Additional Inherited Members</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p>Utility function to run some code in a specific namespace of the container. </p>
-<p>This function uses the setns syscall and therefore it must spawn a thread to run the callback in. However this function blocks until the thread completes, so although it is multi-threaded it's API is blocking, i.e. effectively single threaded.</p>
+<p>Implementation of the callInNamespace public interface. </p>
+<dl class="section see"><dt>See also</dt><dd><a class="el" href="classIDobbyUtils__v1.html#adf774c0a50303a0cea25b97dd5b2591f" title="Calls the given function in the namespace of given pid.">IDobbyUtils::callInNamespace</a></dd></dl>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramdir">[in]</td><td class="paramname">namespaceFd</td><td>The fd of the namespace to enter. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">namespaceFd</td><td>The namespace file descriptor to run the function in. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">func</td><td>The actual function to execute.</td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>true on success, false on failure. </dd></dl>
+
+<p>Implements <a class="el" href="classIDobbyUtils__v1.html#a2124b51aa00a4e133f22a87d31ecee15">IDobbyUtils_v1</a>.</p>
+
+</div>
+</div>
+<a id="a03933ab8451367a0558abe667bf931e7"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a03933ab8451367a0558abe667bf931e7">&#9670;&nbsp;</a></span>callInNamespaceImpl() <span class="overload">[3/4]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool DobbyUtils::callInNamespaceImpl </td>
+          <td>(</td>
+          <td class="paramtype">pid_t&#160;</td>
+          <td class="paramname"><em>pid</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>nsType</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const std::function&lt; void()&gt; &amp;&#160;</td>
+          <td class="paramname"><em>func</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td> const</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">override</span><span class="mlabel">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Utility function to run some code in a specific namespace of the container. </p>
+<p>This function uses the setns syscall and therefore it must spawn a thread to run the callback in. However this function blocks until the thread completes, so although it is multi-threaded it's API is blocking, i.e. effectively single threaded.</p>
+<p>The <em>nsType</em> argument should be one of the following values: CLONE_NEWIPC - run in a IPC namespace CLONE_NEWNET - run in a network namespace CLONE_NEWNS - run in a mount namespace CLONE_NEWPID - run in a PID namespace CLONE_NEWUSER - run in a user namespace CLONE_NEWUTS - run in a UTS namespace</p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">pid</td><td>The pid of the process namespace to enter. </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">nsType</td><td>The namespace to run the function in, see above. </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">func</td><td>The function to execute.</td></tr>
   </table>
@@ -561,12 +750,12 @@ Additional Inherited Members</h2></td></tr>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>true if successifully entered the namespace, otherwise false. </dd></dl>
 
-<p>Implements <a class="el" href="classIDobbyUtils__v1.html#a2124b51aa00a4e133f22a87d31ecee15">IDobbyUtils_v1</a>.</p>
+<p>Implements <a class="el" href="classIDobbyUtils__v1.html#a56631a371594df364766d5a34af08cfa">IDobbyUtils_v1</a>.</p>
 
 </div>
 </div>
 <a id="a03933ab8451367a0558abe667bf931e7"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a03933ab8451367a0558abe667bf931e7">&#9670;&nbsp;</a></span>callInNamespaceImpl() <span class="overload">[2/2]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#a03933ab8451367a0558abe667bf931e7">&#9670;&nbsp;</a></span>callInNamespaceImpl() <span class="overload">[4/4]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -605,25 +794,24 @@ Additional Inherited Members</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p>Utility function to run some code in a specific namespace of the container. </p>
-<p>This function uses the setns syscall and therefore it must spawn a thread to run the callback in. However this function blocks until the thread completes, so although it is multi-threaded it's API is blocking, i.e. effectively single threaded.</p>
-<p>The <em>nsType</em> argument should be one of the following values: CLONE_NEWIPC - run in a IPC namespace CLONE_NEWNET - run in a network namespace CLONE_NEWNS - run in a mount namespace CLONE_NEWPID - run in a PID namespace CLONE_NEWUSER - run in a user namespace CLONE_NEWUTS - run in a UTS namespace</p>
+<p>Implementation of the callInNamespace public interface. </p>
+<dl class="section see"><dt>See also</dt><dd><a class="el" href="classIDobbyUtils__v1.html#adf774c0a50303a0cea25b97dd5b2591f" title="Calls the given function in the namespace of given pid.">IDobbyUtils::callInNamespace</a></dd></dl>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramdir">[in]</td><td class="paramname">pid</td><td>The pid of the process namespace to enter. </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">nsType</td><td>The namespace to run the function in, see above. </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">func</td><td>The function to execute.</td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">pid</td><td>The pid owner of the namespace to enter, typically the pid of the process in the container. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">nsType</td><td>The type of the namespace to enter, see above. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">func</td><td>The actual function to execute.</td></tr>
   </table>
   </dd>
 </dl>
-<dl class="section return"><dt>Returns</dt><dd>true if successifully entered the namespace, otherwise false. </dd></dl>
+<dl class="section return"><dt>Returns</dt><dd>true on success, false on failure. </dd></dl>
 
 <p>Implements <a class="el" href="classIDobbyUtils__v1.html#a56631a371594df364766d5a34af08cfa">IDobbyUtils_v1</a>.</p>
 
 </div>
 </div>
-<a id="a4af42c5118f4bb245403822465abce7e"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a4af42c5118f4bb245403822465abce7e">&#9670;&nbsp;</a></span>cancelTimer() <span class="overload">[1/2]</span></h2>
+<a id="a4ec95adc8de4a99cc4d3ca42f4c6d6a2"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a4ec95adc8de4a99cc4d3ca42f4c6d6a2">&#9670;&nbsp;</a></span>cancelTimer() <span class="overload">[1/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -641,7 +829,7 @@ Additional Inherited Members</h2></td></tr>
       </table>
   </td>
   <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">virtual</span></span>  </td>
+<span class="mlabels"><span class="mlabel">override</span><span class="mlabel">virtual</span></span>  </td>
   </tr>
 </table>
 </div><div class="memdoc">
@@ -651,7 +839,7 @@ Additional Inherited Members</h2></td></tr>
 <p>This method will fail if called from the context of a timer handler, if you want to cancel a repeating timer then just return false in the handler.</p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramdir">[in]</td><td class="paramname">timerId</td><td>The id of the timer to cancel as returned by the startTimer() method.</td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">timerId</td><td>The id of the timer to cancel as returned by the <a class="el" href="classIDobbyUtils__v1.html#a0d0a259821d7a4b6b3137fc78b5a5c5d" title="Adds a new timer to the timer queue.">startTimer()</a> method.</td></tr>
   </table>
   </dd>
 </dl>
@@ -690,7 +878,7 @@ Additional Inherited Members</h2></td></tr>
 <p>This method will fail if called from the context of a timer handler, if you want to cancel a repeating timer then just return false in the handler.</p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramdir">[in]</td><td class="paramname">timerId</td><td>The id of the timer to cancel as returned by the startTimer() method.</td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">timerId</td><td>The id of the timer to cancel as returned by the <a class="el" href="classIDobbyUtils__v1.html#a0d0a259821d7a4b6b3137fc78b5a5c5d" title="Adds a new timer to the timer queue.">startTimer()</a> method.</td></tr>
   </table>
   </dd>
 </dl>
@@ -701,7 +889,7 @@ Additional Inherited Members</h2></td></tr>
 </div>
 </div>
 <a id="a04d4c51777f0e057feac12c158847c8b"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a04d4c51777f0e057feac12c158847c8b">&#9670;&nbsp;</a></span>checkExtImageFile()</h2>
+<h2 class="memtitle"><span class="permalink"><a href="#a04d4c51777f0e057feac12c158847c8b">&#9670;&nbsp;</a></span>checkExtImageFile() <span class="overload">[1/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -757,8 +945,113 @@ Additional Inherited Members</h2></td></tr>
 
 </div>
 </div>
+<a id="a04d4c51777f0e057feac12c158847c8b"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a04d4c51777f0e057feac12c158847c8b">&#9670;&nbsp;</a></span>checkExtImageFile() <span class="overload">[2/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool DobbyUtils::checkExtImageFile </td>
+          <td>(</td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>dirFd</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const std::string &amp;&#160;</td>
+          <td class="paramname"><em>imageFileName</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">bool&#160;</td>
+          <td class="paramname"><em>repair</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td> const</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">override</span><span class="mlabel">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Runs the e2fsck tool on a file system image to check it's integrity. </p>
+<p>This function does a fork/exec to launch the process, it drops root privileges and runs the tool as user 1000:1000, therefore the file that is being checked should be readable and writeble by user 1000.</p>
+<p>If this function returns false the image file should probably be deleted / reformatted.</p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">dirFd</td><td>The fd of the directory containing the the image to check. The function will switch to this directory before dropping permissions (provided it's not AT_FCWD). </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">imageFileName</td><td>The name of the file to check. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">repair</td><td>If true we'll ask the tool to try and repair the file if it detects any errors.</td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>if the file passes the check (or was successifully repaired) true is returned, otherwise false. </dd></dl>
+
+<p>Implements <a class="el" href="classIDobbyUtils__v1.html#a9a9af4b63056292b0bb66698f86cf8cf">IDobbyUtils_v1</a>.</p>
+
+</div>
+</div>
 <a id="ae720f3883de1fe932bc12f97601b5ec1"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ae720f3883de1fe932bc12f97601b5ec1">&#9670;&nbsp;</a></span>cleanMountLostAndFound()</h2>
+<h2 class="memtitle"><span class="permalink"><a href="#ae720f3883de1fe932bc12f97601b5ec1">&#9670;&nbsp;</a></span>cleanMountLostAndFound() <span class="overload">[1/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void DobbyUtils::cleanMountLostAndFound </td>
+          <td>(</td>
+          <td class="paramtype">const std::string &amp;&#160;</td>
+          <td class="paramname"><em>mountPoint</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const std::string &amp;&#160;</td>
+          <td class="paramname"><em>logTag</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td> const</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">override</span><span class="mlabel">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Logs and deletes any files found in the lost+found directory of the mount point. </p>
+<p>We should be clearing the lost+found to avoid cruft building up and taking all the space in the loop mount.</p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">mountPoint</td><td>The absolute path to the mounted device, NOT the the location of the lost+found dir. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">logTag</td><td>If not empty then a log warning message will be printed containing the name of the file that was deleted and referencing the the string in logTag. </td></tr>
+  </table>
+  </dd>
+</dl>
+
+<p>Implements <a class="el" href="classIDobbyUtils__v1.html#a147b2aa94ca13129d0299bcd4baf70b1">IDobbyUtils_v1</a>.</p>
+
+</div>
+</div>
+<a id="ae720f3883de1fe932bc12f97601b5ec1"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae720f3883de1fe932bc12f97601b5ec1">&#9670;&nbsp;</a></span>cleanMountLostAndFound() <span class="overload">[2/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -837,7 +1130,45 @@ Additional Inherited Members</h2></td></tr>
 </div>
 </div>
 <a id="a091f6ebb80d344852268167793046013"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a091f6ebb80d344852268167793046013">&#9670;&nbsp;</a></span>deleteEbtablesRule()</h2>
+<h2 class="memtitle"><span class="permalink"><a href="#a091f6ebb80d344852268167793046013">&#9670;&nbsp;</a></span>deleteEbtablesRule() <span class="overload">[1/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool DobbyUtils::deleteEbtablesRule </td>
+          <td>(</td>
+          <td class="paramtype">const std::string &amp;&#160;</td>
+          <td class="paramname"><em>args</em></td><td>)</td>
+          <td> const</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">override</span><span class="mlabel">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Deletes the given ebtables rule from the existing set. </p>
+<p>This only performs a delete, if the a rule is not currently installed then false is returned</p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">args</td><td>The set of one rule to remove.</td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>true if the rules were removed, otherwise false. </dd></dl>
+
+<p>Implements <a class="el" href="classIDobbyUtils__v3.html#a0412614ec8b7777e9a4ce2010640260e">IDobbyUtils_v3</a>.</p>
+
+</div>
+</div>
+<a id="a091f6ebb80d344852268167793046013"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a091f6ebb80d344852268167793046013">&#9670;&nbsp;</a></span>deleteEbtablesRule() <span class="overload">[2/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -875,7 +1206,7 @@ Additional Inherited Members</h2></td></tr>
 </div>
 </div>
 <a id="aa753c68c6770f2900b75690f13ae2351"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aa753c68c6770f2900b75690f13ae2351">&#9670;&nbsp;</a></span>deviceAllowed()</h2>
+<h2 class="memtitle"><span class="permalink"><a href="#aa753c68c6770f2900b75690f13ae2351">&#9670;&nbsp;</a></span>deviceAllowed() <span class="overload">[1/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -913,8 +1244,48 @@ Additional Inherited Members</h2></td></tr>
 
 </div>
 </div>
+<a id="aa753c68c6770f2900b75690f13ae2351"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa753c68c6770f2900b75690f13ae2351">&#9670;&nbsp;</a></span>deviceAllowed() <span class="overload">[2/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool DobbyUtils::deviceAllowed </td>
+          <td>(</td>
+          <td class="paramtype">dev_t&#160;</td>
+          <td class="paramname"><em>device</em></td><td>)</td>
+          <td> const</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">override</span><span class="mlabel">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Returns true if the given device is allowed in the container. </p>
+<p>This is here for security reasons as I didn't want just any device added to the container whitelist. If we trust the code on the other end of <a class="el" href="classDobby.html" title="The root Dobby object, runs the dbus loop.">Dobby</a> that is creating the containers then this is not needed, but just in case that got hacked I didn't want people to create containers enabling access to CDI / system device nodes.</p>
+<dl class="section warning"><dt>Warning</dt><dd>This method doesn't take into account drivers being insmod / rmmod and the re-use of major numbers, however if a user could do that then this check is the least of our problems.</dd></dl>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">major</td><td>The major number of the device. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">minor</td><td>The minor number of the device.</td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>true if the device is allowed, otherwise false. </dd></dl>
+
+<p>Implements <a class="el" href="classIDobbyUtils__v1.html#a4e32d875c6c4f8997cecab9a75dc90af">IDobbyUtils_v1</a>.</p>
+
+</div>
+</div>
 <a id="a7ecc2d141a16040faca39c3150b58f70"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a7ecc2d141a16040faca39c3150b58f70">&#9670;&nbsp;</a></span>formatExtImageFile()</h2>
+<h2 class="memtitle"><span class="permalink"><a href="#a7ecc2d141a16040faca39c3150b58f70">&#9670;&nbsp;</a></span>formatExtImageFile() <span class="overload">[1/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -969,8 +1340,103 @@ Additional Inherited Members</h2></td></tr>
 
 </div>
 </div>
+<a id="a7ecc2d141a16040faca39c3150b58f70"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a7ecc2d141a16040faca39c3150b58f70">&#9670;&nbsp;</a></span>formatExtImageFile() <span class="overload">[2/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool DobbyUtils::formatExtImageFile </td>
+          <td>(</td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>dirFd</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const std::string &amp;&#160;</td>
+          <td class="paramname"><em>imageFileName</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const std::string &amp;&#160;</td>
+          <td class="paramname"><em>fsType</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td> const</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">override</span><span class="mlabel">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Runs the mke2fs tool to format a file system image. </p>
+<p>This function does a fork/exec to launch the process, it drops root privileges and runs the tool as user 1000:1000, therefore the file that it's formatting should be readable and writeble by user 1000.</p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">dirFd</td><td>The fd of the directory containing the the image to write. The function will switch to this directory before dropping permissions (provided it's not AT_FCWD). </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">imageFileName</td><td>The name of the file to format, it must already exist. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">fsType</td><td>The ext version to format the file as, this is equivalent to the '-t' option and should be one of; 'ext2', 'ext3' or 'ext4'</td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>on success returns true on failure false. </dd></dl>
+
+<p>Implements <a class="el" href="classIDobbyUtils__v1.html#a08d2db01336e05b5b95225557f54c71c">IDobbyUtils_v1</a>.</p>
+
+</div>
+</div>
 <a id="afb4af2e445814b2003c0b880c22cfaf0"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#afb4af2e445814b2003c0b880c22cfaf0">&#9670;&nbsp;</a></span>getDriverMajorNumber()</h2>
+<h2 class="memtitle"><span class="permalink"><a href="#afb4af2e445814b2003c0b880c22cfaf0">&#9670;&nbsp;</a></span>getDriverMajorNumber() <span class="overload">[1/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">unsigned int DobbyUtils::getDriverMajorNumber </td>
+          <td>(</td>
+          <td class="paramtype">const std::string &amp;&#160;</td>
+          <td class="paramname"><em>driverName</em></td><td>)</td>
+          <td> const</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">override</span><span class="mlabel">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Returns the major number assigned to a given driver. </p>
+<p>This function tries to find the major number assigned to a given driver, it does this by parsing the /proc/devices file.</p>
+<dl class="section warning"><dt>Warning</dt><dd>Currently this function doesn't work for 'misc' devices, which are devices listed by /proc/misc.</dd></dl>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">driverName</td><td>The name of the driver to get the major number for.</td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>if found the major number is returned, if not found then 0 is returned. </dd></dl>
+
+<p>Implements <a class="el" href="classIDobbyUtils__v1.html#a8e51d664918af6d5bf05f932894cb27b">IDobbyUtils_v1</a>.</p>
+
+</div>
+</div>
+<a id="afb4af2e445814b2003c0b880c22cfaf0"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#afb4af2e445814b2003c0b880c22cfaf0">&#9670;&nbsp;</a></span>getDriverMajorNumber() <span class="overload">[2/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -1009,7 +1475,57 @@ Additional Inherited Members</h2></td></tr>
 </div>
 </div>
 <a id="a94ab2a74e77d1bcb86c896830b5b98b6"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a94ab2a74e77d1bcb86c896830b5b98b6">&#9670;&nbsp;</a></span>getNamespaceFd()</h2>
+<h2 class="memtitle"><span class="permalink"><a href="#a94ab2a74e77d1bcb86c896830b5b98b6">&#9670;&nbsp;</a></span>getNamespaceFd() <span class="overload">[1/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">int DobbyUtils::getNamespaceFd </td>
+          <td>(</td>
+          <td class="paramtype">pid_t&#160;</td>
+          <td class="paramname"><em>pid</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>nsType</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td> const</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">override</span><span class="mlabel">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Returns a file descriptor to the given namespace of the process. </p>
+<p>The caller is responsible for closing the returned file descriptor when it is no longer required.</p>
+<p>The returned namespace can used in the setns(...) call, or other calls that enter / manipulate namespaces.</p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">pid</td><td>The pid of the process to get the namespace of. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">nsType</td><td>The type of namespace to get, it should be one of the CLONE_NEWxxx constants, see the setns man page for possible values.</td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>on success the file descriptor to the given namespace, on failure -1 </dd></dl>
+
+<p>Implements <a class="el" href="classIDobbyUtils__v1.html#a793342eb3b371f5e4d8d5370d4d57342">IDobbyUtils_v1</a>.</p>
+
+</div>
+</div>
+<a id="a94ab2a74e77d1bcb86c896830b5b98b6"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a94ab2a74e77d1bcb86c896830b5b98b6">&#9670;&nbsp;</a></span>getNamespaceFd() <span class="overload">[2/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -1059,7 +1575,45 @@ Additional Inherited Members</h2></td></tr>
 </div>
 </div>
 <a id="ae944dcf9c7f553bfc9e82b13a8a9b8dc"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ae944dcf9c7f553bfc9e82b13a8a9b8dc">&#9670;&nbsp;</a></span>insertEbtablesRule()</h2>
+<h2 class="memtitle"><span class="permalink"><a href="#ae944dcf9c7f553bfc9e82b13a8a9b8dc">&#9670;&nbsp;</a></span>insertEbtablesRule() <span class="overload">[1/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool DobbyUtils::insertEbtablesRule </td>
+          <td>(</td>
+          <td class="paramtype">const std::string &amp;&#160;</td>
+          <td class="paramname"><em>args</em></td><td>)</td>
+          <td> const</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">override</span><span class="mlabel">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Inserts the given ebtables rule to the existing set. </p>
+<p>This doesn't flush out any old rules, it just adds the new one at the beginning of the table.</p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">args</td><td>The args of one rule to add.</td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>true if the rule was added, otherwise false. </dd></dl>
+
+<p>Implements <a class="el" href="classIDobbyUtils__v3.html#a7acc3509bed72ea64fa58c32631b80c7">IDobbyUtils_v3</a>.</p>
+
+</div>
+</div>
+<a id="ae944dcf9c7f553bfc9e82b13a8a9b8dc"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae944dcf9c7f553bfc9e82b13a8a9b8dc">&#9670;&nbsp;</a></span>insertEbtablesRule() <span class="overload">[2/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -1097,7 +1651,56 @@ Additional Inherited Members</h2></td></tr>
 </div>
 </div>
 <a id="af53933ebb0864b5a1e1acf90d6848799"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#af53933ebb0864b5a1e1acf90d6848799">&#9670;&nbsp;</a></span>loopDeviceAssociate()</h2>
+<h2 class="memtitle"><span class="permalink"><a href="#af53933ebb0864b5a1e1acf90d6848799">&#9670;&nbsp;</a></span>loopDeviceAssociate() <span class="overload">[1/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">int DobbyUtils::loopDeviceAssociate </td>
+          <td>(</td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>fileFd</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">std::string *&#160;</td>
+          <td class="paramname"><em>loopDevPath</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td> const</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">override</span><span class="mlabel">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Associates a give file descriptor with a loop device. </p>
+<p>First the function attempts to get a free loop device, if that succeeds it attaches the supplied file descriptor to it and returns an fd to the loop device and (optionally) writes the path to the loop device in the <em>loopDevPath</em> string.</p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">fileFd</td><td>An open file descriptor to associate with the loop device. </td></tr>
+    <tr><td class="paramdir">[out]</td><td class="paramname">loopDevPath</td><td>If not null, the method will write the path to the loop device dev node into the string</td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>on success returns the open file descriptor to the loop device associated with the file, on failure -1. </dd></dl>
+
+<p>Implements <a class="el" href="classIDobbyUtils__v1.html#a3115fc5af9913b0cb56551bf1941b388">IDobbyUtils_v1</a>.</p>
+
+</div>
+</div>
+<a id="af53933ebb0864b5a1e1acf90d6848799"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af53933ebb0864b5a1e1acf90d6848799">&#9670;&nbsp;</a></span>loopDeviceAssociate() <span class="overload">[2/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -1146,7 +1749,59 @@ Additional Inherited Members</h2></td></tr>
 </div>
 </div>
 <a id="a881f8d1c342d6c887a6db0a7a0ba3112"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a881f8d1c342d6c887a6db0a7a0ba3112">&#9670;&nbsp;</a></span>mkdirRecursive() <span class="overload">[1/2]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#a881f8d1c342d6c887a6db0a7a0ba3112">&#9670;&nbsp;</a></span>mkdirRecursive() <span class="overload">[1/3]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool DobbyUtils::mkdirRecursive </td>
+          <td>(</td>
+          <td class="paramtype">const std::string &amp;&#160;</td>
+          <td class="paramname"><em>path</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">mode_t&#160;</td>
+          <td class="paramname"><em>mode</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td> const</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">override</span><span class="mlabel">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Makes a directory and all parent directories as needed. </p>
+<p>This is equivalent to the 'mkdir -p &lt;dir&gt;' command.</p>
+<p>All directories created will have access mode set by <em>mode</em>, for this reason the mode should be at least 'rwx---&mdash;'.</p>
+<p>If the pathname given in pathname is relative, then it is interpreted relative to the directory referred to by the file descriptor dirFd, if dirFd is not supplied then it's relative to the cwd.</p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">dirFd</td><td>If specified the path should be relative to to this directory. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">path</td><td>The path to the directory to create. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">mode</td><td>The file access mode to give to all directories created.</td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>true on success, false on failure. </dd></dl>
+
+<p>Implements <a class="el" href="classIDobbyUtils__v1.html#a399777342b6320b23c32650bfdb55a3b">IDobbyUtils_v1</a>.</p>
+
+</div>
+</div>
+<a id="a881f8d1c342d6c887a6db0a7a0ba3112"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a881f8d1c342d6c887a6db0a7a0ba3112">&#9670;&nbsp;</a></span>mkdirRecursive() <span class="overload">[2/3]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -1198,7 +1853,7 @@ Additional Inherited Members</h2></td></tr>
 </div>
 </div>
 <a id="aea841dd2249499e46d5a610328be5698"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aea841dd2249499e46d5a610328be5698">&#9670;&nbsp;</a></span>mkdirRecursive() <span class="overload">[2/2]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#aea841dd2249499e46d5a610328be5698">&#9670;&nbsp;</a></span>mkdirRecursive() <span class="overload">[3/3]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -1344,7 +1999,58 @@ Additional Inherited Members</h2></td></tr>
 </div>
 </div>
 <a id="a36712d5edf8f7a660c1fb28c8c6bc658"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a36712d5edf8f7a660c1fb28c8c6bc658">&#9670;&nbsp;</a></span>readTextFile()</h2>
+<h2 class="memtitle"><span class="permalink"><a href="#a36712d5edf8f7a660c1fb28c8c6bc658">&#9670;&nbsp;</a></span>readTextFile() <span class="overload">[1/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::string DobbyUtils::readTextFile </td>
+          <td>(</td>
+          <td class="paramtype">const std::string &amp;&#160;</td>
+          <td class="paramname"><em>path</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">size_t&#160;</td>
+          <td class="paramname"><em>maxLen</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td> const</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">override</span><span class="mlabel">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Simply read a string from a file. </p>
+<p>Not much more to say really.</p>
+<p>If the pathname given in <em>filePath</em> is relative, then it is interpreted relative to the directory referred to by the file descriptor <em>dirFd</em>, if <em>dirFd</em> is not supplied then it's relative to the cwd.</p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">dirFd</td><td>If specified the path should be relative to to this directory. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">path</td><td>The path to file to write to. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">maxLen</td><td>The maximum number of characters to read, defaults to 4096.</td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>the string read from the file, on failure an empty string. </dd></dl>
+
+<p>Implements <a class="el" href="classIDobbyUtils__v1.html#a32a7378abf4c6047eb1c1244e4f6706f">IDobbyUtils_v1</a>.</p>
+
+</div>
+</div>
+<a id="a36712d5edf8f7a660c1fb28c8c6bc658"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a36712d5edf8f7a660c1fb28c8c6bc658">&#9670;&nbsp;</a></span>readTextFile() <span class="overload">[2/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -1452,7 +2158,49 @@ Additional Inherited Members</h2></td></tr>
 </div>
 </div>
 <a id="a2134906151eb7e6b9e4300ab5b8f20ef"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a2134906151eb7e6b9e4300ab5b8f20ef">&#9670;&nbsp;</a></span>rmdirContents() <span class="overload">[1/2]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#a2134906151eb7e6b9e4300ab5b8f20ef">&#9670;&nbsp;</a></span>rmdirContents() <span class="overload">[1/3]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool DobbyUtils::rmdirContents </td>
+          <td>(</td>
+          <td class="paramtype">const std::string &amp;&#160;</td>
+          <td class="paramname"><em>path</em></td><td>)</td>
+          <td> const</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">override</span><span class="mlabel">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Removes the contents of a directory but leave the actual directory in place. </p>
+<p>This is equivalent to the 'rm -rf &lt;dir&gt;/ *' command.</p>
+<p>If the pathname given in pathname is relative, then it is interpreted relative to the directory referred to by the file descriptor dirFd, if dirFd is not supplied then it's relative to the cwd.</p>
+<dl class="section warning"><dt>Warning</dt><dd>This function only supports deleting directories with contents that are less than 128 levels deep, this is to avoid running out of file descriptors.</dd></dl>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">dirFd</td><td>If specified the path should be relative to to this directory. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">path</td><td>The path to the directory to create. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">mode</td><td>The file access mode to give to all directories created.</td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>true on success, false on failure. </dd></dl>
+
+<p>Implements <a class="el" href="classIDobbyUtils__v1.html#a5de5378547d50bb463a1c3f1b99bacf7">IDobbyUtils_v1</a>.</p>
+
+</div>
+</div>
+<a id="a2134906151eb7e6b9e4300ab5b8f20ef"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a2134906151eb7e6b9e4300ab5b8f20ef">&#9670;&nbsp;</a></span>rmdirContents() <span class="overload">[2/3]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -1494,7 +2242,7 @@ Additional Inherited Members</h2></td></tr>
 </div>
 </div>
 <a id="ab3d68994783455a05cff68e3c9c0e131"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ab3d68994783455a05cff68e3c9c0e131">&#9670;&nbsp;</a></span>rmdirContents() <span class="overload">[2/2]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#ab3d68994783455a05cff68e3c9c0e131">&#9670;&nbsp;</a></span>rmdirContents() <span class="overload">[3/3]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -1546,7 +2294,49 @@ Additional Inherited Members</h2></td></tr>
 </div>
 </div>
 <a id="a4ef58044baea510ce498eb19f5dd6c1e"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a4ef58044baea510ce498eb19f5dd6c1e">&#9670;&nbsp;</a></span>rmdirRecursive() <span class="overload">[1/2]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#a4ef58044baea510ce498eb19f5dd6c1e">&#9670;&nbsp;</a></span>rmdirRecursive() <span class="overload">[1/3]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool DobbyUtils::rmdirRecursive </td>
+          <td>(</td>
+          <td class="paramtype">const std::string &amp;&#160;</td>
+          <td class="paramname"><em>path</em></td><td>)</td>
+          <td> const</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">override</span><span class="mlabel">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Removes a directory and all it's contents. </p>
+<p>This is equivalent to the 'rm -rf &lt;dir&gt;' command.</p>
+<p>If the pathname given in pathname is relative, then it is interpreted relative to the directory referred to by the file descriptor dirFd, if dirFd is not supplied then it's relative to the cwd.</p>
+<dl class="section warning"><dt>Warning</dt><dd>This function only supports deleting directories with contents that are less than 128 levels deep, this is to avoid running out of file descriptors.</dd></dl>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">dirFd</td><td>If specified the path should be relative to to this directory. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">path</td><td>The path to the directory to create. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">mode</td><td>The file access mode to give to all directories created.</td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>true on success, false on failure. </dd></dl>
+
+<p>Implements <a class="el" href="classIDobbyUtils__v1.html#a689b8893888afc7d619175e787b370dd">IDobbyUtils_v1</a>.</p>
+
+</div>
+</div>
+<a id="a4ef58044baea510ce498eb19f5dd6c1e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a4ef58044baea510ce498eb19f5dd6c1e">&#9670;&nbsp;</a></span>rmdirRecursive() <span class="overload">[2/3]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -1588,7 +2378,7 @@ Additional Inherited Members</h2></td></tr>
 </div>
 </div>
 <a id="aca5c20e4ee5b99a35300469fba3556c3"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aca5c20e4ee5b99a35300469fba3556c3">&#9670;&nbsp;</a></span>rmdirRecursive() <span class="overload">[2/2]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#aca5c20e4ee5b99a35300469fba3556c3">&#9670;&nbsp;</a></span>rmdirRecursive() <span class="overload">[3/3]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -1702,7 +2492,55 @@ Additional Inherited Members</h2></td></tr>
 </div>
 </div>
 <a id="a23fd9a987ebd196d222526690134eadc"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a23fd9a987ebd196d222526690134eadc">&#9670;&nbsp;</a></span>setIntegerMetaData()</h2>
+<h2 class="memtitle"><span class="permalink"><a href="#a23fd9a987ebd196d222526690134eadc">&#9670;&nbsp;</a></span>setIntegerMetaData() <span class="overload">[1/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void DobbyUtils::setIntegerMetaData </td>
+          <td>(</td>
+          <td class="paramtype">const <a class="el" href="classContainerId.html">ContainerId</a> &amp;&#160;</td>
+          <td class="paramname"><em>id</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const std::string &amp;&#160;</td>
+          <td class="paramname"><em>key</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>value</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">override</span><span class="mlabel">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Sets / Gets integer meta data for the given container. </p>
+<p>You can use this to share meta data about the container across different plugins. For example if network namespaces are enabled.</p>
+<p>The data is cleared automatically when the container is shutdown. </p>
+
+<p>Implements <a class="el" href="classIDobbyUtils__v2.html#a11ef5c9a28210047ffe773f228cc8369">IDobbyUtils_v2</a>.</p>
+
+</div>
+</div>
+<a id="a23fd9a987ebd196d222526690134eadc"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a23fd9a987ebd196d222526690134eadc">&#9670;&nbsp;</a></span>setIntegerMetaData() <span class="overload">[2/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -1750,7 +2588,55 @@ Additional Inherited Members</h2></td></tr>
 </div>
 </div>
 <a id="a121da4f1b6e7972f5e014cc5bd76e82f"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a121da4f1b6e7972f5e014cc5bd76e82f">&#9670;&nbsp;</a></span>setStringMetaData()</h2>
+<h2 class="memtitle"><span class="permalink"><a href="#a121da4f1b6e7972f5e014cc5bd76e82f">&#9670;&nbsp;</a></span>setStringMetaData() <span class="overload">[1/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void DobbyUtils::setStringMetaData </td>
+          <td>(</td>
+          <td class="paramtype">const <a class="el" href="classContainerId.html">ContainerId</a> &amp;&#160;</td>
+          <td class="paramname"><em>id</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const std::string &amp;&#160;</td>
+          <td class="paramname"><em>key</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const std::string &amp;&#160;</td>
+          <td class="paramname"><em>value</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">override</span><span class="mlabel">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Sets / Gets string meta data for the given container. </p>
+<p>You can use this to share meta data about the container across different plugins. For example the ip address assigned to the container.</p>
+<p>The data is cleared automatically when the container is shutdown. </p>
+
+<p>Implements <a class="el" href="classIDobbyUtils__v2.html#ae2375bdcbd779ab174b47ee34edfd4e1">IDobbyUtils_v2</a>.</p>
+
+</div>
+</div>
+<a id="a121da4f1b6e7972f5e014cc5bd76e82f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a121da4f1b6e7972f5e014cc5bd76e82f">&#9670;&nbsp;</a></span>setStringMetaData() <span class="overload">[2/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -1798,7 +2684,65 @@ Additional Inherited Members</h2></td></tr>
 </div>
 </div>
 <a id="a3902be9babf0947712ec8a597742bd6b"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a3902be9babf0947712ec8a597742bd6b">&#9670;&nbsp;</a></span>startTimerImpl()</h2>
+<h2 class="memtitle"><span class="permalink"><a href="#a3902be9babf0947712ec8a597742bd6b">&#9670;&nbsp;</a></span>startTimerImpl() <span class="overload">[1/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">int DobbyUtils::startTimerImpl </td>
+          <td>(</td>
+          <td class="paramtype">const std::chrono::milliseconds &amp;&#160;</td>
+          <td class="paramname"><em>timeout</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">bool&#160;</td>
+          <td class="paramname"><em>oneShot</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const std::function&lt; bool()&gt; &amp;&#160;</td>
+          <td class="paramname"><em>handler</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td> const</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">override</span><span class="mlabel">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Adds a new timer to the timer queue. </p>
+<p>The <em>handler</em> function will be called after the timeout period and then if <em>oneShot</em> is false periodically at the given timeout interval.</p>
+<p>The <em>handler</em> will be called from the context of the timer queue, bare in mind for any locking restrictions.</p>
+<p>A timer can be cancelled by either calling <em><a class="el" href="classIDobbyUtils__v3.html#ada7807d22d0af211daab916d7bc2b128" title="Removes the given timer from the timer queue.">cancelTimer()</a></em> or returning false from the handler. One shot timers are automatically removed after they are fired, there is not need to call <em><a class="el" href="classIDobbyUtils__v3.html#ada7807d22d0af211daab916d7bc2b128" title="Removes the given timer from the timer queue.">cancelTimer()</a></em> for them.</p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">timeout</td><td>The time after which to call the supplied handler. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">oneShot</td><td>If true the timer is automatically removed after it times out the first time. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">handler</td><td>The handler function to call when the timer times out.</td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>on success returns a (greater than zero) timer id integer which identifies the timer, on failure -1 is returned. </dd></dl>
+
+<p>Implements <a class="el" href="classIDobbyUtils__v1.html#aa5f6070c42f0d3e6c96bcac33b377665">IDobbyUtils_v1</a>.</p>
+
+</div>
+</div>
+<a id="a3902be9babf0947712ec8a597742bd6b"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a3902be9babf0947712ec8a597742bd6b">&#9670;&nbsp;</a></span>startTimerImpl() <span class="overload">[2/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -1838,9 +2782,7 @@ Additional Inherited Members</h2></td></tr>
 </div><div class="memdoc">
 
 <p>Adds a new timer to the timer queue. </p>
-<p>The <em>handler</em> function will be called after the timeout period and then if <em>oneShot</em> is false periodically at the given timeout interval.</p>
-<p>The <em>handler</em> will be called from the context of the timer queue, bare in mind for any locking restrictions.</p>
-<p>A timer can be cancelled by either calling <em><a class="el" href="classIDobbyUtils__v3.html#ada7807d22d0af211daab916d7bc2b128" title="Removes the given timer from the timer queue.">cancelTimer()</a></em> or returning false from the handler. One shot timers are automatically removed after they are fired, there is not need to call <em><a class="el" href="classIDobbyUtils__v3.html#ada7807d22d0af211daab916d7bc2b128" title="Removes the given timer from the timer queue.">cancelTimer()</a></em> for them.</p>
+<dl class="section see"><dt>See also</dt><dd><a class="el" href="classIDobbyUtils__v1.html#a0d0a259821d7a4b6b3137fc78b5a5c5d" title="Adds a new timer to the timer queue.">IDobbyUtils::startTimer</a></dd></dl>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramdir">[in]</td><td class="paramname">timeout</td><td>The time after which to call the supplied handler. </td></tr>
@@ -1856,7 +2798,71 @@ Additional Inherited Members</h2></td></tr>
 </div>
 </div>
 <a id="ada13dac7e387faad2024c716e90e2d70"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ada13dac7e387faad2024c716e90e2d70">&#9670;&nbsp;</a></span>writeTextFile()</h2>
+<h2 class="memtitle"><span class="permalink"><a href="#ada13dac7e387faad2024c716e90e2d70">&#9670;&nbsp;</a></span>writeTextFile() <span class="overload">[1/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool DobbyUtils::writeTextFile </td>
+          <td>(</td>
+          <td class="paramtype">const std::string &amp;&#160;</td>
+          <td class="paramname"><em>path</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const std::string &amp;&#160;</td>
+          <td class="paramname"><em>str</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>flags</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">mode_t&#160;</td>
+          <td class="paramname"><em>mode</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td> const</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">override</span><span class="mlabel">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Simply writes a string into a file. </p>
+<p>Not much more to say really.</p>
+<p>If the pathname given in <em>filePath</em> is relative, then it is interpreted relative to the directory referred to by the file descriptor <em>dirFd</em>, if <em>dirFd</em> is not supplied then it's relative to the cwd.</p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">dirFd</td><td>If specified the path should be relative to to this directory. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">path</td><td>The path to file to write to. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">flags</td><td>Open flags, these will be OR'd with O_WRONLY and O_CLOEXEC. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">mode</td><td>The file access mode to set if O_CREAT was specified in flags and the file was created.</td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>true on success, false on failure. </dd></dl>
+
+<p>Implements <a class="el" href="classIDobbyUtils__v1.html#af98f9f383a20991a5a04cde199972b83">IDobbyUtils_v1</a>.</p>
+
+</div>
+</div>
+<a id="ada13dac7e387faad2024c716e90e2d70"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ada13dac7e387faad2024c716e90e2d70">&#9670;&nbsp;</a></span>writeTextFile() <span class="overload">[2/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -1992,6 +2998,7 @@ Additional Inherited Members</h2></td></tr>
 <hr/>The documentation for this class was generated from the following files:<ul>
 <li>unit_tests/L1_testing/mocks/<a class="el" href="unit__tests_2L1__testing_2mocks_2DobbyUtils_8h_source.html">DobbyUtils.h</a></li>
 <li>unit_tests/L1_testing/mocks/DobbyUtilsMock.cpp</li>
+<li>unit_tests/L1_testing/tests/DobbyManagerTest/DaemonDobbyManagerTest.cpp</li>
 <li>unit_tests/L1_testing/tests/DobbyTest/DaemonDobbyTests.cpp</li>
 <li>utils/source/DobbyUtils.cpp</li>
 </ul>

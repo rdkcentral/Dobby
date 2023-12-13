@@ -93,7 +93,7 @@ Collaboration diagram for DobbyIPCUtils:</div>
 <div class="dyncontent">
 <div class="center"><img src="classDobbyIPCUtils__coll__graph.png" border="0" usemap="#aDobbyIPCUtils_coll__map" alt="Collaboration graph"/></div>
 <map name="aDobbyIPCUtils_coll__map" id="aDobbyIPCUtils_coll__map">
-<area shape="rect" title="Utility methods for IPC in Dobby." alt="" coords="85,95,199,121"/>
+<area shape="rect" title="Utility methods for IPC in Dobby." alt="" coords="7,95,122,121"/>
 <area shape="rect" href="classIDobbyIPCUtils.html" title=" " alt="" coords="5,5,124,32"/>
 <area shape="rect" href="classDobbyIPCUtilsImpl.html" title=" " alt="" coords="149,5,293,32"/>
 </map>
@@ -140,6 +140,33 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a67a044d827e1bb6656f73aa741182ac4"><td class="memItemLeft" align="right" valign="top"><a id="a67a044d827e1bb6656f73aa741182ac4"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>setAIDbusAddress</b> (bool privateBus, const std::string &amp;address)</td></tr>
 <tr class="separator:a67a044d827e1bb6656f73aa741182ac4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad3e0ef31a5e8aaaf1921b19cb30299b4"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; <a class="el" href="classAI__IPC_1_1IAsyncReplyGetter.html">AI_IPC::IAsyncReplyGetter</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classDobbyIPCUtils.html#ad3e0ef31a5e8aaaf1921b19cb30299b4">ipcInvokeMethod</a> (const <a class="el" href="classIDobbyIPCUtils.html#aa2bbe0bc876ca7cd2436b01a826302a6">BusType</a> &amp;bus, const <a class="el" href="structAI__IPC_1_1Method.html">AI_IPC::Method</a> &amp;method, const AI_IPC::VariantList &amp;args, int timeoutMs) const override</td></tr>
+<tr class="memdesc:ad3e0ef31a5e8aaaf1921b19cb30299b4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Wrappers around the IPC services in the <a class="el" href="classDobby.html" title="The root Dobby object, runs the dbus loop.">Dobby</a> daemon.  <a href="classDobbyIPCUtils.html#ad3e0ef31a5e8aaaf1921b19cb30299b4">More...</a><br /></td></tr>
+<tr class="separator:ad3e0ef31a5e8aaaf1921b19cb30299b4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:afc125a5bf8281fb896e4f225da0bf23d"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classDobbyIPCUtils.html#afc125a5bf8281fb896e4f225da0bf23d">ipcInvokeMethod</a> (const <a class="el" href="classIDobbyIPCUtils.html#aa2bbe0bc876ca7cd2436b01a826302a6">BusType</a> &amp;bus, const <a class="el" href="structAI__IPC_1_1Method.html">AI_IPC::Method</a> &amp;method, const AI_IPC::VariantList &amp;args, AI_IPC::VariantList &amp;replyArgs) const override</td></tr>
+<tr class="memdesc:afc125a5bf8281fb896e4f225da0bf23d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Invokes the ipc method.  <a href="classDobbyIPCUtils.html#afc125a5bf8281fb896e4f225da0bf23d">More...</a><br /></td></tr>
+<tr class="separator:afc125a5bf8281fb896e4f225da0bf23d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a49c03a77791e6671a8025f69e953ddeb"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classDobbyIPCUtils.html#a49c03a77791e6671a8025f69e953ddeb">ipcEmitSignal</a> (const <a class="el" href="classIDobbyIPCUtils.html#aa2bbe0bc876ca7cd2436b01a826302a6">BusType</a> &amp;bus, const <a class="el" href="structAI__IPC_1_1Signal.html">AI_IPC::Signal</a> &amp;signal, const AI_IPC::VariantList &amp;args) const override</td></tr>
+<tr class="memdesc:a49c03a77791e6671a8025f69e953ddeb"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sends out a signal over dbus.  <a href="classDobbyIPCUtils.html#a49c03a77791e6671a8025f69e953ddeb">More...</a><br /></td></tr>
+<tr class="separator:a49c03a77791e6671a8025f69e953ddeb"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a04107ce63709c358803ba49318b1eb00"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classDobbyIPCUtils.html#a04107ce63709c358803ba49318b1eb00">ipcServiceAvailable</a> (const <a class="el" href="classIDobbyIPCUtils.html#aa2bbe0bc876ca7cd2436b01a826302a6">BusType</a> &amp;bus, const std::string &amp;serviceName) const override</td></tr>
+<tr class="memdesc:a04107ce63709c358803ba49318b1eb00"><td class="mdescLeft">&#160;</td><td class="mdescRight">Queries if the given service is available on the bus.  <a href="classDobbyIPCUtils.html#a04107ce63709c358803ba49318b1eb00">More...</a><br /></td></tr>
+<tr class="separator:a04107ce63709c358803ba49318b1eb00"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af7629cf77635161653c58ba021096b3d"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classDobbyIPCUtils.html#af7629cf77635161653c58ba021096b3d">ipcRegisterServiceHandler</a> (const <a class="el" href="classIDobbyIPCUtils.html#aa2bbe0bc876ca7cd2436b01a826302a6">BusType</a> &amp;bus, const std::string &amp;serviceName, const std::function&lt; void(bool)&gt; &amp;handlerFunc) override</td></tr>
+<tr class="memdesc:af7629cf77635161653c58ba021096b3d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Registers a callback function that will be called when the given service is added or removed from the bus.  <a href="classDobbyIPCUtils.html#af7629cf77635161653c58ba021096b3d">More...</a><br /></td></tr>
+<tr class="separator:af7629cf77635161653c58ba021096b3d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a135d8e543a5b05ad2d0abbe709d172fc"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classDobbyIPCUtils.html#a135d8e543a5b05ad2d0abbe709d172fc">ipcRegisterSignalHandler</a> (const <a class="el" href="classIDobbyIPCUtils.html#aa2bbe0bc876ca7cd2436b01a826302a6">BusType</a> &amp;bus, const <a class="el" href="structAI__IPC_1_1Signal.html">AI_IPC::Signal</a> &amp;signal, const AI_IPC::SignalHandler &amp;handlerFunc) override</td></tr>
+<tr class="memdesc:a135d8e543a5b05ad2d0abbe709d172fc"><td class="mdescLeft">&#160;</td><td class="mdescRight">Registers a callback function that will be called when the given signal is received on the bus.  <a href="classDobbyIPCUtils.html#a135d8e543a5b05ad2d0abbe709d172fc">More...</a><br /></td></tr>
+<tr class="separator:a135d8e543a5b05ad2d0abbe709d172fc"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a10bfc0ee540de724056c3a24e4a4a6b0"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classDobbyIPCUtils.html#a10bfc0ee540de724056c3a24e4a4a6b0">ipcUnregisterHandler</a> (const <a class="el" href="classIDobbyIPCUtils.html#aa2bbe0bc876ca7cd2436b01a826302a6">BusType</a> &amp;bus, int handlerId) override</td></tr>
+<tr class="memdesc:a10bfc0ee540de724056c3a24e4a4a6b0"><td class="mdescLeft">&#160;</td><td class="mdescRight">Unregisters either a service or signal handler.  <a href="classDobbyIPCUtils.html#a10bfc0ee540de724056c3a24e4a4a6b0">More...</a><br /></td></tr>
+<tr class="separator:a10bfc0ee540de724056c3a24e4a4a6b0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab98a1b032450981adce88013a08d7883"><td class="memItemLeft" align="right" valign="top">std::string&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classDobbyIPCUtils.html#ab98a1b032450981adce88013a08d7883">ipcDbusAddress</a> (const <a class="el" href="classIDobbyIPCUtils.html#aa2bbe0bc876ca7cd2436b01a826302a6">BusType</a> &amp;bus) const override</td></tr>
+<tr class="memdesc:ab98a1b032450981adce88013a08d7883"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns complete address to the dbus daemon.  <a href="classDobbyIPCUtils.html#ab98a1b032450981adce88013a08d7883">More...</a><br /></td></tr>
+<tr class="separator:ab98a1b032450981adce88013a08d7883"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a68c07e9e6320cfebe36d7bb58da3c0d3"><td class="memItemLeft" align="right" valign="top">std::string&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classDobbyIPCUtils.html#a68c07e9e6320cfebe36d7bb58da3c0d3">ipcDbusSocketPath</a> (const <a class="el" href="classIDobbyIPCUtils.html#aa2bbe0bc876ca7cd2436b01a826302a6">BusType</a> &amp;bus) const override</td></tr>
+<tr class="memdesc:a68c07e9e6320cfebe36d7bb58da3c0d3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns just the path to the socket for the dbus daemon.  <a href="classDobbyIPCUtils.html#a68c07e9e6320cfebe36d7bb58da3c0d3">More...</a><br /></td></tr>
+<tr class="separator:a68c07e9e6320cfebe36d7bb58da3c0d3"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-methods"></a>
 Static Public Member Functions</h2></td></tr>
@@ -220,7 +247,44 @@ Additional Inherited Members</h2></td></tr>
 </div>
 </div>
 <a id="ab98a1b032450981adce88013a08d7883"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ab98a1b032450981adce88013a08d7883">&#9670;&nbsp;</a></span>ipcDbusAddress()</h2>
+<h2 class="memtitle"><span class="permalink"><a href="#ab98a1b032450981adce88013a08d7883">&#9670;&nbsp;</a></span>ipcDbusAddress() <span class="overload">[1/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::string DobbyIPCUtils::ipcDbusAddress </td>
+          <td>(</td>
+          <td class="paramtype">const <a class="el" href="classIDobbyIPCUtils.html#aa2bbe0bc876ca7cd2436b01a826302a6">BusType</a> &amp;&#160;</td>
+          <td class="paramname"><em>bus</em></td><td>)</td>
+          <td> const</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">override</span><span class="mlabel">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Returns complete address to the dbus daemon. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">bus</td><td>The bus to get the socket path for.</td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>the path to the socket, or an empty string if no socket is available. </dd></dl>
+
+<p>Implements <a class="el" href="classIDobbyIPCUtils.html#a3ad31ffdad4082ee445b66286c53a426">IDobbyIPCUtils</a>.</p>
+
+</div>
+</div>
+<a id="ab98a1b032450981adce88013a08d7883"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab98a1b032450981adce88013a08d7883">&#9670;&nbsp;</a></span>ipcDbusAddress() <span class="overload">[2/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -257,7 +321,44 @@ Additional Inherited Members</h2></td></tr>
 </div>
 </div>
 <a id="a68c07e9e6320cfebe36d7bb58da3c0d3"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a68c07e9e6320cfebe36d7bb58da3c0d3">&#9670;&nbsp;</a></span>ipcDbusSocketPath()</h2>
+<h2 class="memtitle"><span class="permalink"><a href="#a68c07e9e6320cfebe36d7bb58da3c0d3">&#9670;&nbsp;</a></span>ipcDbusSocketPath() <span class="overload">[1/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::string DobbyIPCUtils::ipcDbusSocketPath </td>
+          <td>(</td>
+          <td class="paramtype">const <a class="el" href="classIDobbyIPCUtils.html#aa2bbe0bc876ca7cd2436b01a826302a6">BusType</a> &amp;&#160;</td>
+          <td class="paramname"><em>bus</em></td><td>)</td>
+          <td> const</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">override</span><span class="mlabel">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Returns just the path to the socket for the dbus daemon. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">bus</td><td>The bus to get the socket path for.</td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>the path to the socket, or an empty string if no socket is available. </dd></dl>
+
+<p>Implements <a class="el" href="classIDobbyIPCUtils.html#a14b7ffb7fb6eb8375ac3e0ab9b2d0e1c">IDobbyIPCUtils</a>.</p>
+
+</div>
+</div>
+<a id="a68c07e9e6320cfebe36d7bb58da3c0d3"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a68c07e9e6320cfebe36d7bb58da3c0d3">&#9670;&nbsp;</a></span>ipcDbusSocketPath() <span class="overload">[2/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -294,7 +395,63 @@ Additional Inherited Members</h2></td></tr>
 </div>
 </div>
 <a id="a49c03a77791e6671a8025f69e953ddeb"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a49c03a77791e6671a8025f69e953ddeb">&#9670;&nbsp;</a></span>ipcEmitSignal()</h2>
+<h2 class="memtitle"><span class="permalink"><a href="#a49c03a77791e6671a8025f69e953ddeb">&#9670;&nbsp;</a></span>ipcEmitSignal() <span class="overload">[1/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool DobbyIPCUtils::ipcEmitSignal </td>
+          <td>(</td>
+          <td class="paramtype">const <a class="el" href="classIDobbyIPCUtils.html#aa2bbe0bc876ca7cd2436b01a826302a6">BusType</a> &amp;&#160;</td>
+          <td class="paramname"><em>bus</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="structAI__IPC_1_1Signal.html">AI_IPC::Signal</a> &amp;&#160;</td>
+          <td class="paramname"><em>signal</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const AI_IPC::VariantList &amp;&#160;</td>
+          <td class="paramname"><em>args</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td> const</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">override</span><span class="mlabel">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Sends out a signal over dbus. </p>
+<p>This is a pure wrapper around the <a class="el" href="classIpcService.html#af9962a553561ec2605aa21304804ff0c" title="Emit a signal.">IpcService::emitSignal</a> function.</p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">bus</td><td>The bus to emit the signal on. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">signal</td><td>The signal details. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">args</td><td>The signal args.</td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>true if successful, otherwise false. </dd></dl>
+
+<p>Implements <a class="el" href="classIDobbyIPCUtils.html#a6ca897ae7f85849f9acc564d285f957f">IDobbyIPCUtils</a>.</p>
+
+</div>
+</div>
+<a id="a49c03a77791e6671a8025f69e953ddeb"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a49c03a77791e6671a8025f69e953ddeb">&#9670;&nbsp;</a></span>ipcEmitSignal() <span class="overload">[2/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -350,7 +507,70 @@ Additional Inherited Members</h2></td></tr>
 </div>
 </div>
 <a id="afc125a5bf8281fb896e4f225da0bf23d"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#afc125a5bf8281fb896e4f225da0bf23d">&#9670;&nbsp;</a></span>ipcInvokeMethod() <span class="overload">[1/2]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#afc125a5bf8281fb896e4f225da0bf23d">&#9670;&nbsp;</a></span>ipcInvokeMethod() <span class="overload">[1/4]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool DobbyIPCUtils::ipcInvokeMethod </td>
+          <td>(</td>
+          <td class="paramtype">const <a class="el" href="classIDobbyIPCUtils.html#aa2bbe0bc876ca7cd2436b01a826302a6">BusType</a> &amp;&#160;</td>
+          <td class="paramname"><em>bus</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="structAI__IPC_1_1Method.html">AI_IPC::Method</a> &amp;&#160;</td>
+          <td class="paramname"><em>method</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const AI_IPC::VariantList &amp;&#160;</td>
+          <td class="paramname"><em>args</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">AI_IPC::VariantList &amp;&#160;</td>
+          <td class="paramname"><em>replyArgs</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td> const</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">override</span><span class="mlabel">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Invokes the ipc method. </p>
+<p>This is a pure wrapper around the <a class="el" href="classIpcService.html#af342303de84e188a478fd7721cb4e930" title="Invoke a method and get reply asynchronously.">IpcService::invokeMethod</a> function.</p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">bus</td><td>The bus call the method on. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">method</td><td>The method to call. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">args</td><td>The method args </td></tr>
+    <tr><td class="paramdir">[out]</td><td class="paramname">replyArgs</td><td>The reply.</td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>true if successful, otherwise false. </dd></dl>
+
+<p>Implements <a class="el" href="classIDobbyIPCUtils.html#a27d44a09f04afc5ee559a35da14175cf">IDobbyIPCUtils</a>.</p>
+
+</div>
+</div>
+<a id="afc125a5bf8281fb896e4f225da0bf23d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#afc125a5bf8281fb896e4f225da0bf23d">&#9670;&nbsp;</a></span>ipcInvokeMethod() <span class="overload">[2/4]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -413,7 +633,7 @@ Additional Inherited Members</h2></td></tr>
 </div>
 </div>
 <a id="af2d97d479fbacead3cb9bd1b5d28cc04"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#af2d97d479fbacead3cb9bd1b5d28cc04">&#9670;&nbsp;</a></span>ipcInvokeMethod() <span class="overload">[2/2]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#af2d97d479fbacead3cb9bd1b5d28cc04">&#9670;&nbsp;</a></span>ipcInvokeMethod() <span class="overload">[3/4]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -475,8 +695,120 @@ Additional Inherited Members</h2></td></tr>
 
 </div>
 </div>
+<a id="ad3e0ef31a5e8aaaf1921b19cb30299b4"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad3e0ef31a5e8aaaf1921b19cb30299b4">&#9670;&nbsp;</a></span>ipcInvokeMethod() <span class="overload">[4/4]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::shared_ptr&lt;<a class="el" href="classAI__IPC_1_1IAsyncReplyGetter.html">AI_IPC::IAsyncReplyGetter</a>&gt; DobbyIPCUtils::ipcInvokeMethod </td>
+          <td>(</td>
+          <td class="paramtype">const <a class="el" href="classIDobbyIPCUtils.html#aa2bbe0bc876ca7cd2436b01a826302a6">BusType</a> &amp;&#160;</td>
+          <td class="paramname"><em>bus</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="structAI__IPC_1_1Method.html">AI_IPC::Method</a> &amp;&#160;</td>
+          <td class="paramname"><em>method</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const AI_IPC::VariantList &amp;&#160;</td>
+          <td class="paramname"><em>args</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>timeoutMs</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td> const</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">override</span><span class="mlabel">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Wrappers around the IPC services in the <a class="el" href="classDobby.html" title="The root Dobby object, runs the dbus loop.">Dobby</a> daemon. </p>
+<p>We provide these as wrappers so that hooks don't have to spin up their own connections to a particular bus, instead they can use the service threads already created inside the <a class="el" href="classDobby.html" title="The root Dobby object, runs the dbus loop.">Dobby</a> daemon.</p>
+<p>TODO: flesh out a bit more </p>
+
+<p>Implements <a class="el" href="classIDobbyIPCUtils.html#a42bd4292b0d1d741661a018ef4fac228">IDobbyIPCUtils</a>.</p>
+
+</div>
+</div>
 <a id="af7629cf77635161653c58ba021096b3d"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#af7629cf77635161653c58ba021096b3d">&#9670;&nbsp;</a></span>ipcRegisterServiceHandler()</h2>
+<h2 class="memtitle"><span class="permalink"><a href="#af7629cf77635161653c58ba021096b3d">&#9670;&nbsp;</a></span>ipcRegisterServiceHandler() <span class="overload">[1/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">int DobbyIPCUtils::ipcRegisterServiceHandler </td>
+          <td>(</td>
+          <td class="paramtype">const <a class="el" href="classIDobbyIPCUtils.html#aa2bbe0bc876ca7cd2436b01a826302a6">BusType</a> &amp;&#160;</td>
+          <td class="paramname"><em>bus</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const std::string &amp;&#160;</td>
+          <td class="paramname"><em>serviceName</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const std::function&lt; void(bool)&gt; &amp;&#160;</td>
+          <td class="paramname"><em>handlerFunc</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">override</span><span class="mlabel">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Registers a callback function that will be called when the given service is added or removed from the bus. </p>
+<p>This in turn is useful for hooks to manage situations where the daemon they are talking to has crashed / restarted.</p>
+<p>Case in point is the Jumper hook, it wants to know if the daemon has crashed so it doesn't block container startup by trying to talk to a nonexisting daemon. And likewise it wants to know when it's arrived back so it can re-create any state stored in the daemon.</p>
+<p>To remove the handler call <em>ipcUnregisterHandler</em> with the handler id returned by this function.</p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">bus</td><td>The bus to watch the service on. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">serviceName</td><td>The name of the service to look out for. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">handlerFunc</td><td>Callback function called when the service is added or removed. If added the argument supplied will be true, if removed it will be false.</td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>if the notifier is successifully added then a positive handler id will be returned, otherwise -1 </dd></dl>
+
+<p>Implements <a class="el" href="classIDobbyIPCUtils.html#a2317a337681c475c056e83620b837734">IDobbyIPCUtils</a>.</p>
+
+</div>
+</div>
+<a id="af7629cf77635161653c58ba021096b3d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af7629cf77635161653c58ba021096b3d">&#9670;&nbsp;</a></span>ipcRegisterServiceHandler() <span class="overload">[2/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -534,7 +866,63 @@ Additional Inherited Members</h2></td></tr>
 </div>
 </div>
 <a id="a135d8e543a5b05ad2d0abbe709d172fc"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a135d8e543a5b05ad2d0abbe709d172fc">&#9670;&nbsp;</a></span>ipcRegisterSignalHandler()</h2>
+<h2 class="memtitle"><span class="permalink"><a href="#a135d8e543a5b05ad2d0abbe709d172fc">&#9670;&nbsp;</a></span>ipcRegisterSignalHandler() <span class="overload">[1/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">int DobbyIPCUtils::ipcRegisterSignalHandler </td>
+          <td>(</td>
+          <td class="paramtype">const <a class="el" href="classIDobbyIPCUtils.html#aa2bbe0bc876ca7cd2436b01a826302a6">BusType</a> &amp;&#160;</td>
+          <td class="paramname"><em>bus</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="structAI__IPC_1_1Signal.html">AI_IPC::Signal</a> &amp;&#160;</td>
+          <td class="paramname"><em>signal</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const AI_IPC::SignalHandler &amp;&#160;</td>
+          <td class="paramname"><em>handlerFunc</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">override</span><span class="mlabel">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Registers a callback function that will be called when the given signal is received on the bus. </p>
+<p>This is a pure wrapper around the <a class="el" href="classIpcService.html#abb2f3e3e96d5b4e272c56f739973950f" title="Register a signal handler.">IpcService.registerSignalHandler</a> function.</p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">bus</td><td>The bus to watch for the signal on. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">signal</td><td>The signal details to watch for. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">handlerFunc</td><td>Callback function called when the signal is received.</td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>if the handler is successifully added then a positive handler id will be returned, otherwise -1 </dd></dl>
+
+<p>Implements <a class="el" href="classIDobbyIPCUtils.html#aa1b71c85531f929aa0babfde558862e6">IDobbyIPCUtils</a>.</p>
+
+</div>
+</div>
+<a id="a135d8e543a5b05ad2d0abbe709d172fc"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a135d8e543a5b05ad2d0abbe709d172fc">&#9670;&nbsp;</a></span>ipcRegisterSignalHandler() <span class="overload">[2/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -590,7 +978,7 @@ Additional Inherited Members</h2></td></tr>
 </div>
 </div>
 <a id="a04107ce63709c358803ba49318b1eb00"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a04107ce63709c358803ba49318b1eb00">&#9670;&nbsp;</a></span>ipcServiceAvailable()</h2>
+<h2 class="memtitle"><span class="permalink"><a href="#a04107ce63709c358803ba49318b1eb00">&#9670;&nbsp;</a></span>ipcServiceAvailable() <span class="overload">[1/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -637,8 +1025,104 @@ Additional Inherited Members</h2></td></tr>
 
 </div>
 </div>
+<a id="a04107ce63709c358803ba49318b1eb00"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a04107ce63709c358803ba49318b1eb00">&#9670;&nbsp;</a></span>ipcServiceAvailable() <span class="overload">[2/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool DobbyIPCUtils::ipcServiceAvailable </td>
+          <td>(</td>
+          <td class="paramtype">const <a class="el" href="classIDobbyIPCUtils.html#aa2bbe0bc876ca7cd2436b01a826302a6">BusType</a> &amp;&#160;</td>
+          <td class="paramname"><em>bus</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const std::string &amp;&#160;</td>
+          <td class="paramname"><em>serviceName</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td> const</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">override</span><span class="mlabel">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Queries if the given service is available on the bus. </p>
+<p>This is a pure wrapper around the IpcService::serviceAvailable function.</p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">bus</td><td>The bus to check. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">serviceName</td><td>The service to query.</td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>true if the service is available, otherwise false. </dd></dl>
+
+<p>Implements <a class="el" href="classIDobbyIPCUtils.html#ac7c2468b0bfaf83d774871793b71611a">IDobbyIPCUtils</a>.</p>
+
+</div>
+</div>
 <a id="a10bfc0ee540de724056c3a24e4a4a6b0"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a10bfc0ee540de724056c3a24e4a4a6b0">&#9670;&nbsp;</a></span>ipcUnregisterHandler()</h2>
+<h2 class="memtitle"><span class="permalink"><a href="#a10bfc0ee540de724056c3a24e4a4a6b0">&#9670;&nbsp;</a></span>ipcUnregisterHandler() <span class="overload">[1/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void DobbyIPCUtils::ipcUnregisterHandler </td>
+          <td>(</td>
+          <td class="paramtype">const <a class="el" href="classIDobbyIPCUtils.html#aa2bbe0bc876ca7cd2436b01a826302a6">BusType</a> &amp;&#160;</td>
+          <td class="paramname"><em>bus</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>handlerId</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">override</span><span class="mlabel">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Unregisters either a service or signal handler. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">bus</td><td>The bus to remove the handler for. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">handlerId</td><td>The integer handler id returned by the register function. </td></tr>
+  </table>
+  </dd>
+</dl>
+
+<p>Implements <a class="el" href="classIDobbyIPCUtils.html#a2ad389188ebbd4f027c6a6b669e4e09d">IDobbyIPCUtils</a>.</p>
+
+</div>
+</div>
+<a id="a10bfc0ee540de724056c3a24e4a4a6b0"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a10bfc0ee540de724056c3a24e4a4a6b0">&#9670;&nbsp;</a></span>ipcUnregisterHandler() <span class="overload">[2/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -727,6 +1211,7 @@ Additional Inherited Members</h2></td></tr>
 <li>ipcUtils/include/<a class="el" href="ipcUtils_2include_2DobbyIPCUtils_8h_source.html">DobbyIPCUtils.h</a></li>
 <li>ipcUtils/source/DobbyIPCUtils.cpp</li>
 <li>unit_tests/L1_testing/mocks/DobbyIPCUtilsMock.cpp</li>
+<li>unit_tests/L1_testing/tests/DobbyManagerTest/DaemonDobbyManagerTest.cpp</li>
 <li>unit_tests/L1_testing/tests/DobbyTest/DaemonDobbyTests.cpp</li>
 </ul>
 </div><!-- contents -->

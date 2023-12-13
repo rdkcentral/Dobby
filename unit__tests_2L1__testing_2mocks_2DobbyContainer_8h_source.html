@@ -112,52 +112,55 @@ $(function() {
 <div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;    <span class="keyword">virtual</span> <span class="keywordtype">void</span> clearRestartOnCrash() = 0;</div>
 <div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;    <span class="keyword">virtual</span> <span class="keywordtype">bool</span> shouldRestart(<span class="keywordtype">int</span> statusCode) = 0;</div>
 <div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;    <span class="keyword">virtual</span> <span class="keyword">const</span> std::list&lt;int&gt;&amp; files() <span class="keyword">const</span> = 0;</div>
-<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;};</div>
-<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160; </div>
-<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;<span class="keyword">class </span><a class="code" href="classDobbyContainer.html">DobbyContainer</a> {</div>
-<div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160; </div>
-<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;<span class="keyword">protected</span>:</div>
-<div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160; </div>
-<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;    <span class="keyword">static</span> <a class="code" href="classDobbyContainerImpl.html">DobbyContainerImpl</a>* impl;</div>
-<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160; </div>
-<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;<span class="keyword">public</span>:</div>
-<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160; </div>
-<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;    <a class="code" href="classDobbyContainer.html">DobbyContainer</a>(<a class="code" href="classDobbyContainer.html">DobbyContainer</a>&amp;) = <span class="keyword">delete</span>;</div>
-<div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;    <a class="code" href="classDobbyContainer.html">DobbyContainer</a>(<a class="code" href="classDobbyContainer.html">DobbyContainer</a>&amp;&amp;) = <span class="keyword">delete</span>;</div>
-<div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;    <span class="keyword">friend</span> <span class="keyword">class </span><a class="code" href="classDobbyManager.html">DobbyManager</a>;</div>
-<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160; </div>
-<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;    <span class="keyword">enum class</span> State { Starting, Running, Stopping, Paused, Unknown } state;</div>
-<div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;    pid_t containerPid;</div>
-<div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;    <span class="keyword">const</span> int32_t descriptor;</div>
-<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;    <span class="keyword">const</span> std::shared_ptr&lt;const DobbyRdkPluginManager&gt; rdkPluginManager;</div>
-<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;    <span class="keyword">const</span> std::shared_ptr&lt;const DobbyBundle&gt; bundle;</div>
-<div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;    <span class="keyword">const</span> std::shared_ptr&lt;const DobbyConfig&gt; config;</div>
-<div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;    std::list&lt;int&gt; mFiles;</div>
-<div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;    <span class="keywordtype">bool</span> hasCurseOfDeath;</div>
-<div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;    <span class="keyword">const</span> std::shared_ptr&lt;const DobbyRootfs&gt; rootfs;</div>
-<div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160; </div>
-<div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;    <a class="code" href="classDobbyContainer.html">DobbyContainer</a>();</div>
-<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;    <a class="code" href="classDobbyContainer.html">DobbyContainer</a>(<span class="keyword">const</span> std::shared_ptr&lt;const DobbyBundle&gt;&amp; _bundle,<span class="keyword">const</span> std::shared_ptr&lt;const DobbyConfig&gt;&amp; _config,<span class="keyword">const</span> std::shared_ptr&lt;const DobbyRootfs&gt;&amp; _rootfs);</div>
-<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;    <a class="code" href="classDobbyContainer.html">DobbyContainer</a>(<span class="keyword">const</span> std::shared_ptr&lt;const DobbyBundle&gt;&amp; _bundle,<span class="keyword">const</span> std::shared_ptr&lt;const DobbyConfig&gt;&amp; _config,<span class="keyword">const</span> std::shared_ptr&lt;const DobbyRootfs&gt;&amp; _rootfs,<span class="keyword">const</span> std::shared_ptr&lt;const DobbyRdkPluginManager&gt;&amp; _rdkPluginManager);</div>
-<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;    ~<a class="code" href="classDobbyContainer.html">DobbyContainer</a>();</div>
-<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160; </div>
-<div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;    <span class="keywordtype">bool</span> shouldRestart(<span class="keywordtype">int</span> statusCode);</div>
-<div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160; </div>
-<div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;    std::string customConfigFilePath;</div>
-<div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160; </div>
-<div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;    <span class="keyword">static</span> <span class="keywordtype">void</span> setImpl(<a class="code" href="classDobbyContainerImpl.html">DobbyContainerImpl</a>* newImpl);</div>
-<div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;    <span class="keyword">static</span> <a class="code" href="classDobbyContainer.html">DobbyContainer</a>* getInstance();</div>
-<div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;    <span class="keywordtype">void</span> setRestartOnCrash(<span class="keyword">const</span> std::list&lt;int&gt;&amp; files);</div>
-<div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;    <span class="keywordtype">void</span> clearRestartOnCrash();</div>
-<div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;    <span class="keyword">const</span> std::list&lt;int&gt;&amp; files() <span class="keyword">const</span>;</div>
-<div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;};</div>
-<div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160; </div>
-<div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;<span class="preprocessor">#endif </span><span class="comment">// DOBBYCONTAINER_H</span></div>
+<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;    <span class="keyword">virtual</span> int32_t allocDescriptor() = 0;</div>
+<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;};</div>
+<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160; </div>
+<div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;<span class="keyword">class </span><a class="code" href="classDobbyContainer.html">DobbyContainer</a> {</div>
+<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160; </div>
+<div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;<span class="keyword">protected</span>:</div>
+<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160; </div>
+<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;    <span class="keyword">static</span> <a class="code" href="classDobbyContainerImpl.html">DobbyContainerImpl</a>* impl;</div>
+<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160; </div>
+<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;<span class="keyword">public</span>:</div>
+<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160; </div>
+<div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;    <a class="code" href="classDobbyContainer.html">DobbyContainer</a>(<a class="code" href="classDobbyContainer.html">DobbyContainer</a>&amp;) = <span class="keyword">delete</span>;</div>
+<div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;    <a class="code" href="classDobbyContainer.html">DobbyContainer</a>(<a class="code" href="classDobbyContainer.html">DobbyContainer</a>&amp;&amp;) = <span class="keyword">delete</span>;</div>
+<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;    <span class="keyword">friend</span> <span class="keyword">class </span><a class="code" href="classDobbyManager.html">DobbyManager</a>;</div>
+<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160; </div>
+<div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;    <span class="keyword">enum class</span> State { Starting, Running, Stopping, Paused, Unknown } state;</div>
+<div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;    pid_t containerPid;</div>
+<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;    <span class="keyword">const</span> int32_t descriptor;</div>
+<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;    <span class="keyword">const</span> std::shared_ptr&lt;const DobbyRdkPluginManager&gt; rdkPluginManager;</div>
+<div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;    <span class="keyword">const</span> std::shared_ptr&lt;const DobbyBundle&gt; bundle;</div>
+<div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;    <span class="keyword">const</span> std::shared_ptr&lt;const DobbyConfig&gt; config;</div>
+<div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;    std::list&lt;int&gt; mFiles;</div>
+<div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;    <span class="keywordtype">bool</span> hasCurseOfDeath;</div>
+<div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;    <span class="keyword">const</span> std::shared_ptr&lt;const DobbyRootfs&gt; rootfs;</div>
+<div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160; </div>
+<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;    <a class="code" href="classDobbyContainer.html">DobbyContainer</a>();</div>
+<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;    <a class="code" href="classDobbyContainer.html">DobbyContainer</a>(<span class="keyword">const</span> std::shared_ptr&lt;const DobbyBundle&gt;&amp; _bundle,<span class="keyword">const</span> std::shared_ptr&lt;const DobbyConfig&gt;&amp; _config,<span class="keyword">const</span> std::shared_ptr&lt;const DobbyRootfs&gt;&amp; _rootfs);</div>
+<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;    <a class="code" href="classDobbyContainer.html">DobbyContainer</a>(<span class="keyword">const</span> std::shared_ptr&lt;const DobbyBundle&gt;&amp; _bundle,<span class="keyword">const</span> std::shared_ptr&lt;const DobbyConfig&gt;&amp; _config,<span class="keyword">const</span> std::shared_ptr&lt;const DobbyRootfs&gt;&amp; _rootfs,<span class="keyword">const</span> std::shared_ptr&lt;const DobbyRdkPluginManager&gt;&amp; _rdkPluginManager);</div>
+<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;    ~<a class="code" href="classDobbyContainer.html">DobbyContainer</a>();</div>
+<div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160; </div>
+<div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;    <span class="keywordtype">bool</span> shouldRestart(<span class="keywordtype">int</span> statusCode);</div>
+<div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160; </div>
+<div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;    std::string customConfigFilePath;</div>
+<div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160; </div>
+<div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;    <span class="keyword">static</span> <span class="keywordtype">void</span> setImpl(<a class="code" href="classDobbyContainerImpl.html">DobbyContainerImpl</a>* newImpl);</div>
+<div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;    <span class="keyword">static</span> <a class="code" href="classDobbyContainer.html">DobbyContainer</a>* getInstance();</div>
+<div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;    <span class="keywordtype">void</span> setRestartOnCrash(<span class="keyword">const</span> std::list&lt;int&gt;&amp; files);</div>
+<div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;    <span class="keywordtype">void</span> clearRestartOnCrash();</div>
+<div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;    <span class="keyword">const</span> std::list&lt;int&gt;&amp; files() <span class="keyword">const</span>;</div>
+<div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;    <span class="keyword">static</span> int32_t <a class="code" href="classDobbyContainer.html#a76771e414e9977e3c6861afc58ecf0ae">allocDescriptor</a>();</div>
+<div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;};</div>
 <div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160; </div>
+<div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;<span class="preprocessor">#endif </span><span class="comment">// DOBBYCONTAINER_H</span></div>
+<div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160; </div>
 <div class="ttc" id="aclassDobbyBundle_html"><div class="ttname"><a href="classDobbyBundle.html">DobbyBundle</a></div><div class="ttdoc">Simple class that just creates a subdir in the bundles directory.</div><div class="ttdef"><b>Definition:</b> DobbyBundle.h:46</div></div>
 <div class="ttc" id="aclassDobbyConfig_html"><div class="ttname"><a href="classDobbyConfig.html">DobbyConfig</a></div><div class="ttdoc">Interface that configuration file parser classes have to implement.</div><div class="ttdef"><b>Definition:</b> DobbyConfig.h:66</div></div>
 <div class="ttc" id="aclassDobbyContainerImpl_html"><div class="ttname"><a href="classDobbyContainerImpl.html">DobbyContainerImpl</a></div><div class="ttdef"><b>Definition:</b> DobbyContainer.h:35</div></div>
 <div class="ttc" id="aclassDobbyContainer_html"><div class="ttname"><a href="classDobbyContainer.html">DobbyContainer</a></div><div class="ttdoc">Wrapper object used to store container resources.</div><div class="ttdef"><b>Definition:</b> DobbyContainer.h:59</div></div>
+<div class="ttc" id="aclassDobbyContainer_html_a76771e414e9977e3c6861afc58ecf0ae"><div class="ttname"><a href="classDobbyContainer.html#a76771e414e9977e3c6861afc58ecf0ae">DobbyContainer::allocDescriptor</a></div><div class="ttdeci">static int32_t allocDescriptor()</div><div class="ttdoc">Alloc a unique descriptor from the pool.</div><div class="ttdef"><b>Definition:</b> DobbyContainer.cpp:49</div></div>
 <div class="ttc" id="aclassDobbyManager_html"><div class="ttname"><a href="classDobbyManager.html">DobbyManager</a></div><div class="ttdoc">The main object which starts / stops / manages the containers.</div><div class="ttdef"><b>Definition:</b> DobbyManager.h:76</div></div>
 <div class="ttc" id="aclassDobbyRdkPluginManager_html"><div class="ttname"><a href="classDobbyRdkPluginManager.html">DobbyRdkPluginManager</a></div><div class="ttdoc">Class that manages all the RDK plugin hook libraries.</div><div class="ttdef"><b>Definition:</b> DobbyRdkPluginManager.h:48</div></div>
 <div class="ttc" id="aclassDobbyRootfs_html"><div class="ttname"><a href="classDobbyRootfs.html">DobbyRootfs</a></div><div class="ttdoc">Creates a directory populated with rootfs based on the supplied container config.</div><div class="ttdef"><b>Definition:</b> DobbyRootfs.h:57</div></div>

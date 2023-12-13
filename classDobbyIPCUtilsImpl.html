@@ -85,6 +85,33 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:ab9119cfd9105c69f116f1165e4af2382"><td class="memItemLeft" align="right" valign="top"><a id="ab9119cfd9105c69f116f1165e4af2382"></a>
 virtual bool&#160;</td><td class="memItemRight" valign="bottom"><b>setAIDbusAddress</b> (bool privateBus, const std::string &amp;address)=0</td></tr>
 <tr class="separator:ab9119cfd9105c69f116f1165e4af2382"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4f4ce0a2fa33a2ee9d23bca4360b3b2c"><td class="memItemLeft" align="right" valign="top"><a id="a4f4ce0a2fa33a2ee9d23bca4360b3b2c"></a>
+virtual std::shared_ptr&lt; <a class="el" href="classAI__IPC_1_1IAsyncReplyGetter.html">AI_IPC::IAsyncReplyGetter</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>ipcInvokeMethod</b> (const <a class="el" href="classIDobbyIPCUtils.html#aa2bbe0bc876ca7cd2436b01a826302a6">IDobbyIPCUtils::BusType</a> &amp;bus, const <a class="el" href="structAI__IPC_1_1Method.html">AI_IPC::Method</a> &amp;method, const AI_IPC::VariantList &amp;args, int timeoutMs) const =0</td></tr>
+<tr class="separator:a4f4ce0a2fa33a2ee9d23bca4360b3b2c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5ac842db05d18d650842c7e686a053a1"><td class="memItemLeft" align="right" valign="top"><a id="a5ac842db05d18d650842c7e686a053a1"></a>
+virtual bool&#160;</td><td class="memItemRight" valign="bottom"><b>ipcInvokeMethod</b> (const <a class="el" href="classIDobbyIPCUtils.html#aa2bbe0bc876ca7cd2436b01a826302a6">IDobbyIPCUtils::BusType</a> &amp;bus, const <a class="el" href="structAI__IPC_1_1Method.html">AI_IPC::Method</a> &amp;method, const AI_IPC::VariantList &amp;args, AI_IPC::VariantList &amp;replyArgs) const =0</td></tr>
+<tr class="separator:a5ac842db05d18d650842c7e686a053a1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8560d78a7c8163b3e1a2589723445469"><td class="memItemLeft" align="right" valign="top"><a id="a8560d78a7c8163b3e1a2589723445469"></a>
+virtual bool&#160;</td><td class="memItemRight" valign="bottom"><b>ipcEmitSignal</b> (const <a class="el" href="classIDobbyIPCUtils.html#aa2bbe0bc876ca7cd2436b01a826302a6">IDobbyIPCUtils::BusType</a> &amp;bus, const <a class="el" href="structAI__IPC_1_1Signal.html">AI_IPC::Signal</a> &amp;signal, const AI_IPC::VariantList &amp;args) const =0</td></tr>
+<tr class="separator:a8560d78a7c8163b3e1a2589723445469"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a922ee7620b7f7cfe707b7b77f30069b4"><td class="memItemLeft" align="right" valign="top"><a id="a922ee7620b7f7cfe707b7b77f30069b4"></a>
+virtual bool&#160;</td><td class="memItemRight" valign="bottom"><b>ipcServiceAvailable</b> (const <a class="el" href="classIDobbyIPCUtils.html#aa2bbe0bc876ca7cd2436b01a826302a6">IDobbyIPCUtils::BusType</a> &amp;bus, const std::string &amp;serviceName) const =0</td></tr>
+<tr class="separator:a922ee7620b7f7cfe707b7b77f30069b4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aca9876ff8a74f161ed7bd99b07836b87"><td class="memItemLeft" align="right" valign="top"><a id="aca9876ff8a74f161ed7bd99b07836b87"></a>
+virtual int&#160;</td><td class="memItemRight" valign="bottom"><b>ipcRegisterServiceHandler</b> (const <a class="el" href="classIDobbyIPCUtils.html#aa2bbe0bc876ca7cd2436b01a826302a6">IDobbyIPCUtils::BusType</a> &amp;bus, const std::string &amp;serviceName, const std::function&lt; void(bool)&gt; &amp;handlerFunc)=0</td></tr>
+<tr class="separator:aca9876ff8a74f161ed7bd99b07836b87"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2981f607a5b38487dcc80003c6c46e01"><td class="memItemLeft" align="right" valign="top"><a id="a2981f607a5b38487dcc80003c6c46e01"></a>
+virtual int&#160;</td><td class="memItemRight" valign="bottom"><b>ipcRegisterSignalHandler</b> (const <a class="el" href="classIDobbyIPCUtils.html#aa2bbe0bc876ca7cd2436b01a826302a6">IDobbyIPCUtils::BusType</a> &amp;bus, const <a class="el" href="structAI__IPC_1_1Signal.html">AI_IPC::Signal</a> &amp;signal, const AI_IPC::SignalHandler &amp;handlerFunc)=0</td></tr>
+<tr class="separator:a2981f607a5b38487dcc80003c6c46e01"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aab7751c01f30afc6a89d167f7bb59880"><td class="memItemLeft" align="right" valign="top"><a id="aab7751c01f30afc6a89d167f7bb59880"></a>
+virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>ipcUnregisterHandler</b> (const <a class="el" href="classIDobbyIPCUtils.html#aa2bbe0bc876ca7cd2436b01a826302a6">IDobbyIPCUtils::BusType</a> &amp;bus, int handlerId)=0</td></tr>
+<tr class="separator:aab7751c01f30afc6a89d167f7bb59880"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a24767c83becd6196a0dfee725de8224c"><td class="memItemLeft" align="right" valign="top"><a id="a24767c83becd6196a0dfee725de8224c"></a>
+virtual std::string&#160;</td><td class="memItemRight" valign="bottom"><b>ipcDbusAddress</b> (const <a class="el" href="classIDobbyIPCUtils.html#aa2bbe0bc876ca7cd2436b01a826302a6">IDobbyIPCUtils::BusType</a> &amp;bus) const =0</td></tr>
+<tr class="separator:a24767c83becd6196a0dfee725de8224c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aedbc9075ae03ddf3644fcb57419657ab"><td class="memItemLeft" align="right" valign="top"><a id="aedbc9075ae03ddf3644fcb57419657ab"></a>
+virtual std::string&#160;</td><td class="memItemRight" valign="bottom"><b>ipcDbusSocketPath</b> (const <a class="el" href="classIDobbyIPCUtils.html#aa2bbe0bc876ca7cd2436b01a826302a6">IDobbyIPCUtils::BusType</a> &amp;bus) const =0</td></tr>
+<tr class="separator:aedbc9075ae03ddf3644fcb57419657ab"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <hr/>The documentation for this class was generated from the following file:<ul>
 <li>unit_tests/L1_testing/mocks/<a class="el" href="unit__tests_2L1__testing_2mocks_2DobbyIPCUtils_8h_source.html">DobbyIPCUtils.h</a></li>

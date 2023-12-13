@@ -92,9 +92,6 @@ Collaboration diagram for DobbyEnvMock:</div>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:aeac1a9d32dc3a9cbe4fd3c1378886fe9"><td class="memItemLeft" align="right" valign="top"><a id="aeac1a9d32dc3a9cbe4fd3c1378886fe9"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><b>DobbyEnvMock</b> (const std::shared_ptr&lt; const <a class="el" href="classIDobbySettings.html">IDobbySettings</a> &gt; &amp;settings)</td></tr>
-<tr class="separator:aeac1a9d32dc3a9cbe4fd3c1378886fe9"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad278b1e277a1c8201cae486ee48cef7e"><td class="memItemLeft" align="right" valign="top"><a id="ad278b1e277a1c8201cae486ee48cef7e"></a>
 &#160;</td><td class="memItemRight" valign="bottom"><b>MOCK_METHOD</b> (std::string, workspaceMountPath,(),(const, override))</td></tr>
 <tr class="separator:ad278b1e277a1c8201cae486ee48cef7e"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -107,6 +104,9 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a522339da7d9828ef6fcf6b1b0cbec926"><td class="memItemLeft" align="right" valign="top"><a id="a522339da7d9828ef6fcf6b1b0cbec926"></a>
 &#160;</td><td class="memItemRight" valign="bottom"><b>MOCK_METHOD</b> (uint16_t, platformIdent,(),(const, override))</td></tr>
 <tr class="separator:a522339da7d9828ef6fcf6b1b0cbec926"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8346009a8f8746edcd7cc94824916359"><td class="memItemLeft" align="right" valign="top"><a id="a8346009a8f8746edcd7cc94824916359"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>MOCK_METHOD</b> (std::string, cgroupMountPath,(IDobbyEnv::Cgroup cgroup),(const, override))</td></tr>
+<tr class="separator:a8346009a8f8746edcd7cc94824916359"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pub_methods_classDobbyEnvImpl"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_classDobbyEnvImpl')"><img src="closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="classDobbyEnvImpl.html">DobbyEnvImpl</a></td></tr>
 <tr class="memitem:a1653b1b71a1da2cba5bfc81be216053e inherit pub_methods_classDobbyEnvImpl"><td class="memItemLeft" align="right" valign="top"><a id="a1653b1b71a1da2cba5bfc81be216053e"></a>
 virtual std::string&#160;</td><td class="memItemRight" valign="bottom"><b>workspaceMountPath</b> () const =0</td></tr>
@@ -120,6 +120,9 @@ virtual std::string&#160;</td><td class="memItemRight" valign="bottom"><b>plugin
 <tr class="memitem:ab4a9234ee7c331709822541fe64697c0 inherit pub_methods_classDobbyEnvImpl"><td class="memItemLeft" align="right" valign="top"><a id="ab4a9234ee7c331709822541fe64697c0"></a>
 virtual uint16_t&#160;</td><td class="memItemRight" valign="bottom"><b>platformIdent</b> () const =0</td></tr>
 <tr class="separator:ab4a9234ee7c331709822541fe64697c0 inherit pub_methods_classDobbyEnvImpl"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8c004fd812efcedd1c2b87eefcb80370 inherit pub_methods_classDobbyEnvImpl"><td class="memItemLeft" align="right" valign="top"><a id="a8c004fd812efcedd1c2b87eefcb80370"></a>
+virtual std::string&#160;</td><td class="memItemRight" valign="bottom"><b>cgroupMountPath</b> (IDobbyEnv::Cgroup cgroup) const =0</td></tr>
+<tr class="separator:a8c004fd812efcedd1c2b87eefcb80370 inherit pub_methods_classDobbyEnvImpl"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pri-attribs"></a>
 Private Attributes</h2></td></tr>

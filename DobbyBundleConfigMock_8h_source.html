@@ -100,13 +100,15 @@ $(function() {
 <div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;<span class="keyword">public</span>:</div>
 <div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;    <span class="keyword">virtual</span> ~<a class="code" href="classDobbyBundleConfigMock.html">DobbyBundleConfigMock</a>() = <span class="keywordflow">default</span>;</div>
 <div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160; </div>
-<div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;    MOCK_METHOD(<span class="keywordtype">bool</span>, writeConfigJson, (<span class="keyword">const</span> std::string&amp; filePath), (<span class="keyword">const</span>,<span class="keyword">override</span>));</div>
-<div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;    MOCK_METHOD(std::shared_ptr&lt;rt_dobby_schema&gt;, config, (), (<span class="keyword">const</span>,<span class="keyword">override</span>));</div>
-<div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;    MOCK_METHOD(<span class="keywordtype">bool</span>, restartOnCrash, (), (<span class="keyword">const</span>,<span class="keyword">override</span>));</div>
-<div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;    MOCK_METHOD(<span class="keywordtype">bool</span>, isValid, (), (<span class="keyword">const</span>,<span class="keyword">override</span>));</div>
-<div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;    MOCK_METHOD((<span class="keyword">const</span> std::map&lt;std::string, Json::Value&gt;&amp;), rdkPlugins, (), (<span class="keyword">const</span>,<span class="keyword">override</span>));</div>
-<div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;};</div>
-<div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160; </div>
+<div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;    MOCK_METHOD(std::shared_ptr&lt;rt_dobby_schema&gt;, config, (), (<span class="keyword">const</span>,<span class="keyword">override</span>));</div>
+<div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;    MOCK_METHOD(<span class="keywordtype">bool</span>, restartOnCrash, (), (<span class="keyword">const</span>,<span class="keyword">override</span>));</div>
+<div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;    MOCK_METHOD(<span class="keywordtype">bool</span>, isValid, (), (<span class="keyword">const</span>,<span class="keyword">override</span>));</div>
+<div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;<span class="preprocessor">#ifdef LEGACY_COMPONENTS</span></div>
+<div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;    MOCK_METHOD((<span class="keyword">const</span> std::map&lt;std::string, Json::Value&gt;&amp;), legacyPlugins, (), (<span class="keyword">const</span>));</div>
+<div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* LEGACY_COMPONENTS */</span><span class="preprocessor"></span></div>
+<div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;    MOCK_METHOD((<span class="keyword">const</span> std::map&lt;std::string, Json::Value&gt;&amp;), rdkPlugins, (), (<span class="keyword">const</span>,<span class="keyword">override</span>));</div>
+<div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;};</div>
+<div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160; </div>
 <div class="ttc" id="aclassDobbyBundleConfigImpl_html"><div class="ttname"><a href="classDobbyBundleConfigImpl.html">DobbyBundleConfigImpl</a></div><div class="ttdef"><b>Definition:</b> DobbyBundleConfig.h:26</div></div>
 <div class="ttc" id="aclassDobbyBundleConfigMock_html"><div class="ttname"><a href="classDobbyBundleConfigMock.html">DobbyBundleConfigMock</a></div><div class="ttdef"><b>Definition:</b> DobbyBundleConfigMock.h:25</div></div>
 </div><!-- fragment --></div><!-- contents -->
