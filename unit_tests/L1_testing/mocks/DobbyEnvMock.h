@@ -25,15 +25,13 @@ class DobbyEnvMock : public DobbyEnvImpl {
 
 public:
 
-    DobbyEnvMock(const std::shared_ptr<const IDobbySettings>& settings)
-        : mSettings(settings) {}
-
     virtual ~DobbyEnvMock() = default;
 
     MOCK_METHOD(std::string, workspaceMountPath, (), (const,override));
     MOCK_METHOD(std::string, flashMountPath, (), (const,override));
     MOCK_METHOD(std::string, pluginsWorkspacePath, (), (const,override));
     MOCK_METHOD(uint16_t, platformIdent, (), (const,override));
+    MOCK_METHOD(std::string ,cgroupMountPath, (IDobbyEnv::Cgroup cgroup), (const,override));
 
 private:
     const std::shared_ptr<const IDobbySettings> mSettings;

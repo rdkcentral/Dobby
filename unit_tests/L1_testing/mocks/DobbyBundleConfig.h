@@ -29,7 +29,9 @@ public:
 
     virtual std::shared_ptr<rt_dobby_schema> config() const =0;
     virtual bool restartOnCrash() const =0;
-    virtual bool writeConfigJson(const std::string& filePath) const = 0;
+#ifdef LEGACY_COMPONENTS
+    virtual const std::map<std::string, Json::Value>& legacyPlugins() const =0;
+#endif /* LEGACY_COMPONENTS */
     virtual const std::map<std::string, Json::Value>& rdkPlugins() const = 0;
     virtual bool isValid() const = 0;
 
@@ -47,12 +49,14 @@ public:
     ~DobbyBundleConfig();
 
     bool isValid() const;
+#ifdef LEGACY_COMPONENTS
+    const std::map<std::string, Json::Value>& legacyPlugins() const;
+#endif /* LEGACY_COMPONENTS */
     const std::map<std::string, Json::Value>& rdkPlugins() const ;
     static void setImpl(DobbyBundleConfigImpl* newImpl);
     static DobbyBundleConfig* getInstance();
     std::shared_ptr<rt_dobby_schema> config();
     bool restartOnCrash() const;
-    bool writeConfigJson(const std::string& filePath) const;
 };
 
 

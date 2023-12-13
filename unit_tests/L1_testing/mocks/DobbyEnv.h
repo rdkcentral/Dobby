@@ -34,9 +34,10 @@ public:
     virtual std::string flashMountPath() const = 0;
     virtual std::string pluginsWorkspacePath() const = 0;
     virtual uint16_t platformIdent() const = 0;
+    virtual std::string cgroupMountPath(IDobbyEnv::Cgroup cgroup) const = 0;
 };
 
-class DobbyEnv {
+class DobbyEnv :  public IDobbyEnv{
 
 protected:
     static DobbyEnvImpl* impl;
@@ -48,10 +49,12 @@ public:
     DobbyEnv(const std::shared_ptr<const IDobbySettings>& settings);
     static void setImpl(DobbyEnvImpl* newImpl);
     static DobbyEnv* getInstance();
-    std::string workspaceMountPath() const;
-    std::string flashMountPath() const;
-    std::string pluginsWorkspacePath() const;
-    uint16_t platformIdent() const;
+    std::string workspaceMountPath() const override;
+    std::string flashMountPath() const override;
+    std::string pluginsWorkspacePath() const override;
+    uint16_t platformIdent() const override;
+    std::string cgroupMountPath(Cgroup cgroup) const override;
+
 };
 
 #endif // !defined(DOBBYENV_H)

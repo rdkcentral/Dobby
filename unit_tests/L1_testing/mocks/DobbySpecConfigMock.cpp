@@ -71,6 +71,13 @@ const std::string DobbySpecConfig::spec() const
 
     return impl->spec();
 }
+
+const std::map<std::string, Json::Value>& DobbySpecConfig::legacyPlugins() const
+{
+   EXPECT_NE(impl, nullptr);
+    return impl->legacyPlugins();
+}
+
 #endif //defined(LEGACY_COMPONENTS)
 
 std::shared_ptr<rt_dobby_schema> DobbySpecConfig::config() const
@@ -85,11 +92,4 @@ bool DobbySpecConfig::restartOnCrash() const
    EXPECT_NE(impl, nullptr);
 
     return impl->restartOnCrash();
-}
-
-bool DobbySpecConfig::writeConfigJson(const std::string& filePath) const
-{
-    EXPECT_NE(impl, nullptr);
-
-    return impl->writeConfigJson(filePath);
 }

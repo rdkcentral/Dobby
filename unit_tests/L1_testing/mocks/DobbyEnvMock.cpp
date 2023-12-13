@@ -74,3 +74,11 @@ uint16_t DobbyEnv::platformIdent() const
 
    return impl->platformIdent();
 }
+
+std::string DobbyEnv::cgroupMountPath(IDobbyEnv::Cgroup cgroup) const
+{
+   EXPECT_NE(impl, nullptr);
+
+   return impl->cgroupMountPath(cgroup);
+}
+

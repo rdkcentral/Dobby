@@ -49,6 +49,7 @@ add_library(DaemonDobbyManagerTest SHARED STATIC
             ../../mocks/rt_dobby_schema.c
             ../../mocks/IpcFileDescriptorMock.cpp
             ../../mocks/DobbyStartStateMock.cpp
+            ../../mocks/DobbyUtilsMock.cpp
             )
 
 target_include_directories(DaemonDobbyManagerTest

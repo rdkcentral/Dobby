@@ -32,4 +32,5 @@ public:
     MOCK_METHOD(void, clearRestartOnCrash, (), (override));
     MOCK_METHOD(bool, shouldRestart, (int statusCode), (override));
     MOCK_METHOD((const std::list<int>&), files, (), (const, override));
+    MOCK_METHOD(int32_t, allocDescriptor, (), (override));
 };
