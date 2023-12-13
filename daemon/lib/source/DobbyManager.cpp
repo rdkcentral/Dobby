@@ -470,7 +470,8 @@ void DobbyManager::cleanupContainersShutdown()
     auto it = mContainers.begin();
     while (it != mContainers.end())
     {
-        if (it->second->state == DobbyContainer::State::Running)
+        if ((it->second->state == DobbyContainer::State::Running) || \
+            (it->second->state == DobbyContainer::State::Paused))
         {
             AI_LOG_INFO("Stopping container %s", it->first.c_str());
             // By calling the "proper" stop method here, any listening services will be
