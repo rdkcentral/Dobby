@@ -847,6 +847,36 @@ void DobbyConfig::setApparmorProfile(const std::string& defaultProfileName)
 
 // -----------------------------------------------------------------------------
 /**
+ *  @brief Set cgroup pids limit.
+ *
+ *  Limits the number of processes that containered app can create.
+ *
+ *  @see https://www.kernel.org/doc/Documentation/cgroup-v1/pids.txt
+ *
+ *  @param[in]  limit  limit of pids
+ */
+void DobbyConfig::setPidsLimit(int limit)
+{
+    std::shared_ptr<rt_dobby_schema> cfg = config();
+    if (cfg == nullptr)
+    {
+        AI_LOG_ERROR("Invalid bundle config");
+        return;
+    }
+
+    rt_config_linux_resources_pids* pids = cfg->linux->resources->pids;
+    if (pids == nullptr)
+    {
+        pids = (rt_config_linux_resources_pids*)calloc(1, sizeof(rt_config_linux_resources_pids));
+        cfg->linux->resources->pids = pids;
+    }
+
+    pids->limit = limit;
+    pids->limit_present = true;
+}
+
+// -----------------------------------------------------------------------------
+/**
  *  @brief Convert the input config.json into an OCI compliant bundle config
  *         that adds support for DobbyPluginLauncher to work with rdkPlugins.
  *
