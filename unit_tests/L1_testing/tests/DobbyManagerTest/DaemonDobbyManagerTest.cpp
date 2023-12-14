@@ -2450,3 +2450,357 @@ TEST_F(DaemonDobbyManagerTest, startContainerFromBundle_CreateAndStartContainerF
 
 }
 
+/*Test cases for startContainerFromBundle ends here*/
+
+/****************************************************************************************************
+ * Test functions for :ociConfigOfContainer
+ *  @brief Check if ociConfigOfContainer method is successfully returned the config.json string
+ *
+ *  @param[in]  cd          The descriptor of the container to get the config.json of.
+ *  @return the config.json string.
+ *
+  * Use case coverage:
+ *                @Success :1
+ *                @Failure :2
+ ***************************************************************************************************/
+
+/**
+ * @brief Test ociConfigOfContainer Success case
+ * Check if ociConfigOfContainer method is successfully returned the config.json string
+ *
+ *  @param[in]  cd      The descriptor of the container to get the config.json of.
+ *  @return the config.json string.
+ */
+TEST_F(DaemonDobbyManagerTest, ociConfigOfContainer_Success)
+{
+    EXPECT_CALL(*p_bundleMock, isValid())
+        .Times(1)
+            .WillOnce(::testing::Return(true));
+
+    EXPECT_CALL(*p_specConfigMock, isValid())
+        .Times(1)
+            .WillOnce(::testing::Return(true));
+
+    EXPECT_CALL(*p_rootfsMock, isValid())
+        .Times(1)
+           .WillOnce(::testing::Return(true));
+
+    EXPECT_CALL(*p_startStateMock, isValid())
+        .Times(1)
+            .WillOnce(::testing::Return(true));
+
+    std::map<std::string, Json::Value> emptyMap;
+
+// Set up the mock behavior for rdkPlugins() to return the empty map
+    EXPECT_CALL(*p_specConfigMock, rdkPlugins())
+        .Times(2)
+            .WillOnce(::testing::ReturnRef(emptyMap))
+            .WillOnce(::testing::ReturnRef(emptyMap));
+
+    int32_t cd = 123;
+    EXPECT_CALL(*p_containerMock, allocDescriptor())
+        .Times(1)
+        .WillOnce(::testing::Return(cd));
+
+    const std::string validPath = "/unit_tests/L1_testing/tests/";
+
+// Set the expectation to return the valid path
+    EXPECT_CALL(*p_rootfsMock, path())
+        .Times(5)
+            .WillOnce(::testing::ReturnRef(validPath))
+            .WillOnce(::testing::ReturnRef(validPath))
+            .WillOnce(::testing::ReturnRef(validPath))
+            .WillOnce(::testing::ReturnRef(validPath))
+            .WillOnce(::testing::ReturnRef(validPath));
+
+    std::string valid_path = "/unit_tests/L1_testing/tests/DobbyManagerTest";
+    EXPECT_CALL(*p_bundleMock, path())
+        .Times(1)
+            .WillOnce(::testing::ReturnRef(valid_path));
+
+    EXPECT_CALL(*p_configMock, writeConfigJson(::testing::_))
+        .Times(1)
+            .WillOnce(::testing::Invoke(
+            [](const std::string& filePath) {
+                return true;
+            }));
+
+    EXPECT_CALL(*p_startStateMock, files())
+        .Times(1)
+            .WillOnce(::testing::Return(std::list<int>{1, 2, 3}));
+
+    std::map<std::string, Json::Value> data;
+    data["key1"] = Json::Value("value1");
+    data["key2"] = Json::Value("value2");
+    EXPECT_CALL(*p_specConfigMock, legacyPlugins())
+        .Times(5)
+            .WillOnce(testing::ReturnRef(data))
+            .WillOnce(testing::ReturnRef(data))
+            .WillOnce(testing::ReturnRef(data))
+            .WillOnce(testing::ReturnRef(data))
+            .WillOnce(testing::ReturnRef(data));
+
+    EXPECT_CALL(*p_legacyPluginManagerMock, executePostConstructionHooks(::testing::_, ::testing::_, ::testing::_, ::testing::_))
+        .Times(1)
+            .WillOnce(::testing::Invoke(
+            [](const std::map<std::string, Json::Value>& plugins,const ContainerId& id,const std::shared_ptr<IDobbyStartState>& startupState,const std::string& rootfsPath) {
+                return true;
+            }));
+
+    EXPECT_CALL(*p_legacyPluginManagerMock, executePreStartHooks(::testing::_, ::testing::_, ::testing::_, ::testing::_))
+        .Times(1)
+            .WillOnce(::testing::Invoke(
+            [](const std::map<std::string, Json::Value>& plugins,const ContainerId& id,pid_t pid,const std::string& rootfsPath) {
+                return true;
+            }));
+
+    EXPECT_CALL(*p_legacyPluginManagerMock, executePostStartHooks(::testing::_, ::testing::_,::testing::_,::testing::_))
+        .Times(1)
+            .WillOnce(::testing::Invoke(
+            [](const std::map<std::string, Json::Value>& plugins,const ContainerId& id,pid_t pid,const std::string& rootfsPath) {
+                return true;
+            }));
+
+    EXPECT_CALL(*p_legacyPluginManagerMock, executePostStopHooks(::testing::_, ::testing::_,::testing::_))
+        .Times(1)
+            .WillOnce(::testing::Invoke(
+            [](const std::map<std::string, Json::Value>& plugins,const ContainerId& id,const std::string& rootfsPath) {
+                return true;
+        }));
+
+    EXPECT_CALL(*p_legacyPluginManagerMock, executePreDestructionHooks(::testing::_, ::testing::_,::testing::_))
+        .Times(1)
+            .WillOnce(::testing::Invoke(
+            [](const std::map<std::string, Json::Value>& plugins,const ContainerId& id,const std::string& rootfsPath) {
+                return true;
+        }));
+
+    pid_t pid1 = 1234;
+    pid_t pid2 = 5678;
+    EXPECT_CALL(*p_runcMock, create(::testing::_,::testing::_,::testing::_,::testing::_,::testing::_))
+        .Times(1)
+            .WillOnce(::testing::Invoke(
+            [pid1, pid2](const ContainerId &id,const std::shared_ptr<const DobbyBundle> &bundle,const std::shared_ptr<const IDobbyStream> &console,const std::list<int> &files = std::list<int>(),const std::string& customConfigPath) {
+                return std::make_pair(pid1, pid2);
+            }));
+
+    EXPECT_CALL(*p_runcMock, start(::testing::_,::testing::_))
+        .Times(1)
+            .WillOnce(::testing::Invoke(
+            [](const ContainerId &id, const std::shared_ptr<const IDobbyStream> &console) {
+                return true;
+            }));
+
+        EXPECT_CALL(*p_runcMock, killCont(::testing::_,::testing::_,::testing::_))
+            .Times(1)
+             .WillOnce(::testing::Invoke(
+             [](const ContainerId &id, int signal, bool all) {
+                 return true;
+        }));
+
+        EXPECT_CALL(*p_runcMock, destroy(::testing::_,::testing::_,::testing::_))
+            .Times(1)
+             .WillOnce(::testing::Invoke(
+             [](const ContainerId &id, const std::shared_ptr<const IDobbyStream> &console, bool force) {
+                 return true;
+        }));
+
+    ContainerId id = ContainerId::create("container_123");
+    std::string jsonSpec = "{\"key\": \"value\", \"number\": 42}";
+    std::list<int> files = {1, 2, 3};//file descriptors
+    std::string command ="ls -l";
+    std::string displaySocket = "/tmp/display";
+    std::vector<std::string> envVars;
+    envVars = {"PATH=/usr/bin", "HOME=/home/user"};
+
+    int result = dobbyManager_test->startContainerFromSpec(id,jsonSpec,files,command,displaySocket,envVars);
+
+    EXPECT_EQ(result, cd);
+    EXPECT_TRUE(waitForContainerStarted(MAX_TIMEOUT_CONTAINER_STARTED));
+
+    EXPECT_CALL(*p_configMock, configJson())
+     .Times(1).WillRepeatedly(::testing::Return(jsonSpec));
+
+    std::string res_str = dobbyManager_test->ociConfigOfContainer(cd);
+    EXPECT_EQ(res_str, jsonSpec);
+}
+
+/**
+ * @brief Test ociConfigOfContainer failure case
+ * Check if ociConfigOfContainer method is failing when no containers are added to the list.
+ *
+ *  @param[in]  cd      The descriptor of the container to get the config.json of.
+ *  @return the empty config.json string as there are no containers.
+ */
+TEST_F(DaemonDobbyManagerTest, ociConfigOfContainer_FailedToFindContainer)
+{
+    int32_t cd = 123;
+    std::string res_str = dobbyManager_test->ociConfigOfContainer(cd);
+    EXPECT_EQ(res_str, "");
+}
+
+/**
+ * @brief Test ociConfigOfContainer failure case
+ * Check if ociConfigOfContainer method is failing as JsonSpec is empty for given input container
+ *
+ *  @param[in]  cd      The descriptor of the container to get the config.json of.
+ *  @return the empty config.json string.
+ */
+TEST_F(DaemonDobbyManagerTest, ociConfigOfContainer_EmptyOCIConfigJsonSpec)
+{
+    EXPECT_CALL(*p_bundleMock, isValid())
+        .Times(1)
+            .WillOnce(::testing::Return(true));
+
+    EXPECT_CALL(*p_specConfigMock, isValid())
+        .Times(1)
+            .WillOnce(::testing::Return(true));
+
+    EXPECT_CALL(*p_rootfsMock, isValid())
+        .Times(1)
+           .WillOnce(::testing::Return(true));
+
+    EXPECT_CALL(*p_startStateMock, isValid())
+        .Times(1)
+            .WillOnce(::testing::Return(true));
+
+    std::map<std::string, Json::Value> emptyMap;
+
+// Set up the mock behavior for rdkPlugins() to return the empty map
+    EXPECT_CALL(*p_specConfigMock, rdkPlugins())
+        .Times(2)
+            .WillOnce(::testing::ReturnRef(emptyMap))
+            .WillOnce(::testing::ReturnRef(emptyMap));
+
+    int32_t cd = 123;
+    EXPECT_CALL(*p_containerMock, allocDescriptor())
+        .Times(1)
+        .WillOnce(::testing::Return(cd));
+
+    const std::string validPath = "/unit_tests/L1_testing/tests/";
+
+// Set the expectation to return the valid path
+    EXPECT_CALL(*p_rootfsMock, path())
+        .Times(5)
+            .WillOnce(::testing::ReturnRef(validPath))
+            .WillOnce(::testing::ReturnRef(validPath))
+            .WillOnce(::testing::ReturnRef(validPath))
+            .WillOnce(::testing::ReturnRef(validPath))
+            .WillOnce(::testing::ReturnRef(validPath));
+
+    std::string valid_path = "/unit_tests/L1_testing/tests/DobbyManagerTest";
+    EXPECT_CALL(*p_bundleMock, path())
+        .Times(1)
+            .WillOnce(::testing::ReturnRef(valid_path));
+
+    EXPECT_CALL(*p_configMock, writeConfigJson(::testing::_))
+        .Times(1)
+            .WillOnce(::testing::Invoke(
+            [](const std::string& filePath) {
+                return true;
+            }));
+
+    EXPECT_CALL(*p_startStateMock, files())
+        .Times(1)
+            .WillOnce(::testing::Return(std::list<int>{1, 2, 3}));
+
+    std::map<std::string, Json::Value> data;
+    data["key1"] = Json::Value("value1");
+    data["key2"] = Json::Value("value2");
+    EXPECT_CALL(*p_specConfigMock, legacyPlugins())
+        .Times(5)
+            .WillOnce(testing::ReturnRef(data))
+            .WillOnce(testing::ReturnRef(data))
+            .WillOnce(testing::ReturnRef(data))
+            .WillOnce(testing::ReturnRef(data))
+            .WillOnce(testing::ReturnRef(data));
+
+    EXPECT_CALL(*p_legacyPluginManagerMock, executePostConstructionHooks(::testing::_, ::testing::_, ::testing::_, ::testing::_))
+        .Times(1)
+            .WillOnce(::testing::Invoke(
+            [](const std::map<std::string, Json::Value>& plugins,const ContainerId& id,const std::shared_ptr<IDobbyStartState>& startupState,const std::string& rootfsPath) {
+                return true;
+            }));
+
+    EXPECT_CALL(*p_legacyPluginManagerMock, executePreStartHooks(::testing::_, ::testing::_, ::testing::_, ::testing::_))
+        .Times(1)
+            .WillOnce(::testing::Invoke(
+            [](const std::map<std::string, Json::Value>& plugins,const ContainerId& id,pid_t pid,const std::string& rootfsPath) {
+                return true;
+            }));
+
+    EXPECT_CALL(*p_legacyPluginManagerMock, executePostStartHooks(::testing::_, ::testing::_,::testing::_,::testing::_))
+        .Times(1)
+            .WillOnce(::testing::Invoke(
+            [](const std::map<std::string, Json::Value>& plugins,const ContainerId& id,pid_t pid,const std::string& rootfsPath) {
+                return true;
+            }));
+
+    EXPECT_CALL(*p_legacyPluginManagerMock, executePostStopHooks(::testing::_, ::testing::_,::testing::_))
+        .Times(1)
+            .WillOnce(::testing::Invoke(
+            [](const std::map<std::string, Json::Value>& plugins,const ContainerId& id,const std::string& rootfsPath) {
+                return true;
+        }));
+
+    EXPECT_CALL(*p_legacyPluginManagerMock, executePreDestructionHooks(::testing::_, ::testing::_,::testing::_))
+        .Times(1)
+            .WillOnce(::testing::Invoke(
+            [](const std::map<std::string, Json::Value>& plugins,const ContainerId& id,const std::string& rootfsPath) {
+                return true;
+        }));
+
+    pid_t pid1 = 1234;
+    pid_t pid2 = 5678;
+    EXPECT_CALL(*p_runcMock, create(::testing::_,::testing::_,::testing::_,::testing::_,::testing::_))
+        .Times(1)
+            .WillOnce(::testing::Invoke(
+            [pid1, pid2](const ContainerId &id,const std::shared_ptr<const DobbyBundle> &bundle,const std::shared_ptr<const IDobbyStream> &console,const std::list<int> &files = std::list<int>(),const std::string& customConfigPath) {
+                return std::make_pair(pid1, pid2);
+            }));
+
+    EXPECT_CALL(*p_runcMock, start(::testing::_,::testing::_))
+        .Times(1)
+            .WillOnce(::testing::Invoke(
+            [](const ContainerId &id, const std::shared_ptr<const IDobbyStream> &console) {
+                return true;
+            }));
+
+        EXPECT_CALL(*p_runcMock, killCont(::testing::_,::testing::_,::testing::_))
+            .Times(1)
+             .WillOnce(::testing::Invoke(
+             [](const ContainerId &id, int signal, bool all) {
+                 return true;
+        }));
+
+        EXPECT_CALL(*p_runcMock, destroy(::testing::_,::testing::_,::testing::_))
+            .Times(1)
+             .WillOnce(::testing::Invoke(
+             [](const ContainerId &id, const std::shared_ptr<const IDobbyStream> &console, bool force) {
+                 return true;
+        }));
+
+    ContainerId id = ContainerId::create("container_123");
+    std::string jsonSpec = "{\"key\": \"value\", \"number\": 42}";
+    std::list<int> files = {1, 2, 3};//file descriptors
+    std::string command ="ls -l";
+    std::string displaySocket = "/tmp/display";
+    std::vector<std::string> envVars;
+    envVars = {"PATH=/usr/bin", "HOME=/home/user"};
+
+    int result = dobbyManager_test->startContainerFromSpec(id,jsonSpec,files,command,displaySocket,envVars);
+
+    EXPECT_EQ(result, cd);
+    EXPECT_TRUE(waitForContainerStarted(MAX_TIMEOUT_CONTAINER_STARTED));
+
+    std::string empty_jsonSpec = "";
+
+    EXPECT_CALL(*p_configMock, configJson())
+     .Times(1).WillRepeatedly(::testing::Return(empty_jsonSpec));
+
+    std::string res_str = dobbyManager_test->ociConfigOfContainer(cd);
+    EXPECT_EQ(res_str, empty_jsonSpec);
+}
+
+/*Test cases for ociConfigOfContainer ends here*/
+
