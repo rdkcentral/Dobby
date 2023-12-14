@@ -612,7 +612,6 @@ protected:
             EXPECT_TRUE(waitForContainerStarted(MAX_TIMEOUT_CONTAINER_STARTED));
 
         }
-
         #ifdef LEGACY_COMPONENTS
         void expect_startContainerFromSpec(int32_t cd)
         {
@@ -802,7 +801,6 @@ protected:
             EXPECT_TRUE(waitForContainerStarted(MAX_TIMEOUT_CONTAINER_STARTED));
 
 }
-
      #endif //defined(LEGACY_COMPONENTS)
 
     };
@@ -2665,17 +2663,22 @@ TEST_F(DaemonDobbyManagerTest, startContainerFromBundle_CreateAndStartContainerF
  */
 TEST_F(DaemonDobbyManagerTest, ociConfigOfContainer_Success)
 {
-    int32_t cd = 123;
-    std::string jsonSpec = "{\"key\": \"value\", \"number\": 42}";
-#if defined(LEGACY_COMPONENTS)
-    expect_startContainerFromSpec(cd);
-#endif //defined(LEGACY_COMPONENTS)
+    std::string expect_string("{\n \"id\" : \"container1\",\n \"state\" : \"running\"\n}");
+    int32_t cd = 1234;
+
+#ifdef LEGACY_COMPONENTS
+        expect_startContainerFromSpec(cd);
+#else
+        expect_startContainerFromBundle(cd);
+#endif /* LEGACY_COMPONENTS */
 
     EXPECT_CALL(*p_configMock, configJson())
-     .Times(1).WillRepeatedly(::testing::Return(jsonSpec));
+        .Times(1)
+        .WillOnce(::testing::Return(expect_string));
 
-    std::string res_str = dobbyManager_test->ociConfigOfContainer(cd);
-    EXPECT_EQ(res_str, jsonSpec);
+    std::string result = dobbyManager_test->ociConfigOfContainer(cd);
+
+    EXPECT_EQ(result, expect_string);
 }
 
 /**
@@ -2687,35 +2690,47 @@ TEST_F(DaemonDobbyManagerTest, ociConfigOfContainer_Success)
  */
 TEST_F(DaemonDobbyManagerTest, ociConfigOfContainer_FailedToFindContainer)
 {
-    int32_t cd = 123;
-    std::string res_str = dobbyManager_test->ociConfigOfContainer(cd);
-    EXPECT_EQ(res_str, "");
+    std::string expect_string("");
+    int32_t cd = 1234;
+
+#ifdef LEGACY_COMPONENTS
+        expect_startContainerFromSpec(cd);
+#else
+        expect_startContainerFromBundle(cd);
+#endif /* LEGACY_COMPONENTS */
+
+    std::string result = dobbyManager_test->ociConfigOfContainer(2345);
+    EXPECT_EQ(result, expect_string);
+
 }
 
 /**
- * @brief Test ociConfigOfContainer failure case
- * Check if ociConfigOfContainer method is failing as JsonSpec is empty for given input container
+ * @brief Test ociConfigOfContainer Success case
+ * Check if ociConfigOfContainer method is successfully returned empty config.json string
  *
  *  @param[in]  cd      The descriptor of the container to get the config.json of.
- *  @return the empty config.json string.
+ *  @return the config.json string.
  */
 TEST_F(DaemonDobbyManagerTest, ociConfigOfContainer_EmptyOCIConfigJsonSpec)
 {
+    std::string empty_string("{}");
     int32_t cd = 123;
 
-#if defined(LEGACY_COMPONENTS)
-    expect_startContainerFromSpec(cd);
-#endif //defined(LEGACY_COMPONENTS)
-
-    std::string empty_jsonSpec = "";
+#ifdef LEGACY_COMPONENTS
+        expect_startContainerFromSpec(cd);
+#else
+        expect_startContainerFromBundle(cd);
+#endif /* LEGACY_COMPONENTS */
 
     EXPECT_CALL(*p_configMock, configJson())
-     .Times(1).WillRepeatedly(::testing::Return(empty_jsonSpec));
+        .Times(1)
+        .WillOnce(::testing::Return(empty_string));
 
-    std::string res_str = dobbyManager_test->ociConfigOfContainer(cd);
-    EXPECT_EQ(res_str, empty_jsonSpec);
+    std::string result = dobbyManager_test->ociConfigOfContainer(cd);
+
+    EXPECT_EQ(result, empty_string);
+
 }
-
 /*Test cases for ociConfigOfContainer ends here*/
 
 #if defined(LEGACY_COMPONENTS)
@@ -2728,8 +2743,8 @@ TEST_F(DaemonDobbyManagerTest, ociConfigOfContainer_EmptyOCIConfigJsonSpec)
  *  @return the json spec string.
  *
   * Use case coverage:
- *                @Success :2
- *                @Failure :1
+ *                @Success :1
+ *                @Failure :2
  ***************************************************************************************************/
 /**
  *  @fail to find the container
@@ -2745,11 +2760,7 @@ TEST_F(DaemonDobbyManagerTest, specOfContainer_FailedToFindContainer)
     std::string expected_string("");
     int32_t cd = 1234;
 
-    ContainerId id = ContainerId::create("container1");
-
-    #if defined(LEGACY_COMPONENTS)
     expect_startContainerFromSpec(cd);
-    #endif //defined(LEGACY_COMPONENTS)
 
     std::string result = dobbyManager_test->specOfContainer(2345);
     EXPECT_EQ(result, expected_string);
@@ -2772,8 +2783,6 @@ TEST_F(DaemonDobbyManagerTest, specOfContainer_SuccessWhenStarting)
     std::string expected_string("{\n \"id\" : \"container1\",\n \"state\" : \"running\"\n}");
     int32_t cd = 1234;
 
-    ContainerId id = ContainerId::create("container1");
-
     expect_startContainerFromSpec(1234);
 
     EXPECT_CALL(*p_specConfigMock, spec())
@@ -2793,8 +2802,6 @@ TEST_F(DaemonDobbyManagerTest, specOfContainer_EmptyJsonSpec)
     std::string empty_string("{}");
     int32_t cd = 123;
 
-    ContainerId id = ContainerId::create("container2");
-
     expect_startContainerFromSpec(123);
 
     EXPECT_CALL(*p_specConfigMock, spec())
@@ -2805,7 +2812,7 @@ TEST_F(DaemonDobbyManagerTest, specOfContainer_EmptyJsonSpec)
 
     EXPECT_EQ(result, empty_string);
 }
-    #endif //defined(LEGACY_COMPONENTS)
+#endif //defined(LEGACY_COMPONENTS)
 
 /*specOfContainer usecases ends here*/
 
