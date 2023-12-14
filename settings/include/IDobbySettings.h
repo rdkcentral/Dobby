@@ -244,6 +244,26 @@ public:
     };
 
     virtual ApparmorSettings apparmorSettings() const = 0;
+
+    // -------------------------------------------------------------------------
+    /**
+     *  Pids cgroup settings
+     *
+     *  @see https://www.kernel.org/doc/Documentation/cgroup-v1/pids.txt
+     *
+     *      - enabled
+     *          Specifies if pids cgroup limit should be set
+     *      - limit
+     *          A limit of tasks in cgroup
+     *
+     */
+    struct PidsSettings
+    {
+        bool enabled;
+        int limit;
+    };
+
+    virtual PidsSettings pidsSettings() const = 0;
 };
 
 #endif // !defined(IDOBBYSETTINGS_H)

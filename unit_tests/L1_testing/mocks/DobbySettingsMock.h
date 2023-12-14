@@ -37,4 +37,5 @@ class DobbySettingsMock : public IDobbySettings {
     MOCK_METHOD(LogRelaySettings, logRelaySettings, (), (const, override));
     MOCK_METHOD(StraceSettings, straceSettings, (), (const, override));
     MOCK_METHOD(ApparmorSettings, apparmorSettings, (), (const, override));
+    MOCK_METHOD(PidsSettings, pidsSettings, (), (const, override));
 };

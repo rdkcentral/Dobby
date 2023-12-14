@@ -131,8 +131,8 @@ public:
 
     void printCommand() const;
     bool enableSTrace(const std::string& logsDir);
-
     void setApparmorProfile(const std::string& profileName);
+    void setPidsLimit(int limit);
 
 // protected methods for derived classes to use
 protected:

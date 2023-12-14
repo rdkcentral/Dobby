@@ -341,11 +341,11 @@ Settings::Settings(const Json::Value& settings)
         {
             if (apparmorSettings.isObject())
             {
-                const Json::Value enabled = apparmorSettings["enabled"];
+                const Json::Value enabled = apparmorSettings["enable"];
                 if (enabled.isBool())
                     mApparmorSettings.enabled = enabled.asBool();
                 else
-                    AI_LOG_ERROR("Invalid entry in apparmor.enabled in JSON settings file");
+                    AI_LOG_ERROR("Invalid entry in apparmor.enable in JSON settings file");
 
                 const Json::Value profile = apparmorSettings["defaultProfile"];
                 if (profile.isString())
@@ -356,6 +356,32 @@ Settings::Settings(const Json::Value& settings)
             else
             {
                 AI_LOG_ERROR("Invalid apparmor type in settings file, should be object");
+            }
+        }
+    }
+
+    // Process pids settings
+    {
+        Json::Value pidsSettings = Json::Path(".pids").resolve(settings);
+       if (!pidsSettings.isNull())
+        {
+            if (pidsSettings.isObject())
+            {
+                const Json::Value enabled = pidsSettings["enable"];
+                if (enabled.isBool())
+                    mPidsSettings.enabled = enabled.asBool();
+                else
+                    AI_LOG_ERROR("Invalid entry in pids.enable in JSON settings file");
+
+                const Json::Value limit = pidsSettings["limit"];
+                if (limit.isIntegral())
+                    mPidsSettings.limit = limit.asInt();
+                else
+                    AI_LOG_ERROR("Invalid entry in pids.limit in JSON settings file");
+            }
+            else
+            {
+                AI_LOG_ERROR("Invalid pids type in settings file, should be object");
             }
         }
     }
@@ -376,10 +402,14 @@ void Settings::setDefaults()
     mPersistentDir = getPathFromEnv("AI_PERSISTENT_PATH", "/opt/persistent/rdk");
     mApparmorSettings.enabled = true;
     mApparmorSettings.profileName = "dobby_default";
+    mPidsSettings.enabled = true;
+    mPidsSettings.limit = 128;
 #else
     mWorkspaceDir = getPathFromEnv("AI_WORKSPACE_PATH", "/tmp/ai-workspace-fallback");
     mPersistentDir = getPathFromEnv("AI_PERSISTENT_PATH", "/tmp/ai-flash-fallback");
     mApparmorSettings.enabled = false;
+    mPidsSettings.enabled = false;
+    mPidsSettings.limit = 0;
 #endif
 }
 
@@ -513,6 +543,11 @@ IDobbySettings::ApparmorSettings Settings::apparmorSettings() const
     return mApparmorSettings;
 }
 
+IDobbySettings::PidsSettings Settings::pidsSettings() const
+{
+    return mPidsSettings;
+}
+
 // -----------------------------------------------------------------------------
 /**
  *  @brief Debugging function to dump the settings to the log - info level.
@@ -551,6 +586,9 @@ void Settings::dump(int aiLogLevel) const
 
     __AI_LOG_PRINTF(aiLogLevel, "settings.apparmorSettings.enabled='%s'", mApparmorSettings.enabled ? "true" : "false");
     __AI_LOG_PRINTF(aiLogLevel, "settings.apparmorSettings.defaultProfile='%s'", mApparmorSettings.profileName.c_str());
+
+    __AI_LOG_PRINTF(aiLogLevel, "settings.pidsSettings.enabled='%s'", mPidsSettings.enabled ? "true" : "false");
+    __AI_LOG_PRINTF(aiLogLevel, "settings.pidsSettings.limit=%d", mPidsSettings.limit);
 
     dumpHardwareAccess(aiLogLevel, "gpu", mGpuHardwareAccess);
     dumpHardwareAccess(aiLogLevel, "vpu", mVpuHardwareAccess);
