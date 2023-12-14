@@ -190,6 +190,9 @@ virtual const std::map&lt; std::string, Json::Value &gt; &amp;&#160;</td><td cla
 <tr class="memitem:a4209d82f0709bfab80c49148c950c86a"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classDobbyConfig.html#a4209d82f0709bfab80c49148c950c86a">setApparmorProfile</a> (const std::string &amp;profileName)</td></tr>
 <tr class="memdesc:a4209d82f0709bfab80c49148c950c86a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set apparmor profile in config.  <a href="classDobbyConfig.html#a4209d82f0709bfab80c49148c950c86a">More...</a><br /></td></tr>
 <tr class="separator:a4209d82f0709bfab80c49148c950c86a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6ae2aadac7fdde06fa7e04be7a854119"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classDobbyConfig.html#a6ae2aadac7fdde06fa7e04be7a854119">setPidsLimit</a> (int limit)</td></tr>
+<tr class="memdesc:a6ae2aadac7fdde06fa7e04be7a854119"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set cgroup pids limit.  <a href="classDobbyConfig.html#a6ae2aadac7fdde06fa7e04be7a854119">More...</a><br /></td></tr>
+<tr class="separator:a6ae2aadac7fdde06fa7e04be7a854119"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aad976c50ac8273ca3c631978b9aee0e4"><td class="memItemLeft" align="right" valign="top"><a id="aad976c50ac8273ca3c631978b9aee0e4"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>writeConfigJson</b> (const std::string &amp;filePath) const</td></tr>
 <tr class="separator:aad976c50ac8273ca3c631978b9aee0e4"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -214,6 +217,9 @@ bool&#160;</td><td class="memItemRight" valign="bottom"><b>enableSTrace</b> (con
 <tr class="memitem:a4209d82f0709bfab80c49148c950c86a"><td class="memItemLeft" align="right" valign="top"><a id="a4209d82f0709bfab80c49148c950c86a"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>setApparmorProfile</b> (const std::string &amp;profileName)</td></tr>
 <tr class="separator:a4209d82f0709bfab80c49148c950c86a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6ae2aadac7fdde06fa7e04be7a854119"><td class="memItemLeft" align="right" valign="top"><a id="a6ae2aadac7fdde06fa7e04be7a854119"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>setPidsLimit</b> (int limit)</td></tr>
+<tr class="separator:a6ae2aadac7fdde06fa7e04be7a854119"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa8223f8155756a1260eceee7d257f235"><td class="memItemLeft" align="right" valign="top"><a id="aa8223f8155756a1260eceee7d257f235"></a>
 const std::string&#160;</td><td class="memItemRight" valign="bottom"><b>configJson</b> () const</td></tr>
 <tr class="separator:aa8223f8155756a1260eceee7d257f235"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -767,6 +773,34 @@ Private Member Functions</h2></td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">id</td><td>container identifier </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">cfg</td><td>libocispec config structure instance </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">bundlePath</td><td>path to the container bundle </td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a id="a6ae2aadac7fdde06fa7e04be7a854119"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a6ae2aadac7fdde06fa7e04be7a854119">&#9670;&nbsp;</a></span>setPidsLimit()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void DobbyConfig::setPidsLimit </td>
+          <td>(</td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>limit</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Set cgroup pids limit. </p>
+<p>Limits the number of processes that containered app can create.</p>
+<dl class="section see"><dt>See also</dt><dd><a href="https://www.kernel.org/doc/Documentation/cgroup-v1/pids.txt">https://www.kernel.org/doc/Documentation/cgroup-v1/pids.txt</a></dd></dl>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">limit</td><td>limit of pids </td></tr>
   </table>
   </dd>
 </dl>

@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['dnsmasqsetup_1094',['DnsmasqSetup',['../namespaceDnsmasqSetup.html',1,'']]]
+  ['dnsmasqsetup_1097',['DnsmasqSetup',['../namespaceDnsmasqSetup.html',1,'']]]
 ];

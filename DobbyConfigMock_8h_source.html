@@ -107,9 +107,10 @@ $(function() {
 <div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;    MOCK_METHOD(<span class="keywordtype">bool</span>, addEnvironmentVar, (<span class="keyword">const</span> std::string&amp; envVar), (<span class="keyword">override</span>));</div>
 <div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;    MOCK_METHOD(<span class="keywordtype">bool</span>, enableSTrace, (<span class="keyword">const</span> std::string&amp; logsDir), (<span class="keyword">override</span>));</div>
 <div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;    MOCK_METHOD(<span class="keywordtype">void</span>, setApparmorProfile, (<span class="keyword">const</span> std::string&amp; profileName), (<span class="keyword">override</span>));</div>
-<div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;    MOCK_METHOD(std::string, configJson, (), (<span class="keyword">const</span>,<span class="keyword">override</span>));</div>
-<div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160; </div>
-<div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;};</div>
+<div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;    MOCK_METHOD(<span class="keywordtype">void</span>, setPidsLimit, (<span class="keywordtype">int</span> limit), (<span class="keyword">override</span>));</div>
+<div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;    MOCK_METHOD(std::string, configJson, (), (<span class="keyword">const</span>,<span class="keyword">override</span>));</div>
+<div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160; </div>
+<div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;};</div>
 <div class="ttc" id="aclassDobbyConfigImpl_html"><div class="ttname"><a href="classDobbyConfigImpl.html">DobbyConfigImpl</a></div><div class="ttdef"><b>Definition:</b> DobbyConfig.h:36</div></div>
 <div class="ttc" id="aclassDobbyConfigMock_html"><div class="ttname"><a href="classDobbyConfigMock.html">DobbyConfigMock</a></div><div class="ttdef"><b>Definition:</b> DobbyConfigMock.h:26</div></div>
 </div><!-- fragment --></div><!-- contents -->
