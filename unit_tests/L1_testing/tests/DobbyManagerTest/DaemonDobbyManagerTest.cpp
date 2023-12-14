@@ -2666,7 +2666,7 @@ TEST_F(DaemonDobbyManagerTest, startContainerFromBundle_CreateAndStartContainerF
 TEST_F(DaemonDobbyManagerTest, ociConfigOfContainer_Success)
 {
     int32_t cd = 123;
-
+    std::string jsonSpec = "{\"key\": \"value\", \"number\": 42}";
 #if defined(LEGACY_COMPONENTS)
     expect_startContainerFromSpec(cd);
 #endif //defined(LEGACY_COMPONENTS)
