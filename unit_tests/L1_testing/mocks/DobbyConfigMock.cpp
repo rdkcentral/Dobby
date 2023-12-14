@@ -75,6 +75,13 @@ void DobbyConfig::setApparmorProfile(const std::string& profileName)
     return impl->setApparmorProfile(profileName);
 }
 
+void DobbyConfig::setPidsLimit(int limit)
+{
+   EXPECT_NE(impl, nullptr);
+
+    return impl->setPidsLimit(limit);
+}
+
 const std::string DobbyConfig::configJson() const
 {
    EXPECT_NE(impl, nullptr);

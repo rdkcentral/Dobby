@@ -79,6 +79,7 @@ public:
     LogRelaySettings logRelaySettings() const override;
     StraceSettings straceSettings() const override;
     ApparmorSettings apparmorSettings() const override;
+    PidsSettings pidsSettings() const override;
 
     void dump(int aiLogLevel = -1) const;
 
@@ -131,6 +132,7 @@ private:
     LogRelaySettings mLogRelaySettings;
     StraceSettings mStraceSettings;
     ApparmorSettings mApparmorSettings;
+    PidsSettings mPidsSettings;
 };
 
 #endif // !defined(SETTINGS_H)
