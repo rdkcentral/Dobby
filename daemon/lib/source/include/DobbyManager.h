@@ -45,6 +45,7 @@
 #include <future>
 #include <functional>
 #include <netinet/in.h>
+#include <semaphore.h>
 
 #if defined(RDK)
 #  include <json/json.h>
@@ -211,6 +212,7 @@ private:
     std::unique_ptr<DobbyRunC> mRunc;
 
 private:
+    sem_t mRuncMonitorThreadStartedSem;
     std::thread mRuncMonitorThread;
     std::atomic<bool> mRuncMonitorTerminate;
     int mCleanupTaskTimerId;
