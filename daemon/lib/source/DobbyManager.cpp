@@ -2464,6 +2464,9 @@ void DobbyManager::startRuncMonitorThread()
     // clear the terminate flag
     mRuncMonitorTerminate = false;
 
+    int result = sem_init(&mRuncMonitorThreadStartedSem,0,0);
+    assert(0 == result);
+
     //spawn the thread
     mRuncMonitorThread = std::thread(&DobbyManager::runcMonitorThread, this);
 
@@ -2483,6 +2486,9 @@ void DobbyManager::stopRuncMonitorThread()
     // attempt to terminate the thread
     if (mRuncMonitorThread.joinable())
     {
+        // Wait for RuncMonitorThread to be running first
+        sem_wait(&mRuncMonitorThreadStartedSem);
+
         // set the terminate flag
         mRuncMonitorTerminate = true;
 
@@ -2497,6 +2503,9 @@ void DobbyManager::stopRuncMonitorThread()
             mRuncMonitorThread.join();
         }
     }
+
+    int result = sem_destroy(&mRuncMonitorThreadStartedSem);
+    assert(0 == result);
 
     AI_LOG_FN_EXIT();
 }
@@ -2529,6 +2538,7 @@ void DobbyManager::runcMonitorThread()
     sigprocmask(SIG_BLOCK, &mask, nullptr);
     pthread_sigmask(SIG_BLOCK, &mask, nullptr);
 
+    sem_post(&mRuncMonitorThreadStartedSem);
     while (!mRuncMonitorTerminate)
     {
         // wait for both SIGCHLD and SIGUSR1
