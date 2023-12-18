@@ -65,7 +65,6 @@
 #include "DobbyProtocol.h"
 
 #define MAX_TIMEOUT_CONTAINER_STARTED (5000) /* 5sec */
-#define WAIT_TIME (10000)
 #define LIST_CONTAINERS_HUGE_COUNT 8
 
 DobbyContainerImpl* DobbyContainer::impl = nullptr;
@@ -264,11 +263,6 @@ protected:
            }));
 
            dobbyManager_test = std::make_shared<NiceMock<DobbyManager>>(p_env,p_utils,p_ipcutils,p_dobbysettingsMock,startcb,stopcb);
-           /* Github issue: 294: pthread_kill() is failing in stopRuncMonitorThread() which is calling from destructor.
-            * runcMonitorThread() is starting late, with in the time, if dobbymanager object is deleted, pthread_kill() is failing because the thread is not yet started.
-            * 10ms sleep is added to avoid the time issue */
-           usleep(WAIT_TIME);
-
         }
 
         virtual void TearDown()
