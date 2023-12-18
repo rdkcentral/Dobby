@@ -29,6 +29,7 @@
 class DobbyIPCUtilsImpl
 {
     public:
+    virtual ~DobbyIPCUtilsImpl() = default;
     virtual bool setAIDbusAddress(bool privateBus, const std::string &address) = 0;
     virtual std::shared_ptr<AI_IPC::IAsyncReplyGetter> ipcInvokeMethod(const IDobbyIPCUtils::BusType &bus,const AI_IPC::Method &method,const AI_IPC::VariantList &args,int timeoutMs) const = 0;
     virtual bool ipcInvokeMethod(const IDobbyIPCUtils::BusType &bus,const AI_IPC::Method &method,const AI_IPC::VariantList &args,AI_IPC::VariantList &replyArgs) const = 0;
@@ -55,7 +56,6 @@ public:
     ~DobbyIPCUtils();
 
     static void setImpl(DobbyIPCUtilsImpl* newImpl);
-    static DobbyIPCUtils* getInstance();
     bool setAIDbusAddress(bool privateBus, const std::string &address);
     std::shared_ptr<AI_IPC::IAsyncReplyGetter> ipcInvokeMethod(const BusType &bus,const AI_IPC::Method &method,const AI_IPC::VariantList &args,int timeoutMs) const override;
     bool ipcInvokeMethod(const BusType &bus,const AI_IPC::Method &method,const AI_IPC::VariantList &args,AI_IPC::VariantList &replyArgs) const override;

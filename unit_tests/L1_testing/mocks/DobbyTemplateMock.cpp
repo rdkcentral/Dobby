@@ -25,17 +25,9 @@ DobbyTemplate::DobbyTemplate()
 
 void DobbyTemplate::setImpl(DobbyTemplateImpl* newImpl)
 {
+    // Handles both resetting 'impl' to nullptr and assigning a new value to 'impl'
+    EXPECT_TRUE ((nullptr == impl) || (nullptr == newImpl));
     impl = newImpl;
-}
-
-DobbyTemplate* DobbyTemplate::getInstance()
-{
-    static DobbyTemplate* instance = nullptr;
-    if(nullptr == instance)
-    {
-       instance = new DobbyTemplate();
-    }
-    return instance;
 }
 
 void DobbyTemplate::setSettings(const std::shared_ptr<const IDobbySettings>& settings)
@@ -45,16 +37,3 @@ void DobbyTemplate::setSettings(const std::shared_ptr<const IDobbySettings>& set
     return impl->setSettings(settings);
 }
 
-std::string DobbyTemplate::apply(const ctemplate::TemplateDictionaryInterface* dictionary, bool prettyPrint)
-{
-   EXPECT_NE(impl, nullptr);
-
-    return impl->apply(dictionary, prettyPrint);
-}
-
-bool DobbyTemplate::applyAt(int dirFd, const std::string& fileName, const ctemplate::TemplateDictionaryInterface* dictionary, bool prettyPrint)
-{
-   EXPECT_NE(impl, nullptr);
-
-    return impl->applyAt(dirFd, fileName, dictionary, prettyPrint);
-}

@@ -27,13 +27,14 @@
 #include "IpcFileDescriptorMock.h"
 #include "DobbySettingsMock.h"
 #include "IIpcServiceMock.h"
+#if defined(LEGACY_COMPONENTS)
 #include "DobbyTemplateMock.h"
+#endif /* LEGACY_COMPONENTS */
 #include "DobbyEnvMock.h"
 #include "DobbyManagerMock.h"
 #include "DobbyIPCUtilsMock.h"
 #include "DobbyUtilsMock.h"
 #include "ContainerIdMock.h"
-
 #include "DobbyProtocol.h"
 
 #include <cstdlib>
@@ -42,7 +43,9 @@
 DobbyWorkQueueImpl* DobbyWorkQueue::impl = nullptr;
 DobbyManagerImpl*   DobbyManager::impl = nullptr;
 DobbyIPCUtilsImpl*  DobbyIPCUtils::impl = nullptr;
+#if defined(LEGACY_COMPONENTS)
 DobbyTemplateImpl*  DobbyTemplate::impl = nullptr;
+#endif /* LEGACY_COMPONENTS */
 DobbyUtilsImpl*  DobbyUtils::impl = nullptr;
 ContainerIdImpl*  ContainerId::impl = nullptr;
 AI_IPC::IIpcServiceImpl* AI_IPC::IIpcService::impl = nullptr;
@@ -56,14 +59,18 @@ protected:
     AI_IPC::IAsyncReplySenderMock* p_asyncReplySenderMock = nullptr;
     AI_IPC::IpcFileDescriptorMock*  p_ipcFileDescriptorMock = nullptr;
     DobbyWorkQueueMock*  p_workQueueMock = nullptr;
+#if defined(LEGACY_COMPONENTS)
     DobbyTemplateMock*  p_templateMock = nullptr;
+#endif /* LEGACY_COMPONENTS */
     DobbyUtilsMock*  p_utilsMock = nullptr;
     DobbyIPCUtilsMock*  p_IPCUtilsMock = nullptr;
     DobbyManagerMock*  p_dobbyManagerMock = nullptr ;
     AI_IPC::IpcServiceMock*  p_ipcServiceMock = nullptr ;
     ContainerIdMock*  p_containerIdMock  = nullptr;
-
+#if defined(LEGACY_COMPONENTS)
     DobbyTemplate *p_dobbyTemplate = nullptr;
+#endif //defined(LEGACY_COMPONENTS)
+
     DobbyManager *p_dobbyManager = nullptr;
     AI_IPC::IIpcService *p_ipcService = nullptr;
     DobbyWorkQueue *p_workQueue = nullptr;
@@ -81,37 +88,26 @@ protected:
         p_asyncReplySenderMock = new NiceMock<AI_IPC::IAsyncReplySenderMock>;
         p_ipcFileDescriptorMock = new NiceMock<AI_IPC::IpcFileDescriptorMock>;
         p_workQueueMock =new NiceMock <DobbyWorkQueueMock>;
+#if defined(LEGACY_COMPONENTS)
         p_templateMock = new NiceMock <DobbyTemplateMock>;
+#endif /* LEGACY_COMPONENTS */
         p_utilsMock =  new NiceMock <DobbyUtilsMock>;
         p_IPCUtilsMock = new NiceMock <DobbyIPCUtilsMock>;
         p_dobbyManagerMock = new NiceMock <DobbyManagerMock>;
         p_ipcServiceMock  = new NiceMock <AI_IPC::IpcServiceMock>;
         p_containerIdMock = new NiceMock  <ContainerIdMock>;
 
-        p_dobbyTemplate =  DobbyTemplate::getInstance();
-        EXPECT_NE(p_dobbyTemplate, nullptr);
-        p_dobbyManager =  DobbyManager::getInstance();
-        EXPECT_NE(p_dobbyManager, nullptr);
-        p_workQueue = DobbyWorkQueue::getInstance();
-        EXPECT_NE(p_workQueue, nullptr);
-        p_dobbyUtils = DobbyUtils::getInstance();
-        EXPECT_NE(p_dobbyUtils, nullptr);
-        p_dobbyIPCUtils = DobbyIPCUtils::getInstance();
-        EXPECT_NE(p_dobbyIPCUtils, nullptr);
-        p_containerId =  ContainerId::getInstance();
-        EXPECT_NE(p_containerId, nullptr);
-        p_iIpcFileDescriptor = AI_IPC::IpcFileDescriptor::getInstance();
-        EXPECT_NE(p_iIpcFileDescriptor, nullptr);
-
-        p_iasyncReplySender->setImpl(p_asyncReplySenderMock);
-        p_iIpcFileDescriptor->setImpl(p_ipcFileDescriptorMock);
-        p_ipcService->setImpl(p_ipcServiceMock);
-        p_workQueue->setImpl(p_workQueueMock);
-        p_dobbyTemplate->setImpl(p_templateMock);
-        p_dobbyUtils->setImpl(p_utilsMock);
-        p_dobbyIPCUtils->setImpl(p_IPCUtilsMock);
-        p_dobbyManager->setImpl(p_dobbyManagerMock);
-        p_containerId->setImpl(p_containerIdMock);
+        AI_IPC::IAsyncReplySender::setImpl(p_asyncReplySenderMock);
+        AI_IPC::IpcFileDescriptor::setImpl(p_ipcFileDescriptorMock);
+        AI_IPC::IIpcService::setImpl(p_ipcServiceMock);
+        DobbyWorkQueue::setImpl(p_workQueueMock);
+#if defined(LEGACY_COMPONENTS)
+        DobbyTemplate::setImpl(p_templateMock);
+#endif /* LEGACY_COMPONENTS */
+        DobbyUtils::setImpl(p_utilsMock);
+        DobbyIPCUtils::setImpl(p_IPCUtilsMock);
+        DobbyManager::setImpl(p_dobbyManagerMock);
+        ContainerId::setImpl(p_containerIdMock);
 
         p_settingsMock =  std::make_shared<NiceMock<DobbySettingsMock>>();
         std::string dbusAddress = "unix:path=/some/socket";
@@ -130,19 +126,22 @@ protected:
 
     virtual void TearDown()
     {
-
         ON_CALL(*p_ipcServiceMock, unregisterHandler(::testing::_))
         .WillByDefault(::testing::Return(true));
 
         dobby_test.reset();
-        p_workQueue->setImpl(nullptr);
-        p_iasyncReplySender->setImpl(nullptr);
-        p_iIpcFileDescriptor->setImpl(nullptr);
-        p_dobbyTemplate->setImpl(nullptr);
-        p_ipcService->setImpl(nullptr);
-        p_dobbyManager->setImpl(nullptr);
-        p_dobbyIPCUtils->setImpl(nullptr);
-        p_containerId->setImpl(nullptr);
+        dobby_test = nullptr;
+        DobbyWorkQueue::setImpl(nullptr);
+        AI_IPC::IAsyncReplySender::setImpl(nullptr);
+        AI_IPC::IpcFileDescriptor::setImpl(nullptr);
+#if defined(LEGACY_COMPONENTS)
+        DobbyTemplate::setImpl(nullptr);
+#endif //defined(LEGACY_COMPONENTS)
+        AI_IPC::IIpcService::setImpl(nullptr);
+        DobbyManager::setImpl(nullptr);
+        DobbyIPCUtils::setImpl(nullptr);
+        ContainerId::setImpl(nullptr);
+        DobbyUtils::setImpl(nullptr);
 
         if( p_asyncReplySenderMock != nullptr)
         {
@@ -161,11 +160,13 @@ protected:
             p_workQueueMock = nullptr;
         }
 
+#if defined(LEGACY_COMPONENTS)
         if ( p_templateMock != nullptr)
         {
             delete  p_templateMock;
             p_templateMock = nullptr;
         }
+#endif //defined(LEGACY_COMPONENTS)
 
         if (p_utilsMock != nullptr)
         {
@@ -196,6 +197,9 @@ protected:
             delete  p_containerIdMock;
             p_containerIdMock = nullptr;
         }
+
+        p_settingsMock.reset();
+        p_settingsMock = nullptr;
     }
 };
 
@@ -1636,8 +1640,8 @@ TEST_F(DaemonDobbyTest, stopSuccess_validArg_postWorkSuccess)
     EXPECT_CALL(*p_dobbyManagerMock, stopContainer(::testing::_,::testing::_,::testing::_))
         .WillOnce(::testing::Invoke(
                  [&](int32_t cd, bool withPrejudice, const std::function<void(int32_t cd, const ContainerId& id,  int32_t status)> containnerStopCb) {
-                     ContainerId *p_containerId = ContainerId::getInstance();;
-                     containnerStopCb(cd, *p_containerId, 2/*DobbyContainer::State:Stopping*/);
+                     ContainerId containerId;
+                     containnerStopCb(cd, containerId, 2/*DobbyContainer::State:Stopping*/);
                      return cd;
                  }));
 
@@ -2747,6 +2751,7 @@ TEST_F(DaemonDobbyTest, list_postWorkSuccess_SendReplySuccess)
             }));
 
     dobby_test->list((std::shared_ptr<AI_IPC::IAsyncReplySender>)p_iasyncReplySender);
+    containers.clear();
 }
 
 /*Test cases for startFromBundle ends here*/
@@ -2807,6 +2812,8 @@ TEST_F(DaemonDobbyTest, list_postWorkFailed_SendReplySuccess)
             }));
 
     dobby_test->list((std::shared_ptr<AI_IPC::IAsyncReplySender>)p_iasyncReplySender);
+
+    containers.clear();
 }
 
 /**
@@ -2868,6 +2875,7 @@ TEST_F(DaemonDobbyTest, list_postWorkSuccess_sendReplyFailed)
             }));
 
     dobby_test->list((std::shared_ptr<AI_IPC::IAsyncReplySender>)p_iasyncReplySender);
+    containers.clear();
 }
 
 /**

@@ -28,17 +28,9 @@ DobbyUtils::~DobbyUtils()
 
 void DobbyUtils::setImpl(DobbyUtilsImpl* newImpl)
 {
+    // Handles both resetting 'impl' to nullptr and assigning a new value to 'impl'
+    EXPECT_TRUE ((nullptr == impl) || (nullptr == newImpl));
     impl = newImpl;
-}
-
-DobbyUtils* DobbyUtils::getInstance()
-{
-    static DobbyUtils* instance = nullptr;
-    if(nullptr == instance)
-    {
-        instance = new DobbyUtils();
-    }
-    return instance;
 }
 
 bool DobbyUtils::cancelTimer(int timerId) const

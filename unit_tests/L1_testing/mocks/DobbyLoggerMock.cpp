@@ -32,17 +32,9 @@ DobbyLogger::~DobbyLogger()
 
 void DobbyLogger::setImpl(DobbyLoggerImpl* newImpl)
 {
+    // Handles both resetting 'impl' to nullptr and assigning a new value to 'impl'
+    EXPECT_TRUE ((nullptr == impl) || (nullptr == newImpl));
     impl = newImpl;
-}
-
-DobbyLogger* DobbyLogger::getInstance()
-{
-    static DobbyLogger* instance = nullptr;
-    if (nullptr == instance)
-    {
-       instance = new DobbyLogger();
-    }
-    return instance;
 }
 
 bool DobbyLogger::StartContainerLogging(std::string containerId,pid_t runtimePid,pid_t containerPid,std::shared_ptr<IDobbyRdkLoggingPlugin> loggingPlugin)

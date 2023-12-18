@@ -20,17 +20,9 @@
 
 void ContainerId::setImpl(ContainerIdImpl* newImpl)
 {
+    // Handles both resetting 'impl' to nullptr and assigning a new value to 'impl'
+    EXPECT_TRUE ((nullptr == impl) || (nullptr == newImpl));
     impl = newImpl;
-}
-
-ContainerId* ContainerId::getInstance()
-{
-    static ContainerId* instance = nullptr;
-    if(nullptr == instance)
-    {
-       instance = new ContainerId();
-    }
-    return instance;
 }
 
 bool ContainerId::isValid() const

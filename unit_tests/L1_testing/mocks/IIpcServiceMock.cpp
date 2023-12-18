@@ -20,6 +20,8 @@
 
 void AI_IPC::IIpcService::setImpl(IIpcServiceImpl* newImpl)
 {
+    // Handles both resetting 'impl' to nullptr and assigning a new value to 'impl'
+    EXPECT_TRUE ((nullptr == impl) || (nullptr == newImpl));
     impl = newImpl;
 }
 

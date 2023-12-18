@@ -48,6 +48,8 @@ public:
 
     static void setImpl(IAsyncReplySenderApiImpl* newImpl)
     {
+        // Handles both resetting 'impl' to nullptr and assigning a new value to 'impl'
+        EXPECT_TRUE ((nullptr == impl) || (nullptr == newImpl));
         impl = newImpl;
     }
 
@@ -65,15 +67,6 @@ public:
         return impl->getMethodCallArguments();
     }
 
-    static IAsyncReplySender* getInstance()
-    {
-        static IAsyncReplySender* instance = nullptr;
-        if(nullptr == instance)
-        {
-            instance = new IAsyncReplySender();
-        }
-        return instance;
-    }
 };
 
 

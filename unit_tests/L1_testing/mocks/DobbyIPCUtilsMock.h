@@ -22,6 +22,8 @@
 
 class DobbyIPCUtilsMock : public DobbyIPCUtilsImpl {
 public:
+    virtual ~DobbyIPCUtilsMock() = default;
+
     MOCK_METHOD(bool, setAIDbusAddress,(bool privateBus, const std::string& address), (override));
     MOCK_METHOD(std::shared_ptr<AI_IPC::IAsyncReplyGetter>, ipcInvokeMethod,(const IDobbyIPCUtils::BusType &bus,const AI_IPC::Method &method,const AI_IPC::VariantList &args,int timeoutMs), (const,override));
     MOCK_METHOD(bool, ipcInvokeMethod,(const IDobbyIPCUtils::BusType &bus,const AI_IPC::Method &method,const AI_IPC::VariantList &args,AI_IPC::VariantList &replyArgs), (const,override));

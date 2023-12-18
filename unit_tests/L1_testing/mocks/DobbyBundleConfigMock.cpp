@@ -33,17 +33,9 @@ DobbyBundleConfig::~DobbyBundleConfig()
 
 void DobbyBundleConfig::setImpl(DobbyBundleConfigImpl* newImpl)
 {
+    // Handles both resetting 'impl' to nullptr and assigning a new value to 'impl'
+    EXPECT_TRUE ((nullptr == impl) || (nullptr == newImpl));
     impl = newImpl;
-}
-
-DobbyBundleConfig* DobbyBundleConfig::getInstance()
-{
-    static DobbyBundleConfig* instance = nullptr;
-    if (nullptr == instance)
-    {
-        instance = new DobbyBundleConfig();
-    }
-    return instance;
 }
 
 std::shared_ptr<rt_dobby_schema> DobbyBundleConfig::config()

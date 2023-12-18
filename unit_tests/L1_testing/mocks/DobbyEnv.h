@@ -48,7 +48,6 @@ public:
     ~DobbyEnv();
     DobbyEnv(const std::shared_ptr<const IDobbySettings>& settings);
     static void setImpl(DobbyEnvImpl* newImpl);
-    static DobbyEnv* getInstance();
     std::string workspaceMountPath() const override;
     std::string flashMountPath() const override;
     std::string pluginsWorkspacePath() const override;

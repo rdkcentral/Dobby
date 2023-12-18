@@ -23,6 +23,8 @@
 
 void DobbyConfig::setImpl(DobbyConfigImpl* newImpl)
 {
+    // Handles both resetting 'impl' to nullptr and assigning a new value to 'impl'
+    EXPECT_TRUE ((nullptr == impl) || (nullptr == newImpl));
     impl = newImpl;
 }
 

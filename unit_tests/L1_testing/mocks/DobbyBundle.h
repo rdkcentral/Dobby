@@ -28,6 +28,7 @@ class IDobbyEnv;
 class DobbyBundleImpl {
 
 public:
+    virtual ~DobbyBundleImpl() = default;
 
     virtual void setPersistence(bool persist) = 0;
     virtual bool isValid() const = 0;
@@ -56,7 +57,6 @@ public:
 
 
     static void setImpl(DobbyBundleImpl* newImpl);
-    static DobbyBundle* getInstance();
     void setPersistence(bool persist);
     bool isValid() const;
 };

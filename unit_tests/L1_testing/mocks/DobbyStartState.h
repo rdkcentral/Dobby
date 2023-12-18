@@ -48,7 +48,6 @@ public:
     DobbyStartState(const std::shared_ptr<DobbyConfig>& config,const std::list<int>& files);
     ~DobbyStartState();
     static void setImpl(DobbyStartStateImpl* newImpl);
-    static DobbyStartState* getInstance();
     bool isValid() const;
     std::list<int> files() const;
 

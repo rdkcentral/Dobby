@@ -36,17 +36,9 @@ DobbySpecConfig::~DobbySpecConfig()
 
 void DobbySpecConfig::setImpl(DobbySpecConfigImpl* newImpl)
 {
+    // Handles both resetting 'impl' to nullptr and assigning a new value to 'impl'
+    EXPECT_TRUE ((nullptr == impl) || (nullptr == newImpl));
     impl = newImpl;
-}
-
-DobbySpecConfig* DobbySpecConfig::getInstance()
-{
-    static DobbySpecConfig* instance = nullptr;
-    if (nullptr == instance)
-    {
-       instance = new DobbySpecConfig();
-    }
-    return instance;
 }
 
 bool DobbySpecConfig::isValid() const

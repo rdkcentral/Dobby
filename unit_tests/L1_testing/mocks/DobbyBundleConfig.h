@@ -26,6 +26,7 @@
 class DobbyBundleConfigImpl {
 
 public:
+    virtual ~DobbyBundleConfigImpl() = default;
 
     virtual std::shared_ptr<rt_dobby_schema> config() const =0;
     virtual bool restartOnCrash() const =0;
@@ -54,7 +55,6 @@ public:
 #endif /* LEGACY_COMPONENTS */
     const std::map<std::string, Json::Value>& rdkPlugins() const ;
     static void setImpl(DobbyBundleConfigImpl* newImpl);
-    static DobbyBundleConfig* getInstance();
     std::shared_ptr<rt_dobby_schema> config();
     bool restartOnCrash() const;
 };

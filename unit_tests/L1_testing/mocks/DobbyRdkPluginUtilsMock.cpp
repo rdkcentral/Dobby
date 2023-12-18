@@ -53,17 +53,9 @@ DobbyRdkPluginUtils::~DobbyRdkPluginUtils()
 
 void DobbyRdkPluginUtils::setImpl(DobbyRdkPluginUtilsImpl* newImpl)
 {
+    // Handles both resetting 'impl' to nullptr and assigning a new value to 'impl'
+    EXPECT_TRUE ((nullptr == impl) || (nullptr == newImpl));
     impl = newImpl;
-}
-
-DobbyRdkPluginUtils* DobbyRdkPluginUtils::getInstance()
-{
-    static DobbyRdkPluginUtils* instance = nullptr;
-    if (nullptr == instance)
-    {
-       instance = new DobbyRdkPluginUtils();
-    }
-    return instance;
 }
 
 bool DobbyRdkPluginUtils::callInNamespaceImpl(pid_t pid, int nsType,const std::function<bool()>& func) const

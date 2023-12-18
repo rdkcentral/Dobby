@@ -125,7 +125,6 @@ public:
     ~DobbyManager();
 
     static void setImpl(DobbyManagerImpl* newImpl);
-    static DobbyManager* getInstance();
 
 #if defined(LEGACY_COMPONENTS)
 

@@ -25,6 +25,7 @@
 
 class DobbyStartStateMock : public DobbyStartStateImpl{
 public:
+    virtual ~DobbyStartStateMock() = default;
 
     MOCK_METHOD(std::list<int>, files, (), (const,override));
     MOCK_METHOD(bool, isValid, (), (const,override));

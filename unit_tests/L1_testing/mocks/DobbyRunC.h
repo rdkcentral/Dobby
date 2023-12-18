@@ -70,7 +70,6 @@ struct ContainerListItem
 public:
     DobbyRunC();
     static void setImpl(DobbyRunCImpl* newImpl);
-    static DobbyRunC* getInstance();
 
     std::pair<pid_t, pid_t> create(const ContainerId &id,
                                    const std::shared_ptr<const DobbyBundle> &bundle,
@@ -93,6 +92,8 @@ public:
 class DobbyRunCImpl
 {
 public:
+    virtual ~DobbyRunCImpl() = default;
+
     virtual std::pair<pid_t, pid_t> create(const ContainerId &id,
                                    const std::shared_ptr<const DobbyBundle> &bundle,
                                    const std::shared_ptr<const IDobbyStream> &console,

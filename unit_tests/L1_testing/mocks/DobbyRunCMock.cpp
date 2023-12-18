@@ -108,18 +108,10 @@ DobbyRunC::~DobbyRunC()
 {
 }
 
-DobbyRunC* DobbyRunC::getInstance()
-{
-    static DobbyRunC* instance = nullptr;
-    if (nullptr == instance)
-    {
-        instance = new DobbyRunC();
-    }
-    return instance;
-}
-
 void DobbyRunC::setImpl(DobbyRunCImpl* newImpl)
 {
+    // Handles both resetting 'impl' to nullptr and assigning a new value to 'impl'
+    EXPECT_TRUE ((nullptr == impl) || (nullptr == newImpl));
     impl = newImpl;
 }
 

@@ -33,6 +33,7 @@ class DobbyBundle;
 
 class DobbyRootfsImpl {
 public:
+    virtual ~DobbyRootfsImpl() = default;
 
     virtual void setPersistence(bool persist) = 0;
 
@@ -58,7 +59,6 @@ public:
     ~DobbyRootfs();
 
     static void setImpl(DobbyRootfsImpl* newImpl);
-    static DobbyRootfs* getInstance();
     void setPersistence(bool persist);
     const std::string& path() const;
     bool isValid() const;
