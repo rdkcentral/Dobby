@@ -132,21 +132,20 @@ $(function() {
 <div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;    ~<a class="code" href="classDobbySpecConfig.html">DobbySpecConfig</a>();</div>
 <div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160; </div>
 <div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;    <span class="keyword">static</span> <span class="keywordtype">void</span> setImpl(<a class="code" href="classDobbySpecConfigImpl.html">DobbySpecConfigImpl</a>* newImpl);</div>
-<div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;    <span class="keyword">static</span> <a class="code" href="classDobbySpecConfig.html">DobbySpecConfig</a>* getInstance();</div>
-<div class="line"><a name="l00063"></a><span class="lineno"><a class="line" href="classDobbySpecConfig.html#a74baea4f699d8b6c973a8f43f797bc73">   63</a></span>&#160;    <span class="keywordtype">bool</span> <a class="code" href="classDobbySpecConfig.html#a74baea4f699d8b6c973a8f43f797bc73">isValid</a>() <span class="keyword">const</span>;</div>
-<div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160; </div>
-<div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;<span class="preprocessor">#if defined(LEGACY_COMPONENTS)</span></div>
-<div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;    <span class="keyword">const</span> std::map&lt;std::string, Json::Value&gt;&amp; legacyPlugins() <span class="keyword">const</span>;</div>
-<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;    <span class="keyword">const</span> std::string spec() <span class="keyword">const</span>;</div>
-<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;<span class="preprocessor">#endif </span><span class="comment">//defined(LEGACY_COMPONENTS)</span></div>
-<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160; </div>
-<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;    <span class="keyword">const</span> std::map&lt;std::string, Json::Value&gt;&amp; rdkPlugins() <span class="keyword">const</span>;</div>
-<div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160; </div>
-<div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;    std::shared_ptr&lt;rt_dobby_schema&gt; config() <span class="keyword">const</span>;</div>
-<div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;    <span class="keywordtype">bool</span> restartOnCrash() <span class="keyword">const</span>;</div>
-<div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;};</div>
-<div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160; </div>
-<div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;<span class="preprocessor">#endif </span><span class="comment">// !defined(DOBBYSPECCONFIG_H)</span></div>
+<div class="line"><a name="l00062"></a><span class="lineno"><a class="line" href="classDobbySpecConfig.html#a74baea4f699d8b6c973a8f43f797bc73">   62</a></span>&#160;    <span class="keywordtype">bool</span> <a class="code" href="classDobbySpecConfig.html#a74baea4f699d8b6c973a8f43f797bc73">isValid</a>() <span class="keyword">const</span>;</div>
+<div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160; </div>
+<div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;<span class="preprocessor">#if defined(LEGACY_COMPONENTS)</span></div>
+<div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;    <span class="keyword">const</span> std::map&lt;std::string, Json::Value&gt;&amp; legacyPlugins() <span class="keyword">const</span>;</div>
+<div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;    <span class="keyword">const</span> std::string spec() <span class="keyword">const</span>;</div>
+<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;<span class="preprocessor">#endif </span><span class="comment">//defined(LEGACY_COMPONENTS)</span></div>
+<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160; </div>
+<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;    <span class="keyword">const</span> std::map&lt;std::string, Json::Value&gt;&amp; rdkPlugins() <span class="keyword">const</span>;</div>
+<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160; </div>
+<div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;    std::shared_ptr&lt;rt_dobby_schema&gt; config() <span class="keyword">const</span>;</div>
+<div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;    <span class="keywordtype">bool</span> restartOnCrash() <span class="keyword">const</span>;</div>
+<div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;};</div>
+<div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160; </div>
+<div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;<span class="preprocessor">#endif </span><span class="comment">// !defined(DOBBYSPECCONFIG_H)</span></div>
 <div class="ttc" id="aclassContainerId_html"><div class="ttname"><a href="classContainerId.html">ContainerId</a></div><div class="ttdoc">A wrapper around a std::string, used to add some type definition to to an id and also to sanity check...</div><div class="ttdef"><b>Definition:</b> ContainerId.h:33</div></div>
 <div class="ttc" id="aclassDobbyConfig_html"><div class="ttname"><a href="classDobbyConfig.html">DobbyConfig</a></div><div class="ttdoc">Interface that configuration file parser classes have to implement.</div><div class="ttdef"><b>Definition:</b> DobbyConfig.h:66</div></div>
 <div class="ttc" id="aclassDobbySpecConfigImpl_html"><div class="ttname"><a href="classDobbySpecConfigImpl.html">DobbySpecConfigImpl</a></div><div class="ttdef"><b>Definition:</b> DobbySpecConfig.h:30</div></div>
