@@ -21,17 +21,9 @@
 
 void DobbyBundle::setImpl(DobbyBundleImpl* newImpl)
 {
+    // Handles both resetting 'impl' to nullptr and assigning a new value to 'impl'
+    EXPECT_TRUE ((nullptr == impl) || (nullptr == newImpl));
     impl = newImpl;
-}
-
-DobbyBundle* DobbyBundle::getInstance()
-{
-    static DobbyBundle* instance = nullptr;
-    if (nullptr == instance)
-    {
-       instance = new DobbyBundle();
-    }
-    return instance;
 }
 
 void DobbyBundle::setPersistence(bool persist)

@@ -46,7 +46,6 @@ public:
     ~ContainerId() = default;
 
     static void setImpl(ContainerIdImpl* newImpl);
-    static ContainerId* getInstance();
     bool isValid() const;
     const std::string& str() const;
     const char* c_str() const;

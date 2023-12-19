@@ -48,6 +48,8 @@
 class DobbyFileAccessFixerImpl
 {
 public:
+   virtual ~DobbyFileAccessFixerImpl() = default;
+
     virtual bool fixIt() const = 0;
 };
 
@@ -59,7 +61,6 @@ protected:
 public:
     DobbyFileAccessFixer();
     ~DobbyFileAccessFixer();
-    static DobbyFileAccessFixer* getInstance();
     static void setImpl(DobbyFileAccessFixerImpl* newImpl);
 
 public:

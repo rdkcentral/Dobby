@@ -65,17 +65,9 @@ bool DobbyContainer::shouldRestart(int statusCode)
 
 void DobbyContainer::setImpl(DobbyContainerImpl* newImpl)
 {
+     // Handles both resetting 'impl' to nullptr and assigning a new value to 'impl'
+     EXPECT_TRUE ((nullptr == impl) || (nullptr == newImpl));
      impl = newImpl;
-}
-
-DobbyContainer* DobbyContainer::getInstance()
-{
-    static DobbyContainer* instance = nullptr;
-    if (nullptr == instance)
-    {
-        instance = new DobbyContainer();
-    }
-    return instance;
 }
 
 void DobbyContainer::setRestartOnCrash(const std::list<int>& files)

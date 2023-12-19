@@ -34,17 +34,9 @@ DobbyEnv::DobbyEnv(const std::shared_ptr<const IDobbySettings>& settings)
 
 void DobbyEnv::setImpl(DobbyEnvImpl* newImpl)
 {
+    // Handles both resetting 'impl' to nullptr and assigning a new value to 'impl'
+    EXPECT_TRUE ((nullptr == impl) || (nullptr == newImpl));
     impl = newImpl;
-}
-
-DobbyEnv* DobbyEnv::getInstance()
-{
-    static DobbyEnv* instance = nullptr;
-    if(nullptr == instance)
-    {
-       instance = new DobbyEnv();
-    }
-    return instance;
 }
 
 std::string DobbyEnv::workspaceMountPath() const

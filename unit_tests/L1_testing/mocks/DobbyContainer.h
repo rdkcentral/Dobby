@@ -74,7 +74,6 @@ public:
     std::string customConfigFilePath;
 
     static void setImpl(DobbyContainerImpl* newImpl);
-    static DobbyContainer* getInstance();
     void setRestartOnCrash(const std::list<int>& files);
     void clearRestartOnCrash();
     const std::list<int>& files() const;

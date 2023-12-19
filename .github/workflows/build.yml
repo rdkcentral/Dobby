@@ -34,7 +34,7 @@ jobs:
       - name: install-dependencies
         run: |
           sudo apt-get update -y -q
-          sudo apt-get install -q -y automake libtool autotools-dev software-properties-common build-essential cmake libsystemd-dev libctemplate-dev libjsoncpp-dev libdbus-1-dev libnl-3-dev libnl-route-3-dev libsystemd-dev libyajl-dev libcap-dev libboost-dev lcov clang
+          sudo apt-get install -q -y automake libtool autotools-dev software-properties-common build-essential cmake libsystemd-dev libctemplate-dev libjsoncpp-dev libdbus-1-dev libnl-3-dev libnl-route-3-dev libsystemd-dev libyajl-dev libcap-dev libboost-dev lcov clang valgrind
 
       - name: Set clang toolchain
         if: ${{ matrix.compiler == 'clang' }}
@@ -47,7 +47,7 @@ jobs:
       - name: Install gmock
         run: |
          cd $GITHUB_WORKSPACE
-         git clone https://github.com/google/googletest.git
+         git clone https://github.com/google/googletest.git -b release-1.11.0
          cd googletest
          mkdir build
          cd build
@@ -71,9 +71,9 @@ jobs:
       - name: run unit-tests
         if: ${{ matrix.extra_flags == 'RUN_TESTS' && matrix.build_type == 'Debug' }}
         run: |
-          sudo $GITHUB_WORKSPACE/build/unit_tests/L1_testing/tests/DobbyTest/DobbyL1Test
+          sudo valgrind --tool=memcheck --leak-check=yes --show-reachable=yes --track-fds=yes --fair-sched=try $GITHUB_WORKSPACE/build/unit_tests/L1_testing/tests/DobbyTest/DobbyL1Test
           sudo $GITHUB_WORKSPACE/build/unit_tests/L1_testing/tests/DobbyUtilsTest/DobbyUtilsL1Test
-          sudo $GITHUB_WORKSPACE/build/unit_tests/L1_testing/tests/DobbyManagerTest/DobbyManagerL1Test
+          sudo valgrind --tool=memcheck --leak-check=yes --show-reachable=yes --track-fds=yes --fair-sched=try $GITHUB_WORKSPACE/build/unit_tests/L1_testing/tests/DobbyManagerTest/DobbyManagerL1Test
 
       - name: Generate coverage
         if: ${{ matrix.coverage == 'with-coverage' && matrix.extra_flags == 'RUN_TESTS' && matrix.build_type == 'Debug' }}

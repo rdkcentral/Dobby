@@ -29,7 +29,7 @@ class DobbyRdkPluginUtils;
 class DobbyRdkPluginManagerImpl {
 
 public:
-
+    virtual ~DobbyRdkPluginManagerImpl() = default;
     virtual bool runPlugins(const IDobbyRdkPlugin::HintFlags &hookPoint,const uint timeoutMs ) const = 0;
     virtual bool runPlugins(const IDobbyRdkPlugin::HintFlags &hookPoint) const = 0;
     virtual void setExitStatus(int status) = 0;
@@ -50,7 +50,6 @@ public:
     ~DobbyRdkPluginManager();
 
     static void setImpl(DobbyRdkPluginManagerImpl* newImpl);
-    static DobbyRdkPluginManager* getInstance();
     bool runPlugins(const IDobbyRdkPlugin::HintFlags &hookPoint,const uint timeoutMs ) const;
     bool runPlugins(const IDobbyRdkPlugin::HintFlags &hookPoint) const;
     void setExitStatus(int status) const;

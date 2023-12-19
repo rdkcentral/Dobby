@@ -33,17 +33,9 @@ DobbyIPCUtils::~DobbyIPCUtils()
 
 void DobbyIPCUtils::setImpl(DobbyIPCUtilsImpl* newImpl)
 {
+    // Handles both resetting 'impl' to nullptr and assigning a new value to 'impl'
+    EXPECT_TRUE ((nullptr == impl) || (nullptr == newImpl));
     impl = newImpl;
-}
-
-DobbyIPCUtils* DobbyIPCUtils::getInstance()
-{
-    static DobbyIPCUtils* instance = nullptr;
-    if(nullptr == instance)
-    {
-        instance = new DobbyIPCUtils();
-    }
-    return instance;
 }
 
 bool DobbyIPCUtils::setAIDbusAddress(bool privateBus, const std::string &address)

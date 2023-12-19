@@ -149,20 +149,9 @@ protected:
         DobbyIPCUtilsMock*  p_ipcutilsMock = nullptr;
         DobbyUtilsMock*  p_utilsMock = nullptr;
 
-        DobbyContainer *p_dobbyContainer = nullptr;
-        DobbyRdkPluginManager *p_rdkPluginManager = nullptr;
-        DobbyRootfs *p_rootfs = nullptr;
-        #if defined(LEGACY_COMPONENTS)
-        DobbySpecConfig *p_specConfig = nullptr;
-        #endif //defined(LEGACY_COMPONENTS)
-        DobbyStartState *p_startState = nullptr;
         DobbyBundle *p_bundle = nullptr;
         DobbyBundleConfig *p_bundleConfig = nullptr;
-        DobbyRdkPluginUtils *p_rdkPluginUtils = nullptr;
-        AI_IPC::IAsyncReplySender *p_iasyncReplySender = nullptr;
-        ContainerId *p_containerId = nullptr;
         DobbyFileAccessFixer *p_fileAccessFixer = nullptr;
-        DobbyRunC *p_runc = nullptr;
         DobbyBufferStream *p_stream = nullptr;
         DobbyLegacyPluginManager *p_legacyPluginManager = nullptr;
         DobbyStats *p_stats = nullptr;
@@ -199,27 +188,27 @@ protected:
             p_ipcutilsMock = new NiceMock <DobbyIPCUtilsMock>;
             p_utilsMock = new NiceMock <DobbyUtilsMock>;
 
-            p_dobbyContainer->setImpl(p_containerMock);
-            p_rdkPluginManager->setImpl(p_rdkPluginManagerMock);
-            p_rootfs->setImpl(p_rootfsMock);
-            p_startState->setImpl(p_startStateMock);
+            DobbyContainer::setImpl(p_containerMock);
+            DobbyRdkPluginManager::setImpl(p_rdkPluginManagerMock);
+            DobbyRootfs::setImpl(p_rootfsMock);
+            DobbyStartState::setImpl(p_startStateMock);
 
             #if defined(LEGACY_COMPONENTS)
-            p_specConfig->setImpl(p_specConfigMock);
+            DobbySpecConfig::setImpl(p_specConfigMock);
             #endif //defined(LEGACY_COMPONENTS)
 
-            p_bundle->setImpl(p_bundleMock);
+            DobbyBundle::setImpl(p_bundleMock);
             DobbyConfig::setImpl(p_configMock);
-            p_bundleConfig->setImpl(p_bundleConfigMock);
-            p_rdkPluginUtils->setImpl(p_rdkPluginUtilsMock);
-            p_iasyncReplySender->setImpl(p_asyncReplySenderMock);
-            p_containerId->setImpl(p_containerIdMock);
-            p_fileAccessFixer->setImpl(p_fileAccessFixerMock);
-            p_logger->setImpl(p_loggerMock);
-            p_runc->setImpl(p_runcMock);
-            p_stream->setImpl(p_streamMock);
-            p_legacyPluginManager->setImpl(p_legacyPluginManagerMock);
-            p_stats->setImpl(p_statsMock);
+            DobbyBundleConfig::setImpl(p_bundleConfigMock);
+            DobbyRdkPluginUtils::setImpl(p_rdkPluginUtilsMock);
+            AI_IPC::IAsyncReplySender::setImpl(p_asyncReplySenderMock);
+            ContainerId::setImpl(p_containerIdMock);
+            DobbyFileAccessFixer::setImpl(p_fileAccessFixerMock);
+            DobbyLogger::setImpl(p_loggerMock);
+            DobbyRunC::setImpl(p_runcMock);
+            DobbyBufferStream::setImpl(p_streamMock);
+            DobbyLegacyPluginManager::setImpl(p_legacyPluginManagerMock);
+            DobbyStats::setImpl(p_statsMock);
             DobbyEnv::setImpl(p_envMock);
             DobbyIPCUtils::setImpl(p_ipcutilsMock);
             DobbyUtils::setImpl(p_utilsMock);
@@ -269,31 +258,32 @@ protected:
         {
             dobbyManager_test.reset();
 
-            p_dobbyContainer->setImpl(nullptr);
-            p_rdkPluginManager->setImpl(nullptr);
-            p_rootfs->setImpl(nullptr);
-            p_startState->setImpl(nullptr);
+            DobbyContainer::setImpl(nullptr);
+            DobbyRdkPluginManager::setImpl(nullptr);
+            DobbyRootfs::setImpl(nullptr);
+            DobbyStartState::setImpl(nullptr);
 
             #if defined(LEGACY_COMPONENTS)
-            p_specConfig->setImpl(nullptr);
+            DobbySpecConfig::setImpl(nullptr);
             #endif //defined(LEGACY_COMPONENTS)
 
-            p_bundle->setImpl(nullptr);
+            DobbyBundle::setImpl(nullptr);
             DobbyConfig::setImpl(nullptr);
-            p_bundleConfig->setImpl(nullptr);
-            p_rdkPluginUtils->setImpl(nullptr);
-            p_iasyncReplySender->setImpl(nullptr);
-            p_containerId->setImpl(nullptr);
-            p_fileAccessFixer->setImpl(nullptr);
-            p_logger->setImpl(nullptr);
-            p_runc->setImpl(nullptr);
-            p_stream->setImpl(nullptr);
-            p_legacyPluginManager->setImpl(nullptr);
-            p_stats->setImpl(nullptr);
+            DobbyBundleConfig::setImpl(nullptr);
+            DobbyRdkPluginUtils::setImpl(nullptr);
+            AI_IPC::IAsyncReplySender::setImpl(nullptr);
+            ContainerId::setImpl(nullptr);
+            DobbyFileAccessFixer::setImpl(nullptr);
+            DobbyLogger::setImpl(nullptr);
+            DobbyRunC::setImpl(nullptr);
+            DobbyBufferStream::setImpl(nullptr);
+            DobbyLegacyPluginManager::setImpl(nullptr);
+            DobbyStats::setImpl(nullptr);
             DobbyEnv::setImpl(nullptr);
             DobbyIPCUtils::setImpl(nullptr);
             DobbyUtils::setImpl(nullptr);
 
+            p_dobbysettingsMock.reset();
 
             if( p_rdkPluginManagerMock != nullptr)
             {

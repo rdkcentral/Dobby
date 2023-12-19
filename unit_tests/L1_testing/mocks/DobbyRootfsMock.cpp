@@ -38,17 +38,9 @@ DobbyRootfs::~DobbyRootfs()
 
 void DobbyRootfs::setImpl(DobbyRootfsImpl* newImpl)
 {
+    // Handles both resetting 'impl' to nullptr and assigning a new value to 'impl'
+    EXPECT_TRUE ((nullptr == impl) || (nullptr == newImpl));
     impl = newImpl;
-}
-
-DobbyRootfs* DobbyRootfs::getInstance()
-{
-    static DobbyRootfs* instance = nullptr;
-    if (nullptr == instance)
-    {
-       instance = new DobbyRootfs();
-    }
-    return instance;
 }
 
 void DobbyRootfs::setPersistence(bool persist)

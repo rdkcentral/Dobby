@@ -102,7 +102,6 @@ public:
     ~DobbyLegacyPluginManager();
 
 public:
-    static DobbyLegacyPluginManager* getInstance();
     static void setImpl(DobbyLegacyPluginManagerImpl* newImpl);
     void refreshPlugins(const std::string& path = std::string(DEFAULT_PLUGIN_PATH));
     bool executePostConstructionHooks(const std::map<std::string, Json::Value>& plugins,

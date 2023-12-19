@@ -40,7 +40,6 @@ protected:
 public:
 
     static void setImpl(DobbyWorkQueueImpl* newImpl);
-    static DobbyWorkQueue* getInstance();
     bool runFor(const std::chrono::milliseconds &msecs);
     void exit();
     bool postWork(WorkFunc &&work);

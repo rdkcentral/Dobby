@@ -23,6 +23,8 @@
 
 class DobbySettingsMock : public IDobbySettings {
     public:
+    virtual ~DobbySettingsMock() = default;
+
     MOCK_METHOD(std::string, workspaceDir, (), (const, override));
     MOCK_METHOD(std::string, persistentDir, (), (const, override));
     MOCK_METHOD((std::map<std::string, std::string>), extraEnvVariables, (), (const, override));

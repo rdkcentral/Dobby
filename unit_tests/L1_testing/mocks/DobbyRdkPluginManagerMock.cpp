@@ -33,17 +33,9 @@ DobbyRdkPluginManager::~DobbyRdkPluginManager()
 
 void DobbyRdkPluginManager::setImpl(DobbyRdkPluginManagerImpl* newImpl)
 {
+    // Handles both resetting 'impl' to nullptr and assigning a new value to 'impl'
+    EXPECT_TRUE ((nullptr == impl) || (nullptr == newImpl));
     impl = newImpl;
-}
-
-DobbyRdkPluginManager* DobbyRdkPluginManager::getInstance()
-{
-    static DobbyRdkPluginManager* instance = nullptr;
-    if (nullptr == instance)
-    {
-       instance = new DobbyRdkPluginManager();
-    }
-    return instance;
 }
 
 bool DobbyRdkPluginManager::runPlugins(const IDobbyRdkPlugin::HintFlags &hookPoint,const uint timeoutMs ) const

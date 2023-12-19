@@ -33,17 +33,9 @@ int DobbyBufferStream::dupWriteFD(int newFd, bool closeExec) const
 
 void DobbyBufferStream::setImpl(DobbyBufferStreamImpl* newImpl)
 {
+    // Handles both resetting 'impl' to nullptr and assigning a new value to 'impl'
+    EXPECT_TRUE ((nullptr == impl) || (nullptr == newImpl));
     impl = newImpl;
-}
-
-DobbyBufferStream* DobbyBufferStream::getInstance()
-{
-    static DobbyBufferStream* instance = nullptr;
-    if(nullptr == instance)
-    {
-        instance = new DobbyBufferStream();
-    }
-    return instance;
 }
 
 std::vector<char> DobbyBufferStream::getBuffer() const

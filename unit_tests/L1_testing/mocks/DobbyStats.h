@@ -58,7 +58,6 @@ public:
     ~DobbyStats();
 
     static void setImpl(DobbyStatsImpl* newImpl);
-    static DobbyStats* getInstance();
     const Json::Value & stats() const;
 };
 

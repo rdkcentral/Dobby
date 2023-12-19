@@ -20,19 +20,10 @@
 
 void DobbyWorkQueue::setImpl(DobbyWorkQueueImpl* newImpl)
 {
+    // Handles both resetting 'impl' to nullptr and assigning a new value to 'impl'
+    EXPECT_TRUE ((nullptr == impl) || (nullptr == newImpl));
     impl = newImpl;
 }
-
-DobbyWorkQueue* DobbyWorkQueue::getInstance()
-{
-    static DobbyWorkQueue* instance = nullptr;
-    if(nullptr == instance)
-    {
-        instance =  new DobbyWorkQueue();
-    }
-    return instance;
-}
-
 
 bool DobbyWorkQueue::runFor(const std::chrono::milliseconds &msecs)
 {

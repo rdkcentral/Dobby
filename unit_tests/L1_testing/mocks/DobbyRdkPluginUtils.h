@@ -61,6 +61,7 @@ typedef struct ContainerNetworkInfo
 
 class DobbyRdkPluginUtilsImpl {
 public:
+    virtual ~DobbyRdkPluginUtilsImpl() = default;
 
     virtual bool callInNamespaceImpl(pid_t pid, int nsType,const std::function<bool()>& func) const =0;
     virtual void nsThread(int newNsFd, int nsType, bool* success,std::function<bool()>& func) const = 0;
@@ -103,7 +104,6 @@ public:
     ~DobbyRdkPluginUtils();
 
     static void setImpl(DobbyRdkPluginUtilsImpl* newImpl);
-    static DobbyRdkPluginUtils* getInstance();
     bool callInNamespaceImpl(pid_t pid, int nsType,const std::function<bool()>& func) const;
     void nsThread(int newNsFd, int nsType, bool* success,std::function<bool()>& func) const;
     pid_t getContainerPid() const;

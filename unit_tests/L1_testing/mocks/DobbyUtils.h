@@ -80,7 +80,6 @@ public:
     ~DobbyUtils();
 
     static void setImpl(DobbyUtilsImpl* newImpl);
-    static DobbyUtils* getInstance();
     bool cancelTimer(int timerId) const override;
     int loopDeviceAssociate(int fileFd, std::string* loopDevPath) const override;
     bool checkExtImageFile(int dirFd, const std::string& imageFileName,bool repair) const override;

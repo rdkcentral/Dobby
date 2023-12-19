@@ -90,18 +90,10 @@ bool DobbyLegacyPluginManager::executePreDestructionHooks(const std::map<std::st
     return impl->executePreDestructionHooks(plugins,id,rootfsPath);
 }
 
-DobbyLegacyPluginManager* DobbyLegacyPluginManager::getInstance()
-{
-    static DobbyLegacyPluginManager* instance = nullptr;
-    if (nullptr == instance)
-    {
-        instance = new DobbyLegacyPluginManager();
-    }
-    return instance;
-}
-
 void DobbyLegacyPluginManager::setImpl(DobbyLegacyPluginManagerImpl* newImpl)
 {
+    // Handles both resetting 'impl' to nullptr and assigning a new value to 'impl'
+    EXPECT_TRUE ((nullptr == impl) || (nullptr == newImpl));
     impl = newImpl;
 }
 

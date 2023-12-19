@@ -42,17 +42,9 @@ DobbyManager::~DobbyManager()
 
 void DobbyManager::setImpl(DobbyManagerImpl* newImpl)
 {
+    // Handles both resetting 'impl' to nullptr and assigning a new value to 'impl'
+    EXPECT_TRUE ((nullptr == impl) || (nullptr == newImpl));
     impl = newImpl;
-}
-
-DobbyManager* DobbyManager::getInstance()
-{
-    static DobbyManager* instance = nullptr;
-    if(nullptr == instance)
-    {
-        instance = new DobbyManager();
-    }
-    return instance;
 }
 
 #if defined(LEGACY_COMPONENTS)

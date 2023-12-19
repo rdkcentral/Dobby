@@ -32,17 +32,9 @@ DobbyStats::~DobbyStats()
 
 void DobbyStats::setImpl(DobbyStatsImpl* newImpl)
 {
+    // Handles both resetting 'impl' to nullptr and assigning a new value to 'impl'
+    EXPECT_TRUE ((nullptr == impl) || (nullptr == newImpl));
     impl = newImpl;
-}
-
-DobbyStats* DobbyStats::getInstance()
-{
-    static DobbyStats* instance = nullptr;
-    if (nullptr == instance)
-    {
-       instance = new DobbyStats();
-    }
-    return instance;
 }
 
 const Json::Value & DobbyStats::stats() const

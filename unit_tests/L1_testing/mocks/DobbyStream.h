@@ -88,7 +88,6 @@ public:
     int dupWriteFD(int newFd, bool closeExec) const;
 public:
     static void setImpl(DobbyBufferStreamImpl* newImpl);
-    static DobbyBufferStream* getInstance();
     std::vector<char> getBuffer() const;
     int getMemFd() const;
 

@@ -27,18 +27,10 @@ DobbyFileAccessFixer::~DobbyFileAccessFixer()
 {
 }
 
-DobbyFileAccessFixer* DobbyFileAccessFixer::getInstance()
-{
-    static DobbyFileAccessFixer* instance = nullptr;
-    if (nullptr == instance)
-    {
-        instance = new DobbyFileAccessFixer();
-    }
-    return instance;
-}
-
 void DobbyFileAccessFixer::setImpl(DobbyFileAccessFixerImpl* newImpl)
 {
+    // Handles both resetting 'impl' to nullptr and assigning a new value to 'impl'
+    EXPECT_TRUE ((nullptr == impl) || (nullptr == newImpl));
     impl = newImpl;
 }
 

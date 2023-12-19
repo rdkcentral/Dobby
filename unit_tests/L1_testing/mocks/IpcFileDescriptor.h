@@ -45,7 +45,6 @@ public:
     ~IpcFileDescriptor();
 
     static void setImpl(IpcFileDescriptorApiImpl* newImpl);
-    static IpcFileDescriptor* getInstance();
     bool isValid() const;
     int fd() const;
 

@@ -59,7 +59,6 @@ public:
     ~DobbySpecConfig();
 
     static void setImpl(DobbySpecConfigImpl* newImpl);
-    static DobbySpecConfig* getInstance();
     bool isValid() const;
 
 #if defined(LEGACY_COMPONENTS)

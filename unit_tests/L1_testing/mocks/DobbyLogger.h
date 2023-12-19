@@ -51,7 +51,6 @@ public:
     ~DobbyLogger();
 
     static void setImpl(DobbyLoggerImpl* newImpl);
-    static DobbyLogger* getInstance();
     bool StartContainerLogging(std::string containerId,pid_t runtimePid,pid_t containerPid,std::shared_ptr<IDobbyRdkLoggingPlugin> loggingPlugin);
     bool DumpBuffer(int bufferMemFd,pid_t containerPid,std::shared_ptr<IDobbyRdkLoggingPlugin> loggingPlugin);
 };

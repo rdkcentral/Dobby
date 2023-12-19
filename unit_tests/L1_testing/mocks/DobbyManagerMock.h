@@ -24,6 +24,7 @@
 class  DobbyManagerMock : public DobbyManagerImpl {
 
 public:
+    virtual ~DobbyManagerMock() = default;
 
 #if defined(LEGACY_COMPONENTS)
 

@@ -19,13 +19,7 @@
 #ifndef DOBBYTEMPLATE_H
 #define DOBBYTEMPLATE_H
 
-#pragma GCC diagnostic push
-#  pragma GCC diagnostic ignored "-Wshadow"
-#  include <ctemplate/template.h>
-#pragma GCC diagnostic pop
-
 #include <pthread.h>
-
 #include <memory>
 #include <string>
 #include <list>
@@ -35,8 +29,6 @@ public:
 
     virtual ~DobbyTemplateImpl() = default;
     virtual void setSettings(const std::shared_ptr<const IDobbySettings>& settings) const = 0;
-    virtual std::string apply(const ctemplate::TemplateDictionaryInterface* dictionary, bool prettyPrint) = 0;
-    virtual bool applyAt(int dirFd, const std::string& fileName, const ctemplate::TemplateDictionaryInterface* dictionary, bool prettyPrint) = 0;
 };
 
 class DobbyTemplate {
@@ -49,10 +41,6 @@ public:
 
     DobbyTemplate();
     static void setImpl(DobbyTemplateImpl* newImpl);
-    static DobbyTemplate* getInstance();
     static void setSettings(const std::shared_ptr<const IDobbySettings>& settings);
-    static std::string apply(const ctemplate::TemplateDictionaryInterface* dictionary, bool prettyPrint);
-    static bool applyAt(int dirFd, const std::string& fileName, const ctemplate::TemplateDictionaryInterface* dictionary, bool prettyPrint);
-
   };
 #endif // !defined(DOBBYTEMPLATE_H)

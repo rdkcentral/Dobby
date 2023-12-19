@@ -41,17 +41,9 @@ DobbyStartState::~DobbyStartState()
 
 void DobbyStartState::setImpl(DobbyStartStateImpl* newImpl)
 {
+    // Handles both resetting 'impl' to nullptr and assigning a new value to 'impl'
+    EXPECT_TRUE ((nullptr == impl) || (nullptr == newImpl));
     impl = newImpl;
-}
-
-DobbyStartState* DobbyStartState::getInstance()
-{
-    static DobbyStartState* instance = nullptr;
-    if (nullptr == instance)
-    {
-       instance = new DobbyStartState();
-    }
-    return instance;
 }
 
 std::list<int> DobbyStartState::files() const
