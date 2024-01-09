@@ -842,6 +842,18 @@ int32_t DobbyManager::startContainerFromSpec(const ContainerId &id,
         return -1;
     }
 
+    // Set Apparmor profile
+    if (mSettings->apparmorSettings().enabled)
+    {
+        config->setApparmorProfile(mSettings->apparmorSettings().profileName);
+    }
+
+    // Set pids limit
+    if (mSettings->pidsSettings().enabled)
+    {
+        config->setPidsLimit(mSettings->pidsSettings().limit);
+    }
+
     // Load the RDK plugins from disk (if necessary)
     std::map<std::string, Json::Value> rdkPlugins = config->rdkPlugins();
     AI_LOG_DEBUG("There are %zd rdk plugins to run", rdkPlugins.size());
