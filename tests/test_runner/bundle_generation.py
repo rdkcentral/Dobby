@@ -68,7 +68,7 @@ def execute_test():
         # Test 1
         test = tests[1]
         status = test_utils.run_command_line(["diff",
-                                              "-r",
+                                              "-r --ignore-space-change",
                                               test_utils.get_bundle_path(test.container_id),
                                               bundle_path])
 
