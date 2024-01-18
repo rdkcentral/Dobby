@@ -208,7 +208,7 @@ def start_wpeframework_vm():
     test_utils.print_log("Starting WPEFramework", test_utils.Severity.debug)
 
     # as this process is running infinitely we cannot use run_command_line as it waits for execution to end
-    subproc = subprocess.Popen(["/usr/local/bin/WPEFramework"],
+    subproc = subprocess.Popen(["/usr/bin/WPEFramework"],
                                universal_newlines=True,
                                stdin=subprocess.PIPE,
                                stdout=subprocess.PIPE,
