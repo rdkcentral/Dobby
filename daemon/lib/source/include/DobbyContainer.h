@@ -86,7 +86,7 @@ public:
 public:
     pid_t containerPid;
     bool hasCurseOfDeath;
-    enum class State { Starting, Running, Stopping, Paused, Unknown } state;
+    enum class State { Starting, Running, Stopping, Paused, Hibernating, Hibernated, Awakening, Unknown } state;
     std::string customConfigFilePath;
 
 public:

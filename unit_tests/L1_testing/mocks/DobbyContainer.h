@@ -54,7 +54,7 @@ public:
     DobbyContainer(DobbyContainer&&) = delete;
     friend class DobbyManager;
 
-    enum class State { Starting, Running, Stopping, Paused, Unknown } state;
+    enum class State { Starting, Running, Stopping, Paused, Hibernating, Hibernated, Awakening, Unknown } state;
     pid_t containerPid;
     const int32_t descriptor;
     const std::shared_ptr<const DobbyRdkPluginManager> rdkPluginManager;

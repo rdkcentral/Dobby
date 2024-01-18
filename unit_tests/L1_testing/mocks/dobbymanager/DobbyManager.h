@@ -91,6 +91,10 @@ public:
 
     virtual bool resumeContainer(int32_t cd) = 0;
 
+    virtual bool hibernateContainer(int32_t cd, const std::string& options) = 0;
+
+    virtual bool wakeupContainer(int32_t cd) = 0;
+
     virtual bool execInContainer(int32_t cd,
                              const std::string& options,
                              const std::string& command) = 0;
@@ -115,13 +119,17 @@ protected:
 public:
     typedef std::function<void(int32_t cd, const ContainerId& id)> ContainerStartedFunc;
     typedef std::function<void(int32_t cd, const ContainerId& id, int32_t status)> ContainerStoppedFunc;
+    typedef std::function<void(int32_t cd, const ContainerId& id)> ContainerHibernatedFunc;
+
     DobbyManager();
     DobbyManager(std::shared_ptr<DobbyEnv>&,
                                   std::shared_ptr<DobbyUtils>&,
                                   std::shared_ptr<DobbyIPCUtils>&,
                                   const std::shared_ptr<const IDobbySettings>&,
                                   std::function<void(int, const ContainerId&)>& StartedFunc,
-                                  std::function<void(int, const ContainerId&, int)>& StoppedFunc);
+                                  std::function<void(int, const ContainerId&, int)>& StoppedFunc,
+                                  std::function<void(int32_t cd, const ContainerId& id)>& containerHibernatedCb,
+                                  std::function<void(int32_t cd, const ContainerId& id)>& containerAwokenCb);
     ~DobbyManager();
 
     static void setImpl(DobbyManagerImpl* newImpl);
@@ -147,6 +155,8 @@ public:
     bool stopContainer(int32_t cd, bool withPrejudice);
     bool pauseContainer(int32_t cd);
     bool resumeContainer(int32_t cd);
+    bool hibernateContainer(int32_t cd, const std::string& options);
+    bool wakeupContainer(int32_t cd);
     bool execInContainer(int32_t cd,
                                 const std::string& options,
                                 const std::string& command);
@@ -157,6 +167,7 @@ public:
 
     ContainerStartedFunc mContainerStartedCb;
     ContainerStoppedFunc mContainerStoppedCb;
+
 };
 
 #endif // !defined(DOBBYMANAGER_H)

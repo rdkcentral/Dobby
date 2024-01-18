@@ -103,12 +103,17 @@ protected:
 
     void onContainerStopped(int32_t cd, const ContainerId& id, int status);
 
+    void onContainerHibernated(int32_t cd, const ContainerId& id);
+
+    void onContainerAwoken(int32_t cd, const ContainerId& id);
+
     bool waitForContainerStarted(int32_t timeout_ms);
 
     bool waitForContainerStopped(int32_t timeout_ms);
 
     typedef std::function<void(int32_t cd, const ContainerId& id)> ContainerStartedFunc;
     typedef std::function<void(int32_t cd, const ContainerId& id, int32_t status)> ContainerStoppedFunc;
+    typedef std::function<void(int32_t cd, const ContainerId& id)> ContainerHibernatedFunc;
     std::function<bool()> Test_invalidContainerCleanupTask;
 
     ContainerStartedFunc startcb =
@@ -118,6 +123,14 @@ protected:
     ContainerStoppedFunc stopcb =
         std::bind(&DaemonDobbyManagerTest::onContainerStopped, this,
                   std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
+
+    ContainerHibernatedFunc hibernatedCb  =
+        std::bind(&DaemonDobbyManagerTest::onContainerHibernated, this,
+                  std::placeholders::_1, std::placeholders::_2);
+
+    ContainerHibernatedFunc awokenCb  =
+        std::bind(&DaemonDobbyManagerTest::onContainerAwoken, this,
+                  std::placeholders::_1, std::placeholders::_2);
 
     public:
         std::mutex m_mutex;
@@ -251,7 +264,7 @@ protected:
            return 123456;
            }));
 
-           dobbyManager_test = std::make_shared<NiceMock<DobbyManager>>(p_env,p_utils,p_ipcutils,p_dobbysettingsMock,startcb,stopcb);
+           dobbyManager_test = std::make_shared<NiceMock<DobbyManager>>(p_env,p_utils,p_ipcutils,p_dobbysettingsMock,startcb,stopcb,hibernatedCb,awokenCb);
         }
 
         virtual void TearDown()
@@ -991,6 +1004,12 @@ protected:
                 }
             }
             return true;
+        }
+
+        void DaemonDobbyManagerTest::onContainerHibernated(int32_t cd, const ContainerId& id) {
+        }
+
+        void DaemonDobbyManagerTest::onContainerAwoken(int32_t cd, const ContainerId& id) {
         }
 
 #if defined(LEGACY_COMPONENTS)

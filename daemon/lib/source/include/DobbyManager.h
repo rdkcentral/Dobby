@@ -78,6 +78,7 @@ class DobbyManager
 public:
     typedef std::function<void(int32_t cd, const ContainerId& id)> ContainerStartedFunc;
     typedef std::function<void(int32_t cd, const ContainerId& id, int32_t status)> ContainerStoppedFunc;
+    typedef std::function<void(int32_t cd, const ContainerId& id)> ContainerHibernatedFunc;
 
 public:
     DobbyManager(const std::shared_ptr<IDobbyEnv>& env,
@@ -85,7 +86,9 @@ public:
                  const std::shared_ptr<IDobbyIPCUtils>& ipcUtils,
                  const std::shared_ptr<const IDobbySettings>& settings,
                  const ContainerStartedFunc& containerStartedCb,
-                 const ContainerStoppedFunc& containerStoppedCb);
+                 const ContainerStoppedFunc& containerStoppedCb,
+                 const ContainerHibernatedFunc& containerHibernatedCb,
+                 const ContainerHibernatedFunc& containerAwokenCb);
     ~DobbyManager();
 
 private:
@@ -116,6 +119,8 @@ public:
 
     bool pauseContainer(int32_t cd);
     bool resumeContainer(int32_t cd);
+    bool hibernateContainer(int32_t cd, const std::string& options);
+    bool wakeupContainer(int32_t cd);
 
     bool execInContainer(int32_t cd,
                          const std::string& options,
@@ -163,6 +168,8 @@ private:
 private:
     ContainerStartedFunc mContainerStartedCb;
     ContainerStoppedFunc mContainerStoppedCb;
+    ContainerHibernatedFunc mContainerHibernatedCb;
+    ContainerHibernatedFunc mContainerAwokenCb;
 
 private:
     mutable std::mutex mLock;

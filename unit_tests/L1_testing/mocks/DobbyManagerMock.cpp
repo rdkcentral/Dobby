@@ -30,7 +30,9 @@ DobbyManager::DobbyManager(std::shared_ptr<DobbyEnv>&,
                                                     std::shared_ptr<DobbyIPCUtils>&,
                                                     const std::shared_ptr<const IDobbySettings>&,
                                                     std::function<void(int, const ContainerId&)>& StartedFunc,
-                                                    std::function<void(int, const ContainerId&, int)>& StoppedFunc)
+                                                    std::function<void(int, const ContainerId&, int)>& StoppedFunc,
+                                                    std::function<void(int32_t cd, const ContainerId& id)>&,
+                                                    std::function<void(int32_t cd, const ContainerId& id)>&)
 : mContainerStartedCb(StartedFunc)
 , mContainerStoppedCb(StoppedFunc)
 {
@@ -107,6 +109,20 @@ bool DobbyManager::resumeContainer(int32_t cd)
    EXPECT_NE(impl, nullptr);
 
     return impl->resumeContainer(cd);
+}
+
+bool DobbyManager::hibernateContainer(int32_t cd, const std::string& options)
+{
+   EXPECT_NE(impl, nullptr);
+
+    return true;
+}
+
+bool DobbyManager::wakeupContainer(int32_t cd)
+{
+   EXPECT_NE(impl, nullptr);
+
+    return true;
 }
 
 bool DobbyManager::execInContainer(int32_t cd,

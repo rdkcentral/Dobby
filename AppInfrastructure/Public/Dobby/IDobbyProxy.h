@@ -64,6 +64,9 @@ public:
         Stopping = 3,
         Paused = 4,
         Stopped = 5,
+        Hibernating = 6,
+        Hibernated = 7,
+        Awakening = 8
     };
 
 public:
@@ -140,6 +143,10 @@ public:
     virtual bool pauseContainer(int32_t descriptor) const = 0;
 
     virtual bool resumeContainer(int32_t descriptor) const = 0;
+
+    virtual bool hibernateContainer(int32_t descriptor, const std::string& options) const = 0;
+
+    virtual bool wakeupContainer(int32_t descriptor) const = 0;
 
     virtual bool execInContainer(int32_t cd,
                                  const std::string& options,

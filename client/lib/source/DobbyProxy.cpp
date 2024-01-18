@@ -93,6 +93,14 @@ DobbyProxy::DobbyProxy(const std::shared_ptr<AI_IPC::IIpcService>& ipcService,
     const AI_IPC::SignalHandler stoppedHandler(std::bind(&DobbyProxy::onContainerStoppedEvent, this, std::placeholders::_1));
     mContainerStoppedSignal = mIpcService->registerSignalHandler(stoppedSignal, stoppedHandler);
 
+    const AI_IPC::Signal hibernatedSignal(objectName, DOBBY_CTRL_INTERFACE, DOBBY_CTRL_EVENT_HIBERNATED);
+    const AI_IPC::SignalHandler hibernatedHandler(std::bind(&DobbyProxy::onContainerHibernatedEvent, this, std::placeholders::_1));
+    mContainerStartedSignal = mIpcService->registerSignalHandler(hibernatedSignal, hibernatedHandler);
+
+    const AI_IPC::Signal awokenSignal(objectName, DOBBY_CTRL_INTERFACE, DOBBY_CTRL_EVENT_AWOKEN);
+    const AI_IPC::SignalHandler awokenHandler(std::bind(&DobbyProxy::onContainerAwokenEvent, this, std::placeholders::_1));
+    mContainerStartedSignal = mIpcService->registerSignalHandler(awokenSignal, awokenHandler);
+
     if (mContainerStartedSignal.empty() || mContainerStoppedSignal.empty())
     {
         AI_LOG_ERROR("failed to register dbus signal listeners");
@@ -250,6 +258,74 @@ void DobbyProxy::onContainerStoppedEvent(const AI_IPC::VariantList& args)
         // ping off an event
         std::lock_guard<std::mutex> locker(mStateChangeLock);
         mStateChangeQueue.emplace_back(StateChangeEvent::ContainerStopped, descriptor, id);
+        mStateChangeCond.notify_all();
+    }
+
+    AI_LOG_FN_EXIT();
+}
+
+// -----------------------------------------------------------------------------
+/**
+ *  @brief Called when a org.rdk.dobby.ctrl1.Hibernated event is received from
+ *  the Dobby 'hypervisor' daemon
+ *
+ *  We parse the event data and if it makes sense we bounce this event up to any
+ *  listeners using the Notifier / Observer pattern.
+ *
+ *  @param[in]  args        The args sent with the event.
+ */
+void DobbyProxy::onContainerHibernatedEvent(const AI_IPC::VariantList& args)
+{
+    AI_LOG_FN_ENTRY();
+
+    // the event should container two args; container descriptor and id
+    int32_t descriptor;
+    std::string id;
+
+    if (!AI_IPC::parseVariantList<int32_t, std::string>(args, &descriptor, &id))
+    {
+        AI_LOG_ERROR("failed to read all args from %s.%s signal",
+                     DOBBY_CTRL_INTERFACE, DOBBY_CTRL_EVENT_HIBERNATED);
+    }
+    else
+    {
+        // ping off an event
+        std::lock_guard<std::mutex> locker(mStateChangeLock);
+        mStateChangeQueue.emplace_back(StateChangeEvent::ContainerHibernated, descriptor, id);
+        mStateChangeCond.notify_all();
+    }
+
+    AI_LOG_FN_EXIT();
+}
+
+// -----------------------------------------------------------------------------
+/**
+ *  @brief Called when a org.rdk.dobby.ctrl1.Awoken event is received from
+ *  the Dobby 'hypervisor' daemon
+ *
+ *  We parse the event data and if it makes sense we bounce this event up to any
+ *  listeners using the Notifier / Observer pattern.
+ *
+ *  @param[in]  args        The args sent with the event.
+ */
+void DobbyProxy::onContainerAwokenEvent(const AI_IPC::VariantList& args)
+{
+    AI_LOG_FN_ENTRY();
+
+    // the event should container two args; container descriptor and id
+    int32_t descriptor;
+    std::string id;
+
+    if (!AI_IPC::parseVariantList<int32_t, std::string>(args, &descriptor, &id))
+    {
+        AI_LOG_ERROR("failed to read all args from %s.%s signal",
+                     DOBBY_CTRL_INTERFACE, DOBBY_CTRL_EVENT_AWOKEN);
+    }
+    else
+    {
+        // ping off an event
+        std::lock_guard<std::mutex> locker(mStateChangeLock);
+        mStateChangeQueue.emplace_back(StateChangeEvent::ContainerAwoken, descriptor, id);
         mStateChangeCond.notify_all();
     }
 
@@ -748,6 +824,74 @@ bool DobbyProxy::resumeContainer(int32_t cd) const
 
 // -----------------------------------------------------------------------------
 /**
+ *  @brief Checkpoints the container with the descriptor (container integer id)
+ *
+ *  @param[in]  cd              The container descriptor, which is the value
+ *                              returned by startContainer call.
+ *
+ *  @return true on success, false on failure.
+ */
+bool DobbyProxy::hibernateContainer(int32_t cd, const std::string& options) const
+{
+    AI_LOG_FN_ENTRY();
+
+    // send off the request
+    const AI_IPC::VariantList params = { cd, options };
+    AI_IPC::VariantList returns;
+
+    bool result = false;
+
+    if (invokeMethod(DOBBY_CTRL_INTERFACE,
+                     DOBBY_CTRL_METHOD_HIBERNATE,
+                     params, returns))
+    {
+        if (!AI_IPC::parseVariantList<bool>(returns, &result))
+        {
+            result = false;
+        }
+    }
+
+    AI_LOG_FN_EXIT();
+    return result;
+}
+
+// -----------------------------------------------------------------------------
+/**
+ *  @brief Restores previously checkpointed container with the given id.
+ *
+ *
+ *  @param[in]  id              The string id of the container, this should not
+ *                              have any spaces and only container alphanumeric
+ *                              characters plus '.' and '-'.
+ *
+ *  @return true on success, false on failure.
+ */
+bool DobbyProxy::wakeupContainer(int32_t cd) const
+{
+    AI_LOG_FN_ENTRY();
+
+    // send off the request
+    const AI_IPC::VariantList params = { cd };
+    AI_IPC::VariantList returns;
+
+    bool result = false;
+
+    if (invokeMethod(DOBBY_CTRL_INTERFACE,
+                     DOBBY_CTRL_METHOD_WAKEUP,
+                     params, returns))
+    {
+        if (!AI_IPC::parseVariantList<bool>(returns, &result))
+        {
+            result = false;
+        }
+    }
+
+    AI_LOG_FN_EXIT();
+    return result;
+}
+
+// -----------------------------------------------------------------------------
+/**
  *  @brief Executes a command in the given container.
  *
  *  @param[in]  cd              The container descriptor.
@@ -830,6 +974,15 @@ int DobbyProxy::getContainerState(int32_t cd) const
             break;
         case CONTAINER_STATE_PAUSED:
             state = IDobbyProxyEvents::ContainerState::Paused;
+            break;
+        case CONTAINER_STATE_HIBERNATING:
+            state = IDobbyProxyEvents::ContainerState::Hibernating;
+            break;
+        case CONTAINER_STATE_HIBERNATED:
+            state = IDobbyProxyEvents::ContainerState::Hibernated;
+            break;
+        case CONTAINER_STATE_AWAKENING:
+            state = IDobbyProxyEvents::ContainerState::Awakening;
             break;
         case CONTAINER_STATE_INVALID:
         default:
@@ -1193,10 +1346,16 @@ void DobbyProxy::containerStateChangeThread()
             }
             else
             {
-                const IDobbyProxyEvents::ContainerState state =
-                    (event.type == StateChangeEvent::ContainerStarted) ?
+                IDobbyProxyEvents::ContainerState state =
+                    (event.type == StateChangeEvent::ContainerStarted 
+                        || event.type == StateChangeEvent::ContainerAwoken) ?
                         IDobbyProxyEvents::ContainerState::Running :
                         IDobbyProxyEvents::ContainerState::Stopped;
+
+                if (event.type == StateChangeEvent::ContainerHibernated)
+                {
+                    state = IDobbyProxyEvents::ContainerState::Hibernated;
+                }
 
                 // fire off via the notifier system first (deprecated but
                 // required for backwards compatibility)

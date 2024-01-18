@@ -497,6 +497,105 @@ static void resumeCommand(const std::shared_ptr<IDobbyProxy>& dobbyProxy,
  *
  *
  */
+static void hibernateCommand(const std::shared_ptr<IDobbyProxy>& dobbyProxy,
+                              const std::shared_ptr<const IReadLineContext>& readLine,
+                              const std::vector<std::string>& args)
+{
+    if (args.size() < 1)
+    {
+        readLine->printLnError("must provide at least one arg; <id>");
+        return;
+    }
+
+    size_t i = 0;
+    std::string options;
+
+    // Find options from arguments (start with a '-')
+    while (args[i].c_str()[0] == '-')
+    {
+        // Add space between options
+        if (!options.empty())
+        {
+            options.append(" ");
+        }
+        options.append(args[i]);
+        i++;
+    }
+
+    std::string id = args[i];
+    if (id.empty())
+    {
+        readLine->printLnError("invalid container id '%s'", id.c_str());
+        return;
+    }
+
+    int32_t cd = getContainerDescriptor(dobbyProxy, id);
+    if (cd < 0)
+    {
+        readLine->printLnError("failed to find container '%s'", id.c_str());
+    }
+    else
+    {
+        if (!dobbyProxy->hibernateContainer(cd, options))
+        {
+            readLine->printLnError("failed to hibernate the container");
+        }
+        else
+        {
+            readLine->printLn("hibernate successful for container '%s'", id.c_str());
+        }
+    }
+}
+
+// -----------------------------------------------------------------------------
+/**
+ * @brief
+ *
+ *
+ *
+ */
+static void wakeupCommand(const std::shared_ptr<IDobbyProxy>& dobbyProxy,
+                           const std::shared_ptr<const IReadLineContext>& readLine,
+                           const std::vector<std::string>& args)
+{
+    if (args.size() < 1)
+    {
+        readLine->printLnError("must provide at least one arg; <id>");
+        return;
+    }
+
+    std::string id = args[0];
+    if (id.empty())
+    {
+        readLine->printLnError("invalid container id '%s'", id.c_str());
+        return;
+    }
+
+    int32_t cd = getContainerDescriptor(dobbyProxy, id);
+    if (cd < 0)
+    {
+        readLine->printLnError("failed to find container '%s'", id.c_str());
+    }
+    else
+    {
+        if (!dobbyProxy->wakeupContainer(cd))
+        {
+            readLine->printLnError("failed to wakeup container '%s'", id.c_str());
+        }
+        else
+        {
+            readLine->printLn("wakeup container '%s' successful", id.c_str());
+        }
+    }
+}
+
+// -----------------------------------------------------------------------------
+/**
+ * @brief
+ *
+ *
+ *
+ */
 static void execCommand(const std::shared_ptr<IDobbyProxy>& dobbyProxy,
                         const std::shared_ptr<const IReadLineContext>& readLine,
                         const std::vector<std::string>& args)
@@ -606,6 +705,15 @@ static void listCommand(const std::shared_ptr<IDobbyProxy>& dobbyProxy,
                     break;
                 case int(IDobbyProxyEvents::ContainerState::Paused):
                     state = "paused";
+                    break;
+                case int(IDobbyProxyEvents::ContainerState::Hibernating):
+                    state = "hibernating";
+                    break;
+                case int(IDobbyProxyEvents::ContainerState::Hibernated):
+                    state = "hibernated";
+                    break;
+                case int(IDobbyProxyEvents::ContainerState::Awakening):
+                    state = "awakening";
                     break;
                 default:
                     state = "ERR!";
@@ -1058,6 +1166,18 @@ static void initCommands(const std::shared_ptr<IReadLine>& readLine,
                          std::bind(resumeCommand, dobbyProxy, std::placeholders::_1, std::placeholders::_2),
                          "resume <id>",
                          "Resumes a container with the given id\n",
+                         "\n");
+
+    readLine->addCommand("hibernate",
+                         std::bind(hibernateCommand, dobbyProxy, std::placeholders::_1, std::placeholders::_2),
+                         "hibernate [options...] <id>",
+                         "Hibernate a container with the given id\n",
+                         "\n");
+
+    readLine->addCommand("wakeup",
+                         std::bind(wakeupCommand, dobbyProxy, std::placeholders::_1, std::placeholders::_2),
+                         "wakeup <id>",
+                         "wakeup a container with the given id\n",
                          "\n");
 
     readLine->addCommand("exec",
