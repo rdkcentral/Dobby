@@ -150,6 +150,12 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:abef77688fce01e6629e3278e620e3fc8"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classDobbyProxy.html#abef77688fce01e6629e3278e620e3fc8">resumeContainer</a> (int32_t cd) const override</td></tr>
 <tr class="memdesc:abef77688fce01e6629e3278e620e3fc8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Resumes the container with the descriptor (container integer id)  <a href="classDobbyProxy.html#abef77688fce01e6629e3278e620e3fc8">More...</a><br /></td></tr>
 <tr class="separator:abef77688fce01e6629e3278e620e3fc8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a56f125b509083d5ee7061ddca7e7ac29"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classDobbyProxy.html#a56f125b509083d5ee7061ddca7e7ac29">hibernateContainer</a> (int32_t descriptor, const std::string &amp;options) const override</td></tr>
+<tr class="memdesc:a56f125b509083d5ee7061ddca7e7ac29"><td class="mdescLeft">&#160;</td><td class="mdescRight">Checkpoints the container with the descriptor (container integer id)  <a href="classDobbyProxy.html#a56f125b509083d5ee7061ddca7e7ac29">More...</a><br /></td></tr>
+<tr class="separator:a56f125b509083d5ee7061ddca7e7ac29"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a85df5fa220e4b2a5f3719c2ab123d77f"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classDobbyProxy.html#a85df5fa220e4b2a5f3719c2ab123d77f">wakeupContainer</a> (int32_t descriptor) const override</td></tr>
+<tr class="memdesc:a85df5fa220e4b2a5f3719c2ab123d77f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Restores previously checkpointed container with the given id.  <a href="classDobbyProxy.html#a85df5fa220e4b2a5f3719c2ab123d77f">More...</a><br /></td></tr>
+<tr class="separator:a85df5fa220e4b2a5f3719c2ab123d77f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a174c6ee0fc05b11b900f4b0bece96b88"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classDobbyProxy.html#a174c6ee0fc05b11b900f4b0bece96b88">execInContainer</a> (int32_t cd, const std::string &amp;options, const std::string &amp;command) const override</td></tr>
 <tr class="memdesc:a174c6ee0fc05b11b900f4b0bece96b88"><td class="mdescLeft">&#160;</td><td class="mdescRight">Executes a command in the given container.  <a href="classDobbyProxy.html#a174c6ee0fc05b11b900f4b0bece96b88">More...</a><br /></td></tr>
 <tr class="separator:a174c6ee0fc05b11b900f4b0bece96b88"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -213,6 +219,12 @@ Private Member Functions</h2></td></tr>
 <tr class="memitem:afa636b7c9bedc4804e41956b62bb1b5f"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classDobbyProxy.html#afa636b7c9bedc4804e41956b62bb1b5f">onContainerStoppedEvent</a> (const AI_IPC::VariantList &amp;args)</td></tr>
 <tr class="memdesc:afa636b7c9bedc4804e41956b62bb1b5f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Called when a org.rdk.dobby.ctrl1.Stopped event is received from the <a class="el" href="classDobby.html" title="The root Dobby object, runs the dbus loop.">Dobby</a> 'hypervisor' daemon.  <a href="classDobbyProxy.html#afa636b7c9bedc4804e41956b62bb1b5f">More...</a><br /></td></tr>
 <tr class="separator:afa636b7c9bedc4804e41956b62bb1b5f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:accde4875fbceedfbecb45d0fe292da44"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classDobbyProxy.html#accde4875fbceedfbecb45d0fe292da44">onContainerHibernatedEvent</a> (const AI_IPC::VariantList &amp;args)</td></tr>
+<tr class="memdesc:accde4875fbceedfbecb45d0fe292da44"><td class="mdescLeft">&#160;</td><td class="mdescRight">Called when a org.rdk.dobby.ctrl1.Hibernated event is received from the <a class="el" href="classDobby.html" title="The root Dobby object, runs the dbus loop.">Dobby</a> 'hypervisor' daemon.  <a href="classDobbyProxy.html#accde4875fbceedfbecb45d0fe292da44">More...</a><br /></td></tr>
+<tr class="separator:accde4875fbceedfbecb45d0fe292da44"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa7d40a36ea6b2f6bbd7c846857f2a833"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classDobbyProxy.html#aa7d40a36ea6b2f6bbd7c846857f2a833">onContainerAwokenEvent</a> (const AI_IPC::VariantList &amp;args)</td></tr>
+<tr class="memdesc:aa7d40a36ea6b2f6bbd7c846857f2a833"><td class="mdescLeft">&#160;</td><td class="mdescRight">Called when a org.rdk.dobby.ctrl1.Awoken event is received from the <a class="el" href="classDobby.html" title="The root Dobby object, runs the dbus loop.">Dobby</a> 'hypervisor' daemon.  <a href="classDobbyProxy.html#aa7d40a36ea6b2f6bbd7c846857f2a833">More...</a><br /></td></tr>
+<tr class="separator:aa7d40a36ea6b2f6bbd7c846857f2a833"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a7b7aa19a048e6b747e29a41cbf8a7083"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classDobbyProxy.html#a7b7aa19a048e6b747e29a41cbf8a7083">invokeMethod</a> (const char *interface_, const char *method_, const AI_IPC::VariantList &amp;params_, AI_IPC::VariantList &amp;returns_) const</td></tr>
 <tr class="memdesc:a7b7aa19a048e6b747e29a41cbf8a7083"><td class="mdescLeft">&#160;</td><td class="mdescRight">Invokes a dbus method on the daemon.  <a href="classDobbyProxy.html#a7b7aa19a048e6b747e29a41cbf8a7083">More...</a><br /></td></tr>
 <tr class="separator:a7b7aa19a048e6b747e29a41cbf8a7083"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -589,6 +601,53 @@ std::shared_ptr&lt; <a class="el" href="classAICommon_1_1IDispatcher.html">IDisp
 
 </div>
 </div>
+<a id="a56f125b509083d5ee7061ddca7e7ac29"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a56f125b509083d5ee7061ddca7e7ac29">&#9670;&nbsp;</a></span>hibernateContainer()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool DobbyProxy::hibernateContainer </td>
+          <td>(</td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>cd</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const std::string &amp;&#160;</td>
+          <td class="paramname"><em>options</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td> const</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">override</span><span class="mlabel">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Checkpoints the container with the descriptor (container integer id) </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">cd</td><td>The container descriptor, which is the value returned by startContainer call.</td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>true on success, false on failure. </dd></dl>
+
+<p>Implements <a class="el" href="classIDobbyProxy.html">IDobbyProxy</a>.</p>
+
+</div>
+</div>
 <a id="a7b7aa19a048e6b747e29a41cbf8a7083"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a7b7aa19a048e6b747e29a41cbf8a7083">&#9670;&nbsp;</a></span>invokeMethod()</h2>
 
@@ -717,6 +776,76 @@ std::shared_ptr&lt; <a class="el" href="classAICommon_1_1IDispatcher.html">IDisp
 <dl class="section return"><dt>Returns</dt><dd>a list of all known containers. </dd></dl>
 
 <p>Implements <a class="el" href="classIDobbyProxy.html">IDobbyProxy</a>.</p>
+
+</div>
+</div>
+<a id="aa7d40a36ea6b2f6bbd7c846857f2a833"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa7d40a36ea6b2f6bbd7c846857f2a833">&#9670;&nbsp;</a></span>onContainerAwokenEvent()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void DobbyProxy::onContainerAwokenEvent </td>
+          <td>(</td>
+          <td class="paramtype">const AI_IPC::VariantList &amp;&#160;</td>
+          <td class="paramname"><em>args</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Called when a org.rdk.dobby.ctrl1.Awoken event is received from the <a class="el" href="classDobby.html" title="The root Dobby object, runs the dbus loop.">Dobby</a> 'hypervisor' daemon. </p>
+<p>We parse the event data and if it makes sense we bounce this event up to any listeners using the Notifier / Observer pattern.</p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">args</td><td>The args sent with the event. </td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a id="accde4875fbceedfbecb45d0fe292da44"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#accde4875fbceedfbecb45d0fe292da44">&#9670;&nbsp;</a></span>onContainerHibernatedEvent()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void DobbyProxy::onContainerHibernatedEvent </td>
+          <td>(</td>
+          <td class="paramtype">const AI_IPC::VariantList &amp;&#160;</td>
+          <td class="paramname"><em>args</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Called when a org.rdk.dobby.ctrl1.Hibernated event is received from the <a class="el" href="classDobby.html" title="The root Dobby object, runs the dbus loop.">Dobby</a> 'hypervisor' daemon. </p>
+<p>We parse the event data and if it makes sense we bounce this event up to any listeners using the Notifier / Observer pattern.</p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">args</td><td>The args sent with the event. </td></tr>
+  </table>
+  </dd>
+</dl>
 
 </div>
 </div>
@@ -1350,6 +1479,43 @@ DOBBY_LOG_ETHANLOG : route diag logging to the supplied pipe
   </table>
   </dd>
 </dl>
+
+<p>Implements <a class="el" href="classIDobbyProxy.html">IDobbyProxy</a>.</p>
+
+</div>
+</div>
+<a id="a85df5fa220e4b2a5f3719c2ab123d77f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a85df5fa220e4b2a5f3719c2ab123d77f">&#9670;&nbsp;</a></span>wakeupContainer()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool DobbyProxy::wakeupContainer </td>
+          <td>(</td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>cd</em></td><td>)</td>
+          <td> const</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">override</span><span class="mlabel">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Restores previously checkpointed container with the given id. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">id</td><td>The string id of the container, this should not have any spaces and only container alphanumeric characters plus '.' and '-'.</td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>true on success, false on failure. </dd></dl>
 
 <p>Implements <a class="el" href="classIDobbyProxy.html">IDobbyProxy</a>.</p>
 

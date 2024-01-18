@@ -292,6 +292,9 @@ typedef std::function&lt; void(int32_t cd, const <a class="el" href="classContai
 <tr class="memitem:a2fc5eda15418a158090b2755f5f4f441"><td class="memItemLeft" align="right" valign="top"><a id="a2fc5eda15418a158090b2755f5f4f441"></a>
 typedef std::function&lt; void(int32_t cd, const <a class="el" href="classContainerId.html">ContainerId</a> &amp;id, int32_t status)&gt;&#160;</td><td class="memItemRight" valign="bottom"><b>ContainerStoppedFunc</b></td></tr>
 <tr class="separator:a2fc5eda15418a158090b2755f5f4f441"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5ca2c3ce41c05d4afff95d484bf4b4b0"><td class="memItemLeft" align="right" valign="top"><a id="a5ca2c3ce41c05d4afff95d484bf4b4b0"></a>
+typedef std::function&lt; void(int32_t cd, const <a class="el" href="classContainerId.html">ContainerId</a> &amp;id)&gt;&#160;</td><td class="memItemRight" valign="bottom"><b>ContainerHibernatedFunc</b></td></tr>
+<tr class="separator:a5ca2c3ce41c05d4afff95d484bf4b4b0"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pro-methods"></a>
 Protected Member Functions</h2></td></tr>
@@ -301,6 +304,12 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>onContainerStarted</b
 <tr class="memitem:acd255c7300b0461efd103bab89dd5d2f"><td class="memItemLeft" align="right" valign="top"><a id="acd255c7300b0461efd103bab89dd5d2f"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>onContainerStopped</b> (int32_t cd, const <a class="el" href="classContainerId.html">ContainerId</a> &amp;id, int status)</td></tr>
 <tr class="separator:acd255c7300b0461efd103bab89dd5d2f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a57a1e55bfabfcd5b571cd69db5f7741f"><td class="memItemLeft" align="right" valign="top"><a id="a57a1e55bfabfcd5b571cd69db5f7741f"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>onContainerHibernated</b> (int32_t cd, const <a class="el" href="classContainerId.html">ContainerId</a> &amp;id)</td></tr>
+<tr class="separator:a57a1e55bfabfcd5b571cd69db5f7741f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:abc172877a452db7868896d978e5a0d55"><td class="memItemLeft" align="right" valign="top"><a id="abc172877a452db7868896d978e5a0d55"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>onContainerAwoken</b> (int32_t cd, const <a class="el" href="classContainerId.html">ContainerId</a> &amp;id)</td></tr>
+<tr class="separator:abc172877a452db7868896d978e5a0d55"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a9365d921bd5691b65c507e1b076fe46c"><td class="memItemLeft" align="right" valign="top"><a id="a9365d921bd5691b65c507e1b076fe46c"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>waitForContainerStarted</b> (int32_t timeout_ms)</td></tr>
 <tr class="separator:a9365d921bd5691b65c507e1b076fe46c"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -317,8 +326,62 @@ std::function&lt; bool()&gt;&#160;</td><td class="memItemRight" valign="bottom">
 <tr class="separator:a1e8cab3ac109a0ea7815e1c79c944831"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a0cec8fd8ce281d688782d970be48b19b"><td class="memItemLeft" align="right" valign="top">ContainerStoppedFunc&#160;</td><td class="memItemRight" valign="bottom"><b>stopcb</b></td></tr>
 <tr class="separator:a0cec8fd8ce281d688782d970be48b19b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab9e3e561b76b5cbf5e2d1ec78340b4c5"><td class="memItemLeft" align="right" valign="top">ContainerHibernatedFunc&#160;</td><td class="memItemRight" valign="bottom"><b>hibernatedCb</b></td></tr>
+<tr class="separator:ab9e3e561b76b5cbf5e2d1ec78340b4c5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae4b4c051a8664fe5b79fdb61738c045d"><td class="memItemLeft" align="right" valign="top">ContainerHibernatedFunc&#160;</td><td class="memItemRight" valign="bottom"><b>awokenCb</b></td></tr>
+<tr class="separator:ae4b4c051a8664fe5b79fdb61738c045d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Member Data Documentation</h2>
+<a id="ae4b4c051a8664fe5b79fdb61738c045d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae4b4c051a8664fe5b79fdb61738c045d">&#9670;&nbsp;</a></span>awokenCb</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">ContainerHibernatedFunc DaemonDobbyManagerTest::awokenCb</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">protected</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<b>Initial value:</b><div class="fragment"><div class="line">=</div>
+<div class="line">        std::bind(&amp;DaemonDobbyManagerTest::onContainerAwoken, <span class="keyword">this</span>,</div>
+<div class="line">                  std::placeholders::_1, std::placeholders::_2)</div>
+</div><!-- fragment -->
+</div>
+</div>
+<a id="ab9e3e561b76b5cbf5e2d1ec78340b4c5"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab9e3e561b76b5cbf5e2d1ec78340b4c5">&#9670;&nbsp;</a></span>hibernatedCb</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">ContainerHibernatedFunc DaemonDobbyManagerTest::hibernatedCb</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">protected</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<b>Initial value:</b><div class="fragment"><div class="line">=</div>
+<div class="line">        std::bind(&amp;DaemonDobbyManagerTest::onContainerHibernated, <span class="keyword">this</span>,</div>
+<div class="line">                  std::placeholders::_1, std::placeholders::_2)</div>
+</div><!-- fragment -->
+</div>
+</div>
 <a id="a1e8cab3ac109a0ea7815e1c79c944831"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a1e8cab3ac109a0ea7815e1c79c944831">&#9670;&nbsp;</a></span>startcb</h2>
 

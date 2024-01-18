@@ -145,6 +145,12 @@ Private Member Functions</h2></td></tr>
 <tr class="memitem:a759ed699ca130f14b6e5f40479ed3605"><td class="memItemLeft" align="right" valign="top"><a id="a759ed699ca130f14b6e5f40479ed3605"></a>
 &#160;</td><td class="memItemRight" valign="bottom"><b>DOBBY_DBUS_METHOD</b> (resume)</td></tr>
 <tr class="separator:a759ed699ca130f14b6e5f40479ed3605"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a36089bfd84bbea75c4e556d8a564c8f4"><td class="memItemLeft" align="right" valign="top"><a id="a36089bfd84bbea75c4e556d8a564c8f4"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>DOBBY_DBUS_METHOD</b> (hibernate)</td></tr>
+<tr class="separator:a36089bfd84bbea75c4e556d8a564c8f4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0d997187b4810446d9b70cdf08cdaea8"><td class="memItemLeft" align="right" valign="top"><a id="a0d997187b4810446d9b70cdf08cdaea8"></a>
+&#160;</td><td class="memItemRight" valign="bottom"><b>DOBBY_DBUS_METHOD</b> (wakeup)</td></tr>
+<tr class="separator:a0d997187b4810446d9b70cdf08cdaea8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a3d4ba7746f00ad7b612d3e335f827437"><td class="memItemLeft" align="right" valign="top"><a id="a3d4ba7746f00ad7b612d3e335f827437"></a>
 &#160;</td><td class="memItemRight" valign="bottom"><b>DOBBY_DBUS_METHOD</b> (exec)</td></tr>
 <tr class="separator:a3d4ba7746f00ad7b612d3e335f827437"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -170,6 +176,12 @@ void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="clas
 <tr class="memitem:a5da0529a1a610aad3335bb7ed96c7c8e"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classDobby.html#a5da0529a1a610aad3335bb7ed96c7c8e">onContainerStopped</a> (int32_t cd, const <a class="el" href="classContainerId.html">ContainerId</a> &amp;id, int status)</td></tr>
 <tr class="memdesc:a5da0529a1a610aad3335bb7ed96c7c8e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Called by the <a class="el" href="classDobbyManager.html" title="The main object which starts / stops / manages the containers.">DobbyManager</a> code when a container has stopped.  <a href="classDobby.html#a5da0529a1a610aad3335bb7ed96c7c8e">More...</a><br /></td></tr>
 <tr class="separator:a5da0529a1a610aad3335bb7ed96c7c8e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa8907a29d670a177c03b6d2138b79275"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classDobby.html#aa8907a29d670a177c03b6d2138b79275">onContainerHibernated</a> (int32_t cd, const <a class="el" href="classContainerId.html">ContainerId</a> &amp;id)</td></tr>
+<tr class="memdesc:aa8907a29d670a177c03b6d2138b79275"><td class="mdescLeft">&#160;</td><td class="mdescRight">Called by the <a class="el" href="classDobbyManager.html" title="The main object which starts / stops / manages the containers.">DobbyManager</a> code when a container gets hibernated.  <a href="classDobby.html#aa8907a29d670a177c03b6d2138b79275">More...</a><br /></td></tr>
+<tr class="separator:aa8907a29d670a177c03b6d2138b79275"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a85197da713fecd320ffea52e6cf828e8"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classDobby.html#a85197da713fecd320ffea52e6cf828e8">onContainerAwoken</a> (int32_t cd, const <a class="el" href="classContainerId.html">ContainerId</a> &amp;id)</td></tr>
+<tr class="memdesc:a85197da713fecd320ffea52e6cf828e8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Called by the <a class="el" href="classDobbyManager.html" title="The main object which starts / stops / manages the containers.">DobbyManager</a> code when a container returns back from hibernated.  <a href="classDobby.html#a85197da713fecd320ffea52e6cf828e8">More...</a><br /></td></tr>
+<tr class="separator:a85197da713fecd320ffea52e6cf828e8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6e99035b5f378381a6c15108944dccf5"><td class="memItemLeft" align="right" valign="top"><a id="a6e99035b5f378381a6c15108944dccf5"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classDobby.html#a6e99035b5f378381a6c15108944dccf5">runWorkQueue</a> () const</td></tr>
 <tr class="memdesc:a6e99035b5f378381a6c15108944dccf5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Runs the <a class="el" href="classDobby.html" title="The root Dobby object, runs the dbus loop.">Dobby</a> work queue to handle API calls. <br /></td></tr>
@@ -427,6 +439,96 @@ static std::atomic&lt; unsigned &gt;&#160;</td><td class="memItemRight" valign="
 
 <p>Signal handler that does nothing. </p>
 <p>This is needed to ensure SIGCHLD signals are actually delivered and detected by sigwaitinfo </p>
+
+</div>
+</div>
+<a id="a85197da713fecd320ffea52e6cf828e8"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a85197da713fecd320ffea52e6cf828e8">&#9670;&nbsp;</a></span>onContainerAwoken()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void Dobby::onContainerAwoken </td>
+          <td>(</td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>cd</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="classContainerId.html">ContainerId</a> &amp;&#160;</td>
+          <td class="paramname"><em>id</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Called by the <a class="el" href="classDobbyManager.html" title="The main object which starts / stops / manages the containers.">DobbyManager</a> code when a container returns back from hibernated. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">cd</td><td>The container unique descriptor. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">id</td><td>The string id / name of the container. </td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a id="aa8907a29d670a177c03b6d2138b79275"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa8907a29d670a177c03b6d2138b79275">&#9670;&nbsp;</a></span>onContainerHibernated()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void Dobby::onContainerHibernated </td>
+          <td>(</td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>cd</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="classContainerId.html">ContainerId</a> &amp;&#160;</td>
+          <td class="paramname"><em>id</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Called by the <a class="el" href="classDobbyManager.html" title="The main object which starts / stops / manages the containers.">DobbyManager</a> code when a container gets hibernated. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">cd</td><td>The container unique descriptor. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">id</td><td>The string id / name of the container. </td></tr>
+  </table>
+  </dd>
+</dl>
 
 </div>
 </div>
