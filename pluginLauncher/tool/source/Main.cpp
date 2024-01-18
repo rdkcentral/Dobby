@@ -359,7 +359,7 @@ void logConsolePrinter(int level, const char *file, const char *func,
     iov[5].iov_len = 1;
 
 
-    writev(fileno((level < AI_DEBUG_LEVEL_INFO) ? stderr : stdout), iov, 6);
+    writev(fileno((level <= __ai_debug_log_level) ? stderr : stdout), iov, 6);
 }
 
 #ifdef USE_SYSTEMD
