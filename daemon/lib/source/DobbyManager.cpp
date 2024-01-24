@@ -1650,6 +1650,10 @@ bool DobbyManager::hibernateContainer(int32_t cd, const std::string& options)
             if (ret == DobbyHibernate::Error::ErrorNone)
             {
                 mContainers[id]->state = DobbyContainer::State::Hibernated;
+                if (mContainerHibernatedCb)
+                {
+                    mContainerHibernatedCb(cd, id);
+                }
             }
             else
             {
