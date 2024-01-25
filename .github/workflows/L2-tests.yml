@@ -1,0 +1,215 @@
+name: DobbyL2Test
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        compiler: [ gcc, clang ]
+        coverage: [ with-coverage, without-coverage ]
+        exclude:
+          - compiler: clang
+            coverage: with-coverage
+          - compiler: clang
+            coverage: without-coverage
+          - compiler: gcc
+            coverage: without-coverage
+        # The matrix will try all possible combinations of the below arrays
+        # If adding a new cmake option, include both the ON and OFF version to ensure the
+        # matrix runs both versions
+        build_type: ["Debug"]
+        extra_flags: [ "-DLEGACY_COMPONENTS=ON"]
+
+    name: Build in ${{ matrix.build_type }} Mode (${{ matrix.extra_flags }})
+    steps:
+      - name: Install packages
+        run: >
+          sudo apt update
+          &&
+          sudo apt install -y build-essential cmake make git gcc pkgconf libtool libctemplate-dev libjsoncpp-dev libdbus-1-dev libsystemd-dev libyajl-dev libcap-dev go-md2man autoconf automake libseccomp-dev libboost-dev valgrind libcunit1-dev liblog4c-dev libfreetype6-dev libjpeg-dev xorg-dev python3 python3-pip libarchive-dev libcurl4 libcurl4-gnutls-dev libssl-dev libgpgme11-dev libtool-bin libarchive13 bison flex clang valgrind lcov figlet dbus libdbus-glib-1-dev dbus-user-session systemd libpam-systemd gnome-keyring iptables
+
+      - name: Set clang toolchain
+        if: ${{ matrix.compiler == 'clang' }}
+        run: echo "TOOLCHAIN_FILE=${GITHUB_WORKSPACE}/Dobby/unit_tests/clang.cmake" >> $GITHUB_ENV
+
+      - name: Set gcc/with-coverage toolchain
+        if: ${{ matrix.compiler == 'gcc' && matrix.coverage == 'with-coverage' }}
+        run: echo "TOOLCHAIN_FILE=${GITHUB_WORKSPACE}/Dobby/unit_tests/gcc-with-coverage.cmake" >> $GITHUB_ENV
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+      - run: pip install jsonref
+               pip install coverage
+
+      - name: Set up CMake
+        uses: jwlawson/actions-setup-cmake@v1.13
+        with:
+          cmake-version: '3.16.x'
+
+      - name: Checkout Dobby
+        uses: actions/checkout@v3
+        with:
+          path: Dobby
+
+      - name: Install gmock
+        run: |
+         cd $GITHUB_WORKSPACE
+         git clone https://github.com/google/googletest.git -b release-1.11.0
+         cd googletest
+         mkdir build
+         cd build
+         cmake ..
+         make
+         sudo make install
+
+      - name: Install crun
+        run: |
+         cd $GITHUB_WORKSPACE
+         git clone https://github.com/containers/crun.git
+         cd crun
+         ./autogen.sh
+         ./configure
+         sudo make install -j$(nproc)
+         sudo ln -sf /usr/local/bin/crun /usr/bin/crun
+
+      - name: Install SMCROUTE
+        run: |
+         cd $GITHUB_WORKSPACE
+         git clone --depth 1 --branch 2.5.5 https://github.com/troglobit/smcroute.git
+         cd smcroute
+         ./autogen.sh
+         ./configure
+         sudo make install -j$(nproc)
+         sudo ln -sf /usr/local/sbin/smcroutectl /usr/sbin/smcroutectl
+         sudo mkdir -p /usr/local/var/run
+         sudo systemctl enable smcroute
+
+      - name: Install libnl
+        run: |
+         cd $GITHUB_WORKSPACE
+         git clone --depth 1 --branch libnl3_5_0 https://github.com/thom311/libnl.git
+         cd libnl
+         ./autogen.sh
+         ./configure --prefix=/usr --sysconfdir=/etc --disable-static
+         sudo make install -j$(nproc)
+
+      - name: Set DBUS config
+        run: |
+         sudo touch /etc/dbus-1/system.d/org.rdk.dobby.conf
+         sudo chmod -R 777 /etc/dbus-1/system.d/org.rdk.dobby.conf
+         sudo echo '<!DOCTYPE busconfig PUBLIC "-//freedesktop//DTD D-Bus Bus Configuration 1.0//EN"
+         "http://www.freedesktop.org/standards/dbus/1.0/busconfig.dtd">
+         <busconfig>
+         <policy context="default">
+         <!-- Allow everything to be sent -->
+         <allow send_destination="*" eavesdrop="true"/>
+         <!-- Allow everything to be received -->
+         <allow eavesdrop="true"/>
+         <!-- Allow anyone to own anything -->
+         <allow own="*"/>
+         <!-- XXX: Allow all users to connect -->
+         <allow user="*"/>
+         </policy>
+         </busconfig>' > "/etc/dbus-1/system.d/org.rdk.dobby.conf"
+
+      - name: build Dobby
+        run: |
+          cd Dobby
+          sudo cp /usr/lib/x86_64-linux-gnu/dbus-1.0/include/dbus/dbus-arch-deps.h /usr/include/dbus-1.0/dbus
+          sudo mkdir -p /usr/lib/plugins/dobby
+          sudo mkdir -p /opt/persistent/rdk
+          sudo mkdir -p /var/volatile/rdk/dobby/bundles
+          sudo chmod 755 /var/volatile/rdk/dobby/bundles
+          mkdir -p build
+          cd build
+          cmake -DCMAKE_TOOLCHAIN_FILE="${{ env.TOOLCHAIN_FILE }}" -DRDK_PLATFORM=DEV_VM -DCMAKE_INSTALL_PREFIX:PATH=/usr ${{ matrix.extra_flags }}  -DRDK=ON -DUSE_SYSTEMD=ON -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DAI_BUILD_TYPE=AI_DEBUG ..
+          make -j $(nproc)
+          sudo make install
+          # Link for the DobbyInit tool
+          sudo ln -sf /usr/local/libexec/ /usr/libexec
+          sudo ln -sf /lib/x86_64-linux-gnu/libreadline.so.* /lib/
+
+      - name: Checkout srcThunder
+        run: |
+         cd $GITHUB_WORKSPACE
+         git clone -b R2 https://github.com/rdkcentral/Thunder.git
+         git clone -b R2 https://github.com/rdkcentral/ThunderInterfaces.git
+         git clone -b R2 https://github.com/rdkcentral/ThunderClientLibraries.git
+         git clone https://github.com/rdkcentral/rdkservices.git
+
+      - name: Build Thunder
+        run: >
+          cmake
+          -S "$GITHUB_WORKSPACE/Thunder/Tools"
+          -B build/ThunderTools
+          -DCMAKE_INSTALL_PREFIX=/usr
+          -DCMAKE_MODULE_PATH="$GITHUB_WORKSPACE/install/tools/cmake"
+          -DGENERIC_CMAKE_MODULE_PATH="$GITHUB_WORKSPACE/install/tools/cmake"
+          &&
+          sudo make -j4 -C build/ThunderTools
+          &&
+          sudo make -C build/ThunderTools install
+          &&
+          cmake
+          -S "$GITHUB_WORKSPACE/Thunder"
+          -B build/Thunder
+          -DCMAKE_INSTALL_PREFIX=/usr
+          -DCMAKE_MODULE_PATH="$GITHUB_WORKSPACE/install/tools/cmake"
+          -DBUILD_TYPE=${{ matrix.build_type }}
+          -DBINDING=127.0.0.1
+          -DPORT=9998
+          &&
+          sudo cmake --build build/Thunder -j4
+          &&
+          sudo cmake --install build/Thunder
+
+      - name: Build ThunderInterfaces
+        run: >
+          cmake
+          -S "$GITHUB_WORKSPACE/ThunderInterfaces"
+          -B build/ThunderInterfaces
+          -DCMAKE_INSTALL_PREFIX=/usr
+          -DCMAKE_MODULE_PATH="$GITHUB_WORKSPACE/install/tools/cmake"
+          &&
+          sudo cmake --build build/ThunderInterfaces -j4
+          &&
+          sudo cmake --install build/ThunderInterfaces
+
+      - name: Build ThunderClientLibraries
+        run: >
+          cmake
+          -S "$GITHUB_WORKSPACE/ThunderClientLibraries"
+          -B build/ThunderClientLibraries
+          -DCMAKE_INSTALL_PREFIX=/usr
+          -DCMAKE_MODULE_PATH="$GITHUB_WORKSPACE/install/tools/cmake"
+          -DVIRTUALINPUT=ON
+          &&
+          sudo cmake --build build/ThunderClientLibraries -j4
+          &&
+          sudo cmake --install build/ThunderClientLibraries
+
+      - name: Build rdkservices
+        run: >
+          cmake
+          -S "$GITHUB_WORKSPACE/rdkservices"
+          -B build/rdkservices
+          -DCMAKE_TOOLCHAIN_FILE="${{ env.TOOLCHAIN_FILE }}"
+          -DCMAKE_INSTALL_PREFIX=/usr
+          -DCMAKE_MODULE_PATH="$GITHUB_WORKSPACE/install/tools/cmake"
+          -DCOMCAST_CONFIG=OFF
+          -DPLUGIN_OCICONTAINER=ON
+          -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
+          &&
+          sudo cmake --build build/rdkservices -j4
+          &&
+          sudo cmake --install build/rdkservices
+
+      - name: Run the unit test
+        working-directory: Dobby/unit_tests/L2_testing/test_runner/
+        run: |
+            python3 runner.py -p 1
+

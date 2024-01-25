@@ -1,4 +1,4 @@
-name: Dobby Build
+name: DobbyL1Test
 on: [push, pull_request]
 
 jobs:
@@ -38,11 +38,11 @@ jobs:
 
       - name: Set clang toolchain
         if: ${{ matrix.compiler == 'clang' }}
-        run: echo "TOOLCHAIN_FILE=${GITHUB_WORKSPACE}/unit_tests/L1_testing/clang.cmake" >> $GITHUB_ENV
+        run: echo "TOOLCHAIN_FILE=${GITHUB_WORKSPACE}/unit_tests/clang.cmake" >> $GITHUB_ENV
 
       - name: Set gcc/with-coverage toolchain
         if: ${{ matrix.compiler == 'gcc' && matrix.coverage == 'with-coverage' }}
-        run: echo "TOOLCHAIN_FILE=${GITHUB_WORKSPACE}/unit_tests/L1_testing/gcc-with-coverage.cmake" >> $GITHUB_ENV
+        run: echo "TOOLCHAIN_FILE=${GITHUB_WORKSPACE}/unit_tests/gcc-with-coverage.cmake" >> $GITHUB_ENV
 
       - name: Install gmock
         run: |

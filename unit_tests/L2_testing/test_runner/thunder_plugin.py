@@ -36,7 +36,7 @@ container_name = "sleepy-thunder"
 
 
 def create_successful_regex_answer(additional_content=""):
-    expression = '{"jsonrpc":"2\.0","id":3,"result":{%s"success":true}}' % additional_content
+    expression = '{"jsonrpc":"2\\.0","id":3,"result":{%s"success":true}}' % additional_content
     test_utils.print_log('Regular expression is: @%s@' % expression, test_utils.Severity.debug)
     return expression
 
@@ -45,26 +45,26 @@ def create_tests():
     epg_running_re = ""
     if test_utils.selected_platform == test_utils.Platforms.xi_6:
         # does epg must ber running or can it run on xi6? assumed it can run but not must.
-        epg_running_re = '({"Descriptor":\d+,"Id":"com.bskyb.epgui"})?,?'
+        epg_running_re = '({"Descriptor":\\d+,"Id":"com.bskyb.epgui"})?,?'
 
     tests = (
         Test("List no containers",
              container_name,
-             create_successful_regex_answer('"containers":\['+
+             create_successful_regex_answer('"containers":\\['+
                                             epg_running_re +
-                                            '\],'),
+                                            '\\],'),
              "Sends request for listing all containers, should find none",
              "listContainers"),
         Test("Start bundle container",
              container_name,
-             create_successful_regex_answer('"descriptor":\d+,'),
+             create_successful_regex_answer('"descriptor":\\d+,'),
              "Starts container using bundle",
              "startContainer"),
         Test("List running container %s" % container_name,
              container_name,
-             create_successful_regex_answer('"containers":\[' +
+             create_successful_regex_answer('"containers":\\[' +
                                             epg_running_re +
-                                            '{"Descriptor":\d+,"Id":"%s"}\],' % container_name),
+                                            '{"Descriptor":\\d+,"Id":"%s"}\\],' % container_name),
              "Sends request for listing all containers, should find one",
              "listContainers"),
         Test("Pause container",
@@ -94,7 +94,7 @@ def create_tests():
              "stopContainer"),
         Test("Start Dobby spec container",
              container_name,
-             create_successful_regex_answer('"descriptor":\d+,'),
+             create_successful_regex_answer('"descriptor":\\d+,'),
              "Starts container using a Dobby spec",
              "startContainerFromDobbySpec"),
         Test("Stop container",
