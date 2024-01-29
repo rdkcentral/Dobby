@@ -1563,10 +1563,6 @@ bool DobbyManager::hibernateContainer(int32_t cd, const std::string& options)
         return false;
     }
 
-    // create a stats object for the container to get list of PIDs
-    DobbyStats stats(it->first, mEnvironment, mUtilities);
-    Json::Value jsonPids = DobbyStats(it->first, mEnvironment, mUtilities).stats()["pids"];
-
     std::thread hibernateThread =
         std::thread([=]()
         {
@@ -1599,19 +1595,24 @@ bool DobbyManager::hibernateContainer(int32_t cd, const std::string& options)
             }
             //TODO: --delay support end
 
+            // create a stats object for the container to get list of PIDs
+            std::unique_lock<std::mutex> locker(mLock);
+            DobbyStats stats(it->first, mEnvironment, mUtilities);
+            Json::Value jsonPids = DobbyStats(it->first, mEnvironment, mUtilities).stats()["pids"];
+            locker.unlock();
+
             for (auto pidIt = jsonPids.begin(); pidIt != jsonPids.end(); ++pidIt)
             {
+                locker.lock();
+                if (mContainers.find(id) == mContainers.end() ||
+                    mContainers[id]->descriptor != cd ||
+                    mContainers[id]->state != DobbyContainer::State::Hibernating)
                 {
-                    std::lock_guard<std::mutex> locker(mLock);
-                    if (mContainers.find(id) == mContainers.end() ||
-                        mContainers[id]->descriptor != cd ||
-                        mContainers[id]->state != DobbyContainer::State::Hibernating)
-                    {
-                        AI_LOG_WARN("Hibernation of: %s with descriptor %d aborted", id.c_str(), cd);
-                        AI_LOG_FN_EXIT();
-                        return;
-                    }
+                    AI_LOG_WARN("Hibernation of: %s with descriptor %d aborted", id.c_str(), cd);
+                    AI_LOG_FN_EXIT();
+                    return;
                 }
+                locker.unlock();
 
                 uint32_t pid = pidIt->asUInt();
                 ret  = DobbyHibernate::HibernateProcess(pid);
@@ -1631,7 +1632,7 @@ bool DobbyManager::hibernateContainer(int32_t cd, const std::string& options)
             }
 
             // update state
-            std::lock_guard<std::mutex> locker(mLock);
+            locker.lock();
             if (mContainers.find(id) == mContainers.end() ||
                 mContainers[id]->descriptor != cd)
             {
@@ -1712,13 +1713,14 @@ bool DobbyManager::wakeupContainer(int32_t cd)
     // Awakening state will abort hibernation thread if still running
     it->second->state = DobbyContainer::State::Awakening;
 
-    // create a stats object for the container to get list of PIDs
-    DobbyStats stats(it->first, mEnvironment, mUtilities);
-    Json::Value jsonPids = DobbyStats(it->first, mEnvironment, mUtilities).stats()["pids"];
-
     std::thread wakeupThread =
     std::thread([=]()
     {
+        // create a stats object for the container to get list of PIDs
+        std::unique_lock<std::mutex> locker(mLock);
+        DobbyStats stats(it->first, mEnvironment, mUtilities);
+        Json::Value jsonPids = DobbyStats(it->first, mEnvironment, mUtilities).stats()["pids"];
+        locker.unlock();
         // try to Wakeup all processes to be sure all is cleaned up
         // and wakeup in revers order
         auto pidIt = jsonPids.end();
@@ -1730,7 +1732,7 @@ bool DobbyManager::wakeupContainer(int32_t cd)
         }
 
         // update state
-        std::lock_guard<std::mutex> locker(mLock);
+        locker.lock();
         if (mContainers.find(id) == mContainers.end() ||
             mContainers[id]->descriptor != cd)
         {
