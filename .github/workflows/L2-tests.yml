@@ -132,7 +132,6 @@ jobs:
           # Link for the DobbyInit tool
           sudo ln -sf /usr/local/libexec/ /usr/libexec
           sudo ln -sf /lib/x86_64-linux-gnu/libreadline.so.* /lib/
-          sudo ln -sf /run/systemd/resolve/resolv.conf /etc/resolv.conf
 
       - name: Checkout srcThunder
         run: |
