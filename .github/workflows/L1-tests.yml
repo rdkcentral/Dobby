@@ -1,4 +1,4 @@
-name: Dobby Build
+name: DobbyL1Test
 on: [push, pull_request]
 
 jobs:
@@ -22,7 +22,7 @@ jobs:
             coverage: without-coverage
         # The matrix will try all possible combinations of the below arrays
         # If adding a new cmake option, include both the ON and OFF version to ensure the
-        # If adding a RUN_TESTS cmake option, it will build with enabling optional_flags and run the unit tests
+        # If adding a RUN_TESTS cmake option, it will build with enabling optional_flags and run the L1 tests
         # matrix runs both versions
         build_type: ["Release", "Debug"]
         extra_flags: [ "RUN_TESTS", "-DLEGACY_COMPONENTS=ON", "-DLEGACY_COMPONENTS=OFF", "-DUSE_SYSTEMD=ON", "-DUSE_SYSTEMD=OFF", "-DDOBBY_HIBERNATE_MEMCR_IMPL=ON", "-DDOBBY_HIBERNATE_MEMCR_IMPL=OFF"]
@@ -38,11 +38,11 @@ jobs:
 
       - name: Set clang toolchain
         if: ${{ matrix.compiler == 'clang' }}
-        run: echo "TOOLCHAIN_FILE=${GITHUB_WORKSPACE}/unit_tests/L1_testing/clang.cmake" >> $GITHUB_ENV
+        run: echo "TOOLCHAIN_FILE=${GITHUB_WORKSPACE}/tests/clang.cmake" >> $GITHUB_ENV
 
       - name: Set gcc/with-coverage toolchain
         if: ${{ matrix.compiler == 'gcc' && matrix.coverage == 'with-coverage' }}
-        run: echo "TOOLCHAIN_FILE=${GITHUB_WORKSPACE}/unit_tests/L1_testing/gcc-with-coverage.cmake" >> $GITHUB_ENV
+        run: echo "TOOLCHAIN_FILE=${GITHUB_WORKSPACE}/tests/gcc-with-coverage.cmake" >> $GITHUB_ENV
 
       - name: Install gmock
         run: |
@@ -68,12 +68,12 @@ jobs:
          fi
          make -j $(nproc)
 
-      - name: run unit-tests
+      - name: run l1-tests
         if: ${{ matrix.extra_flags == 'RUN_TESTS' && matrix.build_type == 'Debug' }}
         run: |
-          sudo valgrind --tool=memcheck --leak-check=yes --show-reachable=yes --track-fds=yes --fair-sched=try $GITHUB_WORKSPACE/build/unit_tests/L1_testing/tests/DobbyTest/DobbyL1Test
-          sudo $GITHUB_WORKSPACE/build/unit_tests/L1_testing/tests/DobbyUtilsTest/DobbyUtilsL1Test
-          sudo valgrind --tool=memcheck --leak-check=yes --show-reachable=yes --track-fds=yes --fair-sched=try $GITHUB_WORKSPACE/build/unit_tests/L1_testing/tests/DobbyManagerTest/DobbyManagerL1Test
+          sudo valgrind --tool=memcheck --leak-check=yes --show-reachable=yes --track-fds=yes --fair-sched=try $GITHUB_WORKSPACE/build/tests/L1_testing/tests/DobbyTest/DobbyL1Test
+          sudo $GITHUB_WORKSPACE/build/tests/L1_testing/tests/DobbyUtilsTest/DobbyUtilsL1Test
+          sudo valgrind --tool=memcheck --leak-check=yes --show-reachable=yes --track-fds=yes --fair-sched=try $GITHUB_WORKSPACE/build/tests/L1_testing/tests/DobbyManagerTest/DobbyManagerL1Test
 
       - name: Generate coverage
         if: ${{ matrix.coverage == 'with-coverage' && matrix.extra_flags == 'RUN_TESTS' && matrix.build_type == 'Debug' }}
@@ -86,7 +86,7 @@ jobs:
           -r coverage.info
           '11/*'
           '/usr/include/*'
-          '*/unit_tests/L1_testing/tests/*'
+          '*/tests/L1_testing/tests/*'
           -o filtered_coverage.info
           &&
           genhtml

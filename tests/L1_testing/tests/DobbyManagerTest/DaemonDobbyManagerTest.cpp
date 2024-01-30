@@ -235,7 +235,7 @@ protected:
                .Times(1)
                .WillOnce(::testing::Return(true));
 
-           const std::string expectedWorkDir = "unit_tests/L1_testing/tests";
+           const std::string expectedWorkDir = "tests/L1_testing/tests";
            EXPECT_CALL(*p_runcMock, getWorkingDir())
                .Times(2)
                .WillRepeatedly(::testing::Return(expectedWorkDir));
@@ -454,14 +454,14 @@ protected:
                 .Times(1)
                     .WillOnce(::testing::Return(cd));
 
-            const std::string validPath = "/unit_tests/L1_testing/tests/";
+            const std::string validPath = "/tests/L1_testing/tests/";
 
         // Set the expectation to return the valid path
             EXPECT_CALL(*p_rootfsMock, path())
                  .Times(4)
                     .WillRepeatedly(::testing::ReturnRef(validPath));
 
-            std::string valid_path = "/unit_tests/L1_testing/tests/DobbyManagerTest";
+            std::string valid_path = "/tests/L1_testing/tests/DobbyManagerTest";
 
             EXPECT_CALL(*p_bundleMock, path())
                 .Times(4)
@@ -621,14 +621,14 @@ protected:
                 .Times(1)
                     .WillOnce(::testing::Return(cd));
 
-            const std::string validPath = "/unit_tests/L1_testing/tests/";
+            const std::string validPath = "/tests/L1_testing/tests/";
 
         // Set the expectation to return the valid path
             EXPECT_CALL(*p_rootfsMock, path())
                 .Times(6)
                     .WillRepeatedly(::testing::ReturnRef(validPath));
 
-            std::string valid_path = "/unit_tests/L1_testing/tests/DobbyManagerTest";
+            std::string valid_path = "/tests/L1_testing/tests/DobbyManagerTest";
             EXPECT_CALL(*p_bundleMock, path())
                 .Times(2)
                     .WillRepeatedly(::testing::ReturnRef(valid_path));
@@ -814,7 +814,7 @@ protected:
                 .Times(testing::AtLeast(2))
                 .WillRepeatedly(testing::ReturnRef(data));
 
-            std::string valid_path = "/unit_tests/L1_testing/tests/DobbyManagerTest/DaemonDobbyManagerTest.cpp";
+            std::string valid_path = "/tests/L1_testing/tests/DobbyManagerTest/DaemonDobbyManagerTest.cpp";
             EXPECT_CALL(*p_rootfsMock, path())
                 .Times(testing::AtLeast(2))
                 .WillRepeatedly(::testing::ReturnRef(valid_path));
@@ -1074,14 +1074,14 @@ TEST_F(DaemonDobbyManagerTest, startContainerFromSpec_ValidInputs)
         .Times(1)
         .WillOnce(::testing::Return(cd));
 
-    const std::string validPath = "/unit_tests/L1_testing/tests/";
+    const std::string validPath = "/tests/L1_testing/tests/";
 
     // Set the expectation to return the valid path
     EXPECT_CALL(*p_rootfsMock, path())
         .Times(6)
         .WillRepeatedly(::testing::ReturnRef(validPath));
 
-    std::string valid_path = "/unit_tests/L1_testing/tests/DobbyManagerTest";
+    std::string valid_path = "/tests/L1_testing/tests/DobbyManagerTest";
     EXPECT_CALL(*p_bundleMock, path())
         .Times(2)
         .WillRepeatedly(::testing::ReturnRef(valid_path));
@@ -1279,7 +1279,7 @@ TEST_F(DaemonDobbyManagerTest, startContainerFromSpec_SuccessWithoutRdkPlugins)
         .Times(1)
         .WillOnce(::testing::Return(cd));
 
-    const std::string validPath = "/unit_tests/L1_testing/tests/";
+    const std::string validPath = "/tests/L1_testing/tests/";
 
 // Set the expectation to return the valid path
     EXPECT_CALL(*p_rootfsMock, path())
@@ -1290,7 +1290,7 @@ TEST_F(DaemonDobbyManagerTest, startContainerFromSpec_SuccessWithoutRdkPlugins)
             .WillOnce(::testing::ReturnRef(validPath))
             .WillOnce(::testing::ReturnRef(validPath));
 
-    std::string valid_path = "/unit_tests/L1_testing/tests/DobbyManagerTest";
+    std::string valid_path = "/tests/L1_testing/tests/DobbyManagerTest";
     EXPECT_CALL(*p_bundleMock, path())
         .Times(1)
             .WillOnce(::testing::ReturnRef(valid_path));
@@ -1582,7 +1582,7 @@ TEST_F(DaemonDobbyManagerTest, startContainerFromSpec_onPostConstructionHookFail
         .Times(1)
             .WillOnce(::testing::Return(cd));
 
-    const std::string validPath = "/unit_tests/L1_testing/tests/";
+    const std::string validPath = "/tests/L1_testing/tests/";
 
 // Set the expectation to return the valid path
     EXPECT_CALL(*p_rootfsMock, path())
@@ -1675,7 +1675,7 @@ TEST_F(DaemonDobbyManagerTest, startContainerFromSpec_WriteConfigJsonFailure)
         .Times(1)
             .WillOnce(::testing::ReturnRef(sampleData));
 
-    const std::string validPath = "/unit_tests/L1_testing/tests/";
+    const std::string validPath = "/tests/L1_testing/tests/";
 
     int32_t cd = 123;
     EXPECT_CALL(*p_containerMock, allocDescriptor())
@@ -1689,7 +1689,7 @@ TEST_F(DaemonDobbyManagerTest, startContainerFromSpec_WriteConfigJsonFailure)
             .WillOnce(::testing::ReturnRef(validPath))
             .WillOnce(::testing::ReturnRef(validPath));
 
-    std::string valid_path = "/unit_tests/L1_testing/tests/DobbyManagerTest";
+    std::string valid_path = "/tests/L1_testing/tests/DobbyManagerTest";
 
     EXPECT_CALL(*p_bundleMock, path())
         .Times(2)
@@ -1835,7 +1835,7 @@ TEST_F(DaemonDobbyManagerTest, startContainerFromSpec_CreateAndStartContainerFai
         .Times(1)
             .WillOnce(::testing::Return(cd));
 
-    const std::string validPath = "/unit_tests/L1_testing/tests/";
+    const std::string validPath = "/tests/L1_testing/tests/";
 
     EXPECT_CALL(*p_rootfsMock, path())
         .Times(5)
@@ -1846,7 +1846,7 @@ TEST_F(DaemonDobbyManagerTest, startContainerFromSpec_CreateAndStartContainerFai
             .WillOnce(::testing::ReturnRef(validPath))
             .WillOnce(::testing::ReturnRef(validPath));
 
-    std::string valid_path = "/unit_tests/L1_testing/tests/DobbyManagerTest";
+    std::string valid_path = "/tests/L1_testing/tests/DobbyManagerTest";
 
     EXPECT_CALL(*p_bundleMock, path())
         .Times(2)
@@ -2003,7 +2003,7 @@ TEST_F(DaemonDobbyManagerTest, createBundle_Success)
         .Times(1)
            .WillOnce(::testing::Return(true));
 
-    std::string valid_path = "/unit_tests/L1_testing/tests/DobbyManagerTest";
+    std::string valid_path = "/tests/L1_testing/tests/DobbyManagerTest";
     EXPECT_CALL(*p_bundleMock, path())
         .Times(1)
             .WillOnce(::testing::ReturnRef(valid_path));
@@ -2323,7 +2323,7 @@ TEST_F(DaemonDobbyManagerTest, startContainerFromBundle_onPostConstructionHookFa
         .Times(1)
             .WillOnce(::testing::Return(cd));
 
-    const std::string validPath = "/unit_tests/L1_testing/tests/";
+    const std::string validPath = "/tests/L1_testing/tests/";
 
 // Set the expectation to return the valid path
     EXPECT_CALL(*p_rootfsMock, path())
@@ -2422,7 +2422,7 @@ TEST_F(DaemonDobbyManagerTest, startContainerFromBundle_ConfigJsonFileCreationFa
         .Times(1)
             .WillOnce(::testing::Return(cd));
 
-    const std::string validPath = "/unit_tests/L1_testing/tests/";
+    const std::string validPath = "/tests/L1_testing/tests/";
 
 // Set the expectation to return the valid path
     EXPECT_CALL(*p_rootfsMock, path())
@@ -2431,7 +2431,7 @@ TEST_F(DaemonDobbyManagerTest, startContainerFromBundle_ConfigJsonFileCreationFa
             .WillOnce(::testing::ReturnRef(validPath))
             .WillOnce(::testing::ReturnRef(validPath));
 
-    std::string valid_path = "/unit_tests/L1_testing/tests/DobbyManagerTest";
+    std::string valid_path = "/tests/L1_testing/tests/DobbyManagerTest";
 
     EXPECT_CALL(*p_bundleMock, path())
         .Times(2)
@@ -2589,7 +2589,7 @@ TEST_F(DaemonDobbyManagerTest, startContainerFromBundle_SuccessWithoutRdkPlugins
         .Times(1)
             .WillOnce(::testing::Return(cd));
 
-    const std::string validPath = "/unit_tests/L1_testing/tests/";
+    const std::string validPath = "/tests/L1_testing/tests/";
 
 // Set the expectation to return the valid path
     EXPECT_CALL(*p_rootfsMock, path())
@@ -2600,7 +2600,7 @@ TEST_F(DaemonDobbyManagerTest, startContainerFromBundle_SuccessWithoutRdkPlugins
             .WillOnce(::testing::ReturnRef(validPath))
             .WillOnce(::testing::ReturnRef(validPath));
 
-    std::string valid_path = "/unit_tests/L1_testing/tests/DobbyManagerTest";
+    std::string valid_path = "/tests/L1_testing/tests/DobbyManagerTest";
     EXPECT_CALL(*p_bundleMock, path())
         .Times(2)
             .WillOnce(::testing::ReturnRef(valid_path))
@@ -2747,7 +2747,7 @@ TEST_F(DaemonDobbyManagerTest, startContainerFromBundle_CreateAndStartContainerF
         .Times(1)
             .WillOnce(::testing::Return(cd));
 
-    const std::string validPath = "/unit_tests/L1_testing/tests/";
+    const std::string validPath = "/tests/L1_testing/tests/";
 
     EXPECT_CALL(*p_rootfsMock, path())
         .Times(5)
@@ -2758,7 +2758,7 @@ TEST_F(DaemonDobbyManagerTest, startContainerFromBundle_CreateAndStartContainerF
 
             .WillOnce(::testing::ReturnRef(validPath));
 
-    std::string valid_path = "/unit_tests/L1_testing/tests/DobbyManagerTest";
+    std::string valid_path = "/tests/L1_testing/tests/DobbyManagerTest";
 
     EXPECT_CALL(*p_bundleMock, path())
         .Times(4)
