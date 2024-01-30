@@ -238,7 +238,7 @@ add_subdirectory(settings)
 
 # If ENABLE_DOBBYL1TEST avoid to compile all Dobby source code.
 if( ENABLE_DOBBYL1TEST )
-add_subdirectory( unit_tests/L1_testing )
+add_subdirectory( tests/L1_testing )
 else() # else ENABLE_DOBBYL1TEST
 # Add Bundle Generator code
 add_subdirectory(bundle/lib)

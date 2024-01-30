@@ -77,7 +77,7 @@ target_include_directories(DaemonDobbyManagerTest
                 ../../../../rdkPlugins/Networking/include
                 ../../../../AppInfrastructure/ReadLine/include
                 ../../../../AppInfrastructure/ReadLine/source
-                ../../../../unit_tests/L1_testing/tests
+                ../../../../tests/L1_testing/tests
                 /usr/lib/plugins/dobby
                 /usr/include/jsoncpp
                 /usr/include/dbus-1.0

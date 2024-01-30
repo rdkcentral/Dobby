@@ -32,11 +32,11 @@ jobs:
 
       - name: Set clang toolchain
         if: ${{ matrix.compiler == 'clang' }}
-        run: echo "TOOLCHAIN_FILE=${GITHUB_WORKSPACE}/Dobby/unit_tests/clang.cmake" >> $GITHUB_ENV
+        run: echo "TOOLCHAIN_FILE=${GITHUB_WORKSPACE}/Dobby/tests/clang.cmake" >> $GITHUB_ENV
 
       - name: Set gcc/with-coverage toolchain
         if: ${{ matrix.compiler == 'gcc' && matrix.coverage == 'with-coverage' }}
-        run: echo "TOOLCHAIN_FILE=${GITHUB_WORKSPACE}/Dobby/unit_tests/gcc-with-coverage.cmake" >> $GITHUB_ENV
+        run: echo "TOOLCHAIN_FILE=${GITHUB_WORKSPACE}/Dobby/tests/gcc-with-coverage.cmake" >> $GITHUB_ENV
 
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -208,8 +208,8 @@ jobs:
           &&
           sudo cmake --install build/rdkservices
 
-      - name: Run the unit test
-        working-directory: Dobby/unit_tests/L2_testing/test_runner/
+      - name: Run the l2 test
+        working-directory: Dobby/tests/L2_testing/test_runner/
         run: |
             python3 runner.py -p 1
 
