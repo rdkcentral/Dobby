@@ -1,6 +1,5 @@
 <map id="AI_IPC::DbusUserIdSenderIdCache" name="AI_IPC::DbusUserIdSenderIdCache">
-<area shape="rect" id="node1" title=" " alt="" coords="29,199,219,240"/>
-<area shape="rect" id="node2" href="$classAI__IPC_1_1IDbusUserIdSenderIdCache.html" title=" " alt="" coords="5,95,200,136"/>
-<area shape="rect" id="node3" href="$classAI__IPC_1_1IIpcService.html" title="IPC service that enables us to invoke remote method and emit signals as well as to handle incoming me..." alt="" coords="225,102,367,129"/>
-<area shape="rect" id="node4" href="$classAI__IPC_1_1IIpcServiceImpl.html" title=" " alt="" coords="211,5,381,32"/>
+<area shape="rect" id="node1" title=" " alt="" coords="103,109,294,151"/>
+<area shape="rect" id="node2" href="$classAI__IPC_1_1IDbusUserIdSenderIdCache.html" title=" " alt="" coords="5,5,200,47"/>
+<area shape="rect" id="node3" href="$classAI__IPC_1_1IIpcService.html" title="IPC service that enables us to invoke remote method and emit signals as well as to handle incoming me..." alt="" coords="225,13,367,39"/>
 </map>

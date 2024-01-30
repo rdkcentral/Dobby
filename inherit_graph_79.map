@@ -1,3 +1,4 @@
 <map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
-<area shape="rect" id="node1" href="$classDobbyRunC.html" title="Wrapper around the runc command line app." alt="" coords="5,5,104,32"/>
+<area shape="rect" id="node1" href="$classIDobbyEnv.html" title="Interface that exports the environment of the daemon to plugins." alt="" coords="5,5,97,32"/>
+<area shape="rect" id="node2" href="$classDobbyEnv.html" title="Basic class used to store the stb environment." alt="" coords="145,5,233,32"/>
 </map>

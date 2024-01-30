@@ -66,9 +66,7 @@ $(function() {
   <div class="summary">
 <a href="#pub-types">Public Types</a> &#124;
 <a href="#pub-methods">Public Member Functions</a> &#124;
-<a href="#pub-static-methods">Static Public Member Functions</a> &#124;
 <a href="#pub-attribs">Public Attributes</a> &#124;
-<a href="#pro-static-attribs">Static Protected Attributes</a> &#124;
 <a href="#pri-methods">Private Member Functions</a> &#124;
 <a href="#pri-static-methods">Static Private Member Functions</a> &#124;
 <a href="#pri-attribs">Private Attributes</a> &#124;
@@ -83,53 +81,11 @@ $(function() {
 <p>Wrapper object used to store container resources.  
  <a href="classDobbyContainer.html#details">More...</a></p>
 
-<p><code>#include &lt;<a class="el" href="daemon_2lib_2source_2include_2DobbyContainer_8h_source.html">DobbyContainer.h</a>&gt;</code></p>
-<div class="dynheader">
-Collaboration diagram for DobbyContainer:</div>
-<div class="dyncontent">
-<div class="center"><img src="classDobbyContainer__coll__graph.png" border="0" usemap="#aDobbyContainer_coll__map" alt="Collaboration graph"/></div>
-<map name="aDobbyContainer_coll__map" id="aDobbyContainer_coll__map">
-<area shape="rect" title="Wrapper object used to store container resources." alt="" coords="20,95,147,121"/>
-<area shape="rect" href="classDobbyContainerImpl.html" title=" " alt="" coords="5,5,161,32"/>
-</map>
-<center><span class="legend">[<a href="graph_legend.html">legend</a>]</span></center></div>
+<p><code>#include &lt;<a class="el" href="DobbyContainer_8h_source.html">DobbyContainer.h</a>&gt;</code></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-types"></a>
 Public Types</h2></td></tr>
 <tr class="memitem:aa3441ac25a31d473347e2afa5f7f1031"><td class="memItemLeft" align="right" valign="top"><a id="aa3441ac25a31d473347e2afa5f7f1031"></a>enum class &#160;</td><td class="memItemRight" valign="bottom"><b>State</b> { <br />
-&#160;&#160;<b>Starting</b>
-, <b>Running</b>
-, <b>Stopping</b>
-, <b>Paused</b>
-, <br />
-&#160;&#160;<b>Hibernating</b>
-, <b>Hibernated</b>
-, <b>Awakening</b>
-, <b>Unknown</b>
-, <br />
-&#160;&#160;<b>Starting</b>
-, <b>Running</b>
-, <b>Stopping</b>
-, <b>Paused</b>
-, <br />
-&#160;&#160;<b>Hibernating</b>
-, <b>Hibernated</b>
-, <b>Awakening</b>
-, <b>Unknown</b>
-<br />
- }</td></tr>
-<tr class="separator:aa3441ac25a31d473347e2afa5f7f1031"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa3441ac25a31d473347e2afa5f7f1031"><td class="memItemLeft" align="right" valign="top"><a id="aa3441ac25a31d473347e2afa5f7f1031"></a>enum class &#160;</td><td class="memItemRight" valign="bottom"><b>State</b> { <br />
-&#160;&#160;<b>Starting</b>
-, <b>Running</b>
-, <b>Stopping</b>
-, <b>Paused</b>
-, <br />
-&#160;&#160;<b>Hibernating</b>
-, <b>Hibernated</b>
-, <b>Awakening</b>
-, <b>Unknown</b>
-, <br />
 &#160;&#160;<b>Starting</b>
 , <b>Running</b>
 , <b>Stopping</b>
@@ -163,57 +119,24 @@ bool&#160;</td><td class="memItemRight" valign="bottom"><b>shouldRestart</b> (in
 <tr class="memitem:a473b53062b4c038f7a4dd5eeb4844acf"><td class="memItemLeft" align="right" valign="top"><a id="a473b53062b4c038f7a4dd5eeb4844acf"></a>
 const std::list&lt; int &gt; &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>files</b> () const</td></tr>
 <tr class="separator:a473b53062b4c038f7a4dd5eeb4844acf"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ace94f305a4d6fbb92434a04b16013c3d"><td class="memItemLeft" align="right" valign="top"><a id="ace94f305a4d6fbb92434a04b16013c3d"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><b>DobbyContainer</b> (<a class="el" href="classDobbyContainer.html">DobbyContainer</a> &amp;)=delete</td></tr>
-<tr class="separator:ace94f305a4d6fbb92434a04b16013c3d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae74da66c5ed4ae9344a4336b23bbe459"><td class="memItemLeft" align="right" valign="top"><a id="ae74da66c5ed4ae9344a4336b23bbe459"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><b>DobbyContainer</b> (<a class="el" href="classDobbyContainer.html">DobbyContainer</a> &amp;&amp;)=delete</td></tr>
-<tr class="separator:ae74da66c5ed4ae9344a4336b23bbe459"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:af576f9e497b9192a7116d1ea3dec5de9"><td class="memItemLeft" align="right" valign="top"><a id="af576f9e497b9192a7116d1ea3dec5de9"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><b>DobbyContainer</b> (const std::shared_ptr&lt; const <a class="el" href="classDobbyBundle.html">DobbyBundle</a> &gt; &amp;_bundle, const std::shared_ptr&lt; const <a class="el" href="classDobbyConfig.html">DobbyConfig</a> &gt; &amp;_config, const std::shared_ptr&lt; const <a class="el" href="classDobbyRootfs.html">DobbyRootfs</a> &gt; &amp;_rootfs)</td></tr>
-<tr class="separator:af576f9e497b9192a7116d1ea3dec5de9"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab10beb72a5cbff5f8fed6a450f3a9220"><td class="memItemLeft" align="right" valign="top"><a id="ab10beb72a5cbff5f8fed6a450f3a9220"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><b>DobbyContainer</b> (const std::shared_ptr&lt; const <a class="el" href="classDobbyBundle.html">DobbyBundle</a> &gt; &amp;_bundle, const std::shared_ptr&lt; const <a class="el" href="classDobbyConfig.html">DobbyConfig</a> &gt; &amp;_config, const std::shared_ptr&lt; const <a class="el" href="classDobbyRootfs.html">DobbyRootfs</a> &gt; &amp;_rootfs, const std::shared_ptr&lt; const <a class="el" href="classDobbyRdkPluginManager.html">DobbyRdkPluginManager</a> &gt; &amp;_rdkPluginManager)</td></tr>
-<tr class="separator:ab10beb72a5cbff5f8fed6a450f3a9220"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a433d8df3c5bf2501f59a61973fb714b1"><td class="memItemLeft" align="right" valign="top"><a id="a433d8df3c5bf2501f59a61973fb714b1"></a>
-bool&#160;</td><td class="memItemRight" valign="bottom"><b>shouldRestart</b> (int statusCode)</td></tr>
-<tr class="separator:a433d8df3c5bf2501f59a61973fb714b1"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:af71ffcc40110e33581bc306a1509398e"><td class="memItemLeft" align="right" valign="top"><a id="af71ffcc40110e33581bc306a1509398e"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>setRestartOnCrash</b> (const std::list&lt; int &gt; &amp;files)</td></tr>
-<tr class="separator:af71ffcc40110e33581bc306a1509398e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:af9f3c735d010335d396a97faae34798d"><td class="memItemLeft" align="right" valign="top"><a id="af9f3c735d010335d396a97faae34798d"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>clearRestartOnCrash</b> ()</td></tr>
-<tr class="separator:af9f3c735d010335d396a97faae34798d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a0e03f044e1cae0b2a051da17a6b2c8c4"><td class="memItemLeft" align="right" valign="top"><a id="a0e03f044e1cae0b2a051da17a6b2c8c4"></a>
-const std::list&lt; int &gt; &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>files</b> () const</td></tr>
-<tr class="separator:a0e03f044e1cae0b2a051da17a6b2c8c4"><td class="memSeparator" colspan="2">&#160;</td></tr>
-</table><table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-methods"></a>
-Static Public Member Functions</h2></td></tr>
-<tr class="memitem:a896c10458e41137701e662fb0a36d61c"><td class="memItemLeft" align="right" valign="top"><a id="a896c10458e41137701e662fb0a36d61c"></a>
-static void&#160;</td><td class="memItemRight" valign="bottom"><b>setImpl</b> (<a class="el" href="classDobbyContainerImpl.html">DobbyContainerImpl</a> *newImpl)</td></tr>
-<tr class="separator:a896c10458e41137701e662fb0a36d61c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a3c8dd91024538a4ceaa43265d47e06ec"><td class="memItemLeft" align="right" valign="top"><a id="a3c8dd91024538a4ceaa43265d47e06ec"></a>
-static int32_t&#160;</td><td class="memItemRight" valign="bottom"><b>allocDescriptor</b> ()</td></tr>
-<tr class="separator:a3c8dd91024538a4ceaa43265d47e06ec"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
 <tr class="memitem:aafaa4e8d414fc82853f4abb3139ba9fc"><td class="memItemLeft" align="right" valign="top"><a id="aafaa4e8d414fc82853f4abb3139ba9fc"></a>
 const int32_t&#160;</td><td class="memItemRight" valign="bottom"><b>descriptor</b></td></tr>
 <tr class="separator:aafaa4e8d414fc82853f4abb3139ba9fc"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a29cf1b19e4e38f60e8f2dc1b88037373"><td class="memItemLeft" align="right" valign="top"><a id="a29cf1b19e4e38f60e8f2dc1b88037373"></a>
+<tr class="memitem:adafd36f092d83461e90c724dbe85bcf4"><td class="memItemLeft" align="right" valign="top"><a id="adafd36f092d83461e90c724dbe85bcf4"></a>
 const std::shared_ptr&lt; const <a class="el" href="classDobbyBundle.html">DobbyBundle</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>bundle</b></td></tr>
-<tr class="separator:a29cf1b19e4e38f60e8f2dc1b88037373"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a4f3d01f80a2b2ead8a5a89cdae41ba18"><td class="memItemLeft" align="right" valign="top"><a id="a4f3d01f80a2b2ead8a5a89cdae41ba18"></a>
+<tr class="separator:adafd36f092d83461e90c724dbe85bcf4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a33bc1de37c473b7fb482fd56e50c56fd"><td class="memItemLeft" align="right" valign="top"><a id="a33bc1de37c473b7fb482fd56e50c56fd"></a>
 const std::shared_ptr&lt; const <a class="el" href="classDobbyConfig.html">DobbyConfig</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>config</b></td></tr>
-<tr class="separator:a4f3d01f80a2b2ead8a5a89cdae41ba18"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a8884b6c24e427a7e4efc7ce2de30073e"><td class="memItemLeft" align="right" valign="top"><a id="a8884b6c24e427a7e4efc7ce2de30073e"></a>
+<tr class="separator:a33bc1de37c473b7fb482fd56e50c56fd"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a34d7847ebebd1626b47664019b45759b"><td class="memItemLeft" align="right" valign="top"><a id="a34d7847ebebd1626b47664019b45759b"></a>
 const std::shared_ptr&lt; const <a class="el" href="classDobbyRootfs.html">DobbyRootfs</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>rootfs</b></td></tr>
-<tr class="separator:a8884b6c24e427a7e4efc7ce2de30073e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a24d5dc536558a5fd331a33049ed8e527"><td class="memItemLeft" align="right" valign="top"><a id="a24d5dc536558a5fd331a33049ed8e527"></a>
+<tr class="separator:a34d7847ebebd1626b47664019b45759b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3656f92ca6ba29f342c348ba7188aafb"><td class="memItemLeft" align="right" valign="top"><a id="a3656f92ca6ba29f342c348ba7188aafb"></a>
 const std::shared_ptr&lt; const <a class="el" href="classDobbyRdkPluginManager.html">DobbyRdkPluginManager</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>rdkPluginManager</b></td></tr>
-<tr class="separator:a24d5dc536558a5fd331a33049ed8e527"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="separator:a3656f92ca6ba29f342c348ba7188aafb"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a642bf1a0bc259a947b220d6fc33dde17"><td class="memItemLeft" align="right" valign="top"><a id="a642bf1a0bc259a947b220d6fc33dde17"></a>
 pid_t&#160;</td><td class="memItemRight" valign="bottom"><b>containerPid</b></td></tr>
 <tr class="separator:a642bf1a0bc259a947b220d6fc33dde17"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -226,12 +149,6 @@ enum DobbyContainer::State&#160;</td><td class="memItemRight" valign="bottom"><b
 <tr class="memitem:a9fec1b951e9f42b75992f123b41ff82c"><td class="memItemLeft" align="right" valign="top"><a id="a9fec1b951e9f42b75992f123b41ff82c"></a>
 std::string&#160;</td><td class="memItemRight" valign="bottom"><b>customConfigFilePath</b></td></tr>
 <tr class="separator:a9fec1b951e9f42b75992f123b41ff82c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-</table><table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pro-static-attribs"></a>
-Static Protected Attributes</h2></td></tr>
-<tr class="memitem:a6b3b191a02134d71cd1b8c30f3883236"><td class="memItemLeft" align="right" valign="top"><a id="a6b3b191a02134d71cd1b8c30f3883236"></a>
-static <a class="el" href="classDobbyContainerImpl.html">DobbyContainerImpl</a> *&#160;</td><td class="memItemRight" valign="bottom"><b>impl</b> = nullptr</td></tr>
-<tr class="separator:a6b3b191a02134d71cd1b8c30f3883236"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pri-methods"></a>
 Private Member Functions</h2></td></tr>
@@ -256,9 +173,9 @@ Private Attributes</h2></td></tr>
 <tr class="memitem:ac6c74487390b8719c4f19e584c178b98"><td class="memItemLeft" align="right" valign="top"><a id="ac6c74487390b8719c4f19e584c178b98"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>mRestartOnCrash</b></td></tr>
 <tr class="separator:ac6c74487390b8719c4f19e584c178b98"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a0bb7e7dd8445e2d5664b17e209ba89a0"><td class="memItemLeft" align="right" valign="top"><a id="a0bb7e7dd8445e2d5664b17e209ba89a0"></a>
+<tr class="memitem:a3ddcf0193dcc3c2389d60b6dd2e8d500"><td class="memItemLeft" align="right" valign="top"><a id="a3ddcf0193dcc3c2389d60b6dd2e8d500"></a>
 std::list&lt; int &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>mFiles</b></td></tr>
-<tr class="separator:a0bb7e7dd8445e2d5664b17e209ba89a0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="separator:a3ddcf0193dcc3c2389d60b6dd2e8d500"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a67b5844b60030cb9071b6558d230c040"><td class="memItemLeft" align="right" valign="top"><a id="a67b5844b60030cb9071b6558d230c040"></a>
 unsigned&#160;</td><td class="memItemRight" valign="bottom"><b>mRestartCount</b></td></tr>
 <tr class="separator:a67b5844b60030cb9071b6558d230c040"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -277,9 +194,9 @@ static std::bitset&lt; 1024 &gt;&#160;</td><td class="memItemRight" valign="bott
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="friends"></a>
 Friends</h2></td></tr>
-<tr class="memitem:adc2ab673dcbde4624820a90ec9fa8666"><td class="memItemLeft" align="right" valign="top"><a id="adc2ab673dcbde4624820a90ec9fa8666"></a>
+<tr class="memitem:a8422c31caccd2c092cd8aa5012b0d5bf"><td class="memItemLeft" align="right" valign="top"><a id="a8422c31caccd2c092cd8aa5012b0d5bf"></a>
 class&#160;</td><td class="memItemRight" valign="bottom"><b>DobbyManager</b></td></tr>
-<tr class="separator:adc2ab673dcbde4624820a90ec9fa8666"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="separator:a8422c31caccd2c092cd8aa5012b0d5bf"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Wrapper object used to store container resources. </p>
@@ -354,10 +271,8 @@ class&#160;</td><td class="memItemRight" valign="bottom"><b>DobbyManager</b></td
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following files:<ul>
-<li>daemon/lib/source/include/<a class="el" href="daemon_2lib_2source_2include_2DobbyContainer_8h_source.html">DobbyContainer.h</a></li>
+<li>daemon/lib/source/include/<a class="el" href="DobbyContainer_8h_source.html">DobbyContainer.h</a></li>
 <li>daemon/lib/source/DobbyContainer.cpp</li>
-<li>unit_tests/L1_testing/mocks/DobbyContainerMock.cpp</li>
-<li>unit_tests/L1_testing/tests/DobbyManagerTest/DaemonDobbyManagerTest.cpp</li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->

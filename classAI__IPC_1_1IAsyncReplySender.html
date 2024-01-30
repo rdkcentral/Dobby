@@ -69,8 +69,6 @@ $(function() {
 <div class="header">
   <div class="summary">
 <a href="#pub-methods">Public Member Functions</a> &#124;
-<a href="#pub-static-methods">Static Public Member Functions</a> &#124;
-<a href="#pro-static-attribs">Static Protected Attributes</a> &#124;
 <a href="classAI__IPC_1_1IAsyncReplySender-members.html">List of all members</a>  </div>
   <div class="headertitle">
 <div class="title">AI_IPC::IAsyncReplySender Class Reference<span class="mlabels"><span class="mlabel">abstract</span></span></div>  </div>
@@ -80,7 +78,7 @@ $(function() {
 <p>Helper class to send reply of a method call asynchronously.  
  <a href="classAI__IPC_1_1IAsyncReplySender.html#details">More...</a></p>
 
-<p><code>#include &lt;<a class="el" href="AppInfrastructure_2IpcService_2include_2IpcCommon_8h_source.html">IpcCommon.h</a>&gt;</code></p>
+<p><code>#include &lt;<a class="el" href="IpcCommon_8h_source.html">IpcCommon.h</a>&gt;</code></p>
 <div class="dynheader">
 Inheritance diagram for AI_IPC::IAsyncReplySender:</div>
 <div class="dyncontent">
@@ -89,15 +87,6 @@ Inheritance diagram for AI_IPC::IAsyncReplySender:</div>
 <area shape="rect" title="Helper class to send reply of a method call asynchronously." alt="" coords="110,5,306,32"/>
 <area shape="rect" href="classAI__IPC_1_1AsyncReplySender.html" title=" " alt="" coords="5,80,197,107"/>
 <area shape="rect" href="classSDBusAsyncReplySender.html" title=" " alt="" coords="222,80,407,107"/>
-</map>
-<center><span class="legend">[<a href="graph_legend.html">legend</a>]</span></center></div>
-<div class="dynheader">
-Collaboration diagram for AI_IPC::IAsyncReplySender:</div>
-<div class="dyncontent">
-<div class="center"><img src="classAI__IPC_1_1IAsyncReplySender__coll__graph.png" border="0" usemap="#aAI__IPC_1_1IAsyncReplySender_coll__map" alt="Collaboration graph"/></div>
-<map name="aAI__IPC_1_1IAsyncReplySender_coll__map" id="aAI__IPC_1_1IAsyncReplySender_coll__map">
-<area shape="rect" title="Helper class to send reply of a method call asynchronously." alt="" coords="5,109,201,136"/>
-<area shape="rect" href="classAI__IPC_1_1IAsyncReplySenderApiImpl.html" title=" " alt="" coords="5,5,201,47"/>
 </map>
 <center><span class="legend">[<a href="graph_legend.html">legend</a>]</span></center></div>
 <table class="memberdecls">
@@ -118,24 +107,6 @@ virtual uid_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" h
 virtual std::string&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classAI__IPC_1_1IAsyncReplySender.html#a3c4a367c95f8fa6ba469e532b0709401">getSenderName</a> () const =0</td></tr>
 <tr class="memdesc:a3c4a367c95f8fa6ba469e532b0709401"><td class="mdescLeft">&#160;</td><td class="mdescRight">Gets the unique name of the connection which originated this message. <br /></td></tr>
 <tr class="separator:a3c4a367c95f8fa6ba469e532b0709401"><td class="memSeparator" colspan="2">&#160;</td></tr>
-</table><table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-methods"></a>
-Static Public Member Functions</h2></td></tr>
-<tr class="memitem:ab6cb2c959fa39d720e4600fb9cc6414f"><td class="memItemLeft" align="right" valign="top"><a id="ab6cb2c959fa39d720e4600fb9cc6414f"></a>
-static void&#160;</td><td class="memItemRight" valign="bottom"><b>setImpl</b> (<a class="el" href="classAI__IPC_1_1IAsyncReplySenderApiImpl.html">IAsyncReplySenderApiImpl</a> *newImpl)</td></tr>
-<tr class="separator:ab6cb2c959fa39d720e4600fb9cc6414f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a2e735820f8811b42c040811a693bbaf4"><td class="memItemLeft" align="right" valign="top"><a id="a2e735820f8811b42c040811a693bbaf4"></a>
-static bool&#160;</td><td class="memItemRight" valign="bottom"><b>sendReply</b> (const VariantList &amp;replyArgs)</td></tr>
-<tr class="separator:a2e735820f8811b42c040811a693bbaf4"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a8374bbaf74cb3384f9032df3f4d6c616"><td class="memItemLeft" align="right" valign="top"><a id="a8374bbaf74cb3384f9032df3f4d6c616"></a>
-static VariantList&#160;</td><td class="memItemRight" valign="bottom"><b>getMethodCallArguments</b> ()</td></tr>
-<tr class="separator:a8374bbaf74cb3384f9032df3f4d6c616"><td class="memSeparator" colspan="2">&#160;</td></tr>
-</table><table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pro-static-attribs"></a>
-Static Protected Attributes</h2></td></tr>
-<tr class="memitem:a450d1b52a203924e076b6dcdba0cd6a5"><td class="memItemLeft" align="right" valign="top"><a id="a450d1b52a203924e076b6dcdba0cd6a5"></a>
-static <a class="el" href="classAI__IPC_1_1IAsyncReplySenderApiImpl.html">IAsyncReplySenderApiImpl</a> *&#160;</td><td class="memItemRight" valign="bottom"><b>impl</b> = nullptr</td></tr>
-<tr class="separator:a450d1b52a203924e076b6dcdba0cd6a5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Helper class to send reply of a method call asynchronously. </p>
@@ -174,10 +145,8 @@ On failure: FALSE </dd></dl>
 
 </div>
 </div>
-<hr/>The documentation for this class was generated from the following files:<ul>
-<li>AppInfrastructure/IpcService/include/<a class="el" href="AppInfrastructure_2IpcService_2include_2IpcCommon_8h_source.html">IpcCommon.h</a></li>
-<li>unit_tests/L1_testing/tests/DobbyManagerTest/DaemonDobbyManagerTest.cpp</li>
-<li>unit_tests/L1_testing/tests/DobbyTest/DaemonDobbyTests.cpp</li>
+<hr/>The documentation for this class was generated from the following file:<ul>
+<li>AppInfrastructure/IpcService/include/<a class="el" href="IpcCommon_8h_source.html">IpcCommon.h</a></li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->

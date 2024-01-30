@@ -1,6 +1,4 @@
 <map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
-<area shape="rect" id="node1" href="$structEthanLogLoop_1_1Event.html" title=" " alt="" coords="5,64,164,91"/>
-<area shape="rect" id="node2" href="$structEthanLogLoop_1_1AddClientEvent.html" title=" " alt="" coords="213,5,434,32"/>
-<area shape="rect" id="node3" href="$structEthanLogLoop_1_1SetClientBasePidEvent.html" title=" " alt="" coords="217,57,429,98"/>
-<area shape="rect" id="node4" href="$structEthanLogLoop_1_1TerminateEvent.html" title=" " alt="" coords="212,123,435,149"/>
+<area shape="rect" id="node1" title=" " alt="" coords="5,5,172,32"/>
+<area shape="rect" id="node2" href="$classMockDbusServer.html" title=" " alt="" coords="220,5,352,32"/>
 </map>

@@ -65,8 +65,6 @@ $(function() {
 <div class="header">
   <div class="summary">
 <a href="#pub-methods">Public Member Functions</a> &#124;
-<a href="#pub-static-methods">Static Public Member Functions</a> &#124;
-<a href="#pro-static-attribs">Static Protected Attributes</a> &#124;
 <a href="#pri-methods">Private Member Functions</a> &#124;
 <a href="#pri-attribs">Private Attributes</a> &#124;
 <a href="classDobbyRootfs-members.html">List of all members</a>  </div>
@@ -78,16 +76,7 @@ $(function() {
 <p>Creates a directory populated with rootfs based on the supplied container config.  
  <a href="classDobbyRootfs.html#details">More...</a></p>
 
-<p><code>#include &lt;<a class="el" href="bundle_2lib_2include_2DobbyRootfs_8h_source.html">DobbyRootfs.h</a>&gt;</code></p>
-<div class="dynheader">
-Collaboration diagram for DobbyRootfs:</div>
-<div class="dyncontent">
-<div class="center"><img src="classDobbyRootfs__coll__graph.png" border="0" usemap="#aDobbyRootfs_coll__map" alt="Collaboration graph"/></div>
-<map name="aDobbyRootfs_coll__map" id="aDobbyRootfs_coll__map">
-<area shape="rect" title="Creates a directory populated with rootfs based on the supplied container config." alt="" coords="19,95,126,121"/>
-<area shape="rect" href="classDobbyRootfsImpl.html" title=" " alt="" coords="5,5,140,32"/>
-</map>
-<center><span class="legend">[<a href="graph_legend.html">legend</a>]</span></center></div>
+<p><code>#include &lt;<a class="el" href="DobbyRootfs_8h_source.html">DobbyRootfs.h</a>&gt;</code></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
@@ -109,30 +98,6 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>setPersistence</b> (b
 <tr class="memitem:a72c29bd59ba50b86ef77638c3e99a96c"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classDobbyRootfs.html#a72c29bd59ba50b86ef77638c3e99a96c">unmountAllAt</a> (const std::string &amp;pathPrefix)</td></tr>
 <tr class="memdesc:a72c29bd59ba50b86ef77638c3e99a96c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Unmounts anything mounted at the given path prefix.  <a href="classDobbyRootfs.html#a72c29bd59ba50b86ef77638c3e99a96c">More...</a><br /></td></tr>
 <tr class="separator:a72c29bd59ba50b86ef77638c3e99a96c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a67a3808500a57cb805421ce0d5b76be4"><td class="memItemLeft" align="right" valign="top"><a id="a67a3808500a57cb805421ce0d5b76be4"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><b>DobbyRootfs</b> (const std::shared_ptr&lt; <a class="el" href="classIDobbyUtils__v3.html">IDobbyUtils</a> &gt; &amp;utils, const std::shared_ptr&lt; const <a class="el" href="classDobbyBundle.html">DobbyBundle</a> &gt; &amp;bundle, const std::shared_ptr&lt; const <a class="el" href="classDobbyBundleConfig.html">DobbyBundleConfig</a> &gt; &amp;config)</td></tr>
-<tr class="separator:a67a3808500a57cb805421ce0d5b76be4"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad8df2e5eb59647f85056be6682ab9579"><td class="memItemLeft" align="right" valign="top"><a id="ad8df2e5eb59647f85056be6682ab9579"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>setPersistence</b> (bool persist)</td></tr>
-<tr class="separator:ad8df2e5eb59647f85056be6682ab9579"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a7c986a493d07759472743a0361a8e490"><td class="memItemLeft" align="right" valign="top"><a id="a7c986a493d07759472743a0361a8e490"></a>
-const std::string &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>path</b> () const</td></tr>
-<tr class="separator:a7c986a493d07759472743a0361a8e490"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aedbdc315def08f68d49a4ea71b942900"><td class="memItemLeft" align="right" valign="top"><a id="aedbdc315def08f68d49a4ea71b942900"></a>
-bool&#160;</td><td class="memItemRight" valign="bottom"><b>isValid</b> () const</td></tr>
-<tr class="separator:aedbdc315def08f68d49a4ea71b942900"><td class="memSeparator" colspan="2">&#160;</td></tr>
-</table><table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-methods"></a>
-Static Public Member Functions</h2></td></tr>
-<tr class="memitem:ab2df21a4168f760e19b2f9665dc43a7c"><td class="memItemLeft" align="right" valign="top"><a id="ab2df21a4168f760e19b2f9665dc43a7c"></a>
-static void&#160;</td><td class="memItemRight" valign="bottom"><b>setImpl</b> (<a class="el" href="classDobbyRootfsImpl.html">DobbyRootfsImpl</a> *newImpl)</td></tr>
-<tr class="separator:ab2df21a4168f760e19b2f9665dc43a7c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-</table><table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pro-static-attribs"></a>
-Static Protected Attributes</h2></td></tr>
-<tr class="memitem:ad0a991539130be7fc05ec188a6cec0b5"><td class="memItemLeft" align="right" valign="top"><a id="ad0a991539130be7fc05ec188a6cec0b5"></a>
-static <a class="el" href="classDobbyRootfsImpl.html">DobbyRootfsImpl</a> *&#160;</td><td class="memItemRight" valign="bottom"><b>impl</b> = nullptr</td></tr>
-<tr class="separator:ad0a991539130be7fc05ec188a6cec0b5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pri-methods"></a>
 Private Member Functions</h2></td></tr>
@@ -237,10 +202,8 @@ bool&#160;</td><td class="memItemRight" valign="bottom"><b>mPersist</b></td></tr
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following files:<ul>
-<li>bundle/lib/include/<a class="el" href="bundle_2lib_2include_2DobbyRootfs_8h_source.html">DobbyRootfs.h</a></li>
+<li>bundle/lib/include/<a class="el" href="DobbyRootfs_8h_source.html">DobbyRootfs.h</a></li>
 <li>bundle/lib/source/DobbyRootfs.cpp</li>
-<li>unit_tests/L1_testing/mocks/DobbyRootfsMock.cpp</li>
-<li>unit_tests/L1_testing/tests/DobbyManagerTest/DaemonDobbyManagerTest.cpp</li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->

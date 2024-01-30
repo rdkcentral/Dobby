@@ -65,8 +65,6 @@ $(function() {
 <div class="header">
   <div class="summary">
 <a href="#pub-methods">Public Member Functions</a> &#124;
-<a href="#pub-static-methods">Static Public Member Functions</a> &#124;
-<a href="#pro-static-attribs">Static Protected Attributes</a> &#124;
 <a href="#pri-types">Private Types</a> &#124;
 <a href="#pri-methods">Private Member Functions</a> &#124;
 <a href="#pri-attribs">Private Attributes</a> &#124;
@@ -79,16 +77,7 @@ $(function() {
 <p>Class that manages all the plugin hook libraries.  
  <a href="classDobbyLegacyPluginManager.html#details">More...</a></p>
 
-<p><code>#include &lt;<a class="el" href="daemon_2lib_2source_2include_2DobbyLegacyPluginManager_8h_source.html">DobbyLegacyPluginManager.h</a>&gt;</code></p>
-<div class="dynheader">
-Collaboration diagram for DobbyLegacyPluginManager:</div>
-<div class="dyncontent">
-<div class="center"><img src="classDobbyLegacyPluginManager__coll__graph.png" border="0" usemap="#aDobbyLegacyPluginManager_coll__map" alt="Collaboration graph"/></div>
-<map name="aDobbyLegacyPluginManager_coll__map" id="aDobbyLegacyPluginManager_coll__map">
-<area shape="rect" title="Class that manages all the plugin hook libraries." alt="" coords="20,95,227,121"/>
-<area shape="rect" href="classDobbyLegacyPluginManagerImpl.html" title=" " alt="" coords="5,5,241,32"/>
-</map>
-<center><span class="legend">[<a href="graph_legend.html">legend</a>]</span></center></div>
+<p><code>#include &lt;<a class="el" href="DobbyLegacyPluginManager_8h_source.html">DobbyLegacyPluginManager.h</a>&gt;</code></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
@@ -113,39 +102,6 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a07c851c58614559b36a7f62a31e651c4"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classDobbyLegacyPluginManager.html#a07c851c58614559b36a7f62a31e651c4">executePreDestructionHooks</a> (const std::map&lt; std::string, Json::Value &gt; &amp;plugins, const <a class="el" href="classContainerId.html">ContainerId</a> &amp;id, const std::string &amp;rootfsPath) const</td></tr>
 <tr class="memdesc:a07c851c58614559b36a7f62a31e651c4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Calls the preDestruction method for the given plugins.  <a href="classDobbyLegacyPluginManager.html#a07c851c58614559b36a7f62a31e651c4">More...</a><br /></td></tr>
 <tr class="separator:a07c851c58614559b36a7f62a31e651c4"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a2064bdcade60cb705f9668a57a1c6bf7"><td class="memItemLeft" align="right" valign="top"><a id="a2064bdcade60cb705f9668a57a1c6bf7"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><b>DobbyLegacyPluginManager</b> (const std::shared_ptr&lt; <a class="el" href="classIDobbyEnv.html">IDobbyEnv</a> &gt; &amp;env, const std::shared_ptr&lt; <a class="el" href="classIDobbyUtils__v3.html">IDobbyUtils</a> &gt; &amp;utils, const std::string &amp;path=std::string(DEFAULT_PLUGIN_PATH))</td></tr>
-<tr class="separator:a2064bdcade60cb705f9668a57a1c6bf7"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a7b8472ca680e2e6bd1161fb8f65241db"><td class="memItemLeft" align="right" valign="top"><a id="a7b8472ca680e2e6bd1161fb8f65241db"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>refreshPlugins</b> (const std::string &amp;path=std::string(DEFAULT_PLUGIN_PATH))</td></tr>
-<tr class="separator:a7b8472ca680e2e6bd1161fb8f65241db"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a76a877ffe63ca6d83ea6dc196763086a"><td class="memItemLeft" align="right" valign="top"><a id="a76a877ffe63ca6d83ea6dc196763086a"></a>
-bool&#160;</td><td class="memItemRight" valign="bottom"><b>executePostConstructionHooks</b> (const std::map&lt; std::string, Json::Value &gt; &amp;plugins, const <a class="el" href="classContainerId.html">ContainerId</a> &amp;id, const std::shared_ptr&lt; <a class="el" href="classIDobbyStartState.html">IDobbyStartState</a> &gt; &amp;startupState, const std::string &amp;rootfsPath) const</td></tr>
-<tr class="separator:a76a877ffe63ca6d83ea6dc196763086a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a044692fb553882a3129191f3bc825fa5"><td class="memItemLeft" align="right" valign="top"><a id="a044692fb553882a3129191f3bc825fa5"></a>
-bool&#160;</td><td class="memItemRight" valign="bottom"><b>executePreStartHooks</b> (const std::map&lt; std::string, Json::Value &gt; &amp;plugins, const <a class="el" href="classContainerId.html">ContainerId</a> &amp;id, pid_t pid, const std::string &amp;rootfsPath) const</td></tr>
-<tr class="separator:a044692fb553882a3129191f3bc825fa5"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab9cac112378e900a814781e30c2b9a35"><td class="memItemLeft" align="right" valign="top"><a id="ab9cac112378e900a814781e30c2b9a35"></a>
-bool&#160;</td><td class="memItemRight" valign="bottom"><b>executePostStartHooks</b> (const std::map&lt; std::string, Json::Value &gt; &amp;plugins, const <a class="el" href="classContainerId.html">ContainerId</a> &amp;id, pid_t pid, const std::string &amp;rootfsPath) const</td></tr>
-<tr class="separator:ab9cac112378e900a814781e30c2b9a35"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae935b7f61689a7a5d0e2c82505c9fcc4"><td class="memItemLeft" align="right" valign="top"><a id="ae935b7f61689a7a5d0e2c82505c9fcc4"></a>
-bool&#160;</td><td class="memItemRight" valign="bottom"><b>executePostStopHooks</b> (const std::map&lt; std::string, Json::Value &gt; &amp;plugins, const <a class="el" href="classContainerId.html">ContainerId</a> &amp;id, const std::string &amp;rootfsPath) const</td></tr>
-<tr class="separator:ae935b7f61689a7a5d0e2c82505c9fcc4"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a07c851c58614559b36a7f62a31e651c4"><td class="memItemLeft" align="right" valign="top"><a id="a07c851c58614559b36a7f62a31e651c4"></a>
-bool&#160;</td><td class="memItemRight" valign="bottom"><b>executePreDestructionHooks</b> (const std::map&lt; std::string, Json::Value &gt; &amp;plugins, const <a class="el" href="classContainerId.html">ContainerId</a> &amp;id, const std::string &amp;rootfsPath) const</td></tr>
-<tr class="separator:a07c851c58614559b36a7f62a31e651c4"><td class="memSeparator" colspan="2">&#160;</td></tr>
-</table><table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-methods"></a>
-Static Public Member Functions</h2></td></tr>
-<tr class="memitem:a88e30bf32fa4350ef920064d9bc7bbe4"><td class="memItemLeft" align="right" valign="top"><a id="a88e30bf32fa4350ef920064d9bc7bbe4"></a>
-static void&#160;</td><td class="memItemRight" valign="bottom"><b>setImpl</b> (<a class="el" href="classDobbyLegacyPluginManagerImpl.html">DobbyLegacyPluginManagerImpl</a> *newImpl)</td></tr>
-<tr class="separator:a88e30bf32fa4350ef920064d9bc7bbe4"><td class="memSeparator" colspan="2">&#160;</td></tr>
-</table><table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pro-static-attribs"></a>
-Static Protected Attributes</h2></td></tr>
-<tr class="memitem:ae5da516e21c598484f59514e1bfa8840"><td class="memItemLeft" align="right" valign="top"><a id="ae5da516e21c598484f59514e1bfa8840"></a>
-static <a class="el" href="classDobbyLegacyPluginManagerImpl.html">DobbyLegacyPluginManagerImpl</a> *&#160;</td><td class="memItemRight" valign="bottom"><b>impl</b> = nullptr</td></tr>
-<tr class="separator:ae5da516e21c598484f59514e1bfa8840"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pri-types"></a>
 Private Types</h2></td></tr>
@@ -598,10 +554,8 @@ std::map&lt; std::string, std::pair&lt; void *, std::shared_ptr&lt; <a class="el
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following files:<ul>
-<li>daemon/lib/source/include/<a class="el" href="daemon_2lib_2source_2include_2DobbyLegacyPluginManager_8h_source.html">DobbyLegacyPluginManager.h</a></li>
+<li>daemon/lib/source/include/<a class="el" href="DobbyLegacyPluginManager_8h_source.html">DobbyLegacyPluginManager.h</a></li>
 <li>daemon/lib/source/DobbyLegacyPluginManager.cpp</li>
-<li>unit_tests/L1_testing/mocks/DobbyLegacyPluginManagerMock.cpp</li>
-<li>unit_tests/L1_testing/tests/DobbyManagerTest/DaemonDobbyManagerTest.cpp</li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->

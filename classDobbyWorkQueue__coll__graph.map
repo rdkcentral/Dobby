@@ -1,6 +1,5 @@
 <map id="DobbyWorkQueue" name="DobbyWorkQueue">
-<area shape="rect" id="node1" title=" " alt="" coords="262,109,401,136"/>
+<area shape="rect" id="node1" title=" " alt="" coords="146,109,285,136"/>
 <area shape="rect" id="node2" href="$classAICommon_1_1ConditionVariable.html" title=" " alt="" coords="5,5,223,32"/>
-<area shape="rect" id="node3" href="$classDobbyWorkQueueImpl.html" title=" " alt="" coords="247,5,415,32"/>
-<area shape="rect" id="node4" href="$classAICommon_1_1Mutex.html" title=" " alt="" coords="440,5,583,32"/>
+<area shape="rect" id="node3" href="$classAICommon_1_1Mutex.html" title=" " alt="" coords="247,5,389,32"/>
 </map>

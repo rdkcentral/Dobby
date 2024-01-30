@@ -67,11 +67,9 @@ $(function() {
 <a href="#nested-classes">Classes</a> &#124;
 <a href="#pub-types">Public Types</a> &#124;
 <a href="#pub-methods">Public Member Functions</a> &#124;
-<a href="#pub-static-methods">Static Public Member Functions</a> &#124;
 <a href="#pro-methods">Protected Member Functions</a> &#124;
 <a href="#pro-static-methods">Static Protected Member Functions</a> &#124;
 <a href="#pro-attribs">Protected Attributes</a> &#124;
-<a href="#pro-static-attribs">Static Protected Attributes</a> &#124;
 <a href="#pri-methods">Private Member Functions</a> &#124;
 <a href="classDobbyConfig-members.html">List of all members</a>  </div>
   <div class="headertitle">
@@ -82,7 +80,7 @@ $(function() {
 <p><a class="el" href="structInterface.html">Interface</a> that configuration file parser classes have to implement.  
  <a href="classDobbyConfig.html#details">More...</a></p>
 
-<p><code>#include &lt;<a class="el" href="bundle_2lib_2include_2DobbyConfig_8h_source.html">DobbyConfig.h</a>&gt;</code></p>
+<p><code>#include &lt;<a class="el" href="DobbyConfig_8h_source.html">DobbyConfig.h</a>&gt;</code></p>
 <div class="dynheader">
 Inheritance diagram for DobbyConfig:</div>
 <div class="dyncontent">
@@ -91,15 +89,6 @@ Inheritance diagram for DobbyConfig:</div>
 <area shape="rect" title="Interface that configuration file parser classes have to implement." alt="" coords="112,5,217,32"/>
 <area shape="rect" href="classDobbyBundleConfig.html" title="Takes a JSON formatted OCI bundle configuration file in the constructor, parses it and extracts the r..." alt="" coords="5,80,156,107"/>
 <area shape="rect" href="classDobbySpecConfig.html" title="Takes a JSON formatted spec file in the constructor, parses it and extracts the relevant fields." alt="" coords="181,80,317,107"/>
-</map>
-<center><span class="legend">[<a href="graph_legend.html">legend</a>]</span></center></div>
-<div class="dynheader">
-Collaboration diagram for DobbyConfig:</div>
-<div class="dyncontent">
-<div class="center"><img src="classDobbyConfig__coll__graph.png" border="0" usemap="#aDobbyConfig_coll__map" alt="Collaboration graph"/></div>
-<map name="aDobbyConfig_coll__map" id="aDobbyConfig_coll__map">
-<area shape="rect" title="Interface that configuration file parser classes have to implement." alt="" coords="20,95,125,121"/>
-<area shape="rect" href="classDobbyConfigImpl.html" title=" " alt="" coords="5,5,140,32"/>
 </map>
 <center><span class="legend">[<a href="graph_legend.html">legend</a>]</span></center></div>
 <table class="memberdecls">
@@ -193,42 +182,6 @@ virtual const std::map&lt; std::string, Json::Value &gt; &amp;&#160;</td><td cla
 <tr class="memitem:a6ae2aadac7fdde06fa7e04be7a854119"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classDobbyConfig.html#a6ae2aadac7fdde06fa7e04be7a854119">setPidsLimit</a> (int limit)</td></tr>
 <tr class="memdesc:a6ae2aadac7fdde06fa7e04be7a854119"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set cgroup pids limit.  <a href="classDobbyConfig.html#a6ae2aadac7fdde06fa7e04be7a854119">More...</a><br /></td></tr>
 <tr class="separator:a6ae2aadac7fdde06fa7e04be7a854119"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aad976c50ac8273ca3c631978b9aee0e4"><td class="memItemLeft" align="right" valign="top"><a id="aad976c50ac8273ca3c631978b9aee0e4"></a>
-bool&#160;</td><td class="memItemRight" valign="bottom"><b>writeConfigJson</b> (const std::string &amp;filePath) const</td></tr>
-<tr class="separator:aad976c50ac8273ca3c631978b9aee0e4"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:afe01f113046796c744be3eed46399144"><td class="memItemLeft" align="right" valign="top"><a id="afe01f113046796c744be3eed46399144"></a>
-virtual const std::map&lt; std::string, Json::Value &gt; &amp;&#160;</td><td class="memItemRight" valign="bottom"><b>rdkPlugins</b> () const =0</td></tr>
-<tr class="separator:afe01f113046796c744be3eed46399144"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a31f800e9b848fc6b7ad9574e8b4047c7"><td class="memItemLeft" align="right" valign="top"><a id="a31f800e9b848fc6b7ad9574e8b4047c7"></a>
-const std::shared_ptr&lt; rt_dobby_schema &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>config</b> ()</td></tr>
-<tr class="separator:a31f800e9b848fc6b7ad9574e8b4047c7"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a2d535b818b5a4ae1ee4b436060fe74c0"><td class="memItemLeft" align="right" valign="top"><a id="a2d535b818b5a4ae1ee4b436060fe74c0"></a>
-bool&#160;</td><td class="memItemRight" valign="bottom"><b>changeProcessArgs</b> (const std::string &amp;command)</td></tr>
-<tr class="separator:a2d535b818b5a4ae1ee4b436060fe74c0"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a3019be987c2e81e1f436c30728b067f1"><td class="memItemLeft" align="right" valign="top"><a id="a3019be987c2e81e1f436c30728b067f1"></a>
-bool&#160;</td><td class="memItemRight" valign="bottom"><b>addWesterosMount</b> (const std::string &amp;socketPath)</td></tr>
-<tr class="separator:a3019be987c2e81e1f436c30728b067f1"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a17f3fc7e96c97324b7729840f19c913c"><td class="memItemLeft" align="right" valign="top"><a id="a17f3fc7e96c97324b7729840f19c913c"></a>
-bool&#160;</td><td class="memItemRight" valign="bottom"><b>addEnvironmentVar</b> (const std::string &amp;envVar)</td></tr>
-<tr class="separator:a17f3fc7e96c97324b7729840f19c913c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa34cf839e860bea452f19fbdd0cdde9e"><td class="memItemLeft" align="right" valign="top"><a id="aa34cf839e860bea452f19fbdd0cdde9e"></a>
-bool&#160;</td><td class="memItemRight" valign="bottom"><b>enableSTrace</b> (const std::string &amp;logsDir)</td></tr>
-<tr class="separator:aa34cf839e860bea452f19fbdd0cdde9e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a4209d82f0709bfab80c49148c950c86a"><td class="memItemLeft" align="right" valign="top"><a id="a4209d82f0709bfab80c49148c950c86a"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>setApparmorProfile</b> (const std::string &amp;profileName)</td></tr>
-<tr class="separator:a4209d82f0709bfab80c49148c950c86a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a6ae2aadac7fdde06fa7e04be7a854119"><td class="memItemLeft" align="right" valign="top"><a id="a6ae2aadac7fdde06fa7e04be7a854119"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>setPidsLimit</b> (int limit)</td></tr>
-<tr class="separator:a6ae2aadac7fdde06fa7e04be7a854119"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa8223f8155756a1260eceee7d257f235"><td class="memItemLeft" align="right" valign="top"><a id="aa8223f8155756a1260eceee7d257f235"></a>
-const std::string&#160;</td><td class="memItemRight" valign="bottom"><b>configJson</b> () const</td></tr>
-<tr class="separator:aa8223f8155756a1260eceee7d257f235"><td class="memSeparator" colspan="2">&#160;</td></tr>
-</table><table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-methods"></a>
-Static Public Member Functions</h2></td></tr>
-<tr class="memitem:a35d6ee4e3017ec80304957d406f4521d"><td class="memItemLeft" align="right" valign="top"><a id="a35d6ee4e3017ec80304957d406f4521d"></a>
-static void&#160;</td><td class="memItemRight" valign="bottom"><b>setImpl</b> (<a class="el" href="classDobbyConfigImpl.html">DobbyConfigImpl</a> *newImpl)</td></tr>
-<tr class="separator:a35d6ee4e3017ec80304957d406f4521d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pro-methods"></a>
 Protected Member Functions</h2></td></tr>
@@ -259,12 +212,6 @@ Protected Attributes</h2></td></tr>
 <tr class="memitem:af8fbd47a51268051c2f997dd1431597d"><td class="memItemLeft" align="right" valign="top"><a id="af8fbd47a51268051c2f997dd1431597d"></a>
 std::mutex&#160;</td><td class="memItemRight" valign="bottom"><b>mLock</b></td></tr>
 <tr class="separator:af8fbd47a51268051c2f997dd1431597d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-</table><table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pro-static-attribs"></a>
-Static Protected Attributes</h2></td></tr>
-<tr class="memitem:aae8873a9a71fb55f427140e28b67a4e4"><td class="memItemLeft" align="right" valign="top"><a id="aae8873a9a71fb55f427140e28b67a4e4"></a>
-static <a class="el" href="classDobbyConfigImpl.html">DobbyConfigImpl</a> *&#160;</td><td class="memItemRight" valign="bottom"><b>impl</b> = nullptr</td></tr>
-<tr class="separator:aae8873a9a71fb55f427140e28b67a4e4"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pri-methods"></a>
 Private Member Functions</h2></td></tr>
@@ -939,10 +886,8 @@ Private Member Functions</h2></td></tr>
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following files:<ul>
-<li>bundle/lib/include/<a class="el" href="bundle_2lib_2include_2DobbyConfig_8h_source.html">DobbyConfig.h</a></li>
+<li>bundle/lib/include/<a class="el" href="DobbyConfig_8h_source.html">DobbyConfig.h</a></li>
 <li>bundle/lib/source/DobbyConfig.cpp</li>
-<li>unit_tests/L1_testing/mocks/DobbyConfigMock.cpp</li>
-<li>unit_tests/L1_testing/tests/DobbyManagerTest/DaemonDobbyManagerTest.cpp</li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->

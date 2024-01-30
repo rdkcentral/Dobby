@@ -67,8 +67,6 @@ $(function() {
 <a href="#nested-classes">Classes</a> &#124;
 <a href="#pub-types">Public Types</a> &#124;
 <a href="#pub-methods">Public Member Functions</a> &#124;
-<a href="#pub-static-methods">Static Public Member Functions</a> &#124;
-<a href="#pro-static-attribs">Static Protected Attributes</a> &#124;
 <a href="#pri-attribs">Private Attributes</a> &#124;
 <a href="classDobbyWorkQueue-members.html">List of all members</a>  </div>
   <div class="headertitle">
@@ -80,10 +78,9 @@ Collaboration diagram for DobbyWorkQueue:</div>
 <div class="dyncontent">
 <div class="center"><img src="classDobbyWorkQueue__coll__graph.png" border="0" usemap="#aDobbyWorkQueue_coll__map" alt="Collaboration graph"/></div>
 <map name="aDobbyWorkQueue_coll__map" id="aDobbyWorkQueue_coll__map">
-<area shape="rect" title=" " alt="" coords="262,109,401,136"/>
+<area shape="rect" title=" " alt="" coords="146,109,285,136"/>
 <area shape="rect" href="classAICommon_1_1ConditionVariable.html" title=" " alt="" coords="5,5,223,32"/>
-<area shape="rect" href="classDobbyWorkQueueImpl.html" title=" " alt="" coords="247,5,415,32"/>
-<area shape="rect" href="classAICommon_1_1Mutex.html" title=" " alt="" coords="440,5,583,32"/>
+<area shape="rect" href="classAICommon_1_1Mutex.html" title=" " alt="" coords="247,5,389,32"/>
 </map>
 <center><span class="legend">[<a href="graph_legend.html">legend</a>]</span></center></div>
 <table class="memberdecls">
@@ -119,27 +116,6 @@ void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="clas
 <tr class="memitem:abcefeb1b430b1eccd2213103e9f58c97"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classDobbyWorkQueue.html#abcefeb1b430b1eccd2213103e9f58c97">postWork</a> (WorkFunc &amp;&amp;work)</td></tr>
 <tr class="memdesc:abcefeb1b430b1eccd2213103e9f58c97"><td class="mdescLeft">&#160;</td><td class="mdescRight">Posts a work job onto the queue.  <a href="classDobbyWorkQueue.html#abcefeb1b430b1eccd2213103e9f58c97">More...</a><br /></td></tr>
 <tr class="separator:abcefeb1b430b1eccd2213103e9f58c97"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:af3d60b56633fc65144c9415b9f22e027"><td class="memItemLeft" align="right" valign="top"><a id="af3d60b56633fc65144c9415b9f22e027"></a>
-bool&#160;</td><td class="memItemRight" valign="bottom"><b>runFor</b> (const std::chrono::milliseconds &amp;msecs)</td></tr>
-<tr class="separator:af3d60b56633fc65144c9415b9f22e027"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a4be37ea8c2d1936c4fe65f39b6cc6648"><td class="memItemLeft" align="right" valign="top"><a id="a4be37ea8c2d1936c4fe65f39b6cc6648"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>exit</b> ()</td></tr>
-<tr class="separator:a4be37ea8c2d1936c4fe65f39b6cc6648"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:abcefeb1b430b1eccd2213103e9f58c97"><td class="memItemLeft" align="right" valign="top"><a id="abcefeb1b430b1eccd2213103e9f58c97"></a>
-bool&#160;</td><td class="memItemRight" valign="bottom"><b>postWork</b> (WorkFunc &amp;&amp;work)</td></tr>
-<tr class="separator:abcefeb1b430b1eccd2213103e9f58c97"><td class="memSeparator" colspan="2">&#160;</td></tr>
-</table><table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-methods"></a>
-Static Public Member Functions</h2></td></tr>
-<tr class="memitem:a8414bc76b671703ab0c1d19d63963a09"><td class="memItemLeft" align="right" valign="top"><a id="a8414bc76b671703ab0c1d19d63963a09"></a>
-static void&#160;</td><td class="memItemRight" valign="bottom"><b>setImpl</b> (<a class="el" href="classDobbyWorkQueueImpl.html">DobbyWorkQueueImpl</a> *newImpl)</td></tr>
-<tr class="separator:a8414bc76b671703ab0c1d19d63963a09"><td class="memSeparator" colspan="2">&#160;</td></tr>
-</table><table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pro-static-attribs"></a>
-Static Protected Attributes</h2></td></tr>
-<tr class="memitem:a3f2b5df05cfec441f7f64a1b9290bfcc"><td class="memItemLeft" align="right" valign="top"><a id="a3f2b5df05cfec441f7f64a1b9290bfcc"></a>
-static <a class="el" href="classDobbyWorkQueueImpl.html">DobbyWorkQueueImpl</a> *&#160;</td><td class="memItemRight" valign="bottom"><b>impl</b> = nullptr</td></tr>
-<tr class="separator:a3f2b5df05cfec441f7f64a1b9290bfcc"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pri-attribs"></a>
 Private Attributes</h2></td></tr>
@@ -305,10 +281,8 @@ uint64_t&#160;</td><td class="memItemRight" valign="bottom"><b>mWorkCompleteCoun
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following files:<ul>
-<li>daemon/lib/source/include/<a class="el" href="daemon_2lib_2source_2include_2DobbyWorkQueue_8h_source.html">DobbyWorkQueue.h</a></li>
+<li>daemon/lib/source/include/<a class="el" href="DobbyWorkQueue_8h_source.html">DobbyWorkQueue.h</a></li>
 <li>daemon/lib/source/DobbyWorkQueue.cpp</li>
-<li>unit_tests/L1_testing/mocks/DobbyWorkQueueMock.cpp</li>
-<li>unit_tests/L1_testing/tests/DobbyTest/DaemonDobbyTests.cpp</li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->

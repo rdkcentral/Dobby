@@ -65,8 +65,6 @@ $(function() {
 <div class="header">
   <div class="summary">
 <a href="#pub-methods">Public Member Functions</a> &#124;
-<a href="#pub-static-methods">Static Public Member Functions</a> &#124;
-<a href="#pro-static-attribs">Static Protected Attributes</a> &#124;
 <a href="#pri-methods">Private Member Functions</a> &#124;
 <a href="#pri-attribs">Private Attributes</a> &#124;
 <a href="classDobbyLogger-members.html">List of all members</a>  </div>
@@ -74,15 +72,6 @@ $(function() {
 <div class="title">DobbyLogger Class Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
-<div class="dynheader">
-Collaboration diagram for DobbyLogger:</div>
-<div class="dyncontent">
-<div class="center"><img src="classDobbyLogger__coll__graph.png" border="0" usemap="#aDobbyLogger_coll__map" alt="Collaboration graph"/></div>
-<map name="aDobbyLogger_coll__map" id="aDobbyLogger_coll__map">
-<area shape="rect" title=" " alt="" coords="20,95,128,121"/>
-<area shape="rect" href="classDobbyLoggerImpl.html" title=" " alt="" coords="5,5,143,32"/>
-</map>
-<center><span class="legend">[<a href="graph_legend.html">legend</a>]</span></center></div>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
@@ -95,27 +84,6 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a1fd736649690561cc2927b4ed44087f4"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classDobbyLogger.html#a1fd736649690561cc2927b4ed44087f4">DumpBuffer</a> (int bufferMemFd, pid_t containerPid, std::shared_ptr&lt; <a class="el" href="classIDobbyRdkLoggingPlugin.html">IDobbyRdkLoggingPlugin</a> &gt; loggingPlugin)</td></tr>
 <tr class="memdesc:a1fd736649690561cc2927b4ed44087f4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Blocking method that writes the contents of a buffer at a given memFd to the logger specified in the container config.  <a href="classDobbyLogger.html#a1fd736649690561cc2927b4ed44087f4">More...</a><br /></td></tr>
 <tr class="separator:a1fd736649690561cc2927b4ed44087f4"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a4d8428d3bb81e429af4580957f683707"><td class="memItemLeft" align="right" valign="top"><a id="a4d8428d3bb81e429af4580957f683707"></a>
-&#160;</td><td class="memItemRight" valign="bottom"><b>DobbyLogger</b> (const std::shared_ptr&lt; const <a class="el" href="classIDobbySettings.html">IDobbySettings</a> &gt; &amp;settings)</td></tr>
-<tr class="separator:a4d8428d3bb81e429af4580957f683707"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a813e8b6b7033adaf237c51e5cf20e3bc"><td class="memItemLeft" align="right" valign="top"><a id="a813e8b6b7033adaf237c51e5cf20e3bc"></a>
-bool&#160;</td><td class="memItemRight" valign="bottom"><b>StartContainerLogging</b> (std::string containerId, pid_t runtimePid, pid_t containerPid, std::shared_ptr&lt; <a class="el" href="classIDobbyRdkLoggingPlugin.html">IDobbyRdkLoggingPlugin</a> &gt; loggingPlugin)</td></tr>
-<tr class="separator:a813e8b6b7033adaf237c51e5cf20e3bc"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a1fd736649690561cc2927b4ed44087f4"><td class="memItemLeft" align="right" valign="top"><a id="a1fd736649690561cc2927b4ed44087f4"></a>
-bool&#160;</td><td class="memItemRight" valign="bottom"><b>DumpBuffer</b> (int bufferMemFd, pid_t containerPid, std::shared_ptr&lt; <a class="el" href="classIDobbyRdkLoggingPlugin.html">IDobbyRdkLoggingPlugin</a> &gt; loggingPlugin)</td></tr>
-<tr class="separator:a1fd736649690561cc2927b4ed44087f4"><td class="memSeparator" colspan="2">&#160;</td></tr>
-</table><table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-methods"></a>
-Static Public Member Functions</h2></td></tr>
-<tr class="memitem:a72a2c0ababf18fdd5ea5bb0f00b1e54a"><td class="memItemLeft" align="right" valign="top"><a id="a72a2c0ababf18fdd5ea5bb0f00b1e54a"></a>
-static void&#160;</td><td class="memItemRight" valign="bottom"><b>setImpl</b> (<a class="el" href="classDobbyLoggerImpl.html">DobbyLoggerImpl</a> *newImpl)</td></tr>
-<tr class="separator:a72a2c0ababf18fdd5ea5bb0f00b1e54a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-</table><table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pro-static-attribs"></a>
-Static Protected Attributes</h2></td></tr>
-<tr class="memitem:a6f5966d1ab876bbb470fc22ab4e6bb17"><td class="memItemLeft" align="right" valign="top"><a id="a6f5966d1ab876bbb470fc22ab4e6bb17"></a>
-static <a class="el" href="classDobbyLoggerImpl.html">DobbyLoggerImpl</a> *&#160;</td><td class="memItemRight" valign="bottom"><b>impl</b> = nullptr</td></tr>
-<tr class="separator:a6f5966d1ab876bbb470fc22ab4e6bb17"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pri-methods"></a>
 Private Member Functions</h2></td></tr>
@@ -367,10 +335,8 @@ std::shared_ptr&lt; <a class="el" href="classDobbyLogRelay.html">DobbyLogRelay</
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following files:<ul>
-<li>daemon/lib/source/include/<a class="el" href="daemon_2lib_2source_2include_2DobbyLogger_8h_source.html">DobbyLogger.h</a></li>
+<li>daemon/lib/source/include/<a class="el" href="DobbyLogger_8h_source.html">DobbyLogger.h</a></li>
 <li>daemon/lib/source/DobbyLogger.cpp</li>
-<li>unit_tests/L1_testing/mocks/DobbyLoggerMock.cpp</li>
-<li>unit_tests/L1_testing/tests/DobbyManagerTest/DaemonDobbyManagerTest.cpp</li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->

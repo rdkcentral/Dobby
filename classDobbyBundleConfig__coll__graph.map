@@ -1,6 +1,4 @@
 <map id="DobbyBundleConfig" name="DobbyBundleConfig">
-<area shape="rect" id="node1" title="Takes a JSON formatted OCI bundle configuration file in the constructor, parses it and extracts the r..." alt="" coords="5,184,156,211"/>
-<area shape="rect" id="node2" href="$classDobbyConfig.html" title="Interface that configuration file parser classes have to implement." alt="" coords="28,95,133,121"/>
-<area shape="rect" id="node3" href="$classDobbyConfigImpl.html" title=" " alt="" coords="13,5,148,32"/>
-<area shape="rect" id="node4" href="$classDobbyBundleConfigImpl.html" title=" " alt="" coords="158,95,337,121"/>
+<area shape="rect" id="node1" title="Takes a JSON formatted OCI bundle configuration file in the constructor, parses it and extracts the r..." alt="" coords="5,80,156,107"/>
+<area shape="rect" id="node2" href="$classDobbyConfig.html" title="Interface that configuration file parser classes have to implement." alt="" coords="28,5,133,32"/>
 </map>

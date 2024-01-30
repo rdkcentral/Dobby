@@ -1,9 +1,8 @@
 <map id="IpcService" name="IpcService">
-<area shape="rect" id="node1" title=" " alt="" coords="915,65,1004,92"/>
-<area shape="rect" id="node2" href="$classAI__IPC_1_1IIpcService.html" title="IPC service that enables us to invoke remote method and emit signals as well as to handle incoming me..." alt="" coords="540,7,683,33"/>
-<area shape="rect" id="node3" href="$classAI__IPC_1_1IIpcServiceImpl.html" title=" " alt="" coords="240,7,411,33"/>
-<area shape="rect" id="node4" title=" " alt="" coords="517,58,705,99"/>
-<area shape="rect" id="node5" href="$classAICommon_1_1ThreadedDispatcher.html" title="A dispatcher that does all the work on a single, separate thread started in constructor." alt="" coords="495,124,728,151"/>
-<area shape="rect" id="node6" href="$classAICommon_1_1IDispatcher.html" title="A dispatcher interface." alt="" coords="237,124,413,151"/>
-<area shape="rect" id="node7" href="$classAICommon_1_1Polymorphic.html" title="Inherit from this from all types that have virtual functions." alt="" coords="5,124,188,151"/>
+<area shape="rect" id="node1" title=" " alt="" coords="883,64,972,91"/>
+<area shape="rect" id="node2" href="$classAI__IPC_1_1IIpcService.html" title="IPC service that enables us to invoke remote method and emit signals as well as to handle incoming me..." alt="" coords="508,5,651,32"/>
+<area shape="rect" id="node3" title=" " alt="" coords="485,57,673,98"/>
+<area shape="rect" id="node4" href="$classAICommon_1_1ThreadedDispatcher.html" title="A dispatcher that does all the work on a single, separate thread started in constructor." alt="" coords="463,123,696,149"/>
+<area shape="rect" id="node5" href="$classAICommon_1_1IDispatcher.html" title="A dispatcher interface." alt="" coords="237,123,413,149"/>
+<area shape="rect" id="node6" href="$classAICommon_1_1Polymorphic.html" title="Inherit from this from all types that have virtual functions." alt="" coords="5,123,188,149"/>
 </map>

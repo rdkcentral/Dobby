@@ -1,4 +1,4 @@
 <map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
-<area shape="rect" id="node1" href="$classDobbyStartStateImpl.html" title=" " alt="" coords="5,5,164,32"/>
-<area shape="rect" id="node2" href="$classDobbyStartStateMock.html" title=" " alt="" coords="212,5,376,32"/>
+<area shape="rect" id="node1" href="$classIDobbySettings.html" title="Interface provided to the library at startup, contains the configuration options for Dobby." alt="" coords="5,5,127,32"/>
+<area shape="rect" id="node2" href="$classSettings.html" title="Object containing the settings to pass to the Dobby." alt="" coords="175,5,249,32"/>
 </map>

@@ -1,3 +1,5 @@
 <map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
-<area shape="rect" id="node1" href="$structDeviceMapperPlugin_1_1DevNode.html" title=" " alt="" coords="5,5,161,47"/>
+<area shape="rect" id="node1" href="$classDobbyConfig.html" title="Interface that configuration file parser classes have to implement." alt="" coords="5,31,111,57"/>
+<area shape="rect" id="node2" href="$classDobbyBundleConfig.html" title="Takes a JSON formatted OCI bundle configuration file in the constructor, parses it and extracts the r..." alt="" coords="159,5,309,32"/>
+<area shape="rect" id="node3" href="$classDobbySpecConfig.html" title="Takes a JSON formatted spec file in the constructor, parses it and extracts the relevant fields." alt="" coords="166,56,302,83"/>
 </map>
