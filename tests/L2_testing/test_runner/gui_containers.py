@@ -93,7 +93,7 @@ def execute_test():
     output_table = []
 
     # check if platform is supported
-    if test_utils.selected_platform == test_utils.Platforms.virtual_machine:
+    if test_utils.selected_platform == test_utils.Platforms.vagrant_vm or test_utils.selected_platform == test_utils.Platforms.github_workflow_vm:
         test_utils.print_unsupported_platform(path.basename(__file__), test_utils.selected_platform)
         return test_utils.count_print_results(output_table)
 

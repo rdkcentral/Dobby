@@ -28,11 +28,7 @@ jobs:
         run: >
           sudo apt update
           &&
-          sudo apt install -y build-essential cmake make git gcc pkgconf libtool libctemplate-dev libjsoncpp-dev libdbus-1-dev libsystemd-dev libyajl-dev libcap-dev go-md2man autoconf automake libseccomp-dev libboost-dev valgrind libcunit1-dev liblog4c-dev libfreetype6-dev libjpeg-dev xorg-dev python3 python3-pip libarchive-dev libcurl4 libcurl4-gnutls-dev libssl-dev libgpgme11-dev libtool-bin libarchive13 bison flex clang valgrind lcov figlet dbus libdbus-glib-1-dev dbus-user-session systemd libpam-systemd gnome-keyring iptables
-
-      - name: Set clang toolchain
-        if: ${{ matrix.compiler == 'clang' }}
-        run: echo "TOOLCHAIN_FILE=${GITHUB_WORKSPACE}/Dobby/tests/clang.cmake" >> $GITHUB_ENV
+          sudo apt install -y build-essential cmake make git gcc pkgconf libtool libctemplate-dev libjsoncpp-dev libdbus-1-dev libsystemd-dev libyajl-dev libcap-dev go-md2man autoconf automake libseccomp-dev libboost-dev valgrind libcunit1-dev liblog4c-dev libfreetype6-dev libjpeg-dev xorg-dev python3 python3-pip libarchive-dev libcurl4 libcurl4-gnutls-dev libssl-dev libgpgme11-dev libtool-bin libarchive13 bison flex clang lcov figlet dbus libdbus-glib-1-dev dbus-user-session systemd libpam-systemd gnome-keyring iptables
 
       - name: Set gcc/with-coverage toolchain
         if: ${{ matrix.compiler == 'gcc' && matrix.coverage == 'with-coverage' }}
@@ -118,6 +114,7 @@ jobs:
 
       - name: build Dobby
         run: |
+          sudo ln -sf /run/systemd/resolve/resolv.conf /etc/resolv.conf
           cd Dobby
           sudo cp /usr/lib/x86_64-linux-gnu/dbus-1.0/include/dbus/dbus-arch-deps.h /usr/include/dbus-1.0/dbus
           sudo mkdir -p /usr/lib/plugins/dobby
@@ -211,5 +208,33 @@ jobs:
       - name: Run the l2 test
         working-directory: Dobby/tests/L2_testing/test_runner/
         run: |
-            python3 runner.py -p 1
+            python3 runner.py -p 3
+
+      - name: Generate coverage
+        if: ${{ matrix.coverage == 'with-coverage' }}
+        run: >
+          lcov -c
+          -o coverage.info
+          -d $GITHUB_WORKSPACE
+          &&
+          lcov
+          -r coverage.info
+          '/usr/include/*'
+          '*/tests/L1_testing/*'
+          '*/tests/L2_testing/*'
+          -o filtered_coverage.info
+          &&
+          genhtml
+          -o l2coverage/${{ matrix.build_type }}/${{ matrix.extra_flags }}/coverage
+          -t "dobby coverage"
+          filtered_coverage.info
+
+      - name: Upload artifacts
+        if: ${{ !env.ACT && matrix.coverage == 'with-coverage' }}
+        uses: actions/upload-artifact@v3
+        with:
+          name: artifacts
+          path: |
+            l2coverage
+          if-no-files-found: warn
 

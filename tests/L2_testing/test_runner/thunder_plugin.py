@@ -162,7 +162,7 @@ def start_wpeframework():
 
     """
 
-    if test_utils.selected_platform == test_utils.Platforms.virtual_machine:
+    if test_utils.selected_platform == test_utils.Platforms.vagrant_vm or test_utils.selected_platform == test_utils.Platforms.github_workflow_vm:
         return start_wpeframework_vm()
     elif test_utils.selected_platform == test_utils.Platforms.xi_6:
         # WPEFramework normally runs as a systemd service on Xi6 so doesn't need to be launched manually.
@@ -185,7 +185,7 @@ def stop_wpeframework(process):
 
     """
 
-    if test_utils.selected_platform == test_utils.Platforms.virtual_machine:
+    if test_utils.selected_platform == test_utils.Platforms.vagrant_vm or test_utils.selected_platform == test_utils.Platforms.github_workflow_vm:
         stop_wpeframework_vm(process)
     elif test_utils.selected_platform == test_utils.Platforms.xi_6:
         # WPEFramework normally runs as a systemd service on Xi6 so doesn't need to be closed manually.
