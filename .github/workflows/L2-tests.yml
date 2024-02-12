@@ -211,5 +211,5 @@ jobs:
       - name: Run the l2 test
         working-directory: Dobby/tests/L2_testing/test_runner/
         run: |
-            python3 runner.py -p 1
+            python3 runner.py -p 1 -v 5
 
