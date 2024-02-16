@@ -25,6 +25,7 @@ import plugin_launcher
 import thunder_plugin
 import gui_containers
 import network_tests
+import pid_limit_tests
 import sys
 
 from time import sleep
@@ -37,7 +38,8 @@ supported_tests = [basic_sanity_tests,
 #                   start_from_bundle,
 #                   thunder_plugin,
 #                   network_tests,
-                   gui_containers]
+                   gui_containers,
+                   pid_limit_tests]
 
 def run_all_tests():
     success_count = 0

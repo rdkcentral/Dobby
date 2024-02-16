@@ -3,7 +3,7 @@ on: [push, pull_request]
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     strategy:
       fail-fast: false
       matrix:
@@ -28,7 +28,7 @@ jobs:
         run: >
           sudo apt update
           &&
-          sudo apt install -y build-essential cmake make git gcc pkgconf libtool libctemplate-dev libjsoncpp-dev libdbus-1-dev libsystemd-dev libyajl-dev libcap-dev go-md2man autoconf automake libseccomp-dev libboost-dev valgrind libcunit1-dev liblog4c-dev libfreetype6-dev libjpeg-dev xorg-dev python3 python3-pip libarchive-dev libcurl4 libcurl4-gnutls-dev libssl-dev libgpgme11-dev libtool-bin libarchive13 bison flex clang valgrind lcov figlet dbus libdbus-glib-1-dev dbus-user-session systemd libpam-systemd gnome-keyring iptables
+          sudo apt install -y build-essential cmake make git gcc pkgconf libtool libctemplate-dev libjsoncpp-dev libdbus-1-dev libsystemd-dev libyajl-dev libcap-dev go-md2man autoconf automake libseccomp-dev libboost-dev valgrind libcunit1-dev liblog4c-dev libfreetype6-dev libjpeg-dev xorg-dev python3 python3-pip libarchive-dev libcurl4 libcurl4-gnutls-dev libssl-dev libgpgme11-dev libtool-bin libarchive13 bison flex clang valgrind lcov figlet dbus libdbus-glib-1-dev dbus-user-session systemd libpam-systemd gnome-keyring iptables libprotobuf-c-dev
 
       - name: Set clang toolchain
         if: ${{ matrix.compiler == 'clang' }}
@@ -211,5 +211,5 @@ jobs:
       - name: Run the l2 test
         working-directory: Dobby/tests/L2_testing/test_runner/
         run: |
-            python3 runner.py -p 1
+            python3 runner.py -p 1 -v 5
 
