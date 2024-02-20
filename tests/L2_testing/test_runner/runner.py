@@ -34,10 +34,10 @@ supported_tests = [basic_sanity_tests,
                    container_manipulations,
                    bundle_generation,
                    plugin_launcher,
-#                   command_line_containers, # Commented these tests because they are all failing in the workflow and will be enabled once they are resolved
-#                   start_from_bundle,
-#                   thunder_plugin,
-#                   network_tests,
+                   command_line_containers,
+                   start_from_bundle,
+                   thunder_plugin,
+                   network_tests,
                    gui_containers,
                    pid_limit_tests]
 
@@ -47,8 +47,12 @@ def run_all_tests():
     tested_groups_count = 0
     for test in supported_tests:
         test_utils.print_log("\nExecuting test Test Group: \"%s\"" % test.__name__, test_utils.Severity.info)
-        if (test_utils.selected_platform == test_utils.Platforms.virtual_machine) and (test.__name__ == "gui_containers"):
-            test_utils.print_unsupported_platform("gui_containers.py", test_utils.selected_platform)
+        if (test_utils.selected_platform  == test_utils.Platforms.vagrant_vm ) and (test.__name__ == "gui_containers"):
+            test_utils.print_unsupported_platform(test.__name__, test_utils.selected_platform)
+        # Skipped these tests because they are all failing in the workflow and will be enabled once they are resolved
+        elif (test_utils.selected_platform == test_utils.Platforms.github_workflow_vm) and \
+            ((test.__name__ == "gui_containers") or (test.__name__ == "network_tests")):
+            test_utils.print_unsupported_platform(test.__name__, test_utils.selected_platform)
         else:
             success, total = test.execute_test()
             test_utils.print_log("\nTest Group: \"%s\"" % test.__name__, test_utils.Severity.info)

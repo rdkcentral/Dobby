@@ -104,8 +104,9 @@ class dobby_daemon:
 
 class Platforms(IntEnum):
     no_selection = 0
-    virtual_machine = 1
+    vagrant_vm = 1
     xi_6 = 2
+    github_workflow_vm = 3
 
 
 class Severity(IntEnum):
