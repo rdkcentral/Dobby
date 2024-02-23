@@ -22,11 +22,11 @@ tests = [
     test_utils.Test("Pid limit default",
                     "sleepy",
                     "256",
-                    "Starts contaiern with no pid limit specified, checks if default pid limit is set for container"),
+                    "Starts container with no pid limit specified, checks if default pid limit is set for container"),
     test_utils.Test("Pid limit no override",
                     "sleepy_pid_limit",
                     "1000",
-                    "Starts contaienr with pid limit specified in config.json, checks if that pid limit was not overriden"),
+                    "Starts container with pid limit specified in config.json, checks if that pid limit was not overriden"),
 ]
 
 
