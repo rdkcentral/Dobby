@@ -42,7 +42,7 @@ jobs:
                pip install coverage
 
       - name: Set up CMake
-        uses: jwlawson/actions-setup-cmake@v1.13
+        uses: jwlawson/actions-setup-cmake@v1.14
         with:
           cmake-version: '3.16.x'
 
@@ -231,7 +231,7 @@ jobs:
 
       - name: Upload artifacts
         if: ${{ !env.ACT && matrix.coverage == 'with-coverage' }}
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: artifacts
           path: |
