@@ -47,7 +47,7 @@ jobs:
           cmake-version: '3.16.x'
 
       - name: Checkout Dobby
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           path: Dobby
 
