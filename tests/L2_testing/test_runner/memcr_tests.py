@@ -17,7 +17,6 @@
 
 import test_utils
 import subprocess
-import signal
 import json
 from time import sleep
 from collections import namedtuple
