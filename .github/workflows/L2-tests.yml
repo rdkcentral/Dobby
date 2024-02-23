@@ -123,12 +123,21 @@ jobs:
           sudo chmod 755 /var/volatile/rdk/dobby/bundles
           mkdir -p build
           cd build
-          cmake -DCMAKE_TOOLCHAIN_FILE="${{ env.TOOLCHAIN_FILE }}" -DRDK_PLATFORM=DEV_VM -DCMAKE_INSTALL_PREFIX:PATH=/usr ${{ matrix.extra_flags }}  -DRDK=ON -DUSE_SYSTEMD=ON -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DAI_BUILD_TYPE=AI_DEBUG ..
+          cmake -DCMAKE_TOOLCHAIN_FILE="${{ env.TOOLCHAIN_FILE }}" -DRDK_PLATFORM=DEV_VM -DCMAKE_INSTALL_PREFIX:PATH=/usr ${{ matrix.extra_flags }}  -DRDK=ON -DUSE_SYSTEMD=ON -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DAI_BUILD_TYPE=AI_DEBUG -DDOBBY_HIBERNATE_MEMCR_IMPL=ON ..
           make -j $(nproc)
           sudo make install
           # Link for the DobbyInit tool
           sudo ln -sf /usr/local/libexec/ /usr/libexec
           sudo ln -sf /lib/x86_64-linux-gnu/libreadline.so.* /lib/
+
+       - name: build memcr
+         run: |
+           mkdir -p ~/memcr
+           cd ~/memcr
+           git clone https://github.com/LibertyGlobal/memcr.git .
+           make COMPRESS_LZ4=1 CHECKSUM_MD5=1 ENCRYPT=1
+           mkdir -p scripts
+           cp $GITHUB_WORKSPACE/Dobby/develop/vagrant/memcr/start_memcr.sh ~/memcr/scripts/
 
       - name: Checkout srcThunder
         run: |
