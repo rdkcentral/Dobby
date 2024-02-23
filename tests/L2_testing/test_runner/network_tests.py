@@ -38,7 +38,7 @@ class netcat_listener:
         # as this process is running infinitely we cannot use run_command_line as it waits for execution to end
         self.subproc = subprocess.Popen(["netcat",
                                          "-l",
-                                         "localhost",
+                                         "-p",
                                          "7357"
                                         ],
                                         universal_newlines=True,

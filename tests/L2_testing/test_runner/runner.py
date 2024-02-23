@@ -50,8 +50,7 @@ def run_all_tests():
         if (test_utils.selected_platform  == test_utils.Platforms.vagrant_vm ) and (test.__name__ == "gui_containers"):
             test_utils.print_unsupported_platform(test.__name__, test_utils.selected_platform)
         # Skipped these tests because they are all failing in the workflow and will be enabled once they are resolved
-        elif (test_utils.selected_platform == test_utils.Platforms.github_workflow_vm) and \
-            ((test.__name__ == "gui_containers") or (test.__name__ == "network_tests")):
+        elif (test_utils.selected_platform == test_utils.Platforms.github_workflow_vm) and (test.__name__ == "gui_containers"):
             test_utils.print_unsupported_platform(test.__name__, test_utils.selected_platform)
         else:
             success, total = test.execute_test()
