@@ -130,14 +130,14 @@ jobs:
           sudo ln -sf /usr/local/libexec/ /usr/libexec
           sudo ln -sf /lib/x86_64-linux-gnu/libreadline.so.* /lib/
 
-       - name: build memcr
-         run: |
-           mkdir -p ~/memcr
-           cd ~/memcr
-           git clone https://github.com/LibertyGlobal/memcr.git .
-           make COMPRESS_LZ4=1 CHECKSUM_MD5=1 ENCRYPT=1
-           mkdir -p scripts
-           cp $GITHUB_WORKSPACE/Dobby/develop/vagrant/memcr/start_memcr.sh ~/memcr/scripts/
+      - name: build memcr
+        run: |
+          mkdir -p ~/memcr
+          cd ~/memcr
+          git clone https://github.com/LibertyGlobal/memcr.git .
+          make COMPRESS_LZ4=1 CHECKSUM_MD5=1 ENCRYPT=1
+          mkdir -p scripts
+          cp $GITHUB_WORKSPACE/Dobby/develop/vagrant/memcr/start_memcr.sh ~/memcr/scripts/
 
       - name: Checkout srcThunder
         run: |
