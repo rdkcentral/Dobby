@@ -4,7 +4,6 @@ on: [push, pull_request]
 jobs:
   build:
     runs-on: comcast-runner
-    container: hub.comcast.net/rdke-builds/ci-container-image:latest
     env:
       # For CI, build all optional plugins. Newly developed plugins should be added to this list
       optional_plugins: "-DPLUGIN_TESTPLUGIN=ON -DPLUGIN_GPU=ON -DPLUGIN_LOCALTIME=ON -DPLUGIN_RTSCHEDULING=ON -DPLUGIN_HTTPPROXY=ON -DPLUGIN_APPSERVICES=ON -DPLUGIN_IONMEMORY=ON -DPLUGIN_DEVICEMAPPER=ON -DPLUGIN_OOMCRASH=ON"
