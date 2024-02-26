@@ -3,7 +3,8 @@ on: [push, pull_request]
 
 jobs:
   build:
-    runs-on: ubuntu-20.04
+    runs-on: comcast-runner
+    container: hub.comcast.net/rdke-builds/ci-container-image:latest
     strategy:
       fail-fast: false
       matrix:
