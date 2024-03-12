@@ -248,4 +248,3 @@ jobs:
             DobbyL2TestResults.json
             l2coverage
           if-no-files-found: warn
-
