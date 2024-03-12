@@ -218,6 +218,7 @@ jobs:
         working-directory: Dobby/tests/L2_testing/test_runner/
         run: |
             python3 runner.py -p 3 -v 5
+            cp $GITHUB_WORKSPACE/Dobby/tests/L2_testing/test_runner/DobbyL2TestResults.json $GITHUB_WORKSPACE
 
       - name: Generate coverage
         if: ${{ matrix.coverage == 'with-coverage' }}
@@ -244,6 +245,7 @@ jobs:
         with:
           name: artifacts
           path: |
+            DobbyL2TestResults.json
             l2coverage
           if-no-files-found: warn
 
