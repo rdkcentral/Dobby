@@ -3,7 +3,7 @@
     "cwd": "/",
     "args": [
         "wget",
-        "--timeout=5",
+        "--timeout=4",
         "example.com"
     ],
     "env": [
