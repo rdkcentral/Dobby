@@ -27,6 +27,9 @@ add_library(${PROJECT_NAME}
 
         ../Networking/source/Netfilter.cpp
         ../Networking/source/StdStreamPipe.cpp
+        ../Networking/source/NetworkingHelper.cpp
+        ../Networking/source/PortForwarding.cpp
+        ../Networking/source/IPAllocator.cpp
         )
 
 if(securityagent_FOUND)
