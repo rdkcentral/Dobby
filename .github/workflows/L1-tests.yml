@@ -41,7 +41,6 @@ jobs:
           sudo apt-get install -q -y automake libtool autotools-dev software-properties-common build-essential cmake libsystemd-dev libctemplate-dev libjsoncpp-dev libdbus-1-dev libnl-3-dev libnl-route-3-dev libsystemd-dev libyajl-dev libcap-dev libboost-dev lcov clang valgrind
           sudo pip3 install xmltodict
           sudo pip3 install requests
-
       - name: Set clang toolchain
         if: ${{ matrix.compiler == 'clang' }}
         run: echo "TOOLCHAIN_FILE=${GITHUB_WORKSPACE}/tests/clang.cmake" >> $GITHUB_ENV
@@ -60,7 +59,6 @@ jobs:
          cmake ..
          make
          sudo make install
-
       - name: build dobby
         run: |
          cd $GITHUB_WORKSPACE
@@ -73,17 +71,16 @@ jobs:
              cmake -DCMAKE_TOOLCHAIN_FILE="${{ env.TOOLCHAIN_FILE }}" -DRDK_PLATFORM=DEV_VM -DCMAKE_INSTALL_PREFIX:PATH=/usr -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} ${{ matrix.extra_flags }} ${{ env.optional_plugins }} ..
          fi
          make -j $(nproc)
-
       - name: run l1-tests
         if: ${{ matrix.extra_flags == 'RUN_TESTS' && matrix.build_type == 'Debug' }}
         run: |
-          sudo valgrind --tool=memcheck --leak-check=yes --show-reachable=yes --track-fds=yes --fair-sched=try $GITHUB_WORKSPACE/build/tests/L1_testing/tests/DobbyTest/DobbyL1Test --gtest_output="json:$GITHUB_WORKSPACE/DobbyL1TestResults.json"
-          sudo $GITHUB_WORKSPACE/build/tests/L1_testing/tests/DobbyUtilsTest/DobbyUtilsL1Test --gtest_output="json:$GITHUB_WORKSPACE/DobbyUtilsL1TestResults.json"
-          sudo valgrind --tool=memcheck --leak-check=yes --show-reachable=yes --track-fds=yes --fair-sched=try $GITHUB_WORKSPACE/build/tests/L1_testing/tests/DobbyManagerTest/DobbyManagerL1Test --gtest_output="json:$GITHUB_WORKSPACE//DobbyManagerL1TestResults.json"
-          echo "Siva: $GITHUB_WORKSPACE/DobbyL1TestResults.json"
-          ls -l $GITHUB_WORKSPACE/
-          cat $GITHUB_WORKSPACE/DobbyL1TestResults.json
-
+          mkdir -p /tmp/Gtest_Report/
+          sudo valgrind --tool=memcheck --leak-check=yes --show-reachable=yes --track-fds=yes --fair-sched=try $GITHUB_WORKSPACE/build/tests/L1_testing/tests/DobbyTest/DobbyL1Test --gtest_output="json:/tmp/Gtest_Report/DobbyL1TestResults.json"
+          sudo $GITHUB_WORKSPACE/build/tests/L1_testing/tests/DobbyUtilsTest/DobbyUtilsL1Test --gtest_output="json:/tmp/Gtest_Report/DobbyUtilsL1TestResults.json"
+          sudo valgrind --tool=memcheck --leak-check=yes --show-reachable=yes --track-fds=yes --fair-sched=try $GITHUB_WORKSPACE/build/tests/L1_testing/tests/DobbyManagerTest/DobbyManagerL1Test --gtest_output="json:/tmp/Gtest_Report/DobbyManagerL1TestResults.json"
+          echo "Siva: /tmp/Gtest_Report/DobbyL1TestResults.json"
+          ls -l /tmp/Gtest_Report/
+          cat /tmp/Gtest_Report/DobbyL1TestResults.json
       - name: Generate coverage
         if: ${{ matrix.coverage == 'with-coverage' && matrix.extra_flags == 'RUN_TESTS' && matrix.build_type == 'Debug' }}
         run: >
@@ -102,7 +99,6 @@ jobs:
           -o coverage/${{ matrix.build_type }}/${{ matrix.extra_flags }}/coverage
           -t "dobby coverage"
           filtered_coverage.info
-
       - name: Upload artifacts
         if: ${{ !env.ACT && matrix.coverage == 'with-coverage' && matrix.extra_flags == 'RUN_TESTS' && matrix.build_type == 'Debug' }}
         uses: actions/upload-artifact@v4
@@ -110,12 +106,13 @@ jobs:
           name: artifacts
           path: |
             coverage
-            $GITHUB_WORKSPACE/DobbyL1TestResults.json
-            $GITHUB_WORKSPACE/DobbyL1TestResults.json
-            $GITHUB_WORKSPACE/DobbyManagerL1TestResults.json
+            /tmp/Gtest_Report/DobbyL1TestResults.json
+            /tmp/Gtest_Report/DobbyL1TestResults.json
+            /tmp/Gtest_Report/DobbyManagerL1TestResults.json
           if-no-files-found: warn
 
       - name: Publishing the artifacts to automatics
+        if: ${{ matrix.extra_flags == 'RUN_TESTS' && matrix.build_type == 'Debug' }}
         run: >
           git config --global --add safe.directory $GITHUB_WORKSPACE &&
-          $GITHUB_WORKSPACE/gtest-json-result-push.py $GITHUB_WORKSPACE https://rdkeorchestrationservice.as-g8.cf.comcast.net/rdke_orchestration_api/push_unit_test_results $GITHUB_WORKSPACE
+          $GITHUB_WORKSPACE/gtest-json-result-push.py /tmp/Gtest_Report/ https://rdkeorchestrationservice.ho-g2.cf.comcast.net/rdke_orchestration_api/push_unit_test_results $GITHUB_WORKSPACE
