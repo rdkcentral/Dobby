@@ -35,6 +35,8 @@ jobs:
         run: |
           sudo apt-get update -y -q
           sudo apt-get install -q -y automake libtool autotools-dev software-properties-common build-essential cmake libsystemd-dev libctemplate-dev libjsoncpp-dev libdbus-1-dev libnl-3-dev libnl-route-3-dev libsystemd-dev libyajl-dev libcap-dev libboost-dev lcov clang valgrind
+          sudo pip3 install xmltodict
+          sudo pip3 install requests
 
       - name: Set clang toolchain
         if: ${{ matrix.compiler == 'clang' }}
@@ -71,9 +73,9 @@ jobs:
       - name: run l1-tests
         if: ${{ matrix.extra_flags == 'RUN_TESTS' && matrix.build_type == 'Debug' }}
         run: |
-          sudo valgrind --tool=memcheck --leak-check=yes --show-reachable=yes --track-fds=yes --fair-sched=try $GITHUB_WORKSPACE/build/tests/L1_testing/tests/DobbyTest/DobbyL1Test
-          sudo $GITHUB_WORKSPACE/build/tests/L1_testing/tests/DobbyUtilsTest/DobbyUtilsL1Test
-          sudo valgrind --tool=memcheck --leak-check=yes --show-reachable=yes --track-fds=yes --fair-sched=try $GITHUB_WORKSPACE/build/tests/L1_testing/tests/DobbyManagerTest/DobbyManagerL1Test
+          sudo valgrind --tool=memcheck --leak-check=yes --show-reachable=yes --track-fds=yes --fair-sched=try $GITHUB_WORKSPACE/build/tests/L1_testing/tests/DobbyTest/DobbyL1Test --gtest_output="json:$(pwd)/DobbyL1TestResults.json"
+          sudo $GITHUB_WORKSPACE/build/tests/L1_testing/tests/DobbyUtilsTest/DobbyUtilsL1Test --gtest_output="json:$(pwd)/DobbyUtilsL1TestResults.json"
+          sudo valgrind --tool=memcheck --leak-check=yes --show-reachable=yes --track-fds=yes --fair-sched=try $GITHUB_WORKSPACE/build/tests/L1_testing/tests/DobbyManagerTest/DobbyManagerL1Test --gtest_output="json:$(pwd)/DobbyManagerL1TestResults.json"
 
       - name: Generate coverage
         if: ${{ matrix.coverage == 'with-coverage' && matrix.extra_flags == 'RUN_TESTS' && matrix.build_type == 'Debug' }}
@@ -100,5 +102,8 @@ jobs:
         with:
           name: artifacts
           path: |
+            DobbyL1TestResults.json
+            DobbyUtilsL1TestResults.json
+            DobbyManagerL1TestResults.json
             coverage
           if-no-files-found: warn

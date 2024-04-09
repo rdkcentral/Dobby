@@ -21,6 +21,7 @@ from time import sleep
 from enum import IntEnum
 from collections import namedtuple
 from argparse import ArgumentParser
+import json
 
 Test = namedtuple('Test', ['name',
                            'container_id',
@@ -205,6 +206,15 @@ def count_print_results(output_table):
     """
 
     success_count, test_count = count_successes(output_table)
+
+    # Convert named tuples to dictionaries
+    test_results_dict_list = [{key: value for key, value in result._asdict().items() if key != 'container_log_file'} for result in output_table]
+
+    # Save the data to a JSON file
+    json_file_path = 'test_results.json'
+    with open(json_file_path, 'w') as json_file:
+        json.dump(test_results_dict_list, json_file, indent=2)
+
     return print_results(success_count, test_count)
 
 
