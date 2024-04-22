@@ -81,6 +81,7 @@ jobs:
           echo "Siva: /tmp/Gtest_Report/DobbyL1TestResults.json"
           ls -l /tmp/Gtest_Report/
           cat /tmp/Gtest_Report/DobbyL1TestResults.json
+
       - name: Generate coverage
         if: ${{ matrix.coverage == 'with-coverage' && matrix.extra_flags == 'RUN_TESTS' && matrix.build_type == 'Debug' }}
         run: >
