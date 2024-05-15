@@ -32,7 +32,8 @@ class DobbyHibernate
     enum Error
     {
         ErrorNone = 0,
-        ErrorGeneral = 1
+        ErrorGeneral = 1,
+        ErrorTimeout = 2
     };
 
     enum CompressionAlg

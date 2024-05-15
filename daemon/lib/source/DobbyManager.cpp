@@ -1566,35 +1566,7 @@ bool DobbyManager::hibernateContainer(int32_t cd, const std::string& options)
     std::thread hibernateThread =
         std::thread([=]()
         {
-            //TODO: --delay support is temporary and should be removed
-            int delayMs = 0;
-            size_t delayMsPos = options.find("--delay=");
-            if (delayMsPos != std::string::npos)
-            {
-                delayMs = std::stoi(&options[delayMsPos + std::string("--delay=").length()], nullptr, 10);
-            }
             DobbyHibernate::Error ret = DobbyHibernate::Error::ErrorNone;
-
-            int delayChunkMs = 100;
-            while (delayMs > 0)
-            {
-                int sleepTime = delayMs > delayChunkMs? delayChunkMs : delayMs;
-                delayMs -= sleepTime;
-                std::this_thread::sleep_for(std::chrono::milliseconds(sleepTime));
-                {
-                    std::lock_guard<std::mutex> locker(mLock);
-                    if (mContainers.find(id) == mContainers.end() ||
-                        mContainers[id]->descriptor != cd ||
-                        mContainers[id]->state != DobbyContainer::State::Hibernating)
-                    {
-                        AI_LOG_WARN("Hibernation of: %s with descriptor %d aborted", id.c_str(), cd);
-                        AI_LOG_FN_EXIT();
-                        return;
-                    }
-                }
-            }
-            //TODO: --delay support end
-
             // create a stats object for the container to get list of PIDs
             std::unique_lock<std::mutex> locker(mLock);
             DobbyStats stats(it->first, mEnvironment, mUtilities);
@@ -1619,7 +1591,8 @@ bool DobbyManager::hibernateContainer(int32_t cd, const std::string& options)
                 if (ret != DobbyHibernate::Error::ErrorNone)
                 {
                     AI_LOG_WARN("Error hibernating pid: '%d'", pid);
-                    // revert previous Hibernations and break
+                    // try to revert current and previous Hibernations and break
+                    DobbyHibernate::WakeupProcess(pid);
                     while (pidIt != jsonPids.begin())
                     {
                         --pidIt;
