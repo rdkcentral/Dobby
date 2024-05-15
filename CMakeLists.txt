@@ -22,13 +22,13 @@ cmake_minimum_required( VERSION 3.7.0 )
 include(GNUInstallDirs)
 
 # Project setup
-project( Dobby VERSION "3.9.0" )
+project( Dobby VERSION "3.10.1" )
 
 
 # Set the major and minor version numbers of dobby (also used by plugins)
 set( DOBBY_MAJOR_VERSION 3 )
-set( DOBBY_MINOR_VERSION 9 )
-set( DOBBY_MICRO_VERSION 0 )
+set( DOBBY_MINOR_VERSION 10 )
+set( DOBBY_MICRO_VERSION 1 )
 
 set(INSTALL_CMAKE_DIR lib/cmake/Dobby)
 
@@ -238,7 +238,7 @@ add_subdirectory(settings)
 
 # If ENABLE_DOBBYL1TEST avoid to compile all Dobby source code.
 if( ENABLE_DOBBYL1TEST )
-add_subdirectory( unit_tests/L1_testing )
+add_subdirectory( tests/L1_testing )
 else() # else ENABLE_DOBBYL1TEST
 # Add Bundle Generator code
 add_subdirectory(bundle/lib)

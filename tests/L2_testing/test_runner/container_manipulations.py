@@ -90,7 +90,7 @@ def execute_test():
 
     with test_utils.dobby_daemon():
         for test in tests:
-            process = dobby_tool_command(test.command, test.container_id)
+            process = test_utils.dobby_tool_command(test.command, test.container_id)
             test_utils.print_log("command output = %s" % process.stdout, test_utils.Severity.debug)
             result = test.expected_output in process.stdout
             if test.negation:
@@ -100,32 +100,6 @@ def execute_test():
             test_utils.print_single_result(output)
 
     return test_utils.count_print_results(output_table)
-
-
-def dobby_tool_command(command, container_id):
-    """Runs DobbyTool command
-
-    Parameters:
-    command (string): command that should be run
-    container_id (string): name of container to run
-
-    Returns:
-    process (process): process that runs selected command
-
-    """
-
-    full_command = [
-            "DobbyTool",
-            command,
-            container_id
-        ]
-    if command == "start":
-        container_path = test_utils.get_container_spec_path(container_id)
-        full_command.append(container_path)
-
-    process = test_utils.run_command_line(full_command)
-
-    return process
 
 
 if __name__ == "__main__":

@@ -72,7 +72,7 @@ def execute_test():
                                               test_utils.get_bundle_path(test.container_id),
                                               bundle_path])
 
-        output = test_utils.create_simple_test_output(test, status.stdout is "", "", status.stdout)
+        output = test_utils.create_simple_test_output(test, (status.stdout == ""), "", status.stdout)
         output_table.append(output)
         test_utils.print_single_result(output)
 
@@ -82,7 +82,7 @@ def execute_test():
                                               "-rf",
                                               test_utils.get_bundle_path(test.container_id)])
 
-        output = test_utils.create_simple_test_output(test, status.stderr is "", "", status.stderr)
+        output = test_utils.create_simple_test_output(test, (status.stderr == ""), "", status.stderr)
         output_table.append(output)
         test_utils.print_single_result(output)
 

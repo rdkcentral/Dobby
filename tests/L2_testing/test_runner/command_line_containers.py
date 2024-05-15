@@ -24,7 +24,7 @@ tests = [
                     "hello world",
                     "Prints \"Hello World\" to the console as a baseline functionality test"),
     test_utils.Test("Check mounts",
-                    "mounts-vm",
+                    "mounts-vagrant-vm",
                     "lorem ipsum",
                     "Mounts a sample text file into the container and attempts to read it"),
     test_utils.Test("Check environment variables",
@@ -67,7 +67,12 @@ def platform_dependent_modifications():
                                    "mounts-xi6",
                                    "JENKINS_BUILD_NUMBER=",
                                    "Mounts a sample text file into the container and attempts to read it")
-    elif test_utils.selected_platform == test_utils.Platforms.virtual_machine:
+    elif test_utils.selected_platform == test_utils.Platforms.github_workflow_vm:
+        tests[1] = test_utils.Test("Check mounts",
+                                   "mounts-github-workflow-vm",
+                                   "lorem ipsum",
+                                   "Mounts a sample text file into the container and attempts to read it")
+    elif test_utils.selected_platform == test_utils.Platforms.vagrant_vm:
         # nothing to do, already selected proper one
         pass
     else:

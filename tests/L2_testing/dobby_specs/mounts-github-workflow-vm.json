@@ -13,7 +13,7 @@
     },
     "console": {
         "limit": 65536,
-        "path": "/tmp/mounts-vm.log"
+        "path": "/tmp/mounts-github-workflow-vm.log"
     },
     "etc": {
         "group": [
@@ -28,7 +28,7 @@
     "mounts": [{
         "destination": "/files",
         "options": ["rbind", "ro", "nosuid", "nodev"],
-        "source": "/home/vagrant/srcDobby/tests/test_runner/files",
+        "source": "/home/runner/work/Dobby/Dobby/Dobby/tests/L2_testing/test_runner/files",
         "type": "bind"
     }]
 }

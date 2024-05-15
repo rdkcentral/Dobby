@@ -21,6 +21,7 @@ from time import sleep
 from enum import IntEnum
 from collections import namedtuple
 from argparse import ArgumentParser
+import json
 
 Test = namedtuple('Test', ['name',
                            'container_id',
@@ -59,7 +60,11 @@ class untar_bundle:
 
 class dobby_daemon:
     """Starts and stops DobbyDaemon service."""
-    def __init__(self):
+    def __init__(self, log_to_stdout = False):
+        """
+        Params:
+        log_to_stdout: if True Dobby logs will be visible together with test logs. Useful when debugging tests.
+        """
         if selected_platform == Platforms.xi_6:
             subprocess.run(["systemctl", "stop", "dobby"])
         else:
@@ -68,16 +73,15 @@ class dobby_daemon:
 
         print_log("Starting Dobby Daemon (logging to Journal)...", Severity.debug)
 
+        if log_to_stdout:
+            cmd = ["sudo", "DobbyDaemon", "--nofork"]
+            kvargs = {"universal_newlines": True}
+        else:
+            cmd = ["sudo", "DobbyDaemon", "--nofork", "--journald", "--noconsole"]
+            kvargs = {"universal_newlines": True, "stdout": subprocess.PIPE, "stderr": subprocess.PIPE}
+
         # as this process is running infinitely we cannot use run_command_line as it waits for execution to end
-        self.subproc = subprocess.Popen(["sudo",
-                                         "DobbyDaemon",
-                                         "--nofork",
-                                         "--journald",
-                                         "--noconsole"
-                                        ],
-                                        universal_newlines=True,
-                                        stdout=subprocess.PIPE,
-                                        stderr=subprocess.PIPE)
+        self.subproc = subprocess.Popen(cmd, **kvargs)
         sleep(1) # give DobbyDaemon time to initialise
 
     def __enter__(self):
@@ -104,8 +108,9 @@ class dobby_daemon:
 
 class Platforms(IntEnum):
     no_selection = 0
-    virtual_machine = 1
+    vagrant_vm = 1
     xi_6 = 2
+    github_workflow_vm = 3
 
 
 class Severity(IntEnum):
@@ -135,7 +140,7 @@ def print_log(log_message, log_severity):
     """
 
     if log_severity <= current_log_level:
-        print(log_message)
+        print(log_message, flush=True)
 
 
 def print_single_result(result):
@@ -201,6 +206,15 @@ def count_print_results(output_table):
     """
 
     success_count, test_count = count_successes(output_table)
+
+    # Convert named tuples to dictionaries
+    test_results_dict_list = [{key: value for key, value in result._asdict().items() if key != 'container_log_file'} for result in output_table]
+
+    # Save the data to a JSON file
+    json_file_path = 'test_results.json'
+    with open(json_file_path, 'w') as json_file:
+        json.dump(test_results_dict_list, json_file, indent=2)
+
     return print_results(success_count, test_count)
 
 
@@ -464,3 +478,29 @@ def parse_arguments(file_name, platform_required=False):
     if args.platform is not None:
         selected_platform = args.platform
         print_log("Current platform set to %d" % selected_platform, Severity.debug)
+
+
+def dobby_tool_command(command, container_id):
+    """Runs DobbyTool command
+
+    Parameters:
+    command (string): command that should be run
+    container_id (string): name of container to run
+
+    Returns:
+    process (process): process that runs selected command
+
+    """
+
+    full_command = [
+            "DobbyTool",
+            command,
+            container_id
+        ]
+    if command == "start":
+        container_path = get_container_spec_path(container_id)
+        full_command.append(container_path)
+
+    process = run_command_line(full_command)
+
+    return process

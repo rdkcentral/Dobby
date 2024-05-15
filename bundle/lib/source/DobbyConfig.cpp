@@ -864,15 +864,16 @@ void DobbyConfig::setPidsLimit(int limit)
         return;
     }
 
+    // set pid limit only if it's not set already, we do not override pid limit set in config
     rt_config_linux_resources_pids* pids = cfg->linux->resources->pids;
     if (pids == nullptr)
     {
         pids = (rt_config_linux_resources_pids*)calloc(1, sizeof(rt_config_linux_resources_pids));
+        pids->limit = limit;
+        pids->limit_present = true;
+
         cfg->linux->resources->pids = pids;
     }
-
-    pids->limit = limit;
-    pids->limit_present = true;
 }
 
 // -----------------------------------------------------------------------------

@@ -403,7 +403,7 @@ void Settings::setDefaults()
     mApparmorSettings.enabled = true;
     mApparmorSettings.profileName = "dobby_default";
     mPidsSettings.enabled = true;
-    mPidsSettings.limit = 128;
+    mPidsSettings.limit = 256;
 #else
     mWorkspaceDir = getPathFromEnv("AI_WORKSPACE_PATH", "/tmp/ai-workspace-fallback");
     mPersistentDir = getPathFromEnv("AI_PERSISTENT_PATH", "/tmp/ai-flash-fallback");

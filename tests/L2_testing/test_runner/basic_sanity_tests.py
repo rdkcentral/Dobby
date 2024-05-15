@@ -44,7 +44,7 @@ tests = (
 
 
 def execute_test():
-    if test_utils.selected_platform != test_utils.Platforms.virtual_machine:
+    if test_utils.selected_platform != test_utils.Platforms.vagrant_vm and test_utils.selected_platform != test_utils.Platforms.github_workflow_vm:
         return test_utils.print_unsupported_platform(basename(__file__), test_utils.selected_platform)
 
     output_table = []
