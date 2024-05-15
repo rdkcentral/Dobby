@@ -43,7 +43,8 @@ typedef enum {
 typedef enum {
     MEMCR_OK = 0,
     MEMCR_ERROR = -1,
-    MEMCR_INVALID_PID = -2
+    MEMCR_INVALID_PID = -2,
+    MEMCR_SOCKET_READ_ERROR = -3
 } ServerResponseCode;
 
 typedef struct {
@@ -142,7 +143,6 @@ static bool SendRcvCmd(const ServerRequest* cmd, ServerResponse* resp, uint32_t 
     AI_LOG_FN_ENTRY();
     int cd;
     int ret;
-    struct sockaddr_in addr = { 0 };
     resp->respCode = MEMCR_ERROR;
 
     cd = Connect(serverLocator, timeoutMs);
@@ -154,7 +154,7 @@ static bool SendRcvCmd(const ServerRequest* cmd, ServerResponse* resp, uint32_t 
 
     ret = write(cd, cmd, sizeof(ServerRequest));
     if (ret != sizeof(ServerRequest)) {
-        AI_LOG_ERROR("Socket write failed: ret %d", ret);
+        AI_LOG_ERROR("Socket write failed: ret %d, %m", ret);
         close(cd);
         AI_LOG_FN_EXIT();
         return false;
@@ -162,7 +162,8 @@ static bool SendRcvCmd(const ServerRequest* cmd, ServerResponse* resp, uint32_t 
 
     ret = read(cd, resp, sizeof(ServerResponse));
     if (ret != sizeof(ServerResponse)) {
-        AI_LOG_ERROR("Socket read failed: ret %d", ret);
+        AI_LOG_ERROR("Socket read failed: ret %d, %m", ret);
+        resp->respCode = MEMCR_SOCKET_READ_ERROR;
         close(cd);
         AI_LOG_FN_EXIT();
         return false;
@@ -188,6 +189,10 @@ DobbyHibernate::Error DobbyHibernate::HibernateProcess(const pid_t pid, const ui
         AI_LOG_INFO("Hibernate process PID %d success", pid);
         AI_LOG_FN_EXIT();
         return DobbyHibernate::Error::ErrorNone;
+    } else if (resp.respCode == MEMCR_SOCKET_READ_ERROR) {
+        AI_LOG_WARN("Error Hibernate timeout process PID %d ret %d", pid, resp.respCode);
+        AI_LOG_FN_EXIT();
+        return DobbyHibernate::Error::ErrorTimeout;
     } else {
         AI_LOG_WARN("Error Hibernate process PID %d ret %d", pid, resp.respCode);
         AI_LOG_FN_EXIT();
