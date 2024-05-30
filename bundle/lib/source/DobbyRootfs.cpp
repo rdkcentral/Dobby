@@ -53,6 +53,7 @@ DobbyRootfs::DobbyRootfs(const std::shared_ptr<IDobbyUtils>& utils,
     , mBundle(bundle)
     , mDirFd(-1)
     , mPersist(false)
+    , androidRootfs(false)
 {
     AI_LOG_FN_ENTRY();
 
@@ -72,6 +73,12 @@ DobbyRootfs::DobbyRootfs(const std::shared_ptr<IDobbyUtils>& utils,
         return;
     }
 
+    if (config->androidEnabled())
+    {
+        AI_LOG_WARN("Android container, using Android rootfs");
+        androidRootfs = true;
+    }
+
     // try and open the new directory
     mDirFd = openat(bundle->dirFd(), dirName.c_str(), O_CLOEXEC | O_DIRECTORY);
     if (mDirFd < 0)
@@ -82,14 +89,41 @@ DobbyRootfs::DobbyRootfs(const std::shared_ptr<IDobbyUtils>& utils,
         return;
     }
 
-    // and finally construct the rootfs contents based on the config
-    if (!constructRootfs(mDirFd, config))
+    if (!androidRootfs)
     {
-        AI_LOG_ERROR_EXIT("failed to construct bundle rootfs");
-        cleanUp();
-        return;
+        if (!constructRootfs(mDirFd, config))
+        {
+            AI_LOG_ERROR_EXIT("failed to construct bundle rootfs");
+            cleanUp();
+            return;
+        }
     }
+    else
+    {
+        if (!createStandardMountPoints(mDirFd))
+        {
+            AI_LOG_ERROR("Failed to create standard mount points");
+            cleanUp();
+            return;
+        }
 
+        // process any extra mounts added by the client
+        const std::vector<DobbySpecConfig::MountPoint> extraMounts = config->mountPoints();
+        for (const DobbySpecConfig::MountPoint &mountPoint : extraMounts)
+        {
+            AI_LOG_DEBUG("attempting to create mount point '%s' %s",
+                    mountPoint.destination.c_str(),
+                    (mountPoint.type == DobbySpecConfig::MountPoint::Directory) ?
+                    "directory" : "file");
+
+            if (!createMountPoint(mDirFd, mountPoint.destination,
+                        (mountPoint.type == DobbySpecConfig::MountPoint::Directory)))
+            {
+                AI_LOG_FN_EXIT();
+                return;
+            }
+        }
+    }
     // store the complete path
     mPath = bundle->path() + "/" + dirName + "/";
 
@@ -113,6 +147,7 @@ DobbyRootfs::DobbyRootfs(const std::shared_ptr<IDobbyUtils>& utils,
     , mBundle(bundle)
     , mDirFd(-1)
     , mPersist(false)
+    , androidRootfs(false)
 {
     AI_LOG_FN_ENTRY();
 
@@ -282,7 +317,7 @@ void DobbyRootfs::cleanUp()
 
     if (mDirFd >= 0)
     {
-        if (!mPersist)
+        if (!mPersist && !androidRootfs)
         {
             if (!mUtilities->rmdirContents(mDirFd))
             {
@@ -296,7 +331,7 @@ void DobbyRootfs::cleanUp()
             }
 
             // the rootfs directory should now be empty, so can now delete it
-            if (!mPath.empty() && (rmdir(mPath.c_str()) != 0))
+            if (!androidRootfs && !mPath.empty() && (rmdir(mPath.c_str()) != 0))
             {
                 AI_LOG_SYS_ERROR(errno, "failed to delete rootfs dir");
             }

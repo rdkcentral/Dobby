@@ -26,6 +26,7 @@
 #include <Logging.h>
 #include <FileUtilities.h>
 
+#include <sys/mount.h>
 #include <thread>
 #include <sstream>
 #include <fstream>
@@ -242,9 +243,38 @@ bool DobbyUtils::deleteRecursive(int dirfd, int availDepth)
         // try unlinking the file / directory / symlink / whatever
         if (unlinkat(dirfd, entry->d_name, flags) != 0)
         {
-            AI_LOG_SYS_ERROR(errno, "failed to remove '%s'", entry->d_name);
-            success = false;
-            break;
+            if(errno == EBUSY)
+            {
+                AI_LOG_WARN("EBUSY whilst trying to remove '%s', try unmounting..", entry->d_name);
+                if (fchdir(dirfd) != 0)
+                {
+                    AI_LOG_SYS_ERROR(errno, "failed to change to file directory");
+                    success = false;
+                    break;
+                }
+                else if (umount2(entry->d_name, UMOUNT_NOFOLLOW) != 0)
+                {
+                    AI_LOG_SYS_ERROR(errno, "failed to remove (unmount) '%s'", entry->d_name);
+                    success = false;
+                    break;
+                }
+                else if (unlinkat(dirfd, entry->d_name, flags) != 0)
+                {
+                    AI_LOG_SYS_ERROR(errno, "failed to remove file after unmount '%s'", entry->d_name);
+                    success = false;
+                    break;
+                }
+                else
+                {
+                    AI_LOG_INFO("unmounted and removed '%s'", entry->d_name);
+                }
+            }
+            else
+            {
+                AI_LOG_SYS_ERROR(errno, "failed to remove '%s'", entry->d_name);
+                success = false;
+                break;
+            }
         }
     }
 

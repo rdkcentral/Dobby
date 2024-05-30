@@ -680,6 +680,40 @@
                 }
             }
         },
+        "AndroidRuntime": {
+            "type": "object",
+            "required": [
+                "required"
+            ],
+            "properties": {
+                "required": {
+                    "type": "boolean"
+                },
+                "dependsOn": {
+                    "$ref": "defs.json#/definitions/ArrayOfStrings"
+                },
+                "data": {
+                    "type": "object",
+                    "properties": {
+                        "systemPath": {
+                            "type": "string"
+                        },
+                        "vendorPath": {
+                            "type": "string"
+                        },
+                        "dataPath": {
+                            "type": "string"
+                        },
+                        "cachePath": {
+                            "type": "string"
+                        },
+                        "cmdlinePath": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "LegacyPlugins": {
             "type": "object",
             "properties": {
@@ -741,6 +775,9 @@
                 },
                 "gamepad": {
                     "$ref": "#/definitions/Gamepad"
+                },
+                "androidruntime": {
+                    "$ref": "#/definitions/AndroidRuntime"
                 }
             }
         }

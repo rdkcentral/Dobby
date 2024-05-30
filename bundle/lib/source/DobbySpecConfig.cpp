@@ -60,6 +60,11 @@ static const ctemplate::StaticTemplateString USERNS_ENABLED =
 static const ctemplate::StaticTemplateString USERNS_DISABLED =
     STS_INIT(USERNS_DISABLED, "USERNS_DISABLED");
 
+static const ctemplate::StaticTemplateString ANDROID_ENABLED =
+    STS_INIT(ANDROID_ENABLED, "ANDROID_ENABLED");
+static const ctemplate::StaticTemplateString ANDROID_DISABLED =
+    STS_INIT(ANDROID_DISABLED, "ANDROID_DISABLED");
+
 static const ctemplate::StaticTemplateString MEM_LIMIT =
     STS_INIT(MEM_LIMIT, "MEM_LIMIT");
 
@@ -187,15 +192,31 @@ static const ctemplate::StaticTemplateString SECCOMP_SYSCALLS =
 #define JSON_FLAG_FILECAPABILITIES  (0x1U << 20)
 #define JSON_FLAG_VPU               (0x1U << 21)
 #define JSON_FLAG_SECCOMP           (0x1U << 22)
+#define JSON_FLAG_ANDROID           (0x1U << 23)
 
 int DobbySpecConfig::mNumCores = -1;
 
 // TODO: should we only allowed these if a network namespace is enabled ?
 const std::map<std::string, int> DobbySpecConfig::mAllowedCaps =
 {
+    { "CAP_AUDIT_CONTROL",      CAP_AUDIT_CONTROL       },
+    { "CAP_CHOWN",              CAP_CHOWN               },
+    { "CAP_DAC_OVERRIDE",       CAP_DAC_OVERRIDE        },
+    { "CAP_DAC_READ_SEARCH",    CAP_DAC_READ_SEARCH     },
+    { "CAP_FOWNER",             CAP_FOWNER              },
+    { "CAP_KILL",               CAP_KILL                },
+    { "CAP_MKNOD",              CAP_MKNOD               },
+    { "CAP_NET_ADMIN",          CAP_NET_ADMIN           },
     { "CAP_NET_BIND_SERVICE",   CAP_NET_BIND_SERVICE    },
     { "CAP_NET_BROADCAST",      CAP_NET_BROADCAST       },
     { "CAP_NET_RAW",            CAP_NET_RAW             },
+    { "CAP_SETGID",             CAP_SETGID              },
+    { "CAP_SETPCAP",            CAP_SETPCAP             },
+    { "CAP_SETUID",             CAP_SETUID              },
+    { "CAP_SYSLOG",             CAP_SYSLOG              },
+    { "CAP_SYS_ADMIN",          CAP_SYS_ADMIN           },
+    { "CAP_SYS_PTRACE",         CAP_SYS_PTRACE          },
+    { "CAP_SYS_RESOURCE",       CAP_SYS_RESOURCE        }
 };
 
 // -----------------------------------------------------------------------------
@@ -216,6 +237,7 @@ DobbySpecConfig::DobbySpecConfig(const std::shared_ptr<IDobbyUtils> &utils,
     : mUtilities(utils)
     , mGpuSettings(settings->gpuAccessSettings())
     , mVpuSettings(settings->vpuAccessSettings())
+    , mAndroidSettings(settings->androidAccessSettings())
     , mDefaultPlugins(settings->defaultPlugins())
     , mRdkPluginsData(settings->rdkPluginsData())
     , mDictionary(nullptr)
@@ -229,6 +251,7 @@ DobbySpecConfig::DobbySpecConfig(const std::shared_ptr<IDobbyUtils> &utils,
     , mDebugDbus(IDobbyIPCUtils::BusType::NoneBus)
     , mConsoleDisabled(true)
     , mConsoleLimit(-1)
+    , mAndroidEnabled(false)
     , mRootfsPath("rootfs")
 {
     // get the number of (online) cpu cores on the system if we haven't already
@@ -296,6 +319,7 @@ DobbySpecConfig::DobbySpecConfig(const std::shared_ptr<IDobbyUtils> &utils,
     : mUtilities(utils)
     , mGpuSettings(settings->gpuAccessSettings())
     , mVpuSettings(settings->vpuAccessSettings())
+    , mAndroidSettings(settings->androidAccessSettings())
     , mDictionary(nullptr)
     , mConf(nullptr)
     , mSpecVersion(SpecVersion::Unknown)
@@ -405,6 +429,11 @@ const std::string& DobbySpecConfig::consolePath() const
     return mConsolePath;
 }
 
+bool DobbySpecConfig::androidEnabled() const
+{
+    return mAndroidEnabled;
+}
+
 const std::map<std::string, Json::Value>& DobbySpecConfig::legacyPlugins() const
 {
     return mLegacyPlugins;
@@ -479,6 +508,7 @@ bool DobbySpecConfig::parseSpec(ctemplate::TemplateDictionary* dictionary,
 
     static const ProcessorMap processors =
     {
+        { "android",        {   JSON_FLAG_ANDROID,          &DobbySpecConfig::processAndroid        }   }, /* NOTE: process android before user */
         { "env",            {   JSON_FLAG_ENV,              &DobbySpecConfig::processEnv            }   },
         { "args",           {   JSON_FLAG_ARGS,             &DobbySpecConfig::processArgs           }   },
         { "cwd",            {   JSON_FLAG_CWD,              &DobbySpecConfig::processCwd            }   },
@@ -625,6 +655,11 @@ bool DobbySpecConfig::parseSpec(ctemplate::TemplateDictionary* dictionary,
     if (!(flags & JSON_FLAG_CAPABILITIES))
     {
         dictionary->SetValue(NO_NEW_PRIVS, "true");
+    }
+
+    if (!(flags & JSON_FLAG_ANDROID))
+    {
+        dictionary->ShowSection(ANDROID_DISABLED);
     }
 
     // step 6 - enable the RDK plugins section
@@ -829,9 +864,10 @@ bool DobbySpecConfig::processUser(const Json::Value& value,
     mUserId = uid.asUInt();
     mGroupId = gid.asUInt();
 
+
     // sanity check the uid and gid are valid, and make sure we aren't being
-    // asked to start the container as root
-    if (mUserId == 0)
+    // asked to start the container as root unless it is Android
+    if ((mUserId == 0) && (!mAndroidEnabled))
     {
         AI_LOG_ERROR("the user.uid cannot be root (0)");
         return false;
@@ -841,9 +877,108 @@ bool DobbySpecConfig::processUser(const Json::Value& value,
         AI_LOG_ERROR("invalid uid or gid field, values must be less than 65535");
         return false;
     }
-
     dictionary->SetIntValue(USER_ID, mUserId);
     dictionary->SetIntValue(GROUP_ID, mGroupId);
+
+    return true;
+}
+
+// -----------------------------------------------------------------------------
+/**
+ *  @brief Processes the android field of the json spec
+ *
+ *  Example json:
+ *
+ *          "android": true
+ *          "android": false
+ *
+ *  This field controls whether to enable android customisations or not.
+ *
+ *  @param[in]  value       The json spec document from the client
+ *  @param[in]  dictionary  Pointer to the OCI dictionary to populate
+ *
+ *  @return true if correctly processed the value, otherwise false.
+ */
+bool DobbySpecConfig::processAndroid(const Json::Value& value,
+                                ctemplate::TemplateDictionary* dictionary)
+{
+    bool enabled;
+    mAndroidEnabled = false;
+    if (value.isBool())
+    {
+        enabled = value.asBool();
+    }
+    else if (value.isNull())
+    {
+        enabled = false;
+    }
+    else
+    {
+        AI_LOG_ERROR("invalid android field");
+        return false;
+    }
+
+    mAndroidEnabled = enabled;
+
+    AI_LOG_INFO("Android is %s", enabled ? "enabled" : "disabled");
+
+    dictionary->ShowSection(enabled ? ANDROID_ENABLED : ANDROID_DISABLED);
+
+    if(!enabled) // No need for extra settings if Android disabled
+    {
+        return true;
+    }
+
+    // add any extra mounts (ie ipc sockets, shared memory files, etc)
+    for (const auto& extraMount : mAndroidSettings->extraMounts)
+    {
+        ctemplate::TemplateDictionary *subDict = dictionary->AddSectionDictionary(MOUNT_SECTION);
+        subDict->SetValue(MOUNT_SRC, extraMount.source);
+        subDict->SetValue(MOUNT_DST, extraMount.target);
+        subDict->SetValue(MOUNT_TYPE, extraMount.type);
+
+        for (const std::string& flag : extraMount.flags)
+        {
+            ctemplate::TemplateDictionary *optSubDict = subDict->AddSectionDictionary(MOUNT_OPT_SECTION);
+            optSubDict->SetValue(MOUNT_OPT, flag);
+        }
+
+        // store the mount point for rootfs construction
+        storeMountPoint(extraMount.type, extraMount.source, extraMount.target);
+    }
+
+    // device nodes should be static, so get the details once and store for
+    // all subsequent calls
+    static std::mutex scanningLock;
+    static std::atomic<bool> scannedDevNodes(false);
+    static std::list<DobbyConfig::DevNode> devNodes;
+
+    if (!scannedDevNodes)
+    {
+        std::lock_guard<std::mutex> locker(scanningLock);
+
+        if (!scannedDevNodes)
+        {
+	    for (const auto& devNode : mAndroidSettings->deviceNodes)
+	    {
+                devNodes.emplace_back(DevNode{ devNode.path,
+                                      devNode.major,
+                                      devNode.minor,
+                                      devNode.filemode });
+	    }
+            scannedDevNodes = true;
+        }
+    }
+
+    // add to the additional device node section
+    for (const DobbyConfig::DevNode &devNode : devNodes)
+    {
+        ctemplate::TemplateDictionary *subDict = dictionary->AddSectionDictionary(ADDITIONAL_DEVICE_NODES);
+        subDict->SetValue(DEVICE_PATH, devNode.path);
+        subDict->SetIntValue(DEVICE_MAJOR, devNode.major);
+        subDict->SetIntValue(DEVICE_MINOR, devNode.minor);
+        subDict->SetIntValue(DEVICE_FILE_MODE, devNode.mode);
+    }
 
     return true;
 }

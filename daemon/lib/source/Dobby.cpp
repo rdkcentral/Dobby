@@ -975,7 +975,7 @@ void Dobby::startFromSpec(std::shared_ptr<AI_IPC::IAsyncReplySender> replySender
     std::vector<std::string> envVars;
 
     // The command argument might not be sent at all (e.g. from AI) so we should
-    // be able to withstand receiving 3 or 6 arguments
+    // be able to withstand receiving 3, 4 or 6 arguments
     bool parseArgsSuccess = false;
     if (replySender->getMethodCallArguments().size() == 3)
     {

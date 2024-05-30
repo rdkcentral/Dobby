@@ -157,6 +157,55 @@ public:
      */
     virtual std::shared_ptr<HardwareAccessSettings> vpuAccessSettings() const = 0;
 
+    /**
+     *  Describes the details of any extra device nodes needed for Android Runtime.
+     *  This is needed due to the need for specific major and minor numbers.
+     */
+    struct AndroidDeviceNode
+    {
+        std::string path;
+        int major;
+        int minor;
+        int filemode;
+    };
+
+    // -------------------------------------------------------------------------
+    /**
+     *  Describes the details of anything extra needed to enable Android Runtime.
+     *
+     *      - deviceNodes
+     *          List of extra device nodes that need to be mapped into
+     *          the container to allow the apps to use the H/W.
+     *      - groupIds
+     *          The group id that the app needs to be in to access the
+     *          H/W device nodes. If not empty then the containered app will be
+     *          in that supplementary group(s).
+     *      - extraMounts
+     *          The details of any additional mounts required to access
+     *          the H/W. For example this is used on nexus platforms to map in
+     *          the nexus server socket.  This can also be used to map in
+     *          extra files / sockets used by the software.
+     *      - extraEnvVariables
+     *          A list of extra environment variables that will be set for all
+     *          containers if the given H/W access is requested.
+     *
+     */
+    struct AndroidAccessSettings
+    {
+        std::list<AndroidDeviceNode> deviceNodes;
+        std::set<int> groupIds;
+        std::list<ExtraMount> extraMounts;
+        std::map<std::string, std::string> extraEnvVariables;
+    };
+
+    // -------------------------------------------------------------------------
+    /**
+     *  @brief Returns any extra details needed to access the VPU (video
+     *  pipeline) inside the container.
+     *
+     */
+    virtual std::shared_ptr<AndroidAccessSettings> androidAccessSettings() const = 0;
+
     // -------------------------------------------------------------------------
     /**
      *  @brief Returns the set of external interface that container traffic
