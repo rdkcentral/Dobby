@@ -575,7 +575,11 @@ static const char* ociJsonTemplate = R"JSON(
             "/sys/devices/virtual/misc/vndbinder",
             "/sys/firmware/devicetree/base/emmc@ffe07000",
             "/sys/module/mmcblk",
-            "/sys/power"
+            "/sys/power",
+            "/sys/devices/platform/rdb/84b1000.sdhci",
+            "/sys/devices/virtual/devlink/brcm_scmi@0--84b1000.sdhci",
+            "/sys/firmware/devicetree/base/rdb/sdhci@84b1000",
+            "/sys/firmware/devicetree/base/rdb/sdhci@84b0000"
         ],
         "rootfsPropagation": "rshared"
         {{/ANDROID_ENABLED}}
