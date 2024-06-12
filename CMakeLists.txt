@@ -296,6 +296,7 @@ option(PLUGIN_STORAGE "Include Storage plugin" ON)
 option(PLUGIN_MINIDUMP "Include Minidump plugin" ON)
 option(PLUGIN_THUNDER "Include Thunder plugin" ON)
 option(PLUGIN_OOMCRASH "Include OOMCrash plugin" ON)
+option(PLUGIN_ANDROIDRUNTIME "Include Android plugin" ON)
 
 # Optional RDK plugins
 option(PLUGIN_TESTPLUGIN "Include TestPlugin plugin" OFF)
@@ -371,6 +372,10 @@ endif()
 
 if(PLUGIN_GAMEPAD)
 	add_subdirectory(rdkPlugins/Gamepad)
+endif()
+
+if(PLUGIN_ANDROIDRUNTIME)
+    add_subdirectory(rdkPlugins/AndroidRuntime)
 endif()
 
 # Export targets in Dobby package

@@ -68,6 +68,7 @@ public:
 public:
     std::shared_ptr<HardwareAccessSettings> gpuAccessSettings() const override;
     std::shared_ptr<HardwareAccessSettings> vpuAccessSettings() const override;
+    std::shared_ptr<AndroidAccessSettings> androidAccessSettings() const override;
 
     std::vector<std::string> externalInterfaces() const override;
     std::string addressRangeStr() const override;
@@ -110,6 +111,15 @@ private:
     std::shared_ptr<HardwareAccessSettings> getHardwareAccess(const Json::Value& root,
                                                               const Json::Path& path) const;
 
+    std::list<AndroidDeviceNode> getAndroidNodes(const Json::Value& root,
+                                           const Json::Path& path) const;
+
+    bool processAndroidDevice(const Json::Value& value,
+                              AndroidDeviceNode* devNode) const;
+
+    std::shared_ptr<AndroidAccessSettings> getAndroidAccess(const Json::Value& root,
+		                                            const Json::Path& path) const;
+
     void dumpHardwareAccess(int aiLogLevel, const std::string& name,
                             const std::shared_ptr<const HardwareAccessSettings>& hwAccess) const;
 
@@ -122,6 +132,7 @@ private:
 
     std::shared_ptr<HardwareAccessSettings> mGpuHardwareAccess;
     std::shared_ptr<HardwareAccessSettings> mVpuHardwareAccess;
+    std::shared_ptr<AndroidAccessSettings> mAndroidHardwareAccess;
 
     std::vector<std::string> mExternalInterfaces;
     std::pair<std::string, in_addr_t> mAddressRange;
