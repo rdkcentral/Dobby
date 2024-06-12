@@ -196,6 +196,7 @@ public:
         std::set<int> groupIds;
         std::list<ExtraMount> extraMounts;
         std::map<std::string, std::string> extraEnvVariables;
+        std::string appArmorProfile;
     };
 
     // -------------------------------------------------------------------------

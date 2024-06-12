@@ -964,28 +964,28 @@ std::list<Settings::AndroidDeviceNode> Settings::getAndroidNodes(const Json::Val
     const Json::Value &devNodes = Json::Path(path).resolve(root);
     if (devNodes.isNull())
     {
-	return std::list<AndroidDeviceNode>();
+        return std::list<AndroidDeviceNode>();
     }
     else if (!devNodes.isArray())
     {
         AI_LOG_ERROR("JSON value in settings file is not an array (of dev nodes)");
-	return std::list<AndroidDeviceNode>();
+        return std::list<AndroidDeviceNode>();
     }
 
     std::list<AndroidDeviceNode> result;
     for (const Json::Value &devNode : devNodes)
     {
-	if (!devNode.isObject())
-	{
-	    AI_LOG_ERROR("invalid JSON value in dev nodes array in settings file");
-	    return std::list<AndroidDeviceNode>();
-	}
+        if (!devNode.isObject())
+        {
+            AI_LOG_ERROR("invalid JSON value in dev nodes array in settings file");
+            return std::list<AndroidDeviceNode>();
+        }
 
-	AndroidDeviceNode androidDevNode;
-	if (processAndroidDevice(devNode, &androidDevNode))
-	{
-	    result.emplace_back(androidDevNode);
-	}
+        AndroidDeviceNode androidDevNode;
+        if (processAndroidDevice(devNode, &androidDevNode))
+        {
+            result.emplace_back(androidDevNode);
+        }
     }
 
     return result;
@@ -1278,6 +1278,20 @@ std::shared_ptr<IDobbySettings::AndroidAccessSettings> Settings::getAndroidAcces
 
     // get any extra environment vars
     accessSettings->extraEnvVariables = getEnvVarsFromJson(hw, Json::Path(".extraEnvVariables"));
+
+    const Json::Value appArmorProfile = hw["appArmorProfile"];
+    if (appArmorProfile.isNull())
+    {
+        AI_LOG_INFO("No Android AppArmor profile provided - will use default");
+    }
+    else if (appArmorProfile.isString())
+    {
+        accessSettings->appArmorProfile = appArmorProfile.asString();
+    }
+    else
+    {
+        AI_LOG_ERROR("Invalid entry in android.appArmorProfile");
+    }
 
     return accessSettings;
 }
