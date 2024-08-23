@@ -54,6 +54,8 @@
 #define DOBBY_CTRL_METHOD_RESUME                    "Resume"
 #define DOBBY_CTRL_METHOD_HIBERNATE                 "Hibernate"
 #define DOBBY_CTRL_METHOD_WAKEUP                    "Wakeup"
+#define DOBBY_CTRL_METHOD_MOUNT                     "Mount"
+#define DOBBY_CTRL_METHOD_UNMOUNT                   "Unmount"
 #define DOBBY_CTRL_METHOD_EXEC                      "Exec"
 #define DOBBY_CTRL_METHOD_GETSTATE                  "GetState"
 #define DOBBY_CTRL_METHOD_GETINFO                   "GetInfo"

@@ -494,7 +494,7 @@ protected:
      *
      *  @return true on success, false on failure.
      */
-    virtual bool callInNamespaceImpl(pid_t pid, int nsType, const std::function<void()>& func) const = 0;
+    virtual bool callInNamespaceImpl(pid_t pid, int nsType, const std::function<bool()>& func) const = 0;
 
     // -------------------------------------------------------------------------
     /**
@@ -508,7 +508,7 @@ protected:
      *
      *  @return true on success, false on failure.
      */
-    virtual bool callInNamespaceImpl(int namespaceFd, const std::function<void()>& func) const = 0;
+    virtual bool callInNamespaceImpl(int namespaceFd, const std::function<bool()>& func) const = 0;
 
     // -------------------------------------------------------------------------
     /**
@@ -530,6 +530,29 @@ protected:
                                bool oneShot,
                                const std::function<bool()>& handler) const = 0;
 
+    // -------------------------------------------------------------------------
+    /**
+     *  @brief Returns the GID for the given PID
+     *
+     *  @see IDobbyUtils::getGID
+     *
+     *  @param[in]  pid    The PID of the process to get the GID for
+     *
+     *  @return the GID of the process, or 0 if the GID could not be found
+     */
+    virtual gid_t getGID(pid_t pid) const = 0;
+
+    // -------------------------------------------------------------------------
+    /**
+     *  @brief Returns the UID for the given PID
+     *
+     *  @see IDobbyUtils::getUID
+     *
+     *  @param[in]  pid    The PID of the process to get the UID for
+     *
+     *  @return the UID of the process, or 0 if the UID could not be found
+     */
+    virtual uid_t getUID(pid_t pid) const = 0;
 
 };
 
@@ -561,6 +584,8 @@ public:
     using IDobbyUtils_v1::cancelTimer;
     using IDobbyUtils_v1::getDriverMajorNumber;
     using IDobbyUtils_v1::deviceAllowed;
+    using IDobbyUtils_v1::getGID;
+    using IDobbyUtils_v1::getUID;
 
 public:
 
@@ -626,6 +651,8 @@ public:
     using IDobbyUtils_v1::cancelTimer;
     using IDobbyUtils_v1::getDriverMajorNumber;
     using IDobbyUtils_v1::deviceAllowed;
+    using IDobbyUtils_v1::getGID;
+    using IDobbyUtils_v1::getUID;
 
     using IDobbyUtils_v2::setIntegerMetaData;
     using IDobbyUtils_v2::getIntegerMetaData;

@@ -96,3 +96,15 @@ TEST_F(DobbyUtilsTest, TestContainerMetaData)
         EXPECT_EQ(test.getStringMetaData(t_id,"ipaddr",""),"");
         EXPECT_EQ(test.getIntegerMetaData(t_id,"port",0),0);
 }
+
+TEST_F(DobbyUtilsTest, TestgetUID)
+{
+        pid_t pid = getpid();
+        EXPECT_EQ(test.getUID(pid),getuid());
+}
+
+TEST_F(DobbyUtilsTest, TestgetGID)
+{
+        pid_t pid = getpid();
+        EXPECT_EQ(test.getGID(pid),getgid());
+}

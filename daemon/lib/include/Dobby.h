@@ -91,6 +91,8 @@ private:
     DOBBY_DBUS_METHOD(resume);
     DOBBY_DBUS_METHOD(hibernate);
     DOBBY_DBUS_METHOD(wakeup);
+    DOBBY_DBUS_METHOD(addMount);
+    DOBBY_DBUS_METHOD(removeMount);
     DOBBY_DBUS_METHOD(exec);
     DOBBY_DBUS_METHOD(list);
     DOBBY_DBUS_METHOD(getState);

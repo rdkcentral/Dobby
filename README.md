@@ -131,15 +131,19 @@ vagrant@dobby-vagrant:~$ DobbyTool help
 quit              quit
 help              help [command]
 shutdown          shutdown
-start             start [options...] <id> <specfile/bundlepath> [command]
+start             start [options...] <id> <bundlepath> [command]
 stop              stop <id> [options...]
 pause             pause <id>
 resume            resume <id>
+hibernate         hibernate [options...] <id>
+wakeup            wakeup <id>
+mount             mount <id> <source> <destination> <mountFlags>
+unmount           unmount <id> <source>
 exec              exec [options...] <id> <command>
 list              list
 info              info <id>
-dumpspec          dumpspec <id> [options...]
-bundle            bundle <id> <specfile> [options...]
+wait              wait <id> <state>
+set-log-level     set-log-level <level>
 set-dbus          set-dbus <private>|<public> <address>
 ```
 For more information about a command, run `DobbyTool help [command]`. For example:

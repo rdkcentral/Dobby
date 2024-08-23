@@ -541,7 +541,7 @@ int DobbyUtils::getNamespaceFd(pid_t pid, int nsType) const
  *  @return true if successifully entered the namespace, otherwise false.
  */
 void DobbyUtils::nsThread(int newNsFd, int nsType, bool* success,
-                          std::function<void()>& func) const
+                          std::function<bool()>& func) const
 {
     AI_LOG_FN_ENTRY();
 
@@ -562,9 +562,8 @@ void DobbyUtils::nsThread(int newNsFd, int nsType, bool* success,
     }
 
     // execute the caller's function
-    func();
+     *success = func();
 
-    *success = true;
     AI_LOG_FN_EXIT();
 }
 
@@ -585,7 +584,7 @@ void DobbyUtils::nsThread(int newNsFd, int nsType, bool* success,
  *  @return true if successifully entered the namespace, otherwise false.
  */
 bool DobbyUtils::callInNamespaceImpl(int namespaceFd,
-                                     const std::function<void()>& func) const
+                                     const std::function<bool()>& func) const
 {
     AI_LOG_FN_ENTRY();
 
@@ -628,7 +627,7 @@ bool DobbyUtils::callInNamespaceImpl(int namespaceFd,
  *  @return true if successifully entered the namespace, otherwise false.
  */
 bool DobbyUtils::callInNamespaceImpl(pid_t pid, int nsType,
-                                     const std::function<void()>& func) const
+                                     const std::function<bool()>& func) const
 {
     AI_LOG_FN_ENTRY();
 
@@ -1661,4 +1660,73 @@ bool DobbyUtils::executeCommand(const std::string &command) const
     }
 
     return true;
+}
+// -------------------------------------------------------------------------
+/**
+ *  @brief Returns the effective GID or UID for the given PID 
+ *         by parsing /proc/<PID>/status
+ *
+ *  @param[in]  pid    The PID of the process to get the GID for
+ *  @param[in]  idType The type of ID to get, either "Gid" or "Uid"
+ *
+ *  @return the GID or UID of the process, or -1 if the ID could not be found
+ */
+int DobbyUtils::getGIDorUID(pid_t pid, const std::string& idType) const
+{
+    char filePathBuf[32];
+    sprintf(filePathBuf, "/proc/%d/status", pid);
+
+    int fd = open(filePathBuf, O_CLOEXEC | O_RDONLY);
+    if (fd < 0)
+    {
+        AI_LOG_SYS_ERROR(errno, "failed to open procfs file @ '%s'", filePathBuf);
+        return -1;
+    }
+
+    __gnu_cxx::stdio_filebuf<char> statusFileBuf(fd, std::ios::in);
+    std::istream statusFileStream(&statusFileBuf);
+    
+    std::string line;
+    while (std::getline(statusFileStream, line))
+    {
+        if (line.compare(0, idType.size(), idType) == 0)
+        {
+            int realId = -1, effectiveId = -1, savedId = 1, filesystemId = 1;
+
+            if (sscanf(line.c_str(), (idType + ":\t%d\t%d\t%d\t%d").c_str(), &realId, &effectiveId, &savedId, &filesystemId) != 4)
+            {
+                AI_LOG_WARN("failed to parse %s field, '%s'", idType.c_str(), line.c_str());
+                return -1;
+            }
+
+            return effectiveId;
+        }
+    }
+
+    AI_LOG_WARN("failed to find the %s field in the '%s' file", idType.c_str(), filePathBuf);
+    return -1;
+}
+// -------------------------------------------------------------------------
+/**
+ *  @brief Returns the GID for the given PID
+ *
+ *  @param[in]  pid    The PID of the process to get the GID for
+ *
+ *  @return the GID of the process, or -1 if the GID could not be found
+ */
+gid_t DobbyUtils::getGID(pid_t pid) const
+{
+    return static_cast<gid_t>(getGIDorUID(pid, "Gid"));
+}
+// -------------------------------------------------------------------------
+/**
+ *  @brief Returns the UID for the given PID
+ *
+ *  @param[in]  pid    The PID of the process to get the UID for
+ *
+ *  @return the UID of the process, or -1 if the UID could not be found
+ */
+uid_t DobbyUtils::getUID(pid_t pid) const
+{
+    return static_cast<uid_t>(getGIDorUID(pid, "Uid"));
 }

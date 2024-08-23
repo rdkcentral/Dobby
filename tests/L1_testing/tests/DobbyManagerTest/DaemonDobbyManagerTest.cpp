@@ -3765,8 +3765,7 @@ TEST_F(DaemonDobbyManagerTest, execInContainer_FailedToExecuteCommand)
 TEST_F(DaemonDobbyManagerTest, execInContainer_FailureAsContainerNotRunning)
 {
     bool return_value;
-    pid_t pid1 = 1234;
-    pid_t pid2 = 0;
+
     std::string options = "--tty";
     std::string command = "fork exec";
     int32_t cd = 1234;

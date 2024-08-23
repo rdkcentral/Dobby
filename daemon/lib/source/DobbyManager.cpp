@@ -60,6 +60,9 @@
 #include <unordered_map>
 #include <chrono>
 #include <thread>
+#include <sys/syscall.h>
+#include <linux/mount.h>
+#include <linux/types.h>
 
 #if defined(USE_SYSTEMD)
     #include <systemd/sd-daemon.h>
@@ -1734,6 +1737,289 @@ bool DobbyManager::wakeupContainer(int32_t cd)
 
     wakeupThread.detach();
     AI_LOG_INFO("Wakeup of: %s triggered", id.c_str());
+    AI_LOG_FN_EXIT();
+    return true;
+}
+
+// -----------------------------------------------------------------------------
+/**
+ *  @brief adds a mount to a running container
+ *
+ *  @param[in]  cd           The descriptor of the container to checkpoint.
+ *  @param[in]  source       The source path of the mount
+ *  @param[in]  destination  The destination path of the mount
+ *  @param[in]  mountFlags   The mount flags is a string with comma separated list of flags
+ *                           e.g. "rbind,ro"
+ *
+ *  @return true if a container was successfully restored.
+ */
+bool DobbyManager::addMount(int32_t cd, const std::string &source, const std::string &destination, const std::string &mountFlags)
+{
+     AI_LOG_FN_ENTRY();
+
+    std::lock_guard<std::mutex> locker(mLock);
+
+    // find the container
+    auto it = mContainers.cbegin();
+    for (; it != mContainers.cend(); ++it)
+    {
+        if (it->second && (it->second->descriptor == cd))
+            break;
+    }
+
+    if (it == mContainers.cend())
+    {
+        AI_LOG_WARN("failed to find container with descriptor %d", cd);
+        AI_LOG_FN_EXIT();
+        return false;
+    }
+
+    const ContainerId &id = it->first;
+    
+    const pid_t containerPid = it->second->containerPid;
+    if (containerPid == 0)
+    {
+        AI_LOG_WARN("failed to find container pid for container with descriptor %d", cd);
+        AI_LOG_FN_EXIT();
+        return false;
+    }
+
+    uid_t containerUID = mUtilities->getUID(containerPid);
+    if(containerUID == static_cast<uid_t>(-1))
+    {
+        AI_LOG_ERROR("failed to get UID for container with PID: %d", containerPid);
+        AI_LOG_FN_EXIT();
+        return false;
+    }
+
+    gid_t containerGID = mUtilities->getGID(containerPid);
+    if(containerGID == static_cast<gid_t>(-1))
+    {
+        AI_LOG_ERROR("failed to get GID for container with PID: %d", containerPid);
+        AI_LOG_FN_EXIT();
+        return false;
+    }
+
+    int fdMnt = syscall(SYS_open_tree, -EBADF, source.c_str(),  OPEN_TREE_CLOEXEC | OPEN_TREE_CLONE);
+    if (fdMnt < 0)
+    {
+        AI_LOG_ERROR("open_tree failed errno: %d container: %d", errno, cd);
+        AI_LOG_FN_EXIT();
+        return false;
+    }
+    
+    static const std::vector<std::pair<std::string, unsigned long>> mountFlagsNames =
+    {
+        {   "rbind",       MS_BIND | MS_REC  },
+        {   "bind",        MS_BIND           },
+        {   "silent",      MS_SILENT         },
+        {   "ro",          MS_RDONLY         },
+        {   "sync",        MS_SYNCHRONOUS    },
+        {   "dirsync",     MS_DIRSYNC        },
+        {   "noatime",     MS_NOATIME        },
+        {   "nodiratime",  MS_NODIRATIME     },
+        {   "relatime",    MS_RELATIME       },
+        {   "strictatime", MS_STRICTATIME    },
+        {   "noexec",      MS_NOEXEC         },
+        {   "nodev",       MS_NODEV          },
+        {   "nosuid",      MS_NOSUID         },
+    };
+
+    // convert the comma seperated mountFlags string to a single unsigned long
+    std::istringstream iss(mountFlags);
+    unsigned long mountOptions = 0;
+
+    while(iss.good())
+    {
+        std::string flag;
+        std::getline(iss, flag, ',');
+
+        bool found = false;
+        for (const auto &flagName : mountFlagsNames)
+        {
+            if (flag == flagName.first)
+            {
+                mountOptions |= flagName.second;
+                found = true;
+                break;
+            }
+        }
+
+        if (!found)
+        {
+            AI_LOG_ERROR("unknown mount flag: %s, ignoring it", flag.c_str());
+        }
+    }
+ 
+    // return error if MS_BIND is not set
+    if (!(mountOptions & MS_BIND))
+    {
+        AI_LOG_ERROR("MS_BIND flag is not set, aborting mount operation");
+        close(fdMnt);
+        AI_LOG_FN_EXIT();
+        return false;
+    }
+
+    auto doMoveMountLambda = [fdMnt, containerUID, containerGID, destination, mountOptions]()
+    {
+        // switch to uid / gid of the host since we are still in the host user namespace
+        if (syscall(SYS_setresgid, -1, containerGID, -1) != 0)
+        {
+            AI_LOG_ERROR("failed to setresgid for container with GID: %d", containerGID);
+            return false;
+        }
+
+        if (syscall(SYS_setresuid, -1, containerUID, -1) != 0)
+        {
+            AI_LOG_ERROR("failed to setresuid for container with UID: %d", containerUID);
+            return false;
+        }
+
+        if (mkdir(destination.c_str(), 0755) != 0)
+        {
+            AI_LOG_ERROR("failed to create destination directory %s", destination.c_str());
+            return false;
+        }
+
+        // revert back to root for the mount
+        if (syscall(SYS_setresgid, -1, 0, -1) != 0)
+        {
+            AI_LOG_ERROR("failed to setresgid for root");
+            return false;
+        }
+
+        if (syscall(SYS_setresuid, -1, 0, -1) != 0)
+        {
+            AI_LOG_ERROR("failed to setresuid for root");
+            return false;
+        }
+
+        int ret = syscall(SYS_move_mount, fdMnt, "",  -EBADF, destination.c_str(), MOVE_MOUNT_F_EMPTY_PATH);
+        if (ret < 0)
+        {
+            AI_LOG_ERROR("move_mount failed errno: %d", errno);
+            return false;
+        }
+    
+        if(mount("none", destination.c_str(), nullptr, MS_REMOUNT | mountOptions, nullptr))
+        {
+            AI_LOG_WARN("remount failed for %s errno: %d", destination.c_str(), errno);
+        }
+        
+        return true;
+
+    };
+
+    if(!mUtilities->callInNamespace(containerPid, CLONE_NEWNS, doMoveMountLambda))
+    {
+        AI_LOG_ERROR("failed to addMount for %s in %s", source.c_str(), id.c_str());
+        close(fdMnt);
+        AI_LOG_FN_EXIT();
+        return false;
+    }
+
+    close(fdMnt);
+
+    AI_LOG_INFO("%s is mounted on %s inside %s", source.c_str(), destination.c_str(), id.c_str());
+    AI_LOG_FN_EXIT();
+    return true;
+}
+
+// -----------------------------------------------------------------------------
+/**
+ *  @brief removes a mount from a running container
+ *
+ *  @param[in]  cd           The descriptor of the container to checkpoint.
+ *  @param[in]  source
+ *
+ *  @return true if a container was successfully restored.
+ */
+bool DobbyManager::removeMount(int32_t cd, const std::string &source)
+{
+     AI_LOG_FN_ENTRY();
+
+    std::lock_guard<std::mutex> locker(mLock);
+
+    // find the container
+    auto it = mContainers.cbegin();
+    for (; it != mContainers.cend(); ++it)
+    {
+        if (it->second && (it->second->descriptor == cd))
+            break;
+    }
+
+    if (it == mContainers.cend())
+    {
+        AI_LOG_WARN("failed to find container with descriptor %d", cd);
+        AI_LOG_FN_EXIT();
+        return false;
+    }
+
+    const ContainerId &id = it->first;
+    
+    const pid_t containerPid = it->second->containerPid;
+    if (containerPid == 0)
+    {
+        AI_LOG_WARN("failed to find container pid for container with descriptor %d", cd);
+        AI_LOG_FN_EXIT();
+        return false;
+    }
+
+    uid_t containerUID = mUtilities->getUID(containerPid);
+    if(containerUID == static_cast<uid_t>(-1))
+    {
+        AI_LOG_ERROR("failed to get UID for container with PID: %d", containerPid);
+        AI_LOG_FN_EXIT();
+        return false;
+    }
+    gid_t containerGID = mUtilities->getGID(containerPid);
+    if(containerGID == static_cast<gid_t>(-1))
+    {
+        AI_LOG_ERROR("failed to get GID for container with PID: %d", containerPid);
+        AI_LOG_FN_EXIT();
+        return false;
+    }
+
+    auto doUnmountLambda = [containerUID, containerGID, source]()
+    {
+        // unmount the directory
+        int ret = syscall(SYS_umount2, source.c_str(), MNT_DETACH);
+        if (ret < 0)
+        {
+            AI_LOG_ERROR("umount failed for %s errno: %d", source.c_str(), errno);
+            return false;
+        }
+
+        // switch to uid / gid of the host since we are still in the host user namespace
+        if (syscall(SYS_setresgid, -1, containerGID, -1) != 0)
+        {
+            AI_LOG_ERROR("failed to setresgid for container with GID: %d", containerGID);
+            return false;
+        }
+
+        if (syscall(SYS_setresuid, -1, containerUID, -1) != 0)
+        {
+            AI_LOG_ERROR("failed to setresuid for container with UID: %d", containerUID);
+            return false;
+        }
+
+        // remove the unmounted directory
+        if (rmdir(source.c_str()) != 0)
+        {
+            AI_LOG_WARN("failed to remove source directory %s", source.c_str());
+        }
+        return true;
+
+    };
+
+    if(!mUtilities->callInNamespace(containerPid, CLONE_NEWNS, doUnmountLambda))
+    {
+        AI_LOG_ERROR("failed to unmount %s in %s", source.c_str(), id.c_str());
+        AI_LOG_FN_EXIT();
+        return false;
+    }
+
+    AI_LOG_INFO("%s is unmounted inside %s", source.c_str(),  id.c_str());
     AI_LOG_FN_EXIT();
     return true;
 }
