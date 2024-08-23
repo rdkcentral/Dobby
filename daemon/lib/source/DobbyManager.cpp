@@ -60,6 +60,9 @@
 #include <unordered_map>
 #include <chrono>
 #include <thread>
+#include <sys/syscall.h>
+#include <linux/mount.h>
+#include <linux/types.h>
 
 #if defined(USE_SYSTEMD)
     #include <systemd/sd-daemon.h>
@@ -1731,6 +1734,287 @@ bool DobbyManager::wakeupContainer(int32_t cd)
 
     wakeupThread.detach();
     AI_LOG_INFO("Wakeup of: %s triggered", id.c_str());
+    AI_LOG_FN_EXIT();
+    return true;
+}
+
+// -----------------------------------------------------------------------------
+/**
+ *  @brief adds a mount to a running container
+ *
+ *  @param[in]  cd           The descriptor of the container to checkpoint.
+ *  @param[in]  source
+ *  @param[in]  destination
+ *  @param[in]  mountFlags
+ *
+ *  @return true if a container was successfully restored.
+ */
+bool DobbyManager::addMount(int32_t cd, const std::string &source, const std::string &destination, int32_t mountFlags)
+{
+     AI_LOG_FN_ENTRY();
+
+    std::lock_guard<std::mutex> locker(mLock);
+
+    // find the container
+    auto it = mContainers.cbegin();
+    for (; it != mContainers.cend(); ++it)
+    {
+        if (it->second && (it->second->descriptor == cd))
+            break;
+    }
+
+    if (it == mContainers.cend())
+    {
+        AI_LOG_WARN("failed to find container with descriptor %d", cd);
+        AI_LOG_FN_EXIT();
+        return false;
+    }
+
+    const ContainerId &id = it->first;
+    
+    const pid_t containerPid = it->second->containerPid;
+    if (containerPid == 0)
+    {
+        AI_LOG_WARN("failed to find container pid for container with descriptor %d", cd);
+        AI_LOG_FN_EXIT();
+        return false;
+    }
+    AI_LOG_INFO("containerPid: %d", containerPid);
+ 
+    // fork the process
+    pid_t pid = fork();
+    if (pid < 0)
+    {
+        AI_LOG_WARN("failed to vfork %d - %m", errno);
+        //need to close the fds!
+        return false;
+    }
+
+    if (pid == 0)
+    {
+        int fdMnt = syscall(SYS_open_tree, -EBADF, source.c_str(),  OPEN_TREE_CLOEXEC | OPEN_TREE_CLONE);
+        if (fdMnt < 0)
+        {
+            AI_LOG_WARN("open_tree failed errno: %d container: %d", errno, cd);
+            _exit(EXIT_FAILURE);
+        }
+        
+        AI_LOG_INFO("open_tree succeeded fd: %d container: %d", fdMnt, cd);
+        
+        // set the mount attribute to read-only
+        struct mount_attr attr = {
+            .attr_set = MOUNT_ATTR_RDONLY
+        };
+
+        if(syscall(SYS_mount_setattr, fdMnt, "", AT_EMPTY_PATH, attr, sizeof(struct mount_attr)) == -1)
+        {
+            AI_LOG_WARN("mount_setattr failed errno: %d container: %d", errno, cd);
+            close(fdMnt);
+            _exit(EXIT_FAILURE);
+        }
+        AI_LOG_INFO("mount_setattr succeeded for fd: %d container: %d", fdMnt, cd);
+
+        int fdUserNs = mUtilities->getNamespaceFd(containerPid, CLONE_NEWUSER);
+        if (fdUserNs < 0)
+        {
+            AI_LOG_WARN("failed to get user namespace fd for container with descriptor %d", cd);
+            close(fdMnt);
+            _exit(EXIT_FAILURE);
+        }
+        AI_LOG_INFO("getNamespaceFd succeeded. userns fd: %d container: %d", fdUserNs, cd);
+        
+        int fdMountNs = mUtilities->getNamespaceFd(containerPid, CLONE_NEWNS);
+        if (fdMountNs < 0)
+        {
+            AI_LOG_WARN("failed to get mount namespace fd for container with descriptor %d", cd);
+            close(fdMnt);
+            close(fdUserNs);
+            _exit(EXIT_FAILURE);
+        }
+        AI_LOG_INFO("getNamespaceFd succeeded. mount ns fd: %d container: %d", fdMountNs, cd);
+
+        if (setns(fdUserNs, CLONE_NEWUSER) < 0)
+        {
+            AI_LOG_WARN("failed to setns to user namespace for container with descriptor %d (%d - %m)", cd, errno);
+            close(fdMnt);
+            close(fdUserNs);
+            close(fdMountNs);
+            _exit(EXIT_FAILURE);
+        }
+        AI_LOG_INFO("setns succeeded for user namespace for container with descriptor %d", cd);
+        
+        if (setns(fdMountNs, CLONE_NEWNS) < 0)
+        {
+            AI_LOG_WARN("failed to setns to mount namespace for container with descriptor %d(%d - %m)", cd, errno);
+            close(fdMnt);
+            close(fdUserNs);
+            close(fdMountNs);
+            _exit(EXIT_FAILURE);
+        }
+        AI_LOG_INFO("setns succeeded for mount namespace for container with descriptor %d", cd);
+        
+        close(fdMountNs);
+        close(fdUserNs);
+
+        // switch to local user
+        setuid(0);
+        setgid(0);
+        if (mkdir(destination.c_str(), 0755) != 0)
+        {
+            AI_LOG_WARN("failed to create destination directory %s for container with descriptor %d", destination.c_str(), cd);
+            close(fdMnt);
+            _exit(EXIT_FAILURE);
+        }
+
+        AI_LOG_INFO("mkdir succeeded for directory %s on container with descriptor: %d", destination.c_str(), cd);
+
+        int ret = syscall(SYS_move_mount, fdMnt, "",  -EBADF, destination.c_str(), MOVE_MOUNT_F_EMPTY_PATH);
+        if (ret < 0)
+        {
+            AI_LOG_WARN("move_mount failed errno: %d container: %d", errno, cd);
+            close(fdMnt);
+            _exit(EXIT_FAILURE);
+        }
+
+        close(fdMnt);
+        _exit(EXIT_SUCCESS);
+    }
+
+    // wait for the forked child to finish
+    int status;
+    if ((waitpid(pid, &status, 0) == -1) || (WEXITSTATUS(status) != EXIT_SUCCESS))
+    {
+        AI_LOG_ERROR_EXIT("mount operation failed for container with descriptor %d", cd);
+        AI_LOG_FN_EXIT();
+        return false;
+    }
+
+    AI_LOG_INFO("%s is mounted inside %s", source.c_str(),  id.c_str());
+    AI_LOG_FN_EXIT();
+    return true;
+}
+
+// -----------------------------------------------------------------------------
+/**
+ *  @brief removes a mount from a running container
+ *
+ *  @param[in]  cd           The descriptor of the container to checkpoint.
+ *  @param[in]  source
+ *
+ *  @return true if a container was successfully restored.
+ */
+bool DobbyManager::removeMount(int32_t cd, const std::string &source)
+{
+     AI_LOG_FN_ENTRY();
+
+    std::lock_guard<std::mutex> locker(mLock);
+
+    // find the container
+    auto it = mContainers.cbegin();
+    for (; it != mContainers.cend(); ++it)
+    {
+        if (it->second && (it->second->descriptor == cd))
+            break;
+    }
+
+    if (it == mContainers.cend())
+    {
+        AI_LOG_WARN("failed to find container with descriptor %d", cd);
+        AI_LOG_FN_EXIT();
+        return false;
+    }
+
+    const ContainerId &id = it->first;
+    
+    const pid_t containerPid = it->second->containerPid;
+    if (containerPid == 0)
+    {
+        AI_LOG_WARN("failed to find container pid for container with descriptor %d", cd);
+        AI_LOG_FN_EXIT();
+        return false;
+    }
+    
+    AI_LOG_INFO("containerPid: %d", containerPid);
+
+    // fork the process
+    pid_t pid = fork();
+    if (pid < 0)
+    {
+        AI_LOG_WARN("failed to vfork %d - %m", errno);
+        //need to close the fds!
+        return false;
+    }
+
+    if (pid == 0)
+    {
+        int fdUserNs = mUtilities->getNamespaceFd(containerPid, CLONE_NEWUSER);
+        if (fdUserNs < 0)
+        {
+            AI_LOG_WARN("failed to get user namespace fd for container with descriptor %d", cd);
+            _exit(EXIT_FAILURE);
+        }
+        AI_LOG_INFO("getNamespaceFd succeeded. userns fd: %d container: %d", fdUserNs, cd);
+        
+        int fdMountNs = mUtilities->getNamespaceFd(containerPid, CLONE_NEWNS);
+        if (fdMountNs < 0)
+        {
+            AI_LOG_WARN("failed to get mount namespace fd for container with descriptor %d", cd);
+            close(fdUserNs);
+            _exit(EXIT_FAILURE);
+        }
+        AI_LOG_INFO("getNamespaceFd succeeded. mount ns fd: %d container: %d", fdMountNs, cd);
+
+        if (setns(fdUserNs, CLONE_NEWUSER) < 0)
+        {
+            AI_LOG_WARN("failed to setns to user namespace for container with descriptor %d (%d - %m)", cd, errno);
+            close(fdUserNs);
+            close(fdMountNs);
+            _exit(EXIT_FAILURE);
+        }
+        AI_LOG_INFO("setns succeeded for user namespace for container with descriptor %d", cd);
+        
+        if (setns(fdMountNs, CLONE_NEWNS) < 0)
+        {
+            AI_LOG_WARN("failed to setns to mount namespace for container with descriptor %d(%d - %m)", cd, errno);
+            close(fdUserNs);
+            close(fdMountNs);
+            _exit(EXIT_FAILURE);
+        }
+        AI_LOG_INFO("setns succeeded for mount namespace for container with descriptor %d", cd);
+        
+        close(fdMountNs);
+        close(fdUserNs);
+
+        // switch to local user
+        setuid(0);
+        setgid(0);
+
+        int ret = syscall(SYS_umount2, source.c_str(), MNT_DETACH);
+        if (ret < 0)
+        {
+            AI_LOG_WARN("umount failed for %s errno: %d container: %d", source.c_str(), errno, cd);
+            _exit(EXIT_FAILURE);
+        }
+        
+        if (rmdir(source.c_str()) != 0)
+        {
+            AI_LOG_WARN("failed to remove source directory %s for container with descriptor %d", source.c_str(), cd);
+            _exit(EXIT_FAILURE);
+        }
+        _exit(EXIT_SUCCESS);
+    }
+
+    // wait for the forked child to finish
+    int status;
+    if ((waitpid(pid, &status, 0) == -1) || (WEXITSTATUS(status) != EXIT_SUCCESS))
+    {
+        AI_LOG_ERROR_EXIT("unmount operation failed for container with descriptor %d", cd);
+        AI_LOG_FN_EXIT();
+        return false;
+    }
+
+
+    AI_LOG_INFO("%s is unmounted inside %s", source.c_str(),  id.c_str());
     AI_LOG_FN_EXIT();
     return true;
 }

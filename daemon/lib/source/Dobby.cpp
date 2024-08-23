@@ -650,6 +650,8 @@ void Dobby::initIpcMethods()
         {   DOBBY_CTRL_INTERFACE,        DOBBY_CTRL_METHOD_RESUME,                  &Dobby::resume                 },
         {   DOBBY_CTRL_INTERFACE,        DOBBY_CTRL_METHOD_HIBERNATE,               &Dobby::hibernate              },
         {   DOBBY_CTRL_INTERFACE,        DOBBY_CTRL_METHOD_WAKEUP,                  &Dobby::wakeup                 },
+        {   DOBBY_CTRL_INTERFACE,        DOBBY_CTRL_METHOD_MOUNT,                   &Dobby::addMount                  },
+        {   DOBBY_CTRL_INTERFACE,        DOBBY_CTRL_METHOD_UNMOUNT,                 &Dobby::removeMount                },
         {   DOBBY_CTRL_INTERFACE,        DOBBY_CTRL_METHOD_EXEC,                    &Dobby::exec                   },
         {   DOBBY_CTRL_INTERFACE,        DOBBY_CTRL_METHOD_GETSTATE,                &Dobby::getState               },
         {   DOBBY_CTRL_INTERFACE,        DOBBY_CTRL_METHOD_GETINFO,                 &Dobby::getInfo                },
@@ -1410,6 +1412,118 @@ void Dobby::wakeup(std::shared_ptr<AI_IPC::IAsyncReplySender> replySender)
             {
                 // Try and wakeup the container
                 bool result = manager->wakeupContainer(descriptor);
+
+                // Fire off the reply
+                if (!replySender->sendReply({ result }))
+                {
+                    AI_LOG_ERROR("failed to send reply");
+                }
+            };
+
+        // Queue the work, if successful then we're done
+        if (mWorkQueue->postWork(std::move(doWakeupLambda)))
+        {
+            AI_LOG_FN_EXIT();
+            return;
+        }
+    }
+
+    // Fire off the reply
+    AI_IPC::VariantList results = { false };
+    if (!replySender->sendReply(results))
+    {
+        AI_LOG_ERROR("failed to send reply");
+    }
+
+    AI_LOG_FN_EXIT();
+}
+
+// -----------------------------------------------------------------------------
+/**
+ *  @brief mount a USB mass storage device inside container
+ *
+ *
+ *
+ *
+ */
+void Dobby::addMount(std::shared_ptr<AI_IPC::IAsyncReplySender> replySender)
+{
+    AI_LOG_FN_ENTRY();
+
+    // Expecting 4 arguments  (int32_t cd, string source, string target, int32_t mountFlags)
+    int32_t descriptor;
+    std::string source;
+    std::string destination;
+    int32_t mountFlags;
+
+    if (!AI_IPC::parseVariantList
+            <int32_t, std::string, std::string, int32_t>
+            (replySender->getMethodCallArguments(), &descriptor, &source, &destination, &mountFlags))
+    {
+        AI_LOG_ERROR("error getting the args");
+    }
+    else
+    {
+        auto doWakeupLambda =
+            [manager = mManager, descriptor, source, destination, mountFlags, replySender]()
+            {
+                // Try and wakeup the container
+                bool result = manager->addMount(descriptor, source, destination, mountFlags);
+
+                // Fire off the reply
+                if (!replySender->sendReply({ result }))
+                {
+                    AI_LOG_ERROR("failed to send reply");
+                }
+            };
+
+        // Queue the work, if successful then we're done
+        if (mWorkQueue->postWork(std::move(doWakeupLambda)))
+        {
+            AI_LOG_FN_EXIT();
+            return;
+        }
+    }
+
+    // Fire off the reply
+    AI_IPC::VariantList results = { false };
+    if (!replySender->sendReply(results))
+    {
+        AI_LOG_ERROR("failed to send reply");
+    }
+
+    AI_LOG_FN_EXIT();
+}
+
+// -----------------------------------------------------------------------------
+/**
+ *  @brief unmount a USB mass storage device inside container
+ *
+ *
+ *
+ *
+ */
+void Dobby::removeMount(std::shared_ptr<AI_IPC::IAsyncReplySender> replySender)
+{
+    AI_LOG_FN_ENTRY();
+
+    // Expecting 2 arguments  (int32_t cd, string source)
+    int32_t descriptor;
+    std::string source;
+
+    if (!AI_IPC::parseVariantList
+            <int32_t, std::string>
+            (replySender->getMethodCallArguments(), &descriptor, &source))
+    {
+        AI_LOG_ERROR("error getting the args");
+    }
+    else
+    {
+        auto doWakeupLambda =
+            [manager = mManager, descriptor, source, replySender]()
+            {
+                // Try and wakeup the container
+                bool result = manager->removeMount(descriptor, source);
 
                 // Fire off the reply
                 if (!replySender->sendReply({ result }))

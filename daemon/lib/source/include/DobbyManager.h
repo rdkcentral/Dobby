@@ -122,6 +122,13 @@ public:
     bool hibernateContainer(int32_t cd, const std::string& options);
     bool wakeupContainer(int32_t cd);
 
+    bool addMount(int32_t cd, 
+                  const std::string& source, 
+                  const std::string& destination, 
+                  int32_t mountFlags);
+
+    bool removeMount(int32_t cd, const std::string& source);
+
     bool execInContainer(int32_t cd,
                          const std::string& options,
                          const std::string& command);

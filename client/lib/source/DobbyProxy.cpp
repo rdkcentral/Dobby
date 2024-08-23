@@ -892,6 +892,75 @@ bool DobbyProxy::wakeupContainer(int32_t cd) const
 
 // -----------------------------------------------------------------------------
 /**
+ *  @brief mounts a USB mass storage device inside container
+ *
+ *  @param[in]  cd              The container descriptor.
+ *  @param[in]  source          path of the mount device on the host
+ *  @param[in]  destination     path of the mount on the container 
+ *  @param[in]  mountFlags      should contain OPEN_TREE_CLONE
+ *
+ *  @return true on success, false on failure.
+ */
+bool DobbyProxy::addContainerMount(int32_t cd, const std::string& source, const std::string& destination, int32_t mountFlags) const
+{
+    AI_LOG_FN_ENTRY();
+
+    // Send off the request
+    const AI_IPC::VariantList params = { cd, source, destination, mountFlags};
+    AI_IPC::VariantList returns;
+
+    bool result = false;
+
+    if (invokeMethod(DOBBY_CTRL_INTERFACE,
+                     DOBBY_CTRL_METHOD_MOUNT,
+                     params, returns))
+    {
+        if (!AI_IPC::parseVariantList<bool>(returns, &result))
+        {
+            result = false;
+        }
+    }
+
+    AI_LOG_FN_EXIT();
+    return result;
+}
+
+// -----------------------------------------------------------------------------
+/**
+ *  @brief unmounts a USB mass storage device inside the container
+ *
+ *  @param[in]  cd              The container descriptor.
+ *  @param[in]  source          path of the mount device on the host
+ *
+ *  @return true on success, false on failure.
+ */
+bool DobbyProxy::removeContainerMount(int32_t cd, const std::string &source) const
+{
+
+    AI_LOG_FN_ENTRY();
+
+    // Send off the request
+    const AI_IPC::VariantList params = { cd, source };
+    AI_IPC::VariantList returns;
+
+    bool result = false;
+
+    if (invokeMethod(DOBBY_CTRL_INTERFACE,
+                     DOBBY_CTRL_METHOD_UNMOUNT,
+                     params, returns))
+    {
+        if (!AI_IPC::parseVariantList<bool>(returns, &result))
+        {
+            result = false;
+        }
+    }
+
+    AI_LOG_FN_EXIT();
+    return result;
+}
+
+// -----------------------------------------------------------------------------
+/**
  *  @brief Executes a command in the given container.
  *
  *  @param[in]  cd              The container descriptor.
