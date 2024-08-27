@@ -128,11 +128,14 @@ endif()
 
 message("Using settings from ${DOBBY_SETTINGS_FILE}")
 
-install(
-        FILES       "${DOBBY_SETTINGS_FILE}"
-        RENAME      dobby.json
-        DESTINATION /etc/ )
-
+if ( "${DOBBY_SETTINGS_FILE}" STREQUAL "DONT_INSTALL_DEVICESETTINGSFILE" )
+        message("Skipping the installation of device settings file")
+else()
+        install(
+                FILES       "${DOBBY_SETTINGS_FILE}"
+                RENAME      dobby.json
+                DESTINATION /etc/ )
+endif()
 
 if (USE_SYSTEMD)
         # Install a systemd launch service config and enables it by default
