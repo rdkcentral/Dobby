@@ -126,11 +126,10 @@ else()
         endif()
 endif()
 
-message("Using settings from ${DOBBY_SETTINGS_FILE}")
-
 if ( "${DOBBY_SETTINGS_FILE}" STREQUAL "DONT_INSTALL_DEVICESETTINGSFILE" )
         message("Skipping the installation of device settings file")
 else()
+        message("Using settings from ${DOBBY_SETTINGS_FILE}")
         install(
                 FILES       "${DOBBY_SETTINGS_FILE}"
                 RENAME      dobby.json
