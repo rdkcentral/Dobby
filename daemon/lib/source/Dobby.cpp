@@ -1464,10 +1464,10 @@ void Dobby::addMount(std::shared_ptr<AI_IPC::IAsyncReplySender> replySender)
     }
     else
     {
-        auto doWakeupLambda =
+        auto doMountLambda =
             [manager = mManager, descriptor, source, destination, mountFlags, replySender]()
             {
-                // Try and wakeup the container
+                // add the mount inside the container
                 bool result = manager->addMount(descriptor, source, destination, mountFlags);
 
                 // Fire off the reply
@@ -1478,7 +1478,7 @@ void Dobby::addMount(std::shared_ptr<AI_IPC::IAsyncReplySender> replySender)
             };
 
         // Queue the work, if successful then we're done
-        if (mWorkQueue->postWork(std::move(doWakeupLambda)))
+        if (mWorkQueue->postWork(std::move(doMountLambda)))
         {
             AI_LOG_FN_EXIT();
             return;
@@ -1519,10 +1519,10 @@ void Dobby::removeMount(std::shared_ptr<AI_IPC::IAsyncReplySender> replySender)
     }
     else
     {
-        auto doWakeupLambda =
+        auto doUnmountLambda =
             [manager = mManager, descriptor, source, replySender]()
             {
-                // Try and wakeup the container
+                //remove the mount inside the container
                 bool result = manager->removeMount(descriptor, source);
 
                 // Fire off the reply
@@ -1533,7 +1533,7 @@ void Dobby::removeMount(std::shared_ptr<AI_IPC::IAsyncReplySender> replySender)
             };
 
         // Queue the work, if successful then we're done
-        if (mWorkQueue->postWork(std::move(doWakeupLambda)))
+        if (mWorkQueue->postWork(std::move(doUnmountLambda)))
         {
             AI_LOG_FN_EXIT();
             return;
