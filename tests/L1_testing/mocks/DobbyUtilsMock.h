@@ -53,5 +53,7 @@ public:
     MOCK_METHOD(bool, callInNamespaceImpl, (pid_t pid, int nsType, const std::function<void()>& func), (const, override));
     MOCK_METHOD(bool, callInNamespaceImpl, (int namespaceFd, const std::function<void()>& func), (const, override));
     MOCK_METHOD(int, startTimerImpl, (const std::chrono::milliseconds& timeout,bool oneShot,const std::function<bool()>& handler), (const, override));
+    MOCK_METHOD(gid_t, getUID, (pid_t pid), (const, override));
+    MOCK_METHOD(gid_t, getGID, (pid_t pid), (const, override));
 
 };
