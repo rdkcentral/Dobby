@@ -100,6 +100,7 @@ jobs:
           -o coverage/${{ matrix.build_type }}/${{ matrix.extra_flags }}/coverage
           -t "dobby coverage"
           filtered_coverage.info
+
       - name: Upload artifacts
         if: ${{ !env.ACT && matrix.coverage == 'with-coverage' && matrix.extra_flags == 'RUN_TESTS' && matrix.build_type == 'Debug' }}
         uses: actions/upload-artifact@v4
