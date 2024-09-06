@@ -128,7 +128,7 @@ bool DobbyManager::wakeupContainer(int32_t cd)
 bool DobbyManager::addMount(int32_t cd, 
                         const std::string& source, 
                         const std::string& destination, 
-                        int32_t mountFlags)
+                        const std::string& mountFlags)
 {
    EXPECT_NE(impl, nullptr);
 

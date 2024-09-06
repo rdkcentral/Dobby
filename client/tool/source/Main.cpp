@@ -623,7 +623,7 @@ static void mountCommand(const std::shared_ptr<IDobbyProxy>& dobbyProxy,
     }
     else
     {
-        if (!dobbyProxy->addContainerMount(cd, source, destination, std::stoi(mountFlags)))
+        if (!dobbyProxy->addContainerMount(cd, source, destination, mountFlags))
         {
             readLine->printLnError("failed to mount %s inside the container %s", source.c_str(), id.c_str());
         }

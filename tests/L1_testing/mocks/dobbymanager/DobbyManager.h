@@ -95,7 +95,7 @@ public:
 
     virtual bool wakeupContainer(int32_t cd) = 0;
     
-    virtual bool addMount(int32_t cd, const std::string& source, const std::string& destination, int32_t mountFlags) = 0;
+    virtual bool addMount(int32_t cd, const std::string& source, const std::string& destination, const std::string& mountFlags) = 0;
 
     virtual bool removeMount(int32_t cd, const std::string& source) = 0;
     
@@ -161,7 +161,7 @@ public:
     bool resumeContainer(int32_t cd);
     bool hibernateContainer(int32_t cd, const std::string& options);
     bool wakeupContainer(int32_t cd);
-    bool addMount(int32_t cd, const std::string& source, const std::string& destination, int32_t mountFlags);
+    bool addMount(int32_t cd, const std::string& source, const std::string& destination, const std::string& mountFlags);
     bool removeMount(int32_t cd, const std::string& source);
     bool execInContainer(int32_t cd,
                                 const std::string& options,

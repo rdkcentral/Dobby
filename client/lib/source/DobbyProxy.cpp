@@ -897,11 +897,13 @@ bool DobbyProxy::wakeupContainer(int32_t cd) const
  *  @param[in]  cd              The container descriptor.
  *  @param[in]  source          path of the mount device on the host
  *  @param[in]  destination     path of the mount on the container 
- *  @param[in]  mountFlags      should contain OPEN_TREE_CLONE
+ *  @param[in]  mountFlags      The mount flags is a string with comma separated list of flags
+ *                              e.g. "rbind,ro"
+ *                              it should include "bind"
  *
  *  @return true on success, false on failure.
  */
-bool DobbyProxy::addContainerMount(int32_t cd, const std::string& source, const std::string& destination, int32_t mountFlags) const
+bool DobbyProxy::addContainerMount(int32_t cd, const std::string& source, const std::string& destination, const std::string& mountFlags) const
 {
     AI_LOG_FN_ENTRY();
 

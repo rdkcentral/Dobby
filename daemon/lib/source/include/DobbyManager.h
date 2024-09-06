@@ -125,7 +125,7 @@ public:
     bool addMount(int32_t cd, 
                   const std::string& source, 
                   const std::string& destination, 
-                  int32_t mountFlags);
+                  const std::string& mountFlags);
 
     bool removeMount(int32_t cd, const std::string& source);
 

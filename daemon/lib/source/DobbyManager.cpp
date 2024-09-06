@@ -1743,13 +1743,14 @@ bool DobbyManager::wakeupContainer(int32_t cd)
  *  @brief adds a mount to a running container
  *
  *  @param[in]  cd           The descriptor of the container to checkpoint.
- *  @param[in]  source
- *  @param[in]  destination
- *  @param[in]  mountFlags
+ *  @param[in]  source       The source path of the mount
+ *  @param[in]  destination  The destination path of the mount
+ *  @param[in]  mountFlags   The mount flags is a string with comma separated list of flags
+ *                           e.g. "rbind,ro"
  *
  *  @return true if a container was successfully restored.
  */
-bool DobbyManager::addMount(int32_t cd, const std::string &source, const std::string &destination, int32_t mountFlags)
+bool DobbyManager::addMount(int32_t cd, const std::string &source, const std::string &destination, const std::string &mountFlags)
 {
      AI_LOG_FN_ENTRY();
 
@@ -1803,21 +1804,61 @@ bool DobbyManager::addMount(int32_t cd, const std::string &source, const std::st
         AI_LOG_FN_EXIT();
         return false;
     }
-
-    // set the mount attribute to read-only
-    struct mount_attr attr = {
-        .attr_set = MOUNT_ATTR_RDONLY
+    
+    static const std::vector<std::pair<std::string, unsigned long>> mountFlagsNames =
+    {
+        {   "rbind",       MS_BIND | MS_REC  },
+        {   "bind",        MS_BIND           },
+        {   "silent",      MS_SILENT         },
+        {   "ro",          MS_RDONLY         },
+        {   "sync",        MS_SYNCHRONOUS    },
+        {   "dirsync",     MS_DIRSYNC        },
+        {   "noatime",     MS_NOATIME        },
+        {   "nodiratime",  MS_NODIRATIME     },
+        {   "relatime",    MS_RELATIME       },
+        {   "strictatime", MS_STRICTATIME    },
+        {   "noexec",      MS_NOEXEC         },
+        {   "nodev",       MS_NODEV          },
+        {   "nosuid",      MS_NOSUID         },
     };
 
-    if(syscall(SYS_mount_setattr, fdMnt, "", AT_EMPTY_PATH, attr, sizeof(struct mount_attr)) == -1)
+    // convert the comma seperated mountFlags string to a single unsigned long
+    std::istringstream iss(mountFlags);
+    unsigned long mountOptions = 0;
+
+    while(iss.good())
     {
-        AI_LOG_ERROR("mount_setattr failed errno: %d container: %d", errno, cd);
+        std::string flag;
+        std::getline(iss, flag, ',');
+
+        bool found = false;
+        for (const auto &flagName : mountFlagsNames)
+        {
+            if (flag == flagName.first)
+            {
+                mountOptions |= flagName.second;
+                found = true;
+                AI_LOG_INFO("found flag: %s, value: %lu", flag.c_str(), flagName.second);
+                break;
+            }
+        }
+
+        if (!found)
+        {
+            AI_LOG_ERROR("unknown mount flag: %s, ignoring it", flag.c_str());
+        }
+    }
+ 
+    // return error if MS_BIND is not set
+    if (!(mountOptions & MS_BIND))
+    {
+        AI_LOG_ERROR("MS_BIND flag is not set, aborting mount operation");
         close(fdMnt);
         AI_LOG_FN_EXIT();
         return false;
     }
 
-    auto doMoveMountLambda = [fdMnt, containerUID, containerGID, destination]()
+    auto doMoveMountLambda = [fdMnt, containerUID, containerGID, destination, mountOptions]()
     {
         // switch to uid / gid of the host since we are still in the host user namespace
         if (syscall(SYS_setresgid, -1, containerGID, -1) != 0)
@@ -1857,6 +1898,12 @@ bool DobbyManager::addMount(int32_t cd, const std::string &source, const std::st
             AI_LOG_ERROR("move_mount failed errno: %d", errno);
             return false;
         }
+    
+        if(mount("none", destination.c_str(), nullptr, MS_REMOUNT | mountOptions, nullptr))
+        {
+            AI_LOG_WARN("remount failed for %s errno: %d", destination.c_str(), errno);
+        }
+        
         return true;
 
     };

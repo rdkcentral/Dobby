@@ -1450,14 +1450,14 @@ void Dobby::addMount(std::shared_ptr<AI_IPC::IAsyncReplySender> replySender)
 {
     AI_LOG_FN_ENTRY();
 
-    // Expecting 4 arguments  (int32_t cd, string source, string target, int32_t mountFlags)
+    // Expecting 4 arguments  (int32_t cd, string source, string target, string mountFlags)
     int32_t descriptor;
     std::string source;
     std::string destination;
-    int32_t mountFlags;
+    std::string mountFlags;
 
     if (!AI_IPC::parseVariantList
-            <int32_t, std::string, std::string, int32_t>
+            <int32_t, std::string, std::string, std::string>
             (replySender->getMethodCallArguments(), &descriptor, &source, &destination, &mountFlags))
     {
         AI_LOG_ERROR("error getting the args");

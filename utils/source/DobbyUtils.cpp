@@ -564,7 +564,6 @@ void DobbyUtils::nsThread(int newNsFd, int nsType, bool* success,
     // execute the caller's function
      *success = func();
 
-    //*success = true;
     AI_LOG_FN_EXIT();
 }
 

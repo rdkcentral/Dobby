@@ -103,7 +103,7 @@ public:
 
     bool wakeupContainer(int32_t descriptor) const override;
     
-    bool addContainerMount(int32_t descriptor, const std::string& source, const std::string& destination, int32_t mountFlags) const override;
+    bool addContainerMount(int32_t descriptor, const std::string& source, const std::string& destination, const std::string& mountFlags) const override;
     
     bool removeContainerMount(int32_t descriptor, const std::string& source) const override;
 

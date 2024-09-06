@@ -148,7 +148,7 @@ public:
 
     virtual bool wakeupContainer(int32_t descriptor) const = 0;
 
-    virtual bool addContainerMount(int32_t descriptor, const std::string& source, const std::string& destination, int32_t mountFlags) const = 0;
+    virtual bool addContainerMount(int32_t descriptor, const std::string& source, const std::string& destination, const std::string& mountFlags) const = 0;
     
     virtual bool removeContainerMount(int32_t descriptor, const std::string& source) const = 0;
 

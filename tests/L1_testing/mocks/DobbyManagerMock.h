@@ -60,7 +60,7 @@ public:
 
     MOCK_METHOD(bool, wakeupContainer, (int32_t cd), (override));
 
-    MOCK_METHOD(bool, addMount, (int32_t cd, const std::string& source, const std::string& destination, int32_t mountFlags), (override));
+    MOCK_METHOD(bool, addMount, (int32_t cd, const std::string& source, const std::string& destination, const std::string& mountFlags), (override));
 
     MOCK_METHOD(bool, removeMount, (int32_t cd, const std::string& source), (override));
 
