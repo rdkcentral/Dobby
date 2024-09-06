@@ -1838,7 +1838,6 @@ bool DobbyManager::addMount(int32_t cd, const std::string &source, const std::st
             {
                 mountOptions |= flagName.second;
                 found = true;
-                AI_LOG_INFO("found flag: %s, value: %lu", flag.c_str(), flagName.second);
                 break;
             }
         }
