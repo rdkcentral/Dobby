@@ -476,7 +476,10 @@ void DobbyManager::cleanupContainersShutdown()
     while (it != mContainers.end())
     {
         if ((it->second->state == DobbyContainer::State::Running) || \
-            (it->second->state == DobbyContainer::State::Paused))
+            (it->second->state == DobbyContainer::State::Paused) || \
+            (it->second->state == DobbyContainer::State::Hibernating) || \
+            (it->second->state == DobbyContainer::State::Hibernated) || \
+            (it->second->state == DobbyContainer::State::Awakening))
         {
             AI_LOG_INFO("Stopping container %s", it->first.c_str());
             // By calling the "proper" stop method here, any listening services will be
