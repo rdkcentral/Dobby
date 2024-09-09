@@ -61,7 +61,11 @@
 #include <chrono>
 #include <thread>
 #include <sys/syscall.h>
-#include <linux/mount.h>
+
+#ifdef HAVE_LINUX_MOUNT_H
+#  include <linux/mount.h>
+#endif
+
 #include <linux/types.h>
 
 #if defined(USE_SYSTEMD)
@@ -1799,15 +1803,6 @@ bool DobbyManager::addMount(int32_t cd, const std::string &source, const std::st
         AI_LOG_FN_EXIT();
         return false;
     }
-
-    int fdMnt = syscall(SYS_open_tree, -EBADF, source.c_str(),  OPEN_TREE_CLOEXEC | OPEN_TREE_CLONE);
-    if (fdMnt < 0)
-    {
-        AI_LOG_ERROR("open_tree failed errno: %d container: %d", errno, cd);
-        AI_LOG_FN_EXIT();
-        return false;
-    }
-    
     static const std::vector<std::pair<std::string, unsigned long>> mountFlagsNames =
     {
         {   "rbind",       MS_BIND | MS_REC  },
@@ -1855,7 +1850,15 @@ bool DobbyManager::addMount(int32_t cd, const std::string &source, const std::st
     if (!(mountOptions & MS_BIND))
     {
         AI_LOG_ERROR("MS_BIND flag is not set, aborting mount operation");
-        close(fdMnt);
+        AI_LOG_FN_EXIT();
+        return false;
+    }
+
+#ifdef HAVE_LINUX_MOUNT_H
+    int fdMnt = syscall(SYS_open_tree, -EBADF, source.c_str(),  OPEN_TREE_CLOEXEC | OPEN_TREE_CLONE);
+    if (fdMnt < 0)
+    {
+        AI_LOG_ERROR("open_tree failed errno: %d container: %d", errno, cd);
         AI_LOG_FN_EXIT();
         return false;
     }
@@ -1923,6 +1926,11 @@ bool DobbyManager::addMount(int32_t cd, const std::string &source, const std::st
     AI_LOG_INFO("%s is mounted on %s inside %s", source.c_str(), destination.c_str(), id.c_str());
     AI_LOG_FN_EXIT();
     return true;
+#else
+    AI_LOG_ERROR("open_tree and move_mount are not supported on this platform, aborting mount operation inside %s", id.c_str());
+    AI_LOG_FN_EXIT();
+    return false;
+#endif
 }
 
 // -----------------------------------------------------------------------------
