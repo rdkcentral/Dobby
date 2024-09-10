@@ -1752,12 +1752,13 @@ bool DobbyManager::wakeupContainer(int32_t cd)
  *  @param[in]  cd           The descriptor of the container to checkpoint.
  *  @param[in]  source       The source path of the mount
  *  @param[in]  destination  The destination path of the mount
- *  @param[in]  mountFlags   The mount flags is a string with comma separated list of flags
- *                           e.g. "rbind,ro"
+ *  @param[in]  mountFlags   The mount flags is vector of strings containing the mount flags
+ *                           e.g. "rbind, ro"
+ *  @param[in]  mountData    a string containing the mountdata 
  *
  *  @return true if a container was successfully restored.
  */
-bool DobbyManager::addMount(int32_t cd, const std::string &source, const std::string &destination, const std::string &mountFlags)
+bool DobbyManager::addMount(int32_t cd, const std::string &source, const std::string &destination, const std::vector<std::string> &mountFlags, const std::string &mountData)
 {
      AI_LOG_FN_ENTRY();
 
@@ -1820,15 +1821,10 @@ bool DobbyManager::addMount(int32_t cd, const std::string &source, const std::st
         {   "nosuid",      MS_NOSUID         },
     };
 
-    // convert the comma seperated mountFlags string to a single unsigned long
-    std::istringstream iss(mountFlags);
+    // convert mountFlags strings vector to a single unsigned long
     unsigned long mountOptions = 0;
-
-    while(iss.good())
+    for (const auto &flag : mountFlags)
     {
-        std::string flag;
-        std::getline(iss, flag, ',');
-
         bool found = false;
         for (const auto &flagName : mountFlagsNames)
         {
@@ -1845,7 +1841,7 @@ bool DobbyManager::addMount(int32_t cd, const std::string &source, const std::st
             AI_LOG_ERROR("unknown mount flag: %s, ignoring it", flag.c_str());
         }
     }
- 
+
     // return error if MS_BIND is not set
     if (!(mountOptions & MS_BIND))
     {
@@ -1863,7 +1859,7 @@ bool DobbyManager::addMount(int32_t cd, const std::string &source, const std::st
         return false;
     }
 
-    auto doMoveMountLambda = [fdMnt, containerUID, containerGID, destination, mountOptions]()
+    auto doMoveMountLambda = [fdMnt, containerUID, containerGID, destination, mountOptions, mountData]()
     {
         // switch to uid / gid of the host since we are still in the host user namespace
         if (syscall(SYS_setresgid, -1, containerGID, -1) != 0)
@@ -1903,7 +1899,8 @@ bool DobbyManager::addMount(int32_t cd, const std::string &source, const std::st
             AI_LOG_ERROR("move_mount failed errno: %d", errno);
             return false;
         }
-    
+        
+        // mountData is ignored since we only support MS_BIND for now
         if(mount("none", destination.c_str(), nullptr, MS_REMOUNT | mountOptions, nullptr))
         {
             AI_LOG_WARN("remount failed for %s errno: %d", destination.c_str(), errno);

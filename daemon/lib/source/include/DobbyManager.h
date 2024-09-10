@@ -125,7 +125,8 @@ public:
     bool addMount(int32_t cd, 
                   const std::string& source, 
                   const std::string& destination, 
-                  const std::string& mountFlags);
+                  const std::vector<std::string>& mountFlags,
+                  const std::string& mountData);
 
     bool removeMount(int32_t cd, const std::string& source);
 

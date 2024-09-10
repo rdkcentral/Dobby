@@ -614,8 +614,26 @@ static void mountCommand(const std::shared_ptr<IDobbyProxy>& dobbyProxy,
     }
     std::string source(args[1]);
     std::string destination(args[2]);
-    std::string mountFlags(args[3]);
-    
+    std::vector<std::string> mountFlags;
+    std::string mountData;
+
+    // parse args[3] which is a comma separated list of flags into a vector of strings
+    std::string flags = args[3];
+    size_t pos = 0;
+    while ((pos = flags.find(",")) != std::string::npos)
+    {
+        std::string flag = flags.substr(0, pos);
+        mountFlags.push_back(flag);
+        flags.erase(0, pos + 1);
+    }
+    mountFlags.push_back(flags);
+
+    // mountData is optional for now
+    if(args.size() >= 5 && !args[4].empty())
+    {
+        mountData = args[4];
+    }
+
     int32_t cd = getContainerDescriptor(dobbyProxy, id);
     if (cd < 0)
     {
@@ -623,7 +641,7 @@ static void mountCommand(const std::shared_ptr<IDobbyProxy>& dobbyProxy,
     }
     else
     {
-        if (!dobbyProxy->addContainerMount(cd, source, destination, mountFlags))
+        if (!dobbyProxy->addContainerMount(cd, source, destination, mountFlags, mountData))
         {
             readLine->printLnError("failed to mount %s inside the container %s", source.c_str(), id.c_str());
         }
@@ -1270,7 +1288,7 @@ static void initCommands(const std::shared_ptr<IReadLine>& readLine,
     
     readLine->addCommand("mount",
                          std::bind(mountCommand, dobbyProxy, std::placeholders::_1, std::placeholders::_2),
-                         "mount <id> <source> <destination> <mountFlags>",
+                         "mount <id> <source> <destination> <mountFlags> <mountData>",
                          "mount a USB mass storage device\n",
                          "\n");
     

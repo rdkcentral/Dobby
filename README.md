@@ -137,7 +137,7 @@ pause             pause <id>
 resume            resume <id>
 hibernate         hibernate [options...] <id>
 wakeup            wakeup <id>
-mount             mount <id> <source> <destination> <mountFlags>
+mount             mount <id> <source> <destination> <mountFlags> <mountData>
 unmount           unmount <id> <source>
 exec              exec [options...] <id> <command>
 list              list

@@ -897,18 +897,19 @@ bool DobbyProxy::wakeupContainer(int32_t cd) const
  *  @param[in]  cd              The container descriptor.
  *  @param[in]  source          path of the mount device on the host
  *  @param[in]  destination     path of the mount on the container 
- *  @param[in]  mountFlags      The mount flags is a string with comma separated list of flags
+ *  @param[in]  mountFlags      The mount flags is a vector of srings containing the mount optiosn
  *                              e.g. "rbind,ro"
  *                              it should include "bind"
+ *  @param[in]  mountData       string containing the mount data
  *
  *  @return true on success, false on failure.
  */
-bool DobbyProxy::addContainerMount(int32_t cd, const std::string& source, const std::string& destination, const std::string& mountFlags) const
+bool DobbyProxy::addContainerMount(int32_t cd, const std::string& source, const std::string& destination,  const std::vector<std::string>& mountFlags, const std::string& mountData) const
 {
     AI_LOG_FN_ENTRY();
 
     // Send off the request
-    const AI_IPC::VariantList params = { cd, source, destination, mountFlags};
+    const AI_IPC::VariantList params = { cd, source, destination, mountFlags, mountData};
     AI_IPC::VariantList returns;
 
     bool result = false;

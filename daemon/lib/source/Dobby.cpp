@@ -1454,21 +1454,22 @@ void Dobby::addMount(std::shared_ptr<AI_IPC::IAsyncReplySender> replySender)
     int32_t descriptor;
     std::string source;
     std::string destination;
-    std::string mountFlags;
+    std::vector<std::string> mountFlags;
+    std::string mountData;
 
     if (!AI_IPC::parseVariantList
-            <int32_t, std::string, std::string, std::string>
-            (replySender->getMethodCallArguments(), &descriptor, &source, &destination, &mountFlags))
+            <int32_t, std::string, std::string, std::vector<std::string>, std::string>
+            (replySender->getMethodCallArguments(), &descriptor, &source, &destination, &mountFlags, &mountData))
     {
         AI_LOG_ERROR("error getting the args");
     }
     else
     {
         auto doMountLambda =
-            [manager = mManager, descriptor, source, destination, mountFlags, replySender]()
+            [manager = mManager, descriptor, source, destination, mountFlags, mountData, replySender]()
             {
                 // add the mount inside the container
-                bool result = manager->addMount(descriptor, source, destination, mountFlags);
+                bool result = manager->addMount(descriptor, source, destination, mountFlags, mountData);
 
                 // Fire off the reply
                 if (!replySender->sendReply({ result }))
