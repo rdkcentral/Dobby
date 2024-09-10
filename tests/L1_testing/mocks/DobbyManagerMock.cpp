@@ -128,11 +128,12 @@ bool DobbyManager::wakeupContainer(int32_t cd)
 bool DobbyManager::addMount(int32_t cd, 
                         const std::string& source, 
                         const std::string& destination, 
-                        const std::string& mountFlags)
+                        const std::vector<std::string>& mountFlags,
+                        const std::string& mountData)
 {
    EXPECT_NE(impl, nullptr);
 
-    return impl->addMount(cd, source, destination, mountFlags);
+    return impl->addMount(cd, source, destination, mountFlags, mountData);
 }
 
 bool DobbyManager::removeMount(int32_t cd, const std::string& source)
