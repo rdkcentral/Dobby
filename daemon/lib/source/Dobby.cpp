@@ -1450,7 +1450,7 @@ void Dobby::addMount(std::shared_ptr<AI_IPC::IAsyncReplySender> replySender)
 {
     AI_LOG_FN_ENTRY();
 
-    // Expecting 4 arguments  (int32_t cd, string source, string target, string mountFlags)
+    // Expecting 5 arguments  (int32_t cd, string source, string target, std::vector<std::string> mountFlags, string mountData)
     int32_t descriptor;
     std::string source;
     std::string destination;
