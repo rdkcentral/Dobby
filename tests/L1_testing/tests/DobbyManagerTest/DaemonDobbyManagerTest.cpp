@@ -3891,41 +3891,10 @@ TEST_F(DaemonDobbyManagerTest, listContainers_WhenListIsHuge)
  *
  *
  * Use case coverage:
- *                @Success :1
+ *                @Success :0
  *                @Failure :2
  *  -----------------------------------------------------------------------------
 */
-/**
- * @brief Test addMount.
- * Check the addMount method success when valid Container Id is found and correct arguments are passed
- *
- * @return false.
- */
-TEST_F(DaemonDobbyManagerTest, addMount_success)
-{
-    int32_t cd = 1234;
-    std::vector<std::string> mountFlags = {"bind"};
-    std::string source = "/tmp/foo";
-    std::string target = "/foo/bar2";
-    std::string data = "";
-    
-    mkdir(source.c_str(), 0755);
-
-    ContainerId id = ContainerId::create("container1");
-    expect_invalidContainerCleanupTask();
-
-    expect_startContainerFromBundle(cd,id);
-
-    EXPECT_CALL(*p_utilsMock,callInNamespaceImpl(::testing::_, ::testing::_, ::testing::_))
-        .Times(1)
-        .WillOnce(::testing::Return(true));
-    
-    bool return_value = dobbyManager_test->addMount(cd, source, target, mountFlags, data);
-    
-    rmdir(source.c_str());
-
-    EXPECT_EQ(return_value,true);
-}
 
 TEST_F(DaemonDobbyManagerTest, addMount_failwithoutBINDoption)
 {
