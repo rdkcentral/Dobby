@@ -1289,13 +1289,13 @@ static void initCommands(const std::shared_ptr<IReadLine>& readLine,
     readLine->addCommand("mount",
                          std::bind(mountCommand, dobbyProxy, std::placeholders::_1, std::placeholders::_2),
                          "mount <id> <source> <destination> <mountFlags> <mountData>",
-                         "mount a USB mass storage device\n",
+                         "mount a directory from the host inside the container with the given id\n",
                          "\n");
     
     readLine->addCommand("unmount",
                          std::bind(unmountCommand, dobbyProxy, std::placeholders::_1, std::placeholders::_2),
                          "unmount <id> <source>",
-                         "unmount a USB mass storage device inside the container with the given id\n",
+                         "unmount a directory inside the container with the given id\n",
                          "\n");
     
     readLine->addCommand("exec",

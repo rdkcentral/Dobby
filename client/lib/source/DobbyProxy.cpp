@@ -892,7 +892,7 @@ bool DobbyProxy::wakeupContainer(int32_t cd) const
 
 // -----------------------------------------------------------------------------
 /**
- *  @brief mounts a USB mass storage device inside container
+ *  @brief mounts a new host directory/device inside container
  *
  *  @param[in]  cd              The container descriptor.
  *  @param[in]  source          path of the mount device on the host
@@ -930,7 +930,7 @@ bool DobbyProxy::addContainerMount(int32_t cd, const std::string& source, const 
 
 // -----------------------------------------------------------------------------
 /**
- *  @brief unmounts a USB mass storage device inside the container
+ *  @brief unmounts a directory/device inside the container
  *
  *  @param[in]  cd              The container descriptor.
  *  @param[in]  source          path of the mount device on the host

@@ -1440,7 +1440,7 @@ void Dobby::wakeup(std::shared_ptr<AI_IPC::IAsyncReplySender> replySender)
 
 // -----------------------------------------------------------------------------
 /**
- *  @brief mount a USB mass storage device inside container
+ *  @brief mount a host directory/device inside container
  *
  *
  *
@@ -1498,7 +1498,7 @@ void Dobby::addMount(std::shared_ptr<AI_IPC::IAsyncReplySender> replySender)
 
 // -----------------------------------------------------------------------------
 /**
- *  @brief unmount a USB mass storage device inside container
+ *  @brief unmount a directory/device inside container
  *
  *
  *
