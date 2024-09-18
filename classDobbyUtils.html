@@ -181,6 +181,12 @@ std::string&#160;</td><td class="memItemRight" valign="bottom"><b>getStringMetaD
 <tr class="memitem:a091f6ebb80d344852268167793046013"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classDobbyUtils.html#a091f6ebb80d344852268167793046013">deleteEbtablesRule</a> (const std::string &amp;args) const override</td></tr>
 <tr class="memdesc:a091f6ebb80d344852268167793046013"><td class="mdescLeft">&#160;</td><td class="mdescRight">Deletes the given ebtables rule from the existing set.  <a href="classDobbyUtils.html#a091f6ebb80d344852268167793046013">More...</a><br /></td></tr>
 <tr class="separator:a091f6ebb80d344852268167793046013"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a39280331f472a143abe233405de7ac45"><td class="memItemLeft" align="right" valign="top">uid_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classDobbyUtils.html#a39280331f472a143abe233405de7ac45">getUID</a> (pid_t pid) const override</td></tr>
+<tr class="memdesc:a39280331f472a143abe233405de7ac45"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the UID for the given PID.  <a href="classDobbyUtils.html#a39280331f472a143abe233405de7ac45">More...</a><br /></td></tr>
+<tr class="separator:a39280331f472a143abe233405de7ac45"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5c540495695c039bdec0b1cd95278df8"><td class="memItemLeft" align="right" valign="top">gid_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classDobbyUtils.html#a5c540495695c039bdec0b1cd95278df8">getGID</a> (pid_t pid) const override</td></tr>
+<tr class="memdesc:a5c540495695c039bdec0b1cd95278df8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the GID for the given PID.  <a href="classDobbyUtils.html#a5c540495695c039bdec0b1cd95278df8">More...</a><br /></td></tr>
+<tr class="separator:a5c540495695c039bdec0b1cd95278df8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pub_methods_classIDobbyUtils__v3"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_classIDobbyUtils__v3')"><img src="closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="classIDobbyUtils__v3.html">IDobbyUtils_v3</a></td></tr>
 <tr class="memitem:a0da40b4f94a877cc2f0dfbd58d08e4e8 inherit pub_methods_classIDobbyUtils__v3"><td class="memItemLeft" align="right" valign="top">virtual bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classIDobbyUtils__v3.html#a0da40b4f94a877cc2f0dfbd58d08e4e8">mkdirRecursive</a> (const std::string &amp;path, mode_t mode) const=0</td></tr>
 <tr class="memdesc:a0da40b4f94a877cc2f0dfbd58d08e4e8 inherit pub_methods_classIDobbyUtils__v3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Makes a directory and all parent directories as needed.  <a href="classIDobbyUtils__v3.html#a0da40b4f94a877cc2f0dfbd58d08e4e8">More...</a><br /></td></tr>
@@ -242,6 +248,12 @@ virtual std::string&#160;</td><td class="memItemRight" valign="bottom"><b>readTe
 <tr class="memitem:a63592339480cc99ad076f57101efb329 inherit pub_methods_classIDobbyUtils__v3"><td class="memItemLeft" align="right" valign="top"><a id="a63592339480cc99ad076f57101efb329"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>deviceAllowed</b> (unsigned int major, unsigned int minor) const</td></tr>
 <tr class="separator:a63592339480cc99ad076f57101efb329 inherit pub_methods_classIDobbyUtils__v3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3a15bee053eb9528d837ed07c52eab22 inherit pub_methods_classIDobbyUtils__v3"><td class="memItemLeft" align="right" valign="top">virtual gid_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classIDobbyUtils__v3.html#a3a15bee053eb9528d837ed07c52eab22">getGID</a> (pid_t pid) const=0</td></tr>
+<tr class="memdesc:a3a15bee053eb9528d837ed07c52eab22 inherit pub_methods_classIDobbyUtils__v3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the GID for the given PID.  <a href="classIDobbyUtils__v3.html#a3a15bee053eb9528d837ed07c52eab22">More...</a><br /></td></tr>
+<tr class="separator:a3a15bee053eb9528d837ed07c52eab22 inherit pub_methods_classIDobbyUtils__v3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aea62490e8fe8217f0f186f713cec4943 inherit pub_methods_classIDobbyUtils__v3"><td class="memItemLeft" align="right" valign="top">virtual uid_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classIDobbyUtils__v3.html#aea62490e8fe8217f0f186f713cec4943">getUID</a> (pid_t pid) const=0</td></tr>
+<tr class="memdesc:aea62490e8fe8217f0f186f713cec4943 inherit pub_methods_classIDobbyUtils__v3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the UID for the given PID.  <a href="classIDobbyUtils__v3.html#aea62490e8fe8217f0f186f713cec4943">More...</a><br /></td></tr>
+<tr class="separator:aea62490e8fe8217f0f186f713cec4943 inherit pub_methods_classIDobbyUtils__v3"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a11ef5c9a28210047ffe773f228cc8369 inherit pub_methods_classIDobbyUtils__v3"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classIDobbyUtils__v3.html#a11ef5c9a28210047ffe773f228cc8369">setIntegerMetaData</a> (const <a class="el" href="classContainerId.html">ContainerId</a> &amp;id, const std::string &amp;key, int value)=0</td></tr>
 <tr class="memdesc:a11ef5c9a28210047ffe773f228cc8369 inherit pub_methods_classIDobbyUtils__v3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sets / Gets integer meta data for the given container.  <a href="classIDobbyUtils__v3.html#a11ef5c9a28210047ffe773f228cc8369">More...</a><br /></td></tr>
 <tr class="separator:a11ef5c9a28210047ffe773f228cc8369 inherit pub_methods_classIDobbyUtils__v3"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -330,6 +342,12 @@ virtual std::string&#160;</td><td class="memItemRight" valign="bottom"><b>readTe
 <tr class="memitem:a63592339480cc99ad076f57101efb329 inherit pub_methods_classIDobbyUtils__v2"><td class="memItemLeft" align="right" valign="top"><a id="a63592339480cc99ad076f57101efb329"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>deviceAllowed</b> (unsigned int major, unsigned int minor) const</td></tr>
 <tr class="separator:a63592339480cc99ad076f57101efb329 inherit pub_methods_classIDobbyUtils__v2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3a15bee053eb9528d837ed07c52eab22 inherit pub_methods_classIDobbyUtils__v2"><td class="memItemLeft" align="right" valign="top">virtual gid_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classIDobbyUtils__v2.html#a3a15bee053eb9528d837ed07c52eab22">getGID</a> (pid_t pid) const=0</td></tr>
+<tr class="memdesc:a3a15bee053eb9528d837ed07c52eab22 inherit pub_methods_classIDobbyUtils__v2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the GID for the given PID.  <a href="classIDobbyUtils__v2.html#a3a15bee053eb9528d837ed07c52eab22">More...</a><br /></td></tr>
+<tr class="separator:a3a15bee053eb9528d837ed07c52eab22 inherit pub_methods_classIDobbyUtils__v2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aea62490e8fe8217f0f186f713cec4943 inherit pub_methods_classIDobbyUtils__v2"><td class="memItemLeft" align="right" valign="top">virtual uid_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classIDobbyUtils__v2.html#aea62490e8fe8217f0f186f713cec4943">getUID</a> (pid_t pid) const=0</td></tr>
+<tr class="memdesc:aea62490e8fe8217f0f186f713cec4943 inherit pub_methods_classIDobbyUtils__v2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the UID for the given PID.  <a href="classIDobbyUtils__v2.html#aea62490e8fe8217f0f186f713cec4943">More...</a><br /></td></tr>
+<tr class="separator:aea62490e8fe8217f0f186f713cec4943 inherit pub_methods_classIDobbyUtils__v2"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pub_methods_classIDobbyUtils__v1"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_classIDobbyUtils__v1')"><img src="closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="classIDobbyUtils__v1.html">IDobbyUtils_v1</a></td></tr>
 <tr class="memitem:adf774c0a50303a0cea25b97dd5b2591f inherit pub_methods_classIDobbyUtils__v1"><td class="memTemplParams" colspan="2">template&lt;class Function &gt; </td></tr>
 <tr class="memitem:adf774c0a50303a0cea25b97dd5b2591f inherit pub_methods_classIDobbyUtils__v1"><td class="memTemplItemLeft" align="right" valign="top">bool&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classIDobbyUtils__v1.html#adf774c0a50303a0cea25b97dd5b2591f">callInNamespace</a> (pid_t pid, int nsType, Function func) const</td></tr>
@@ -366,15 +384,15 @@ Private Member Functions</h2></td></tr>
 <tr class="memitem:abb215d57f040bbac85aa15db3db96ab3"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classDobbyUtils.html#abb215d57f040bbac85aa15db3db96ab3">runE2fsTool</a> (int dirFd, std::list&lt; std::string &gt; *consoleOutput, const char *e2fsTool,...) const</td></tr>
 <tr class="memdesc:abb215d57f040bbac85aa15db3db96ab3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Run the E2FS tool inside the given directory with given args.  <a href="classDobbyUtils.html#abb215d57f040bbac85aa15db3db96ab3">More...</a><br /></td></tr>
 <tr class="separator:abb215d57f040bbac85aa15db3db96ab3"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a03933ab8451367a0558abe667bf931e7"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classDobbyUtils.html#a03933ab8451367a0558abe667bf931e7">callInNamespaceImpl</a> (pid_t pid, int nsType, const std::function&lt; void()&gt; &amp;func) const override</td></tr>
-<tr class="memdesc:a03933ab8451367a0558abe667bf931e7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Utility function to run some code in a specific namespace of the container.  <a href="classDobbyUtils.html#a03933ab8451367a0558abe667bf931e7">More...</a><br /></td></tr>
-<tr class="separator:a03933ab8451367a0558abe667bf931e7"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a86d4c37109273abc67f74de3fecac8c4"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classDobbyUtils.html#a86d4c37109273abc67f74de3fecac8c4">callInNamespaceImpl</a> (int namespaceFd, const std::function&lt; void()&gt; &amp;func) const override</td></tr>
-<tr class="memdesc:a86d4c37109273abc67f74de3fecac8c4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Utility function to run some code in a specific namespace of the container.  <a href="classDobbyUtils.html#a86d4c37109273abc67f74de3fecac8c4">More...</a><br /></td></tr>
-<tr class="separator:a86d4c37109273abc67f74de3fecac8c4"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:af92f68a698c306e0de0f93211d5c51ff"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classDobbyUtils.html#af92f68a698c306e0de0f93211d5c51ff">nsThread</a> (int newNsFd, int nsType, bool *success, std::function&lt; void()&gt; &amp;func) const</td></tr>
-<tr class="memdesc:af92f68a698c306e0de0f93211d5c51ff"><td class="mdescLeft">&#160;</td><td class="mdescRight">Thread helper function that implements the setns syscall.  <a href="classDobbyUtils.html#af92f68a698c306e0de0f93211d5c51ff">More...</a><br /></td></tr>
-<tr class="separator:af92f68a698c306e0de0f93211d5c51ff"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:abeb17e9bda01ebccf3cb2c0fc6221196"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classDobbyUtils.html#abeb17e9bda01ebccf3cb2c0fc6221196">callInNamespaceImpl</a> (pid_t pid, int nsType, const std::function&lt; bool()&gt; &amp;func) const override</td></tr>
+<tr class="memdesc:abeb17e9bda01ebccf3cb2c0fc6221196"><td class="mdescLeft">&#160;</td><td class="mdescRight">Utility function to run some code in a specific namespace of the container.  <a href="classDobbyUtils.html#abeb17e9bda01ebccf3cb2c0fc6221196">More...</a><br /></td></tr>
+<tr class="separator:abeb17e9bda01ebccf3cb2c0fc6221196"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af1b587d77a9b5138a2c61c632ba788ef"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classDobbyUtils.html#af1b587d77a9b5138a2c61c632ba788ef">callInNamespaceImpl</a> (int namespaceFd, const std::function&lt; bool()&gt; &amp;func) const override</td></tr>
+<tr class="memdesc:af1b587d77a9b5138a2c61c632ba788ef"><td class="mdescLeft">&#160;</td><td class="mdescRight">Utility function to run some code in a specific namespace of the container.  <a href="classDobbyUtils.html#af1b587d77a9b5138a2c61c632ba788ef">More...</a><br /></td></tr>
+<tr class="separator:af1b587d77a9b5138a2c61c632ba788ef"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a35c93615512d4e9a1079ddd264f283e6"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classDobbyUtils.html#a35c93615512d4e9a1079ddd264f283e6">nsThread</a> (int newNsFd, int nsType, bool *success, std::function&lt; bool()&gt; &amp;func) const</td></tr>
+<tr class="memdesc:a35c93615512d4e9a1079ddd264f283e6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Thread helper function that implements the setns syscall.  <a href="classDobbyUtils.html#a35c93615512d4e9a1079ddd264f283e6">More...</a><br /></td></tr>
+<tr class="separator:a35c93615512d4e9a1079ddd264f283e6"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a3902be9babf0947712ec8a597742bd6b"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classDobbyUtils.html#a3902be9babf0947712ec8a597742bd6b">startTimerImpl</a> (const std::chrono::milliseconds &amp;timeout, bool oneShot, const std::function&lt; bool()&gt; &amp;handler) const override</td></tr>
 <tr class="memdesc:a3902be9babf0947712ec8a597742bd6b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Adds a new timer to the timer queue.  <a href="classDobbyUtils.html#a3902be9babf0947712ec8a597742bd6b">More...</a><br /></td></tr>
 <tr class="separator:a3902be9babf0947712ec8a597742bd6b"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -384,6 +402,9 @@ Private Member Functions</h2></td></tr>
 <tr class="memitem:ac8161e356722fbc34b7eba766f4664f3"><td class="memItemLeft" align="right" valign="top"><a id="ac8161e356722fbc34b7eba766f4664f3"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>executeCommand</b> (const std::string &amp;command) const</td></tr>
 <tr class="separator:ac8161e356722fbc34b7eba766f4664f3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab2e4d2c578db4f0d1471d4a6b910c84b"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classDobbyUtils.html#ab2e4d2c578db4f0d1471d4a6b910c84b">getGIDorUID</a> (pid_t pid, const std::string &amp;idType) const</td></tr>
+<tr class="memdesc:ab2e4d2c578db4f0d1471d4a6b910c84b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the effective GID or UID for the given PID by parsing /proc/&lt;PID&gt;/status.  <a href="classDobbyUtils.html#ab2e4d2c578db4f0d1471d4a6b910c84b">More...</a><br /></td></tr>
+<tr class="separator:ab2e4d2c578db4f0d1471d4a6b910c84b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pri-static-methods"></a>
 Static Private Member Functions</h2></td></tr>
@@ -491,8 +512,8 @@ Additional Inherited Members</h2></td></tr>
 
 </div>
 </div>
-<a id="a86d4c37109273abc67f74de3fecac8c4"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a86d4c37109273abc67f74de3fecac8c4">&#9670;&nbsp;</a></span>callInNamespaceImpl() <span class="overload">[1/2]</span></h2>
+<a id="af1b587d77a9b5138a2c61c632ba788ef"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af1b587d77a9b5138a2c61c632ba788ef">&#9670;&nbsp;</a></span>callInNamespaceImpl() <span class="overload">[1/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -509,7 +530,7 @@ Additional Inherited Members</h2></td></tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">const std::function&lt; void()&gt; &amp;&#160;</td>
+          <td class="paramtype">const std::function&lt; bool()&gt; &amp;&#160;</td>
           <td class="paramname"><em>func</em>&#160;</td>
         </tr>
         <tr>
@@ -537,12 +558,12 @@ Additional Inherited Members</h2></td></tr>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>true if successifully entered the namespace, otherwise false. </dd></dl>
 
-<p>Implements <a class="el" href="classIDobbyUtils__v1.html#a2124b51aa00a4e133f22a87d31ecee15">IDobbyUtils_v1</a>.</p>
+<p>Implements <a class="el" href="classIDobbyUtils__v1.html#afe4f29f96c57c2bc36cb575e0f1c0713">IDobbyUtils_v1</a>.</p>
 
 </div>
 </div>
-<a id="a03933ab8451367a0558abe667bf931e7"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a03933ab8451367a0558abe667bf931e7">&#9670;&nbsp;</a></span>callInNamespaceImpl() <span class="overload">[2/2]</span></h2>
+<a id="abeb17e9bda01ebccf3cb2c0fc6221196"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#abeb17e9bda01ebccf3cb2c0fc6221196">&#9670;&nbsp;</a></span>callInNamespaceImpl() <span class="overload">[2/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -565,7 +586,7 @@ Additional Inherited Members</h2></td></tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">const std::function&lt; void()&gt; &amp;&#160;</td>
+          <td class="paramtype">const std::function&lt; bool()&gt; &amp;&#160;</td>
           <td class="paramname"><em>func</em>&#160;</td>
         </tr>
         <tr>
@@ -594,7 +615,7 @@ Additional Inherited Members</h2></td></tr>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>true if successifully entered the namespace, otherwise false. </dd></dl>
 
-<p>Implements <a class="el" href="classIDobbyUtils__v1.html#a56631a371594df364766d5a34af08cfa">IDobbyUtils_v1</a>.</p>
+<p>Implements <a class="el" href="classIDobbyUtils__v1.html#a93958f4a378e14d9a02a0daafb739fe8">IDobbyUtils_v1</a>.</p>
 
 </div>
 </div>
@@ -945,6 +966,89 @@ Additional Inherited Members</h2></td></tr>
 
 </div>
 </div>
+<a id="a5c540495695c039bdec0b1cd95278df8"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a5c540495695c039bdec0b1cd95278df8">&#9670;&nbsp;</a></span>getGID()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">gid_t DobbyUtils::getGID </td>
+          <td>(</td>
+          <td class="paramtype">pid_t&#160;</td>
+          <td class="paramname"><em>pid</em></td><td>)</td>
+          <td> const</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">override</span><span class="mlabel">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Returns the GID for the given PID. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">pid</td><td>The PID of the process to get the GID for</td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>the GID of the process, or -1 if the GID could not be found </dd></dl>
+
+<p>Implements <a class="el" href="classIDobbyUtils__v1.html#a762c6db2d3a64d7043578e35880b8757">IDobbyUtils_v1</a>.</p>
+
+</div>
+</div>
+<a id="ab2e4d2c578db4f0d1471d4a6b910c84b"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab2e4d2c578db4f0d1471d4a6b910c84b">&#9670;&nbsp;</a></span>getGIDorUID()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">int DobbyUtils::getGIDorUID </td>
+          <td>(</td>
+          <td class="paramtype">pid_t&#160;</td>
+          <td class="paramname"><em>pid</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const std::string &amp;&#160;</td>
+          <td class="paramname"><em>idType</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td> const</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">private</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Returns the effective GID or UID for the given PID by parsing /proc/&lt;PID&gt;/status. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">pid</td><td>The PID of the process to get the GID for </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">idType</td><td>The type of ID to get, either "Gid" or "Uid"</td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>the GID or UID of the process, or -1 if the ID could not be found </dd></dl>
+
+</div>
+</div>
 <a id="a94ab2a74e77d1bcb86c896830b5b98b6"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a94ab2a74e77d1bcb86c896830b5b98b6">&#9670;&nbsp;</a></span>getNamespaceFd()</h2>
 
@@ -992,6 +1096,43 @@ Additional Inherited Members</h2></td></tr>
 <dl class="section return"><dt>Returns</dt><dd>on success the file descriptor to the given namespace, on failure -1 </dd></dl>
 
 <p>Implements <a class="el" href="classIDobbyUtils__v1.html#a793342eb3b371f5e4d8d5370d4d57342">IDobbyUtils_v1</a>.</p>
+
+</div>
+</div>
+<a id="a39280331f472a143abe233405de7ac45"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a39280331f472a143abe233405de7ac45">&#9670;&nbsp;</a></span>getUID()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">uid_t DobbyUtils::getUID </td>
+          <td>(</td>
+          <td class="paramtype">pid_t&#160;</td>
+          <td class="paramname"><em>pid</em></td><td>)</td>
+          <td> const</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">override</span><span class="mlabel">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Returns the UID for the given PID. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">pid</td><td>The PID of the process to get the UID for</td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>the UID of the process, or -1 if the UID could not be found </dd></dl>
+
+<p>Implements <a class="el" href="classIDobbyUtils__v1.html#a6d054913c462aa11498689a48b98a8e2">IDobbyUtils_v1</a>.</p>
 
 </div>
 </div>
@@ -1192,8 +1333,8 @@ Additional Inherited Members</h2></td></tr>
 
 </div>
 </div>
-<a id="af92f68a698c306e0de0f93211d5c51ff"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#af92f68a698c306e0de0f93211d5c51ff">&#9670;&nbsp;</a></span>nsThread()</h2>
+<a id="a35c93615512d4e9a1079ddd264f283e6"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a35c93615512d4e9a1079ddd264f283e6">&#9670;&nbsp;</a></span>nsThread()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -1222,7 +1363,7 @@ Additional Inherited Members</h2></td></tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">std::function&lt; void()&gt; &amp;&#160;</td>
+          <td class="paramtype">std::function&lt; bool()&gt; &amp;&#160;</td>
           <td class="paramname"><em>func</em>&#160;</td>
         </tr>
         <tr>

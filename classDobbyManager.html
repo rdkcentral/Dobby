@@ -114,6 +114,12 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a61c23b8b21675ad8f377b62823a2fd46"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classDobbyManager.html#a61c23b8b21675ad8f377b62823a2fd46">wakeupContainer</a> (int32_t cd)</td></tr>
 <tr class="memdesc:a61c23b8b21675ad8f377b62823a2fd46"><td class="mdescLeft">&#160;</td><td class="mdescRight">Wakeup a checkpointed container from existing dump.  <a href="classDobbyManager.html#a61c23b8b21675ad8f377b62823a2fd46">More...</a><br /></td></tr>
 <tr class="separator:a61c23b8b21675ad8f377b62823a2fd46"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a51074edde8c775e771f9420d948752ea"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classDobbyManager.html#a51074edde8c775e771f9420d948752ea">addMount</a> (int32_t cd, const std::string &amp;source, const std::string &amp;destination, const std::vector&lt; std::string &gt; &amp;mountFlags, const std::string &amp;mountData)</td></tr>
+<tr class="memdesc:a51074edde8c775e771f9420d948752ea"><td class="mdescLeft">&#160;</td><td class="mdescRight">adds a mount to a running container  <a href="classDobbyManager.html#a51074edde8c775e771f9420d948752ea">More...</a><br /></td></tr>
+<tr class="separator:a51074edde8c775e771f9420d948752ea"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7a3582f066e8fea7425e4bbd26da194c"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classDobbyManager.html#a7a3582f066e8fea7425e4bbd26da194c">removeMount</a> (int32_t cd, const std::string &amp;source)</td></tr>
+<tr class="memdesc:a7a3582f066e8fea7425e4bbd26da194c"><td class="mdescLeft">&#160;</td><td class="mdescRight">removes a mount from a running container  <a href="classDobbyManager.html#a7a3582f066e8fea7425e4bbd26da194c">More...</a><br /></td></tr>
+<tr class="separator:a7a3582f066e8fea7425e4bbd26da194c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a26f396a3d1f2f145aa05ff23bfc50685"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classDobbyManager.html#a26f396a3d1f2f145aa05ff23bfc50685">execInContainer</a> (int32_t cd, const std::string &amp;options, const std::string &amp;command)</td></tr>
 <tr class="memdesc:a26f396a3d1f2f145aa05ff23bfc50685"><td class="mdescLeft">&#160;</td><td class="mdescRight">Executes a command in a running container.  <a href="classDobbyManager.html#a26f396a3d1f2f145aa05ff23bfc50685">More...</a><br /></td></tr>
 <tr class="separator:a26f396a3d1f2f145aa05ff23bfc50685"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -256,6 +262,65 @@ int&#160;</td><td class="memItemRight" valign="bottom"><b>mCleanupTaskTimerId</b
 <p>This is where most of the work is done for creating and monitoring containers.</p>
 <p><a href="https://groups.google.com/a/opencontainers.org/forum/m/#!topic/dev/Y7p6YW8zr4s">https://groups.google.com/a/opencontainers.org/forum/m/#!topic/dev/Y7p6YW8zr4s</a> </p>
 </div><h2 class="groupheader">Member Function Documentation</h2>
+<a id="a51074edde8c775e771f9420d948752ea"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a51074edde8c775e771f9420d948752ea">&#9670;&nbsp;</a></span>addMount()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool DobbyManager::addMount </td>
+          <td>(</td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>cd</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const std::string &amp;&#160;</td>
+          <td class="paramname"><em>source</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const std::string &amp;&#160;</td>
+          <td class="paramname"><em>destination</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const std::vector&lt; std::string &gt; &amp;&#160;</td>
+          <td class="paramname"><em>mountFlags</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const std::string &amp;&#160;</td>
+          <td class="paramname"><em>mountData</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>adds a mount to a running container </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">cd</td><td>The descriptor of the container to checkpoint. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">source</td><td>The source path of the mount </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">destination</td><td>The destination path of the mount </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">mountFlags</td><td>The mount flags is vector of strings containing the mount flags e.g. "rbind, ro" </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">mountData</td><td>a string containing the mountdata</td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>true if a container was successfully restored. </dd></dl>
+
+</div>
+</div>
 <a id="a772377ca89b442f98c325b931cb94b6d"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a772377ca89b442f98c325b931cb94b6d">&#9670;&nbsp;</a></span>cleanupContainer()</h2>
 
@@ -861,6 +926,44 @@ int&#160;</td><td class="memItemRight" valign="bottom"><b>mCleanupTaskTimerId</b
   </dd>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>true if a container with a matching descriptor was found and it was frozen. </dd></dl>
+
+</div>
+</div>
+<a id="a7a3582f066e8fea7425e4bbd26da194c"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a7a3582f066e8fea7425e4bbd26da194c">&#9670;&nbsp;</a></span>removeMount()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool DobbyManager::removeMount </td>
+          <td>(</td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>cd</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const std::string &amp;&#160;</td>
+          <td class="paramname"><em>source</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>removes a mount from a running container </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">cd</td><td>The descriptor of the container to checkpoint. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">source</td><td></td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>true if a container was successfully restored. </dd></dl>
 
 </div>
 </div>

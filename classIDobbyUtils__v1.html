@@ -173,15 +173,21 @@ bool&#160;</td><td class="memItemRight" valign="bottom"><b>deviceAllowed</b> (un
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pro-methods"></a>
 Protected Member Functions</h2></td></tr>
-<tr class="memitem:a56631a371594df364766d5a34af08cfa"><td class="memItemLeft" align="right" valign="top">virtual bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classIDobbyUtils__v1.html#a56631a371594df364766d5a34af08cfa">callInNamespaceImpl</a> (pid_t pid, int nsType, const std::function&lt; void()&gt; &amp;func) const =0</td></tr>
-<tr class="memdesc:a56631a371594df364766d5a34af08cfa"><td class="mdescLeft">&#160;</td><td class="mdescRight">Implementation of the callInNamespace public interface.  <a href="classIDobbyUtils__v1.html#a56631a371594df364766d5a34af08cfa">More...</a><br /></td></tr>
-<tr class="separator:a56631a371594df364766d5a34af08cfa"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a2124b51aa00a4e133f22a87d31ecee15"><td class="memItemLeft" align="right" valign="top">virtual bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classIDobbyUtils__v1.html#a2124b51aa00a4e133f22a87d31ecee15">callInNamespaceImpl</a> (int namespaceFd, const std::function&lt; void()&gt; &amp;func) const =0</td></tr>
-<tr class="memdesc:a2124b51aa00a4e133f22a87d31ecee15"><td class="mdescLeft">&#160;</td><td class="mdescRight">Implementation of the callInNamespace public interface.  <a href="classIDobbyUtils__v1.html#a2124b51aa00a4e133f22a87d31ecee15">More...</a><br /></td></tr>
-<tr class="separator:a2124b51aa00a4e133f22a87d31ecee15"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a93958f4a378e14d9a02a0daafb739fe8"><td class="memItemLeft" align="right" valign="top">virtual bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classIDobbyUtils__v1.html#a93958f4a378e14d9a02a0daafb739fe8">callInNamespaceImpl</a> (pid_t pid, int nsType, const std::function&lt; bool()&gt; &amp;func) const =0</td></tr>
+<tr class="memdesc:a93958f4a378e14d9a02a0daafb739fe8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Implementation of the callInNamespace public interface.  <a href="classIDobbyUtils__v1.html#a93958f4a378e14d9a02a0daafb739fe8">More...</a><br /></td></tr>
+<tr class="separator:a93958f4a378e14d9a02a0daafb739fe8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:afe4f29f96c57c2bc36cb575e0f1c0713"><td class="memItemLeft" align="right" valign="top">virtual bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classIDobbyUtils__v1.html#afe4f29f96c57c2bc36cb575e0f1c0713">callInNamespaceImpl</a> (int namespaceFd, const std::function&lt; bool()&gt; &amp;func) const =0</td></tr>
+<tr class="memdesc:afe4f29f96c57c2bc36cb575e0f1c0713"><td class="mdescLeft">&#160;</td><td class="mdescRight">Implementation of the callInNamespace public interface.  <a href="classIDobbyUtils__v1.html#afe4f29f96c57c2bc36cb575e0f1c0713">More...</a><br /></td></tr>
+<tr class="separator:afe4f29f96c57c2bc36cb575e0f1c0713"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa5f6070c42f0d3e6c96bcac33b377665"><td class="memItemLeft" align="right" valign="top">virtual int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classIDobbyUtils__v1.html#aa5f6070c42f0d3e6c96bcac33b377665">startTimerImpl</a> (const std::chrono::milliseconds &amp;timeout, bool oneShot, const std::function&lt; bool()&gt; &amp;handler) const =0</td></tr>
 <tr class="memdesc:aa5f6070c42f0d3e6c96bcac33b377665"><td class="mdescLeft">&#160;</td><td class="mdescRight">Adds a new timer to the timer queue.  <a href="classIDobbyUtils__v1.html#aa5f6070c42f0d3e6c96bcac33b377665">More...</a><br /></td></tr>
 <tr class="separator:aa5f6070c42f0d3e6c96bcac33b377665"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a762c6db2d3a64d7043578e35880b8757"><td class="memItemLeft" align="right" valign="top">virtual gid_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classIDobbyUtils__v1.html#a762c6db2d3a64d7043578e35880b8757">getGID</a> (pid_t pid) const =0</td></tr>
+<tr class="memdesc:a762c6db2d3a64d7043578e35880b8757"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the GID for the given PID.  <a href="classIDobbyUtils__v1.html#a762c6db2d3a64d7043578e35880b8757">More...</a><br /></td></tr>
+<tr class="separator:a762c6db2d3a64d7043578e35880b8757"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6d054913c462aa11498689a48b98a8e2"><td class="memItemLeft" align="right" valign="top">virtual uid_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classIDobbyUtils__v1.html#a6d054913c462aa11498689a48b98a8e2">getUID</a> (pid_t pid) const =0</td></tr>
+<tr class="memdesc:a6d054913c462aa11498689a48b98a8e2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the UID for the given PID.  <a href="classIDobbyUtils__v1.html#a6d054913c462aa11498689a48b98a8e2">More...</a><br /></td></tr>
+<tr class="separator:a6d054913c462aa11498689a48b98a8e2"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p><a class="el" href="structInterface.html">Interface</a> that exports some utilities that plugins may find useful. </p>
@@ -357,8 +363,8 @@ template&lt;class Function &gt; </div>
 
 </div>
 </div>
-<a id="a2124b51aa00a4e133f22a87d31ecee15"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a2124b51aa00a4e133f22a87d31ecee15">&#9670;&nbsp;</a></span>callInNamespaceImpl() <span class="overload">[1/2]</span></h2>
+<a id="afe4f29f96c57c2bc36cb575e0f1c0713"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#afe4f29f96c57c2bc36cb575e0f1c0713">&#9670;&nbsp;</a></span>callInNamespaceImpl() <span class="overload">[1/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -375,7 +381,7 @@ template&lt;class Function &gt; </div>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">const std::function&lt; void()&gt; &amp;&#160;</td>
+          <td class="paramtype">const std::function&lt; bool()&gt; &amp;&#160;</td>
           <td class="paramname"><em>func</em>&#160;</td>
         </tr>
         <tr>
@@ -402,12 +408,12 @@ template&lt;class Function &gt; </div>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>true on success, false on failure. </dd></dl>
 
-<p>Implemented in <a class="el" href="classDobbyUtils.html#a86d4c37109273abc67f74de3fecac8c4">DobbyUtils</a>.</p>
+<p>Implemented in <a class="el" href="classDobbyUtils.html#af1b587d77a9b5138a2c61c632ba788ef">DobbyUtils</a>.</p>
 
 </div>
 </div>
-<a id="a56631a371594df364766d5a34af08cfa"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a56631a371594df364766d5a34af08cfa">&#9670;&nbsp;</a></span>callInNamespaceImpl() <span class="overload">[2/2]</span></h2>
+<a id="a93958f4a378e14d9a02a0daafb739fe8"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a93958f4a378e14d9a02a0daafb739fe8">&#9670;&nbsp;</a></span>callInNamespaceImpl() <span class="overload">[2/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -430,7 +436,7 @@ template&lt;class Function &gt; </div>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">const std::function&lt; void()&gt; &amp;&#160;</td>
+          <td class="paramtype">const std::function&lt; bool()&gt; &amp;&#160;</td>
           <td class="paramname"><em>func</em>&#160;</td>
         </tr>
         <tr>
@@ -458,7 +464,7 @@ template&lt;class Function &gt; </div>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>true on success, false on failure. </dd></dl>
 
-<p>Implemented in <a class="el" href="classDobbyUtils.html#a03933ab8451367a0558abe667bf931e7">DobbyUtils</a>.</p>
+<p>Implemented in <a class="el" href="classDobbyUtils.html#abeb17e9bda01ebccf3cb2c0fc6221196">DobbyUtils</a>.</p>
 
 </div>
 </div>
@@ -741,6 +747,44 @@ template&lt;class Function &gt; </div>
 
 </div>
 </div>
+<a id="a762c6db2d3a64d7043578e35880b8757"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a762c6db2d3a64d7043578e35880b8757">&#9670;&nbsp;</a></span>getGID()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">virtual gid_t IDobbyUtils_v1::getGID </td>
+          <td>(</td>
+          <td class="paramtype">pid_t&#160;</td>
+          <td class="paramname"><em>pid</em></td><td>)</td>
+          <td> const</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">protected</span><span class="mlabel">pure virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Returns the GID for the given PID. </p>
+<dl class="section see"><dt>See also</dt><dd><a class="el" href="classIDobbyUtils__v3.html#a3a15bee053eb9528d837ed07c52eab22" title="Returns the GID for the given PID.">IDobbyUtils::getGID</a></dd></dl>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">pid</td><td>The PID of the process to get the GID for</td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>the GID of the process, or 0 if the GID could not be found </dd></dl>
+
+<p>Implemented in <a class="el" href="classDobbyUtils.html#a5c540495695c039bdec0b1cd95278df8">DobbyUtils</a>.</p>
+
+</div>
+</div>
 <a id="a793342eb3b371f5e4d8d5370d4d57342"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a793342eb3b371f5e4d8d5370d4d57342">&#9670;&nbsp;</a></span>getNamespaceFd()</h2>
 
@@ -788,6 +832,44 @@ template&lt;class Function &gt; </div>
 <dl class="section return"><dt>Returns</dt><dd>on success the file descriptor to the given namespace, on failure -1 </dd></dl>
 
 <p>Implemented in <a class="el" href="classDobbyUtils.html#a94ab2a74e77d1bcb86c896830b5b98b6">DobbyUtils</a>.</p>
+
+</div>
+</div>
+<a id="a6d054913c462aa11498689a48b98a8e2"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a6d054913c462aa11498689a48b98a8e2">&#9670;&nbsp;</a></span>getUID()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">virtual uid_t IDobbyUtils_v1::getUID </td>
+          <td>(</td>
+          <td class="paramtype">pid_t&#160;</td>
+          <td class="paramname"><em>pid</em></td><td>)</td>
+          <td> const</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">protected</span><span class="mlabel">pure virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Returns the UID for the given PID. </p>
+<dl class="section see"><dt>See also</dt><dd><a class="el" href="classIDobbyUtils__v3.html#aea62490e8fe8217f0f186f713cec4943" title="Returns the UID for the given PID.">IDobbyUtils::getUID</a></dd></dl>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">pid</td><td>The PID of the process to get the UID for</td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>the UID of the process, or 0 if the UID could not be found </dd></dl>
+
+<p>Implemented in <a class="el" href="classDobbyUtils.html#a39280331f472a143abe233405de7ac45">DobbyUtils</a>.</p>
 
 </div>
 </div>

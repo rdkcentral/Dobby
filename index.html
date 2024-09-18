@@ -197,15 +197,19 @@ DobbyTool</h2>
 <div class="line">quit              quit</div>
 <div class="line">help              help [command]</div>
 <div class="line">shutdown          shutdown</div>
-<div class="line">start             start [options...] &lt;id&gt; &lt;specfile/bundlepath&gt; [command]</div>
+<div class="line">start             start [options...] &lt;id&gt; &lt;bundlepath&gt; [command]</div>
 <div class="line">stop              stop &lt;id&gt; [options...]</div>
 <div class="line">pause             pause &lt;id&gt;</div>
 <div class="line">resume            resume &lt;id&gt;</div>
+<div class="line">hibernate         hibernate [options...] &lt;id&gt;</div>
+<div class="line">wakeup            wakeup &lt;id&gt;</div>
+<div class="line">mount             mount &lt;id&gt; &lt;source&gt; &lt;destination&gt; &lt;mountFlags&gt; &lt;mountData&gt;</div>
+<div class="line">unmount           unmount &lt;id&gt; &lt;source&gt;</div>
 <div class="line">exec              exec [options...] &lt;id&gt; &lt;command&gt;</div>
 <div class="line">list              list</div>
 <div class="line">info              info &lt;id&gt;</div>
-<div class="line">dumpspec          dumpspec &lt;id&gt; [options...]</div>
-<div class="line">bundle            bundle &lt;id&gt; &lt;specfile&gt; [options...]</div>
+<div class="line">wait              wait &lt;id&gt; &lt;state&gt;</div>
+<div class="line">set-log-level     set-log-level &lt;level&gt;</div>
 <div class="line">set-dbus          set-dbus &lt;private&gt;|&lt;public&gt; &lt;address&gt;</div>
 </div><!-- fragment --><p> For more information about a command, run <code>DobbyTool help [command]</code>. For example: </p><div class="fragment"><div class="line">$ DobbyTool help start</div>
 <div class="line">start             start [options...] &lt;id&gt; &lt;specfile/bundlepath&gt; [command]</div>

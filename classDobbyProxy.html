@@ -156,6 +156,12 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a85df5fa220e4b2a5f3719c2ab123d77f"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classDobbyProxy.html#a85df5fa220e4b2a5f3719c2ab123d77f">wakeupContainer</a> (int32_t descriptor) const override</td></tr>
 <tr class="memdesc:a85df5fa220e4b2a5f3719c2ab123d77f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Restores previously checkpointed container with the given id.  <a href="classDobbyProxy.html#a85df5fa220e4b2a5f3719c2ab123d77f">More...</a><br /></td></tr>
 <tr class="separator:a85df5fa220e4b2a5f3719c2ab123d77f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a520416902b071cd00b57911ba4018125"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classDobbyProxy.html#a520416902b071cd00b57911ba4018125">addContainerMount</a> (int32_t descriptor, const std::string &amp;source, const std::string &amp;destination, const std::vector&lt; std::string &gt; &amp;mountFlags, const std::string &amp;mountData) const override</td></tr>
+<tr class="memdesc:a520416902b071cd00b57911ba4018125"><td class="mdescLeft">&#160;</td><td class="mdescRight">mounts a new host directory/device inside container  <a href="classDobbyProxy.html#a520416902b071cd00b57911ba4018125">More...</a><br /></td></tr>
+<tr class="separator:a520416902b071cd00b57911ba4018125"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2cc59ff4d1c0b0111516f93518adcfea"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classDobbyProxy.html#a2cc59ff4d1c0b0111516f93518adcfea">removeContainerMount</a> (int32_t descriptor, const std::string &amp;source) const override</td></tr>
+<tr class="memdesc:a2cc59ff4d1c0b0111516f93518adcfea"><td class="mdescLeft">&#160;</td><td class="mdescRight">unmounts a directory/device inside the container  <a href="classDobbyProxy.html#a2cc59ff4d1c0b0111516f93518adcfea">More...</a><br /></td></tr>
+<tr class="separator:a2cc59ff4d1c0b0111516f93518adcfea"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a174c6ee0fc05b11b900f4b0bece96b88"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classDobbyProxy.html#a174c6ee0fc05b11b900f4b0bece96b88">execInContainer</a> (int32_t cd, const std::string &amp;options, const std::string &amp;command) const override</td></tr>
 <tr class="memdesc:a174c6ee0fc05b11b900f4b0bece96b88"><td class="mdescLeft">&#160;</td><td class="mdescRight">Executes a command in the given container.  <a href="classDobbyProxy.html#a174c6ee0fc05b11b900f4b0bece96b88">More...</a><br /></td></tr>
 <tr class="separator:a174c6ee0fc05b11b900f4b0bece96b88"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -292,6 +298,75 @@ std::shared_ptr&lt; <a class="el" href="classAICommon_1_1IDispatcher.html">IDisp
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Wrapper around an <a class="el" href="classIpcService.html">IpcService</a> object that provides simpler method calls to the dobby daemon. </p>
 </div><h2 class="groupheader">Member Function Documentation</h2>
+<a id="a520416902b071cd00b57911ba4018125"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a520416902b071cd00b57911ba4018125">&#9670;&nbsp;</a></span>addContainerMount()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool DobbyProxy::addContainerMount </td>
+          <td>(</td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>cd</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const std::string &amp;&#160;</td>
+          <td class="paramname"><em>source</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const std::string &amp;&#160;</td>
+          <td class="paramname"><em>destination</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const std::vector&lt; std::string &gt; &amp;&#160;</td>
+          <td class="paramname"><em>mountFlags</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const std::string &amp;&#160;</td>
+          <td class="paramname"><em>mountData</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td> const</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">override</span><span class="mlabel">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>mounts a new host directory/device inside container </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">cd</td><td>The container descriptor. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">source</td><td>path of the mount device on the host </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">destination</td><td>path of the mount on the container </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">mountFlags</td><td>The mount flags is a vector of srings containing the mount optiosn e.g. "rbind,ro" it should include "bind" </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">mountData</td><td>string containing the mount data</td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>true on success, false on failure. </dd></dl>
+
+<p>Implements <a class="el" href="classIDobbyProxy.html">IDobbyProxy</a>.</p>
+
+</div>
+</div>
 <a id="a299bdef1240360d87163c856f808d653"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a299bdef1240360d87163c856f808d653">&#9670;&nbsp;</a></span>containerStateChangeThread()</h2>
 
@@ -1030,6 +1105,54 @@ std::shared_ptr&lt; <a class="el" href="classAICommon_1_1IDispatcher.html">IDisp
   </table>
   </dd>
 </dl>
+
+<p>Implements <a class="el" href="classIDobbyProxy.html">IDobbyProxy</a>.</p>
+
+</div>
+</div>
+<a id="a2cc59ff4d1c0b0111516f93518adcfea"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a2cc59ff4d1c0b0111516f93518adcfea">&#9670;&nbsp;</a></span>removeContainerMount()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool DobbyProxy::removeContainerMount </td>
+          <td>(</td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>cd</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const std::string &amp;&#160;</td>
+          <td class="paramname"><em>source</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td> const</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">override</span><span class="mlabel">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>unmounts a directory/device inside the container </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">cd</td><td>The container descriptor. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">source</td><td>path of the mount device on the host</td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>true on success, false on failure. </dd></dl>
 
 <p>Implements <a class="el" href="classIDobbyProxy.html">IDobbyProxy</a>.</p>
 
