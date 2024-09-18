@@ -3765,8 +3765,7 @@ TEST_F(DaemonDobbyManagerTest, execInContainer_FailedToExecuteCommand)
 TEST_F(DaemonDobbyManagerTest, execInContainer_FailureAsContainerNotRunning)
 {
     bool return_value;
-    pid_t pid1 = 1234;
-    pid_t pid2 = 0;
+
     std::string options = "--tty";
     std::string command = "fork exec";
     int32_t cd = 1234;
@@ -3886,3 +3885,111 @@ TEST_F(DaemonDobbyManagerTest, listContainers_WhenListIsHuge)
     expect_cleanupContainersShutdown();
 }
 /* listContainers usecases ends here*/
+
+/* -----------------------------------------------------------------------------
+ *  Test functions for :addMount
+ *
+ *
+ * Use case coverage:
+ *                @Success :0
+ *                @Failure :2
+ *  -----------------------------------------------------------------------------
+*/
+
+TEST_F(DaemonDobbyManagerTest, addMount_failwithoutBINDoption)
+{
+    int32_t cd = 1234;
+    std::vector<std::string> mountFlags = {"ro"};
+    std::string source = "/foo/bar1";
+    std::string target = "/foo/bar2";
+    std::string data = "";
+
+    ContainerId id = ContainerId::create("container1");
+    expect_invalidContainerCleanupTask();
+
+    expect_startContainerFromBundle(cd,id);
+
+    bool return_value = dobbyManager_test->addMount(cd, source, target, mountFlags, data);
+    EXPECT_EQ(return_value,false);
+}
+
+/**
+ * @brief Test addMount.
+ * Check the addMount method failed when valid Container Id is not found
+ *
+ * @return false.
+ */
+TEST_F(DaemonDobbyManagerTest, addMount_FailedToFindContainer)
+{
+    int32_t cd = 1234;
+    int32_t expect_cd = 2345;
+    std::vector<std::string> mountFlags = {"ro"};
+    std::string source = "/foo/bar1";
+    std::string target = "/foo/bar2";
+    std::string data = "";
+
+    ContainerId id = ContainerId::create("container1");
+    expect_invalidContainerCleanupTask();
+
+    expect_startContainerFromBundle(cd,id);
+
+    bool return_value = dobbyManager_test->addMount(expect_cd, source, target, mountFlags, data);
+    EXPECT_EQ(return_value,false);
+}
+
+/* -----------------------------------------------------------------------------
+ *  Test functions for :removeMount
+ *
+ *
+ * Use case coverage:
+ *                @Success :1
+ *                @Failure :1
+ *  -----------------------------------------------------------------------------
+*/
+/**
+ * @brief Test removeMount.
+ * Check the removeMount method success when valid Container Id is found and correct arguments are passed
+ *
+ * @return false.
+ */
+TEST_F(DaemonDobbyManagerTest, removeMount_success)
+{
+    int32_t cd = 1234;
+    std::string source = "/foo/bar";
+
+    ContainerId id = ContainerId::create("container1");
+    expect_invalidContainerCleanupTask();
+
+    expect_startContainerFromBundle(cd,id);
+
+    EXPECT_CALL(*p_utilsMock,callInNamespaceImpl(::testing::_, ::testing::_, ::testing::_))
+        .Times(1)
+        .WillOnce(::testing::Return(true));
+    
+    bool return_value = dobbyManager_test->removeMount(cd, source);
+    
+    EXPECT_EQ(return_value,true);
+}
+
+/**
+ * @brief Test removeMount.
+ * Check the removeMount method failed when valid Container Id is not found
+ *
+ * @return false.
+ */
+TEST_F(DaemonDobbyManagerTest, removeMount_FailedToFindContainer)
+{
+    int32_t cd = 1234;
+    int32_t expect_cd = 2345;
+
+    std::string source = "/foo/bar";
+
+    ContainerId id = ContainerId::create("container1");
+    expect_invalidContainerCleanupTask();
+
+    expect_startContainerFromBundle(cd,id);
+
+    bool return_value = dobbyManager_test->removeMount(expect_cd, source);
+    EXPECT_EQ(return_value,false);
+}
+

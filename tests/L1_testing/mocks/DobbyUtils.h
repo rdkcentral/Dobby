@@ -67,6 +67,8 @@ public:
     virtual bool callInNamespaceImpl(pid_t pid, int nsType, const std::function<void()>& func) const = 0;
     virtual bool callInNamespaceImpl(int namespaceFd, const std::function<void()>& func) const = 0;
     virtual int startTimerImpl(const std::chrono::milliseconds& timeout,bool oneShot,const std::function<bool()>& handler) const = 0;
+    virtual uid_t getUID(pid_t pid) const=0;
+    virtual gid_t getGID(pid_t pid) const=0;
 };
 
 class DobbyUtils : public virtual IDobbyUtils_v3 {
@@ -106,9 +108,11 @@ public:
     void clearContainerMetaData(const ContainerId &id) override;
     bool insertEbtablesRule(const std::string &args) const override;
     bool deleteEbtablesRule(const std::string &args) const override;
-    bool callInNamespaceImpl(pid_t pid, int nsType, const std::function<void()>& func) const override;
-    bool callInNamespaceImpl(int namespaceFd, const std::function<void()>& func) const override;
+    bool callInNamespaceImpl(pid_t pid, int nsType, const std::function<bool()>& func) const override;
+    bool callInNamespaceImpl(int namespaceFd, const std::function<bool()>& func) const override;
     int startTimerImpl(const std::chrono::milliseconds& timeout,bool oneShot,const std::function<bool()>& handler) const override;
+    uid_t getUID(pid_t pid) const override;
+    gid_t getGID(pid_t pid) const override;
 
 };
 

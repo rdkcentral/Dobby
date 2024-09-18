@@ -596,6 +596,112 @@ static void wakeupCommand(const std::shared_ptr<IDobbyProxy>& dobbyProxy,
  *
  *
  */
+static void mountCommand(const std::shared_ptr<IDobbyProxy>& dobbyProxy,
+                         const std::shared_ptr<const IReadLineContext>& readLine,
+                         const std::vector<std::string>& args)
+{
+    if (args.size() < 4 || args[0].empty() || args[1].empty() || args[2].empty() || args[3].empty())
+    {
+        readLine->printLnError("must provide at least 4 args; <id> <source> <destination> <mountFlags>");
+        return;
+    }
+
+    std::string id = args[0];
+    if (id.empty())
+    {
+        readLine->printLnError("invalid container id '%s'", id.c_str());
+        return;
+    }
+    std::string source(args[1]);
+    std::string destination(args[2]);
+    std::vector<std::string> mountFlags;
+    std::string mountData;
+
+    // parse args[3] which is a comma separated list of flags into a vector of strings
+    std::string flags = args[3];
+    size_t pos = 0;
+    while ((pos = flags.find(",")) != std::string::npos)
+    {
+        std::string flag = flags.substr(0, pos);
+        mountFlags.push_back(flag);
+        flags.erase(0, pos + 1);
+    }
+    mountFlags.push_back(flags);
+
+    // mountData is optional for now
+    if(args.size() >= 5 && !args[4].empty())
+    {
+        mountData = args[4];
+    }
+
+    int32_t cd = getContainerDescriptor(dobbyProxy, id);
+    if (cd < 0)
+    {
+        readLine->printLnError("failed to find container '%s'", id.c_str());
+    }
+    else
+    {
+        if (!dobbyProxy->addContainerMount(cd, source, destination, mountFlags, mountData))
+        {
+            readLine->printLnError("failed to mount %s inside the container %s", source.c_str(), id.c_str());
+        }
+        else
+        {
+            readLine->printLn("mount successful for container '%s'", id.c_str());
+        }
+    }
+}
+
+// -----------------------------------------------------------------------------
+/**
+ * @brief
+ *
+ *
+ *
+ */
+static void unmountCommand(const std::shared_ptr<IDobbyProxy>& dobbyProxy,
+                         const std::shared_ptr<const IReadLineContext>& readLine,
+                         const std::vector<std::string>& args)
+{
+    if (args.size() < 2 || args[0].empty() || args[1].empty())
+    {
+        readLine->printLnError("must provide at least two args; <id> <source>");
+        return;
+    }
+
+    std::string id = args[0];
+    if (id.empty())
+    {
+        readLine->printLnError("invalid container id '%s'", id.c_str());
+        return;
+    }
+    std::string source(args[1]);
+    
+    int32_t cd = getContainerDescriptor(dobbyProxy, id);
+    if (cd < 0)
+    {
+        readLine->printLnError("failed to find container '%s'", id.c_str());
+    }
+    else
+    {
+        if (!dobbyProxy->removeContainerMount(cd, source))
+        {
+            readLine->printLnError("failed to unmount %s inside the container %s", source.c_str(), id.c_str());
+        }
+        else
+        {
+            readLine->printLn("unmount successful for container '%s'", id.c_str());
+        }
+    }
+}
+
+// -----------------------------------------------------------------------------
+/**
+ * @brief
+ *
+ *
+ *
+ */
 static void execCommand(const std::shared_ptr<IDobbyProxy>& dobbyProxy,
                         const std::shared_ptr<const IReadLineContext>& readLine,
                         const std::vector<std::string>& args)
@@ -1179,7 +1285,19 @@ static void initCommands(const std::shared_ptr<IReadLine>& readLine,
                          "wakeup <id>",
                          "wakeup a container with the given id\n",
                          "\n");
-
+    
+    readLine->addCommand("mount",
+                         std::bind(mountCommand, dobbyProxy, std::placeholders::_1, std::placeholders::_2),
+                         "mount <id> <source> <destination> <mountFlags> <mountData>",
+                         "mount a directory from the host inside the container with the given id\n",
+                         "\n");
+    
+    readLine->addCommand("unmount",
+                         std::bind(unmountCommand, dobbyProxy, std::placeholders::_1, std::placeholders::_2),
+                         "unmount <id> <source>",
+                         "unmount a directory inside the container with the given id\n",
+                         "\n");
+    
     readLine->addCommand("exec",
                          std::bind(execCommand, dobbyProxy, std::placeholders::_1, std::placeholders::_2),
                          "exec [options...] <id> <command>",

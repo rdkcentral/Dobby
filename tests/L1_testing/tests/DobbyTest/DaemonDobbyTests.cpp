@@ -3699,3 +3699,152 @@ TEST_F(DaemonDobbyTest, setDefaultAIDbusAddresses_success)
 
     dobby_test->setDefaultAIDbusAddresses(aiPrivateBusAddress,aiPublicBusAddress);
 }
+
+
+/**
+ * @brief Test addMount with valid arguments and successful postWork.
+ * Check if addMount method handles the case with valid arguments and successful postWork.
+ *
+ * @return None.
+ */
+TEST_F(DaemonDobbyTest, addMountSuccess_validArg_postWorkSuccess)
+{
+    AI_IPC::VariantList validArgs = {
+    int32_t(123),/*Simulates a valid argument 'descriptor' with a value of 123*/
+    std::string("/foo/bar/source"),
+    std::string("/foo/bar/dest"),
+    std::vector<std::string> { "bind", "ro" },
+    std::string("") };
+    
+    EXPECT_CALL(*p_asyncReplySenderMock, getMethodCallArguments())
+        .WillOnce(::testing::Return(validArgs));
+
+    EXPECT_CALL(*p_dobbyManagerMock, addMount(::testing::_,::testing::_,::testing::_,::testing::_,::testing::_))
+        .WillOnce(::testing::Return(true));
+
+    EXPECT_CALL(*p_workQueueMock, postWork(::testing::_))
+        .Times(1)
+            .WillOnce(::testing::Invoke(
+            [](const WorkFunc &work) {
+                work();
+                return true;
+            }));
+
+    EXPECT_CALL(*p_asyncReplySenderMock, sendReply(::testing::_))
+        .Times(1)
+        .WillOnce(::testing::Invoke(
+            [](const AI_IPC::VariantList& replyArgs) {
+                bool expectedResult = true;
+                bool actualResult;
+                if (AI_IPC::parseVariantList <bool>
+                         (replyArgs, &actualResult))
+                {
+                    EXPECT_EQ(actualResult, expectedResult);
+                }
+                return true;
+            }));
+
+    dobby_test->addMount((std::shared_ptr<AI_IPC::IAsyncReplySender>)p_iasyncReplySender);
+}
+/**
+ * @brief Test addMount with empty arguments and failed postWork.
+ *
+ * @return None.
+ */
+TEST_F(DaemonDobbyTest, addMountFailure_invalidArg)
+{    
+    EXPECT_CALL(*p_asyncReplySenderMock, getMethodCallArguments())
+        .WillOnce(::testing::Return(AI_IPC::VariantList{}));
+    
+    EXPECT_CALL(*p_workQueueMock, postWork(::testing::_)).Times(0);
+
+    EXPECT_CALL(*p_dobbyManagerMock, addMount(::testing::_,::testing::_,::testing::_,::testing::_,::testing::_)).Times(0);
+
+    EXPECT_CALL(*p_asyncReplySenderMock, sendReply(::testing::_))
+        .Times(1)
+        .WillOnce(::testing::Invoke(
+            [](const AI_IPC::VariantList& replyArgs) {
+                bool expectedResult = false;
+                bool actualResult;
+                if (AI_IPC::parseVariantList <bool>
+                         (replyArgs, &actualResult))
+                {
+                    EXPECT_EQ(actualResult, expectedResult);
+                }
+                return true;
+            }));
+
+    dobby_test->addMount((std::shared_ptr<AI_IPC::IAsyncReplySender>)p_iasyncReplySender);
+}
+/**
+ * @brief Test removeMount with valid arguments and successful postWork.
+ * Check if removeMount method handles the case with valid arguments and successful postWork.
+ *
+ * @return None.
+ */
+TEST_F(DaemonDobbyTest, removeMountSuccess_validArg_postWorkSuccess)
+{
+    AI_IPC::VariantList validArgs = {
+    int32_t(123),/*Simulates a valid argument 'descriptor' with a value of 123*/
+    std::string("/foo/bar")    };
+    
+    EXPECT_CALL(*p_asyncReplySenderMock, getMethodCallArguments())
+        .WillOnce(::testing::Return(validArgs));
+
+    EXPECT_CALL(*p_dobbyManagerMock, removeMount(::testing::_,::testing::_))
+        .WillOnce(::testing::Return(true));
+
+    EXPECT_CALL(*p_workQueueMock, postWork(::testing::_))
+        .Times(1)
+            .WillOnce(::testing::Invoke(
+            [](const WorkFunc &work) {
+                work();
+                return true;
+            }));
+
+    EXPECT_CALL(*p_asyncReplySenderMock, sendReply(::testing::_))
+        .Times(1)
+        .WillOnce(::testing::Invoke(
+            [](const AI_IPC::VariantList& replyArgs) {
+                bool expectedResult = true;
+                bool actualResult;
+                if (AI_IPC::parseVariantList <bool>
+                         (replyArgs, &actualResult))
+                {
+                    EXPECT_EQ(actualResult, expectedResult);
+                }
+                return true;
+            }));
+
+    dobby_test->removeMount((std::shared_ptr<AI_IPC::IAsyncReplySender>)p_iasyncReplySender);
+}
+/**
+ * @brief Test removeMount with empty arguments and failed postWork.
+ *
+ * @return None.
+ */
+TEST_F(DaemonDobbyTest, removeMountFailure_invalidArg)
+{    
+    EXPECT_CALL(*p_asyncReplySenderMock, getMethodCallArguments())
+        .WillOnce(::testing::Return(AI_IPC::VariantList{}));
+    
+    EXPECT_CALL(*p_workQueueMock, postWork(::testing::_)).Times(0);
+
+    EXPECT_CALL(*p_dobbyManagerMock, removeMount(::testing::_,::testing::_)).Times(0);
+
+    EXPECT_CALL(*p_asyncReplySenderMock, sendReply(::testing::_))
+        .Times(1)
+        .WillOnce(::testing::Invoke(
+            [](const AI_IPC::VariantList& replyArgs) {
+                bool expectedResult = false;
+                bool actualResult;
+                if (AI_IPC::parseVariantList <bool>
+                         (replyArgs, &actualResult))
+                {
+                    EXPECT_EQ(actualResult, expectedResult);
+                }
+                return true;
+            }));
+
+    dobby_test->removeMount((std::shared_ptr<AI_IPC::IAsyncReplySender>)p_iasyncReplySender);
+}

@@ -165,6 +165,14 @@ endif()
 
 find_package( breakpad QUIET )
 
+find_path(LINUXMOUNT NAMES "linux/mount.h")
+if(NOT LINUXMOUNT)
+  message( "Couldn't find linux/mount.h. You may need to upgrade your kernel to 5.2 or later" )
+else()
+  message("Found linux/mount.h")
+  add_definitions( -DHAVE_LINUX_MOUNT_H )
+endif()
+
 # Run libocispec to generate OCI config parsers and necessary C headers
 include(Findlibocispec)
 GenerateLibocispec(EXTRA_SCHEMA_PATH "${EXTERNAL_PLUGIN_SCHEMA}")
