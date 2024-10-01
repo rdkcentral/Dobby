@@ -60,6 +60,7 @@ private:
     bool doLoopMount(const std::string &src, const std::string &dest);
     bool doBindMount(const std::string &src, const std::string &dest);
     bool doBindFile(const std::string &src, const std::string &dest);
+    bool doTmpfsMount(const std::string &dest);
     bool doUnmounts();
     const std::string mName;
     const std::string mRootfsPath;
@@ -67,6 +68,8 @@ private:
     const std::shared_ptr<DobbyRdkPluginUtils> mUtils;
 
     bool mValid = false;
+
+    std::string mRootFsType;
 
     std::string mSystemPath;
     std::string mVendorPath;

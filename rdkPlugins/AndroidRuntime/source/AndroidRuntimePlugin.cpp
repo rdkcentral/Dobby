@@ -30,6 +30,10 @@
 #include <unistd.h>
 #include <limits.h>
 
+#include <filesystem>
+#include <system_error>
+namespace fs = std::filesystem;
+
 REGISTER_RDK_PLUGIN(AndroidRuntimePlugin);
 
 AndroidRuntimePlugin::AndroidRuntimePlugin(std::shared_ptr<rt_dobby_schema> &containerConfig,
@@ -62,11 +66,13 @@ AndroidRuntimePlugin::AndroidRuntimePlugin(std::shared_ptr<rt_dobby_schema> &con
 
     if(pluginData->vendor_path == nullptr)
     {
-        AI_LOG_ERROR("No path to vendor.img provided");
-        return;
+        AI_LOG_WARN("No path to vendor.img provided - continuing with single image");
     }
-    mVendorPath = std::string(pluginData->vendor_path);
-    AI_LOG_INFO("Android vendor.img path is %s\n", mVendorPath.c_str());
+    else
+    {
+        mVendorPath = std::string(pluginData->vendor_path);
+        AI_LOG_INFO("Android vendor.img path is %s\n", mVendorPath.c_str());
+    }
 
     if(pluginData->data_path == nullptr)
     {
@@ -83,14 +89,6 @@ AndroidRuntimePlugin::AndroidRuntimePlugin(std::shared_ptr<rt_dobby_schema> &con
     }
     mCachePath = std::string(pluginData->cache_path);
     AI_LOG_INFO("Android cache path is %s\n", mCachePath.c_str());
-
-    if(pluginData->cmdline_path == nullptr)
-    {
-        AI_LOG_ERROR("No path to kernel commandline file provided");
-        return;
-    }
-    mCmdlinePath = std::string(pluginData->cmdline_path);
-    AI_LOG_INFO("Android cmdline path is %s\n", mCmdlinePath.c_str());
 
     mValid = true;
     AI_LOG_INFO("Started Android runtime plugin");
@@ -124,35 +122,6 @@ bool AndroidRuntimePlugin::postInstallation()
 
     doMounts();
 
-    std::string etcPath = mRootfsPath + "etc";
-    struct stat s;
-
-    // There may be a symlink from /etc to /system/etc in the container, remove it if present
-    // so that the Networking plugin can populate /etc
-    if (lstat(etcPath.c_str(), &s) == 0)
-    {
-        if (S_ISLNK(s.st_mode))
-        {
-            if(unlink(etcPath.c_str()) < 0)
-            {
-                AI_LOG_SYS_ERROR_EXIT(errno, "Failed to remove %s symlink", etcPath.c_str());
-                return false;
-            }
-            else
-            {
-                AI_LOG_INFO("Removed symlink %s", etcPath.c_str());
-            }
-        }
-    }
-    else
-    {
-        AI_LOG_INFO("%s cannot be statted", etcPath.c_str());
-    }
-
-    if (mUtils->mkdirRecursive(mRootfsPath + "/etc", 0755))
-    {
-        AI_LOG_INFO("Ensured /etc exists in rootfs");
-    }
 
     AI_LOG_FN_EXIT();
     return true;
@@ -226,7 +195,26 @@ bool AndroidRuntimePlugin::doLoopMount(const std::string &src, const std::string
         return false;
     }
 
-    if (mount(deviceLoop.c_str(), dest.c_str(), "ext4", 0, NULL) < 0)
+    std::vector<std::string> fstypes
+    {
+        "erofs",
+        "ext4",
+        "squashfs"
+    };
+
+    bool mounted = false;
+    for(auto type : fstypes)
+    {
+       if (mount(deviceLoop.c_str(), dest.c_str(), type.c_str(), 0, NULL) == 0)
+       {
+           mRootFsType = type;
+           AI_LOG_INFO("Mounted %s as %s", dest.c_str(), mRootFsType.c_str());
+           mounted = true;
+           break;
+       }
+    }
+
+    if(!mounted)
     {
         close(fdAttached);
         close(fdSrc);
@@ -246,8 +234,12 @@ bool AndroidRuntimePlugin::doBindMount(const std::string &src, const std::string
     AI_LOG_FN_ENTRY();
     if (access(src.c_str(), F_OK) != 0)
     {
-        AI_LOG_SYS_ERROR_EXIT(errno, "Failed to open source file %s", src.c_str());
-        return false;
+        AI_LOG_INFO("Creating source location for bind mount %s", src.c_str());
+        if (!mUtils->mkdirRecursive(src, 0755))
+        {
+            AI_LOG_ERROR_EXIT("Failed to create bind mount source directory %s", dest.c_str());
+            return false;
+        }
     }
 
     if (!mUtils->mkdirRecursive(dest, 0755))
@@ -274,7 +266,7 @@ bool AndroidRuntimePlugin::doBindFile(const std::string &src, const std::string 
         return false;
     }
 
-    int fdDest = open(dest.c_str(), O_RDWR | O_CREAT);
+    int fdDest = open(dest.c_str(), O_RDONLY | O_CREAT);
     if (fdDest < 0)
     {
         AI_LOG_SYS_ERROR_EXIT(errno, "Failed to open destination file for bind %s", dest.c_str());
@@ -288,20 +280,35 @@ bool AndroidRuntimePlugin::doBindFile(const std::string &src, const std::string 
         return false;
     }
 
+    AI_LOG_INFO("Bind-mounted file %s to %s", src.c_str(), dest.c_str());
+
     AI_LOG_FN_EXIT();
     return true;
 }
 
-#define MOUNT_VENDOR  "/vendor"
-#define MOUNT_DATA    "/data"
-#define MOUNT_CACHE   "/cache"
-#define MOUNT_CMDLINE "/cmdline"
+bool AndroidRuntimePlugin::doTmpfsMount(const std::string &dest)
+{
+    AI_LOG_FN_ENTRY();
+
+    if (mount("tmpfs", dest.c_str(), "tmpfs", 0, nullptr) < 0)
+    {
+        AI_LOG_SYS_ERROR_EXIT(errno, "tmpfs mount failed %s", dest.c_str());
+        return false;
+    }
+
+    return true;
+}
+
+#define MOUNT_VENDOR      "vendor"
+#define MOUNT_DATA        "data"
+#define MOUNT_CACHE       "cache"
+#define MOUNT_RESOLV_CONF "resolv.conf"
 
 bool AndroidRuntimePlugin::doMounts()
 {
     AI_LOG_FN_ENTRY();
 
-    if(!mMounted.empty())
+    if (!mMounted.empty())
     {
         AI_LOG_ERROR("Attempt to mount again before unmounting previous");
         return false;
@@ -317,39 +324,53 @@ bool AndroidRuntimePlugin::doMounts()
     }
     mMounted.push_back(dest.c_str());
 
-    dest = mRootfsPath + MOUNT_VENDOR;
-    if (!doLoopMount(mVendorPath.c_str(), dest))
+    if (!mVendorPath.empty())
     {
-        AI_LOG_ERROR_EXIT("Failed to loop mount %s", mVendorPath.c_str());
-        return false;
+        dest = mRootfsPath + MOUNT_VENDOR;
+        if (!doLoopMount(mVendorPath.c_str(), dest))
+        {
+            AI_LOG_ERROR_EXIT("Failed to loop mount %s", mVendorPath.c_str());
+            return false;
+        }
+        mMounted.push_back(dest.c_str());
     }
-    mMounted.push_back(dest.c_str());
 
     dest = mRootfsPath + MOUNT_DATA;
-    if(!doBindMount(mDataPath, dest))
+    if (!doBindMount(mDataPath, dest))
     {
         AI_LOG_ERROR_EXIT("Failed to bind mount %s->%s", mDataPath.c_str(), dest.c_str());
         return false;
     }
     mMounted.push_back(dest.c_str());
 
-    dest = mRootfsPath + MOUNT_DATA + MOUNT_CACHE;
-    if(!doBindMount(mCachePath, dest))
+    dest = mRootfsPath + MOUNT_DATA + "/" + MOUNT_CACHE;
+    if (!doBindMount(mCachePath, dest))
     {
         AI_LOG_ERROR_EXIT("Failed to bind mount %s->%s", mCachePath.c_str(), dest.c_str());
         return false;
     }
     mMounted.push_back(dest.c_str());
 
-    dest = mRootfsPath + MOUNT_CMDLINE;
-    if(!doBindFile(mCmdlinePath, dest))
+    dest = mRootfsPath + "system/etc/" + MOUNT_RESOLV_CONF;
+    std::string src = mRootfsPath + "../" + MOUNT_RESOLV_CONF;
+    if (!fs::exists(src)) {
+        std::error_code ec;
+        fs::copy(dest, src, ec);
+        if (ec.value() ) {
+            AI_LOG_ERROR_EXIT("Error(%d) - %s for binding %s->%s",
+            ec.value(), ec.message().c_str(), src.c_str(), dest.c_str());
+            return false;
+        }
+    }
+
+    if (!doBindFile(src, dest))
     {
-        AI_LOG_ERROR_EXIT("Failed to bind file %s->%s", mCmdlinePath.c_str(), dest.c_str());
+        AI_LOG_ERROR_EXIT("Failed to bind file %s->%s", src.c_str(), dest.c_str());
         return false;
     }
     mMounted.push_back(dest.c_str());
 
-    for(std::string s : mMounted)
+    for (std::string s : mMounted)
     {
         AI_LOG_INFO("Mounted %s", s.c_str());
     }
@@ -361,11 +382,11 @@ bool AndroidRuntimePlugin::doUnmounts()
 {
     AI_LOG_FN_ENTRY();
 
-    AI_LOG_INFO("doUnmount complete");
-    for(std::vector<std::string>::reverse_iterator it = mMounted.rbegin(); it != mMounted.rend(); it++)
+    AI_LOG_INFO("doUnmount start");
+    for (std::vector<std::string>::reverse_iterator it = mMounted.rbegin(); it != mMounted.rend(); it++)
     {
         AI_LOG_INFO("Unmounting %s", it->c_str());
-        if(umount2(it->c_str(), UMOUNT_NOFOLLOW) < 0)
+        if (umount2(it->c_str(), UMOUNT_NOFOLLOW) < 0)
         {
             AI_LOG_SYS_ERROR(errno, "Failed to unmount %s", it->c_str());
         }

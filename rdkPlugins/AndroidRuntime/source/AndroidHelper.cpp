@@ -18,22 +18,17 @@
 */
 
 #include "AndroidHelper.h"
-#include "DobbyRdkPluginUtils.h"
 
 #include <stdio.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <strings.h>
 #include <unistd.h>
-#include <list>
-#include <map>
 #include <sys/mount.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/ioctl.h>
-#include <sstream>
-#include <fstream>
 #include <dirent.h>
-#include <string.h>
 #include <sys/sysmacros.h>
 
 #if defined(__linux__)

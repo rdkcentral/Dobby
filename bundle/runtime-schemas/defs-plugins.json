@@ -706,9 +706,6 @@
                         },
                         "cachePath": {
                             "type": "string"
-                        },
-                        "cmdlinePath": {
-                            "type": "string"
                         }
                     }
                 }
