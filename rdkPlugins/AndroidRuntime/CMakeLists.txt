@@ -20,6 +20,7 @@
 # Project name should match the name of the plugin
 # CMake will prefix this with "lib"
 project(AndroidRuntimePlugin)
+set(CMAKE_CXX_STANDARD 17)
 
 add_library( ${PROJECT_NAME}
         SHARED
