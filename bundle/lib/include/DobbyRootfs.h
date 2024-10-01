@@ -100,6 +100,7 @@ private:
     std::string mPath;
     int mDirFd;
     bool mPersist;
+    bool androidRootfs;
 };
 
 
