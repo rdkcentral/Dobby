@@ -105,8 +105,6 @@ static const char* ociJsonTemplate = R"JSON(
         "readonly": true
     },
 
-    "rootfsPropagation": "rprivate",
-
     "hostname": "dobby",
 
     "mounts": [
@@ -388,7 +386,8 @@ static const char* ociJsonTemplate = R"JSON(
             "/proc/irq",
             "/proc/sys",
             "/proc/sysrq-trigger"
-        ]
+        ],
+        "rootfsPropagation": "slave"
     },
     {{#ENABLE_LEGACY_PLUGINS}}
     "legacyPlugins": {

@@ -62,6 +62,11 @@ public:
     // This is public as RDKPluginManager isn't responsible for handling logging
     std::shared_ptr<IDobbyRdkLoggingPlugin> getContainerLogger() const;
     void setExitStatus(int status) const;
+    
+    std::shared_ptr<rt_dobby_schema> getContainerConfig() const
+    {
+        return mContainerConfig;
+    };
 
 private:
     bool loadPlugins();

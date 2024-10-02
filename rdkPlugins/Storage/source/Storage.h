@@ -26,6 +26,7 @@
 #include "LoopMountDetails.h"
 #include "DynamicMountDetails.h"
 #include "MountOwnerDetails.h"
+#include "MountTunnelDetails.h"
 
 #include <RdkPluginBase.h>
 
@@ -93,6 +94,9 @@ private:
 
     std::vector<MountOwnerProperties> getMountOwners() const;
     std::vector<std::unique_ptr<MountOwnerDetails>> getMountOwnerDetails() const;
+
+    std::vector<MountTunnelProperties> getMountTunnel() const;
+    std::vector<std::unique_ptr<MountTunnelDetails>> getMountTunnelDetails() const;
 
     void setupOwnerIds(uid_t& uid, gid_t& gid) const;
 
