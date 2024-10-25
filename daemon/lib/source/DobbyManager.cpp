@@ -1924,33 +1924,17 @@ bool DobbyManager::addMount(int32_t cd, const std::string &source, const std::st
     AI_LOG_FN_EXIT();
     return true;
 #else
-    // get the mount tunnel configuration from storage plugin
-    if(it->second->rdkPluginManager == nullptr ||  
-       it->second->rdkPluginManager->getContainerConfig()->rdk_plugins->storage == nullptr || 
-       it->second->rdkPluginManager->getContainerConfig()->rdk_plugins->storage->data->mounttunnel_len == 0)
-    {
-        AI_LOG_ERROR("mount tunnel is not configured in %s", id.c_str());
-        AI_LOG_FN_EXIT();
-        return false;
-    }
-    
-    auto mounttunnel = it->second->rdkPluginManager->getContainerConfig()->rdk_plugins->storage->data->mounttunnel[0];
-    if(mounttunnel->source == nullptr || mounttunnel->destination == nullptr)
-    {
-        AI_LOG_ERROR("mount tunnel source or destination not found for %s", id.c_str());
-        AI_LOG_FN_EXIT();
-        return false;
-    }
-    
     std::string mountPointInsideContainer = destination;
-    std::string tempMountPointInsideContainer = std::string(mounttunnel->destination) + "/tmpdir";
-    std::string tempMountPointOutsideContainer = std::string(mounttunnel->source) + "/tmpdir";
-   
-    AI_LOG_INFO("temp mount point outside container: %s", tempMountPointOutsideContainer.c_str());
-    AI_LOG_INFO("temp mount point inside container: %s", tempMountPointInsideContainer.c_str());
+    std::string tempMountPointInsideContainer = std::string(MOUNT_TUNNEL_CONTAINER_PATH) + "/tmpdir";
+    std::string tempMountPointOutsideContainer = std::string(MOUNT_TUNNEL_HOST_PATH) + "/tmpdir";
     
     // create the temporary mount point outside the container
-    mUtilities->mkdirRecursive(tempMountPointOutsideContainer.c_str(), 0755);
+     if (!mUtilities->mkdirRecursive(tempMountPointOutsideContainer.c_str(), 0755))
+     {
+            AI_LOG_ERROR("failed to create temporary mount point %s", tempMountPointOutsideContainer.c_str());
+            AI_LOG_FN_EXIT();
+            return false;
+     }
     
     // mount the source dir on the temporary mount point outside the container
     // this is needed to move the mount inside the container namespace later
@@ -1961,8 +1945,6 @@ bool DobbyManager::addMount(int32_t cd, const std::string &source, const std::st
         AI_LOG_FN_EXIT();
         return false;
     }
-
-    AI_LOG_INFO("%s is mounted on %s inside %s", source.c_str(), tempMountPointOutsideContainer.c_str(), id.c_str());
 
     auto doMoveMountLambda = [containerUID, containerGID, tempMountPointInsideContainer, mountPointInsideContainer, mountOptions, mountData]()
     {

@@ -46,6 +46,10 @@ Storage::Storage(std::shared_ptr<rt_dobby_schema> &containerSpec,
     : mName("Storage"),
       mContainerConfig(containerSpec),
       mRootfsPath(rootfsPath),
+#ifdef USE_MOUNT_TUNNEL
+      mMountPointInsideContainer(rootfsPath + MOUNT_TUNNEL_CONTAINER_PATH),
+      mTempMountPointOutsideContainer(MOUNT_TUNNEL_HOST_PATH),
+#endif
       mUtils(utils)
 {
     AI_LOG_FN_ENTRY();
@@ -90,17 +94,27 @@ bool Storage::preCreation()
             return false;
         }
     }
-    
-    std::vector<std::unique_ptr<MountTunnelDetails>> tunnelDetails = getMountTunnelDetails();
-    for(auto it = tunnelDetails.begin(); it != tunnelDetails.end(); it++)
+
+#ifdef USE_MOUNT_TUNNEL
+    // Create host directory for the mount tunnel
+    if (!DobbyRdkPluginUtils::mkdirRecursive(mTempMountPointOutsideContainer, 0755))
     {
-        // Creating loop mount and attaching it to temp mount inside container
-        if(!(*it)->onPreCreate())
-        {
-            AI_LOG_ERROR_EXIT("failed to execute preCreation hook for loop mount");
-            return false;
-        }
+        AI_LOG_WARN("failed to create dir '%s'", mTempMountPointOutsideContainer.c_str());
+        return false;
     }
+    // Create directory inside the container rootfs for the mount tunnel
+    if (!DobbyRdkPluginUtils::mkdirRecursive(mMountPointInsideContainer, 0755))
+    {
+        AI_LOG_WARN("failed to create dir '%s'", mMountPointInsideContainer.c_str());
+        return false;
+    }
+
+    if(mount(mTempMountPointOutsideContainer.c_str(), mTempMountPointOutsideContainer.c_str(), NULL, MS_BIND, NULL) != 0)
+    {
+        AI_LOG_SYS_ERROR(errno, "failed to bind mount '%s'", mTempMountPointOutsideContainer.c_str());
+        return false;
+    }
+#endif
 
     AI_LOG_FN_EXIT();
     return true;
@@ -124,17 +138,7 @@ bool Storage::createRuntime()
             return false;
         }
     }
-    
-    std::vector<std::unique_ptr<MountTunnelDetails>> tunnelDetails = getMountTunnelDetails();
-    for(auto it = tunnelDetails.begin(); it != tunnelDetails.end(); it++)
-    {
-        // Setting permissions for generated directories
-        if(!(*it)->setPermissions())
-        {
-            AI_LOG_ERROR_EXIT("failed to set permissions for loop mount");
-            return false;
-        }
-    }
+
     // create destination paths for each dynamic mount
     std::vector<std::unique_ptr<DynamicMountDetails>> dynamicMountDetails = getDynamicMountDetails();
     for(auto it = dynamicMountDetails.begin(); it != dynamicMountDetails.end(); it++)
@@ -171,16 +175,24 @@ bool Storage::createContainer()
 {
     AI_LOG_FN_ENTRY();
 
-    std::vector<std::unique_ptr<MountTunnelDetails>> tunnelDetails = getMountTunnelDetails();
-    for(auto it = tunnelDetails.begin(); it != tunnelDetails.end(); it++)
+#ifdef USE_MOUNT_TUNNEL
+    // create the mount tunnel, the mounts on the host will now be visible inside the container dynamically
+    if (mount(mTempMountPointOutsideContainer.c_str(),
+                mMountPointInsideContainer.c_str(),
+                "", MS_BIND, nullptr) != 0)
     {
-        // Remount temp directory into proper place
-        if(!(*it)->remountTempDirectory())
-        {
-            AI_LOG_ERROR_EXIT("failed to execute createRuntime loop hook");
-            return false;
-        }
+        AI_LOG_ERROR_EXIT("failed to bind mount '%s' -> '%s'",
+                            mTempMountPointOutsideContainer.c_str(),
+                            mMountPointInsideContainer.c_str());
+        return false;
     }
+    else
+    {
+        AI_LOG_INFO("created mount tunnel '%s' -> '%s'",
+                    mTempMountPointOutsideContainer.c_str(),
+                    mMountPointInsideContainer.c_str());
+    }
+#endif
 
     // Mount temp directory in proper place
     std::vector<std::unique_ptr<LoopMountDetails>> loopMountDetails = getLoopMountDetails();
@@ -284,17 +296,27 @@ bool Storage::postStop()
         }
     }
 
-    std::vector<std::unique_ptr<MountTunnelDetails>> tunnelDetails = getMountTunnelDetails();
-    for(auto it = tunnelDetails.begin(); it != tunnelDetails.end(); it++)
+#ifdef USE_MOUNT_TUNNEL
+    // cleanup for the mount tunnel
+    if (umount2(mTempMountPointOutsideContainer.c_str(), UMOUNT_NOFOLLOW) != 0)
     {
-        // Clean up temp mount points
-        if(!(*it)->removeMountTunnel())
+        AI_LOG_SYS_ERROR(errno, "failed to unmount '%s'",
+                         mTempMountPointOutsideContainer.c_str());
+    }
+    else
+    {
+        AI_LOG_DEBUG("unmounted temp mount @ '%s', now deleting mount point",
+                    mTempMountPointOutsideContainer.c_str());
+
+        // can now delete the temporary mount point
+        if (rmdir(mTempMountPointOutsideContainer.c_str()) != 0)
         {
-            AI_LOG_ERROR_EXIT("failed to clean up non persistent image");
-            // This is probably to late to fail but do it either way
+            AI_LOG_ERROR_EXIT("failed to delete temp mount point @ '%s'",
+                             mTempMountPointOutsideContainer.c_str());
             return false;
         }
     }
+#endif
 
     AI_LOG_FN_EXIT();
     return true;
@@ -626,88 +648,6 @@ std::vector<MountOwnerProperties> Storage::getMountOwners() const
     return mountOwners;
 }
 
-// -----------------------------------------------------------------------------
-/**
- *  @brief Create mount owner details vector from all mount owners in config.
- *
- *
- *  @return vector of MountOwnerDetails that were in the config
- */
-std::vector<std::unique_ptr<MountTunnelDetails>> Storage::getMountTunnelDetails() const
-{
-    AI_LOG_FN_ENTRY();
-
-    const std::vector<MountTunnelProperties> mountTunnels = getMountTunnel();
-    std::vector<std::unique_ptr<MountTunnelDetails>> tunnelDetails;
-
-    // loop though all the loop mounts for the given container and create individual
-    // LoopMountDetails objects for each
-    for (const MountTunnelProperties &properties : mountTunnels)
-    {
-        // Setup the user/group IDs
-        uid_t uid = 0;
-        gid_t gid = 0;
-        setupOwnerIds(uid, gid);
-
-        // create the loop mount and make sure it was constructed
-        auto mountTunnel = std::make_unique<MountTunnelDetails>(mRootfsPath,
-                                                            properties,
-                                                            uid,
-                                                            gid,
-                                                            mUtils);
-
-        if (mountTunnel)
-        {
-            tunnelDetails.emplace_back(std::move(mountTunnel));
-        }
-    }
-
-    AI_LOG_FN_EXIT();
-    return tunnelDetails;
-
-}
-// -----------------------------------------------------------------------------
-/**
- *  @brief Reads container config and creates the MountTunnelProperties
- *  type object.
- *
- *
- *  @return MountTunnelProperties object that was in the config
- */
-std::vector<MountTunnelProperties> Storage::getMountTunnel() const
-{
-    AI_LOG_FN_ENTRY();
-
-    std::vector<MountTunnelProperties> tunnelProp;
-
-    // Check if container has mount data
-    if (mContainerConfig->rdk_plugins->storage->data)
-    {
-        for (size_t i = 0; i < mContainerConfig->rdk_plugins->storage->data->mounttunnel_len; i++)
-        {
-            auto mounttunnel = mContainerConfig->rdk_plugins->storage->data->mounttunnel[i];
-
-            MountTunnelProperties tunnel;
-            tunnel.source = std::string(mounttunnel->source);
-            tunnel.destination = std::string(mounttunnel->destination);
-            tunnel.mountFlags  = mounttunnel->flags;
-
-            for (size_t j = 0; j < mounttunnel->options_len; j++)
-            {
-                tunnel.mountOptions.push_back(std::string(mounttunnel->options[j]));
-            }
-
-            tunnelProp.push_back(tunnel);
-        }
-    }
-    else
-    {
-        AI_LOG_ERROR("No storage data in config file");
-    }
-
-    AI_LOG_FN_EXIT();
-    return tunnelProp;
-}
 // -----------------------------------------------------------------------------
 /**
  *  @brief Gets userId and groupId

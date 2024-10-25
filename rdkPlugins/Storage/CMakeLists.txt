@@ -30,7 +30,6 @@ add_library( ${PROJECT_NAME}
         source/LoopMountDetails.cpp
         source/DynamicMountDetails.cpp
         source/MountOwnerDetails.cpp
-        source/MountTunnelDetails.cpp
         )
 
 target_include_directories(${PROJECT_NAME}

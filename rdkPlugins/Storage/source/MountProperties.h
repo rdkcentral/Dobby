@@ -68,16 +68,4 @@ typedef struct _MountOwnerProperties
 
 } MountOwnerProperties;
 
-/**
-*  @brief MountTunnelProperties struct used for Storage plugin
-*/
-typedef struct _MountTunnelProperties
-{
-    std::string source;
-    std::string destination;
-    std::list<std::string> mountOptions;
-    unsigned long mountFlags;
-
-} MountTunnelProperties;
-
 #endif // !defined(MOUNTPROPERTIES_H)

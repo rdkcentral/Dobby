@@ -47,6 +47,9 @@
 // but we don't programatically know the workspace dir in this code.
 #define ADDRESS_FILE_DIR          "/tmp/dobby/plugin/networking/"
 
+#define MOUNT_TUNNEL_CONTAINER_PATH  "/mnt/.containermnttunnel"
+#define MOUNT_TUNNEL_HOST_PATH       "/tmp/.hostmnttunnel"
+
 typedef struct ContainerNetworkInfo
 {
     std::string vethName;
