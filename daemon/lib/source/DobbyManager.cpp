@@ -1938,7 +1938,7 @@ bool DobbyManager::addMount(int32_t cd, const std::string &source, const std::st
     
     // mount the source dir on the temporary mount point outside the container
     // this is needed to move the mount inside the container namespace later
-    if(mount(source.c_str(), tempMountPointOutsideContainer.c_str(), nullptr, mountOptions, nullptr))
+    if(mount(source.c_str(), tempMountPointOutsideContainer.c_str(), nullptr, mountOptions, mountData.data()))
     {
         AI_LOG_WARN("mount failed for %s errno: %d", destination.c_str(), errno);
         mUtilities->rmdirRecursive(tempMountPointOutsideContainer.c_str());
@@ -1946,7 +1946,7 @@ bool DobbyManager::addMount(int32_t cd, const std::string &source, const std::st
         return false;
     }
 
-    auto doMoveMountLambda = [containerUID, containerGID, tempMountPointInsideContainer, mountPointInsideContainer, mountOptions, mountData]()
+    auto doMoveMountLambda = [containerUID, containerGID, tempMountPointInsideContainer, mountPointInsideContainer]()
     {
         // switch to uid / gid of the host since we are still in the host user namespace
         if (syscall(SYS_setresgid, -1, containerGID, -1) != 0)
@@ -1979,7 +1979,7 @@ bool DobbyManager::addMount(int32_t cd, const std::string &source, const std::st
             return false;
         }
         // move the mount from the temporary mount point inside the container to the final mount point
-        if(mount(tempMountPointInsideContainer.c_str(), mountPointInsideContainer.c_str(), nullptr, mountOptions | MS_MOVE, nullptr))
+        if(mount(tempMountPointInsideContainer.c_str(), mountPointInsideContainer.c_str(), nullptr, MS_MOVE, nullptr))
         {
             AI_LOG_WARN("mount failed for src %s, dest %s errno: %d", tempMountPointInsideContainer.c_str(), mountPointInsideContainer.c_str(), errno);
             return false;
