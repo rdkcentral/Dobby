@@ -30,6 +30,7 @@ jobs:
         # matrix runs both versions
         build_type: ["Release", "Debug"]
         extra_flags: [ "RUN_TESTS", "-DLEGACY_COMPONENTS=ON", "-DLEGACY_COMPONENTS=OFF", "-DUSE_SYSTEMD=ON", "-DUSE_SYSTEMD=OFF", "-DDOBBY_HIBERNATE_MEMCR_IMPL=ON", "-DDOBBY_HIBERNATE_MEMCR_IMPL=OFF"]
+
     name: Build in ${{ matrix.build_type }} Mode (${{ matrix.extra_flags }})
     steps:
       - name: checkout
@@ -41,6 +42,7 @@ jobs:
           sudo apt-get install -q -y automake libtool autotools-dev software-properties-common build-essential cmake libsystemd-dev libctemplate-dev libjsoncpp-dev libdbus-1-dev libnl-3-dev libnl-route-3-dev libsystemd-dev libyajl-dev libcap-dev libboost-dev lcov clang valgrind
           sudo pip3 install xmltodict
           sudo pip3 install requests
+
       - name: Set clang toolchain
         if: ${{ matrix.compiler == 'clang' }}
         run: echo "TOOLCHAIN_FILE=${GITHUB_WORKSPACE}/tests/clang.cmake" >> $GITHUB_ENV
@@ -77,6 +79,7 @@ jobs:
              cmake -DCMAKE_TOOLCHAIN_FILE="${{ env.TOOLCHAIN_FILE }}" -DRDK_PLATFORM=DEV_VM -DCMAKE_INSTALL_PREFIX:PATH=/usr -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} ${{ matrix.extra_flags }} ${{ env.optional_plugins }} ..
          fi
          make -j $(nproc)
+
       - name: run l1-tests
         if: ${{ matrix.extra_flags == 'RUN_TESTS' && matrix.build_type == 'Debug' }}
         run: |
@@ -84,9 +87,6 @@ jobs:
           sudo valgrind --tool=memcheck --leak-check=yes --show-reachable=yes --track-fds=yes --fair-sched=try $GITHUB_WORKSPACE/build/tests/L1_testing/tests/DobbyTest/DobbyL1Test --gtest_output="json:/tmp/Gtest_Report/DobbyL1TestResults.json"
           sudo $GITHUB_WORKSPACE/build/tests/L1_testing/tests/DobbyUtilsTest/DobbyUtilsL1Test --gtest_output="json:/tmp/Gtest_Report/DobbyUtilsL1TestResults.json"
           sudo valgrind --tool=memcheck --leak-check=yes --show-reachable=yes --track-fds=yes --fair-sched=try $GITHUB_WORKSPACE/build/tests/L1_testing/tests/DobbyManagerTest/DobbyManagerL1Test --gtest_output="json:/tmp/Gtest_Report/DobbyManagerL1TestResults.json"
-          echo "Siva: /tmp/Gtest_Report/DobbyL1TestResults.json"
-          ls -l /tmp/Gtest_Report/
-          cat /tmp/Gtest_Report/DobbyL1TestResults.json
 
       - name: Generate coverage
         if: ${{ matrix.coverage == 'with-coverage' && matrix.extra_flags == 'RUN_TESTS' && matrix.build_type == 'Debug' }}
