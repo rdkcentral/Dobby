@@ -124,6 +124,5 @@ jobs:
         run: >
           export http_proxy=http://96.102.165.62:80 &&
           export https_proxy=http://96.102.165.62:80 &&
-          chmod 777 $GITHUB_WORKSPACE/gtest-json-result-push.py &&
           git config --global --add safe.directory $GITHUB_WORKSPACE &&
           $GITHUB_WORKSPACE/docker-rdk-ci/gtest-json-result-push.py /tmp/Gtest_Report/ http://rdkeorchestrationservice.apps.cloud.comcast.net/rdke_orchestration_api/push_unit_test_results $GITHUB_WORKSPACE
