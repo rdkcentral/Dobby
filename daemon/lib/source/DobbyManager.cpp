@@ -62,7 +62,7 @@
 #include <thread>
 #include <sys/syscall.h>
 
-#ifdef HAVE_LINUX_MOUNT_H
+#ifdef USE_OPEN_TREE_FOR_DYNAMIC_MOUNTS
 #  include <linux/mount.h>
 #endif
 
@@ -1849,8 +1849,8 @@ bool DobbyManager::addMount(int32_t cd, const std::string &source, const std::st
         AI_LOG_FN_EXIT();
         return false;
     }
-
-#ifdef HAVE_LINUX_MOUNT_H
+    
+#ifdef USE_OPEN_TREE_FOR_DYNAMIC_MOUNTS
     int fdMnt = syscall(SYS_open_tree, -EBADF, source.c_str(),  OPEN_TREE_CLOEXEC | OPEN_TREE_CLONE);
     if (fdMnt < 0)
     {
@@ -1924,9 +1924,110 @@ bool DobbyManager::addMount(int32_t cd, const std::string &source, const std::st
     AI_LOG_FN_EXIT();
     return true;
 #else
-    AI_LOG_ERROR("open_tree and move_mount are not supported on this platform, aborting mount operation inside %s", id.c_str());
-    AI_LOG_FN_EXIT();
-    return false;
+    std::string mountPointInsideContainer = destination;
+    std::string tempMountPointInsideContainer = std::string(MOUNT_TUNNEL_CONTAINER_PATH) + "/tmpdir";
+    std::string tempMountPointOutsideContainer = std::string(MOUNT_TUNNEL_HOST_PATH) + "/tmpdir";
+    
+    // create the temporary mount point outside the container
+     if (!mUtilities->mkdirRecursive(tempMountPointOutsideContainer.c_str(), 0755))
+     {
+            AI_LOG_ERROR("failed to create temporary mount point %s", tempMountPointOutsideContainer.c_str());
+            AI_LOG_FN_EXIT();
+            return false;
+     }
+    
+    // mount the source dir on the temporary mount point outside the container
+    // this is needed to move the mount inside the container namespace later
+    if(mount(source.c_str(), tempMountPointOutsideContainer.c_str(), nullptr, mountOptions, mountData.data()))
+    {
+        AI_LOG_WARN("mount failed for %s errno: %d", destination.c_str(), errno);
+        mUtilities->rmdirRecursive(tempMountPointOutsideContainer.c_str());
+        AI_LOG_FN_EXIT();
+        return false;
+    }
+
+    auto doMoveMountLambda = [containerUID, containerGID, tempMountPointInsideContainer, mountPointInsideContainer]()
+    {
+        // switch to uid / gid of the host since we are still in the host user namespace
+        if (syscall(SYS_setresgid, -1, containerGID, -1) != 0)
+        {
+            AI_LOG_ERROR("failed to setresgid for container with GID: %d", containerGID);
+            return false;
+        }
+
+        if (syscall(SYS_setresuid, -1, containerUID, -1) != 0)
+        {
+            AI_LOG_ERROR("failed to setresuid for container with UID: %d", containerUID);
+            return false;
+        }
+
+        if (mkdir(mountPointInsideContainer.c_str(), 0755) != 0)
+        {
+            AI_LOG_ERROR("failed to create destination directory %s", mountPointInsideContainer.c_str());
+            return false;
+        }
+        // revert back to root for the mount
+        if (syscall(SYS_setresgid, -1, 0, -1) != 0)
+        {
+            AI_LOG_ERROR("failed to setresgid for root");
+            return false;
+        }
+
+        if (syscall(SYS_setresuid, -1, 0, -1) != 0)
+        {
+            AI_LOG_ERROR("failed to setresuid for root");
+            return false;
+        }
+        // move the mount from the temporary mount point inside the container to the final mount point
+        if(mount(tempMountPointInsideContainer.c_str(), mountPointInsideContainer.c_str(), nullptr, MS_MOVE, nullptr))
+        {
+            AI_LOG_WARN("mount failed for src %s, dest %s errno: %d", tempMountPointInsideContainer.c_str(), mountPointInsideContainer.c_str(), errno);
+            return false;
+        }
+        return true;
+
+    };
+
+    bool success = true;
+    if(!mUtilities->callInNamespace(containerPid, CLONE_NEWNS, doMoveMountLambda))
+    {
+        AI_LOG_ERROR("failed to addMount for %s in %s", source.c_str(), id.c_str());
+        success = false;
+    }
+    
+    // cleanup the temporary mount on the host, we don't need it anymore
+    if (umount2(tempMountPointOutsideContainer.c_str(), UMOUNT_NOFOLLOW) != 0)
+    {
+        AI_LOG_SYS_ERROR(errno, "failed to unmount '%s'",
+                         tempMountPointOutsideContainer.c_str());
+    }
+    else
+    {
+        AI_LOG_INFO("unmounted temp mount @ '%s', now deleting mount point",
+                    tempMountPointOutsideContainer.c_str());
+
+        // can now delete the temporary mount point
+        if (rmdir(tempMountPointOutsideContainer.c_str()) != 0)
+        {
+            AI_LOG_SYS_ERROR(errno, "failed to delete temp mount point @ '%s'",
+                             tempMountPointOutsideContainer.c_str());
+        }else{
+            AI_LOG_INFO("deleted temp mount point @ '%s'", tempMountPointOutsideContainer.c_str());
+        }
+    }
+
+    if(success)
+    {
+        AI_LOG_INFO("%s is mounted on %s inside %s", source.c_str(), destination.c_str(), id.c_str());
+        AI_LOG_FN_EXIT();
+        return true;
+    }
+    else
+    {
+        AI_LOG_ERROR("failed to addMount for %s in %s", source.c_str(), id.c_str());
+        AI_LOG_FN_EXIT();
+        return false;
+    }
 #endif
 }
 

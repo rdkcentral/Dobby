@@ -54,6 +54,18 @@ It will mount "source" into container "destination" only if the source exists on
     }
 }
 ```
+### Mount tunnel
+Storage plugin will create a mount tunnel on devices running older linux kernels.
+This will enable dynamic mounting of host devices/directories inside the container on devices running older linux kernels.
+
+You need to have `rootfsPropagation` set to `slave` in the OCI runtime configuration for the tunneling to work.
+Some references :
+- https://lwn.net/Articles/690679/
+- https://brauner.io/2023/02/28/mounting-into-mount-namespaces.html
+- https://www.kernel.org/doc/Documentation/filesystems/sharedsubtree.txt
+
+Please note that devices with kernel 5.4 or higher don't need the mount tunnel for dynamic mounts and this code will be disabled at build time.
+
 
 ### Mount Owners
 Add the following section to your OCI runtime configuration `config.json` file to configure mount ownership.

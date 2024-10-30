@@ -101,7 +101,10 @@ private:
     std::shared_ptr<rt_dobby_schema> mContainerConfig;
     const std::string mRootfsPath;
     const std::shared_ptr<DobbyRdkPluginUtils> mUtils;
-
+#ifndef USE_OPEN_TREE_FOR_DYNAMIC_MOUNTS
+    std::string mMountPointInsideContainer;
+    std::string mTempMountPointOutsideContainer;
+#endif
     uint32_t getMappedId(uint32_t id, rt_defs_id_mapping **mapping, size_t mapping_len) const;
 };
 

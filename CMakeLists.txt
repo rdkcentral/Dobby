@@ -165,12 +165,10 @@ endif()
 
 find_package( breakpad QUIET )
 
-find_path(LINUXMOUNT NAMES "linux/mount.h")
-if(NOT LINUXMOUNT)
-  message( "Couldn't find linux/mount.h. You may need to upgrade your kernel to 5.2 or later" )
-else()
-  message("Found linux/mount.h")
-  add_definitions( -DHAVE_LINUX_MOUNT_H )
+option( USE_OPEN_TREE_FOR_DYNAMIC_MOUNTS "use open_tree() syscall for dynamic mounts" OFF )
+if ( USE_OPEN_TREE_FOR_DYNAMIC_MOUNTS )
+    message("will use open_tree syscall for dynamic mounts")
+    add_definitions( -DUSE_OPEN_TREE_FOR_DYNAMIC_MOUNTS )
 endif()
 
 # Run libocispec to generate OCI config parsers and necessary C headers

@@ -24,6 +24,7 @@
 #include <errno.h>
 #include <string>
 #include <memory>
+#include <sys/stat.h>
 
 /**
  * Need to do this at the start of every plugin to make sure the correct
@@ -45,6 +46,10 @@ Storage::Storage(std::shared_ptr<rt_dobby_schema> &containerSpec,
     : mName("Storage"),
       mContainerConfig(containerSpec),
       mRootfsPath(rootfsPath),
+#ifndef USE_OPEN_TREE_FOR_DYNAMIC_MOUNTS
+      mMountPointInsideContainer(rootfsPath + MOUNT_TUNNEL_CONTAINER_PATH),
+      mTempMountPointOutsideContainer(MOUNT_TUNNEL_HOST_PATH),
+#endif
       mUtils(utils)
 {
     AI_LOG_FN_ENTRY();
@@ -89,6 +94,28 @@ bool Storage::preCreation()
             return false;
         }
     }
+
+#ifndef USE_OPEN_TREE_FOR_DYNAMIC_MOUNTS
+    // Create host directory for the mount tunnel
+    if (!DobbyRdkPluginUtils::mkdirRecursive(mTempMountPointOutsideContainer, 0755))
+    {
+        AI_LOG_WARN("failed to create dir '%s'", mTempMountPointOutsideContainer.c_str());
+        return false;
+    }
+    // Create directory inside the container rootfs for the mount tunnel
+    if (!DobbyRdkPluginUtils::mkdirRecursive(mMountPointInsideContainer, 0755))
+    {
+        AI_LOG_WARN("failed to create dir '%s'", mMountPointInsideContainer.c_str());
+        return false;
+    }
+
+    if(mount(mTempMountPointOutsideContainer.c_str(), mTempMountPointOutsideContainer.c_str(), NULL, MS_BIND, NULL) != 0)
+    {
+        AI_LOG_SYS_ERROR(errno, "failed to bind mount '%s'", mTempMountPointOutsideContainer.c_str());
+        return false;
+    }
+#endif
+
     AI_LOG_FN_EXIT();
     return true;
 }
@@ -107,7 +134,7 @@ bool Storage::createRuntime()
         // Setting permissions for generated directories
         if(!(*it)->setPermissions())
         {
-            AI_LOG_ERROR_EXIT("failed to execute createRuntime loop hook");
+            AI_LOG_ERROR_EXIT("failed to set permissions for loop mount");
             return false;
         }
     }
@@ -147,6 +174,25 @@ bool Storage::createRuntime()
 bool Storage::createContainer()
 {
     AI_LOG_FN_ENTRY();
+
+#ifndef USE_OPEN_TREE_FOR_DYNAMIC_MOUNTS
+    // create the mount tunnel, the mounts on the host will now be visible inside the container dynamically
+    if (mount(mTempMountPointOutsideContainer.c_str(),
+                mMountPointInsideContainer.c_str(),
+                "", MS_BIND, nullptr) != 0)
+    {
+        AI_LOG_ERROR_EXIT("failed to bind mount '%s' -> '%s'",
+                            mTempMountPointOutsideContainer.c_str(),
+                            mMountPointInsideContainer.c_str());
+        return false;
+    }
+    else
+    {
+        AI_LOG_INFO("created mount tunnel '%s' -> '%s'",
+                    mTempMountPointOutsideContainer.c_str(),
+                    mMountPointInsideContainer.c_str());
+    }
+#endif
 
     // Mount temp directory in proper place
     std::vector<std::unique_ptr<LoopMountDetails>> loopMountDetails = getLoopMountDetails();
@@ -249,6 +295,28 @@ bool Storage::postStop()
             return false;
         }
     }
+
+#ifndef USE_OPEN_TREE_FOR_DYNAMIC_MOUNTS
+    // cleanup for the mount tunnel
+    if (umount2(mTempMountPointOutsideContainer.c_str(), UMOUNT_NOFOLLOW) != 0)
+    {
+        AI_LOG_SYS_ERROR(errno, "failed to unmount '%s'",
+                         mTempMountPointOutsideContainer.c_str());
+    }
+    else
+    {
+        AI_LOG_DEBUG("unmounted temp mount @ '%s', now deleting mount point",
+                    mTempMountPointOutsideContainer.c_str());
+
+        // can now delete the temporary mount point
+        if (rmdir(mTempMountPointOutsideContainer.c_str()) != 0)
+        {
+            AI_LOG_ERROR_EXIT("failed to delete temp mount point @ '%s'",
+                             mTempMountPointOutsideContainer.c_str());
+            return false;
+        }
+    }
+#endif
 
     AI_LOG_FN_EXIT();
     return true;
