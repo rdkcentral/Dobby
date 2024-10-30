@@ -62,7 +62,7 @@
 #include <thread>
 #include <sys/syscall.h>
 
-#ifdef HAVE_LINUX_MOUNT_H
+#ifdef USE_OPEN_TREE_FOR_DYNAMIC_MOUNTS
 #  include <linux/mount.h>
 #endif
 
@@ -1850,7 +1850,7 @@ bool DobbyManager::addMount(int32_t cd, const std::string &source, const std::st
         return false;
     }
     
-#ifdef HAVE_LINUX_MOUNT_H
+#ifdef USE_OPEN_TREE_FOR_DYNAMIC_MOUNTS
     int fdMnt = syscall(SYS_open_tree, -EBADF, source.c_str(),  OPEN_TREE_CLOEXEC | OPEN_TREE_CLONE);
     if (fdMnt < 0)
     {

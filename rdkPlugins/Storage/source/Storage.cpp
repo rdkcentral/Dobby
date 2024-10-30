@@ -46,7 +46,7 @@ Storage::Storage(std::shared_ptr<rt_dobby_schema> &containerSpec,
     : mName("Storage"),
       mContainerConfig(containerSpec),
       mRootfsPath(rootfsPath),
-#ifdef USE_MOUNT_TUNNEL
+#ifndef USE_OPEN_TREE_FOR_DYNAMIC_MOUNTS
       mMountPointInsideContainer(rootfsPath + MOUNT_TUNNEL_CONTAINER_PATH),
       mTempMountPointOutsideContainer(MOUNT_TUNNEL_HOST_PATH),
 #endif
@@ -95,7 +95,7 @@ bool Storage::preCreation()
         }
     }
 
-#ifdef USE_MOUNT_TUNNEL
+#ifndef USE_OPEN_TREE_FOR_DYNAMIC_MOUNTS
     // Create host directory for the mount tunnel
     if (!DobbyRdkPluginUtils::mkdirRecursive(mTempMountPointOutsideContainer, 0755))
     {
@@ -175,7 +175,7 @@ bool Storage::createContainer()
 {
     AI_LOG_FN_ENTRY();
 
-#ifdef USE_MOUNT_TUNNEL
+#ifndef USE_OPEN_TREE_FOR_DYNAMIC_MOUNTS
     // create the mount tunnel, the mounts on the host will now be visible inside the container dynamically
     if (mount(mTempMountPointOutsideContainer.c_str(),
                 mMountPointInsideContainer.c_str(),
@@ -296,7 +296,7 @@ bool Storage::postStop()
         }
     }
 
-#ifdef USE_MOUNT_TUNNEL
+#ifndef USE_OPEN_TREE_FOR_DYNAMIC_MOUNTS
     // cleanup for the mount tunnel
     if (umount2(mTempMountPointOutsideContainer.c_str(), UMOUNT_NOFOLLOW) != 0)
     {

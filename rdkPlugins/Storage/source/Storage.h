@@ -101,7 +101,7 @@ private:
     std::shared_ptr<rt_dobby_schema> mContainerConfig;
     const std::string mRootfsPath;
     const std::shared_ptr<DobbyRdkPluginUtils> mUtils;
-#ifdef USE_MOUNT_TUNNEL
+#ifndef USE_OPEN_TREE_FOR_DYNAMIC_MOUNTS
     std::string mMountPointInsideContainer;
     std::string mTempMountPointOutsideContainer;
 #endif
