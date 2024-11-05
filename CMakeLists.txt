@@ -22,12 +22,12 @@ cmake_minimum_required( VERSION 3.7.0 )
 include(GNUInstallDirs)
 
 # Project setup
-project( Dobby VERSION "3.10.0" )
+project( Dobby VERSION "3.11.0" )
 
 
 # Set the major and minor version numbers of dobby (also used by plugins)
 set( DOBBY_MAJOR_VERSION 3 )
-set( DOBBY_MINOR_VERSION 10 )
+set( DOBBY_MINOR_VERSION 11 )
 set( DOBBY_MICRO_VERSION 0 )
 
 set(INSTALL_CMAKE_DIR lib/cmake/Dobby)
@@ -164,6 +164,12 @@ if( ENABLE_PERFETTO_TRACING )
 endif()
 
 find_package( breakpad QUIET )
+
+option( USE_OPEN_TREE_FOR_DYNAMIC_MOUNTS "use open_tree() syscall for dynamic mounts" OFF )
+if ( USE_OPEN_TREE_FOR_DYNAMIC_MOUNTS )
+    message("will use open_tree syscall for dynamic mounts")
+    add_definitions( -DUSE_OPEN_TREE_FOR_DYNAMIC_MOUNTS )
+endif()
 
 # Run libocispec to generate OCI config parsers and necessary C headers
 include(Findlibocispec)

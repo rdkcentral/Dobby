@@ -84,13 +84,13 @@ public:
 
 private:
     bool callInNamespaceImpl(pid_t pid, int nsType,
-                             const std::function<void()>& func) const override;
+                             const std::function<bool()>& func) const override;
 
     bool callInNamespaceImpl(int namespaceFd,
-                             const std::function<void()>& func) const override;
+                             const std::function<bool()>& func) const override;
 
     void nsThread(int newNsFd, int nsType, bool* success,
-                  std::function<void()>& func) const;
+                  std::function<bool()>& func) const;
 
 public:
     bool writeTextFileAt(int dirFd, const std::string& path,
@@ -148,6 +148,11 @@ public:
 
 private:
     bool executeCommand(const std::string &command) const;
+    int  getGIDorUID(pid_t pid, const std::string& idType) const;
+
+public:
+    uid_t getUID(pid_t pid) const override;
+    gid_t getGID(pid_t pid) const override;
 
 private:
     std::mutex mMetaDataLock;

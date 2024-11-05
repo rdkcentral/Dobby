@@ -215,14 +215,14 @@ bool DobbyUtils::deleteEbtablesRule(const std::string &args) const
     return impl->deleteEbtablesRule(args);
 }
 
-bool DobbyUtils::callInNamespaceImpl(pid_t pid, int nsType, const std::function<void()>& func) const
+bool DobbyUtils::callInNamespaceImpl(pid_t pid, int nsType, const std::function<bool()>& func) const
 {
    EXPECT_NE(impl, nullptr);
 
     return impl->callInNamespaceImpl(pid,nsType,func);
 }
 
-bool DobbyUtils::callInNamespaceImpl(int namespaceFd, const std::function<void()>& func) const
+bool DobbyUtils::callInNamespaceImpl(int namespaceFd, const std::function<bool()>& func) const
 {
    EXPECT_NE(impl, nullptr);
 
@@ -237,3 +237,16 @@ int DobbyUtils::startTimerImpl(const std::chrono::milliseconds& timeout,bool one
 }
 
 
+gid_t DobbyUtils::getGID(pid_t pid) const
+{
+   EXPECT_NE(impl, nullptr);
+
+    return impl->getGID(pid);
+}
+
+uid_t DobbyUtils::getUID(pid_t pid) const
+{
+   EXPECT_NE(impl, nullptr);
+
+    return impl->getUID(pid);
+}
