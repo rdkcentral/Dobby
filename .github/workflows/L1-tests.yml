@@ -115,7 +115,7 @@ jobs:
           path: |
             coverage
             /tmp/Gtest_Report/DobbyL1TestResults.json
-            /tmp/Gtest_Report/DobbyL1TestResults.json
+            /tmp/Gtest_Report/DobbyUtilsL1TestResults.json
             /tmp/Gtest_Report/DobbyManagerL1TestResults.json
           if-no-files-found: warn
 
