@@ -112,6 +112,8 @@ private:
     DOBBY_DBUS_METHOD(stopInProcessTracing);
 #endif
 
+    DOBBY_DBUS_METHOD(addAnnotation);
+
     #undef DOBBY_DBUS_METHOD
 
 private:

@@ -156,6 +156,10 @@ public:
     
     virtual bool removeContainerMount(int32_t descriptor, const std::string& source) const = 0;
 
+    virtual bool addAnnotation(int32_t cd,
+                               const std::string& key,
+                               const std::string& value) const = 0;
+
     virtual bool execInContainer(int32_t cd,
                                  const std::string& options,
                                  const std::string& command) const = 0;

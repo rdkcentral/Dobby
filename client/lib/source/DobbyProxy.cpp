@@ -927,6 +927,39 @@ bool DobbyProxy::addContainerMount(int32_t cd, const std::string& source, const 
     AI_LOG_FN_EXIT();
     return result;
 }
+// -----------------------------------------------------------------------------
+/**
+ *  @brief adds a key value pair to the container annotation
+ *
+ *  @param[in]  cd         The container descriptor.
+ *  @param[in]  key        The key string
+ *  @param[in]  value      The value string
+ *
+ *  @return true on success, false on failure.
+ */
+bool DobbyProxy::addAnnotation(int32_t cd, const std::string& key, const std::string& value) const
+{
+    AI_LOG_FN_ENTRY();
+
+    // Send off the request
+    const AI_IPC::VariantList params = { cd, key, value};
+    AI_IPC::VariantList returns;
+
+    bool result = false;
+
+    if (invokeMethod(DOBBY_CTRL_INTERFACE,
+                     DOBBY_CTRL_METHOD_ANNOTATE,
+                     params, returns))
+    {
+        if (!AI_IPC::parseVariantList<bool>(returns, &result))
+        {
+            result = false;
+        }
+    }
+
+    AI_LOG_FN_EXIT();
+    return result;
+}
 
 // -----------------------------------------------------------------------------
 /**

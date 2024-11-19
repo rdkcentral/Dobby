@@ -736,3 +736,25 @@ std::string DobbyRdkPluginUtils::ipAddressToString(const in_addr_t &ipAddress)
     AI_LOG_DEBUG("Converted IP %u -> %s", ipAddress, str);
     return std::string(str);
 }
+
+// -------------------------------------------------------------------------
+/**
+ *  @brief adds a key value pair to the annotations
+ *
+ *  @param[in]  key     The key to add
+ *  @param[in]  value   The value to add
+ *
+ *  @return true on success, false on failure
+ */
+bool DobbyRdkPluginUtils::addAnnotation(const std::string &key, const std::string &value)
+{
+    AI_LOG_FN_ENTRY();
+
+    std::lock_guard<std::mutex> locker(mLock);
+
+    mAnnotations[key] = value;
+
+    AI_LOG_FN_EXIT();
+
+    return true;
+}

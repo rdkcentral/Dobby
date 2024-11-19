@@ -152,6 +152,15 @@ bool DobbyManager::execInContainer(int32_t cd,
     return impl->execInContainer(cd, options, command);
 }
 
+bool DobbyManager::annotate(int32_t cd,
+                            const std::string& key,
+                            const std::string& value)
+{
+   EXPECT_NE(impl, nullptr);
+
+   return impl->annotate(cd, key, value);
+}
+
 std::list<std::pair<int32_t, ContainerId>> DobbyManager::listContainers()
 {
    EXPECT_NE(impl, nullptr);

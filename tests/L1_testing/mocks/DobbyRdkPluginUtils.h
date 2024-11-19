@@ -77,6 +77,8 @@ public:
     virtual int addFileDescriptor(const std::string& pluginName, int fd) = 0;
     virtual std::list<int> files() const = 0;
     virtual std::list<int> files(const std::string& pluginName) const = 0;
+    virtual bool addAnnotation(const std::string &key, const std::string &value) = 0;
+    virtual std::map<std::string, std::string> getAnnotations() const = 0;
 };
 
 class DobbyRdkPluginUtils {
@@ -118,6 +120,8 @@ public:
     int addFileDescriptor(const std::string& pluginName, int fd);
     std::list<int> files();
     std::list<int> files(const std::string& pluginName);
+    bool addAnnotation(const std::string &key, const std::string &value);
+    std::map<std::string, std::string> getAnnotations() const;
 };
 
 

@@ -73,3 +73,9 @@ std::shared_ptr<IDobbyRdkLoggingPlugin> DobbyRdkPluginManager::getContainerLogge
     return impl->getContainerLogger();
 }
 
+std::shared_ptr<DobbyRdkPluginUtils> DobbyRdkPluginManager::getUtils() const
+{
+   EXPECT_NE(impl, nullptr);
+
+    return impl->getUtils();
+}
