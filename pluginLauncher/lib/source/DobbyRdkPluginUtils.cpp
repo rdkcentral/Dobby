@@ -758,3 +758,31 @@ bool DobbyRdkPluginUtils::addAnnotation(const std::string &key, const std::strin
 
     return true;
 }
+
+// -------------------------------------------------------------------------
+/**
+ *  @brief removes a key value pair from the annotations
+ *
+ *  @param[in]  key     The key to remove
+ *
+ *  @return true on success, false on failure
+ */
+bool DobbyRdkPluginUtils::removeAnnotation(const std::string &key)
+{
+    AI_LOG_FN_ENTRY();
+    bool success = false;
+
+    std::lock_guard<std::mutex> locker(mLock);
+
+    const auto it = mAnnotations.find(key);
+    if (it != mAnnotations.end()){
+        mAnnotations.erase(it);
+        success = true;
+    } else {
+        AI_LOG_ERROR("Key %s not found in annotations", key.c_str());
+    }
+
+    AI_LOG_FN_EXIT();
+
+    return success;
+}

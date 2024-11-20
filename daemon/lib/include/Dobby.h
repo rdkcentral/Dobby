@@ -113,6 +113,7 @@ private:
 #endif
 
     DOBBY_DBUS_METHOD(addAnnotation);
+    DOBBY_DBUS_METHOD(removeAnnotation);
 
     #undef DOBBY_DBUS_METHOD
 

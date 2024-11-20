@@ -16,13 +16,12 @@
 # limitations under the License.
 
 import test_utils
-from pathlib import Path
 
 tests = [
-    test_utils.Test("annotate()",
+    test_utils.Test("annotations",
                     "sleepy",
                     "\"Key1\" : \"Value1\"",
-                    "Starts container, adds a key&value pair, confirms container info contains the annotation"),
+                    "Starts container, adds a key&value pair, confirms annotation, then removes the annotation and confirms removal"),
 ]
 
 
@@ -98,8 +97,30 @@ def validate_annotation(container_id, expected_output):
 
     if expected_output not in status.stdout:
         return False, "annotation is not found in container info"
-    else:
-        return True, "Test passed"
+
+    removeAnnotationCommand = ["DobbyTool",
+                        "remove-annotation",
+                        container_id,
+                        "Key1"]
+    status = test_utils.run_command_line(removeAnnotationCommand)
+
+    test_utils.print_log("command returned %s" % status.stdout, test_utils.Severity.debug)
+
+    if "removed Key1 key from container '" + container_id + "'" not in status.stdout:
+        return False, "remove annotation failed"
+
+    infoCommand = ["DobbyTool",
+                "info",
+                container_id]
+
+    status = test_utils.run_command_line(infoCommand)
+
+    test_utils.print_log("command returned %s" % status.stdout, test_utils.Severity.debug)
+
+    if expected_output in status.stdout:
+        return False, "annotation is still found in container info after removal"
+
+    return True, "Test passed"
     
 
 if __name__ == "__main__":

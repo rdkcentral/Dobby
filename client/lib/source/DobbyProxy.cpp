@@ -960,7 +960,38 @@ bool DobbyProxy::addAnnotation(int32_t cd, const std::string& key, const std::st
     AI_LOG_FN_EXIT();
     return result;
 }
+// -----------------------------------------------------------------------------
+/**
+ *  @brief removes a key value pair from the container annotation
+ *
+ *  @param[in]  cd         The container descriptor.
+ *  @param[in]  key        The key string
+ *
+ *  @return true on success, false on failure.
+ */
+bool DobbyProxy::removeAnnotation(int32_t cd, const std::string& key) const
+{
+    AI_LOG_FN_ENTRY();
 
+    // Send off the request
+    const AI_IPC::VariantList params = { cd, key};
+    AI_IPC::VariantList returns;
+
+    bool result = false;
+
+    if (invokeMethod(DOBBY_CTRL_INTERFACE,
+                     DOBBY_CTRL_METHOD_REMOVE_ANNOTATION,
+                     params, returns))
+    {
+        if (!AI_IPC::parseVariantList<bool>(returns, &result))
+        {
+            result = false;
+        }
+    }
+
+    AI_LOG_FN_EXIT();
+    return result;
+}
 // -----------------------------------------------------------------------------
 /**
  *  @brief unmounts a directory/device inside the container

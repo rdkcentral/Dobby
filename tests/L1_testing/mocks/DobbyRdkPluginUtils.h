@@ -78,6 +78,7 @@ public:
     virtual std::list<int> files() const = 0;
     virtual std::list<int> files(const std::string& pluginName) const = 0;
     virtual bool addAnnotation(const std::string &key, const std::string &value) = 0;
+    virtual bool removeAnnotation(const std::string &key) = 0;
     virtual std::map<std::string, std::string> getAnnotations() const = 0;
 };
 
@@ -121,6 +122,7 @@ public:
     std::list<int> files();
     std::list<int> files(const std::string& pluginName);
     bool addAnnotation(const std::string &key, const std::string &value);
+    bool removeAnnotation(const std::string &key);
     std::map<std::string, std::string> getAnnotations() const;
 };
 

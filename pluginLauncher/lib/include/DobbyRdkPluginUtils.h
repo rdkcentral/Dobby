@@ -159,6 +159,7 @@ public:
     std::list<int> files(const std::string& pluginName) const;
 
     bool addAnnotation(const std::string &key, const std::string &value);
+    bool removeAnnotation(const std::string &key);
     std::map<std::string, std::string> getAnnotations() const { return mAnnotations; };
 
     int exitStatus;

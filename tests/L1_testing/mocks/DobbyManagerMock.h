@@ -76,6 +76,9 @@ public:
                                  const std::string &key,
                                  const std::string &value), (override));
 
+    MOCK_METHOD(bool, removeAnnotation, (int32_t cd,
+                                 const std::string &key), (override));
+
     MOCK_METHOD((std::list<std::pair<int32_t, ContainerId>>), listContainers, (), (const,override));
 
     MOCK_METHOD(int32_t, stateOfContainer, (int32_t cd), (const,override));

@@ -160,7 +160,13 @@ bool DobbyManager::annotate(int32_t cd,
 
    return impl->annotate(cd, key, value);
 }
+bool DobbyManager::removeAnnotation(int32_t cd,
+                            const std::string& key)
+{
+   EXPECT_NE(impl, nullptr);
 
+   return impl->removeAnnotation(cd, key);
+}
 std::list<std::pair<int32_t, ContainerId>> DobbyManager::listContainers()
 {
    EXPECT_NE(impl, nullptr);

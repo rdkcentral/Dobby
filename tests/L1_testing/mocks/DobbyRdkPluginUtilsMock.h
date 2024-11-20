@@ -44,6 +44,7 @@ public:
     MOCK_METHOD(std::list<int>, files, (), (const,override));
     MOCK_METHOD(std::list<int>, files, (const std::string& pluginName), (const,override));
     MOCK_METHOD(bool, addAnnotation, (const std::string &key, const std::string &value), (override));
+    MOCK_METHOD(bool, removeAnnotation, (const std::string &key), (override));
     MOCK_METHOD((std::map<std::string, std::string>), getAnnotations, (), (const, override));
 };
 

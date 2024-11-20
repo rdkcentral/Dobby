@@ -671,6 +671,7 @@ void Dobby::initIpcMethods()
         {   DOBBY_DEBUG_INTERFACE,       DOBBY_DEBUG_STOP_INPROCESS_TRACING,        &Dobby::stopInProcessTracing   },
 #endif // defined(AI_ENABLE_TRACING)
         {   DOBBY_CTRL_INTERFACE,        DOBBY_CTRL_METHOD_ANNOTATE,                &Dobby::addAnnotation          },
+        {   DOBBY_CTRL_INTERFACE,        DOBBY_CTRL_METHOD_REMOVE_ANNOTATION,       &Dobby::removeAnnotation       },
     };
 
     // ... register them all
@@ -1580,7 +1581,7 @@ void Dobby::addAnnotation(std::shared_ptr<AI_IPC::IAsyncReplySender> replySender
         auto doAnnotateLambda =
             [manager = mManager, descriptor, key, value, replySender]()
             {
-                //remove the mount inside the container
+                //add the key value pair to the annotations
                 bool result = manager->annotate(descriptor, key, value);
 
                 // Fire off the reply
@@ -1592,6 +1593,60 @@ void Dobby::addAnnotation(std::shared_ptr<AI_IPC::IAsyncReplySender> replySender
 
         // Queue the work, if successful then we're done
         if (mWorkQueue->postWork(std::move(doAnnotateLambda)))
+        {
+            AI_LOG_FN_EXIT();
+            return;
+        }
+    }
+
+    // Fire off the reply
+    AI_IPC::VariantList results = { false };
+    if (!replySender->sendReply(results))
+    {
+        AI_LOG_ERROR("failed to send reply");
+    }
+
+    AI_LOG_FN_EXIT();
+}
+// -----------------------------------------------------------------------------
+/**
+ *  @brief remove a key from container annotations
+ *
+ *
+ *
+ *
+ */
+void Dobby::removeAnnotation(std::shared_ptr<AI_IPC::IAsyncReplySender> replySender)
+{
+    AI_LOG_FN_ENTRY();
+
+    // Expecting 2 arguments  (int32_t cd, string key)
+    int32_t descriptor;
+    std::string key;
+
+    if (!AI_IPC::parseVariantList
+            <int32_t, std::string>
+            (replySender->getMethodCallArguments(), &descriptor, &key))
+    {
+        AI_LOG_ERROR("error getting the args");
+    }
+    else
+    {
+        auto doremoveAnnotationLambda =
+            [manager = mManager, descriptor, key, replySender]()
+            {
+                //remove the key from the annotations
+                bool result = manager->removeAnnotation(descriptor, key);
+
+                // Fire off the reply
+                if (!replySender->sendReply({ result }))
+                {
+                    AI_LOG_ERROR("failed to send reply");
+                }
+            };
+
+        // Queue the work, if successful then we're done
+        if (mWorkQueue->postWork(std::move(doremoveAnnotationLambda)))
         {
             AI_LOG_FN_EXIT();
             return;

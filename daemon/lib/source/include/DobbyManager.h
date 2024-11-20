@@ -131,6 +131,7 @@ public:
     bool removeMount(int32_t cd, const std::string& source);
 
     bool annotate(int32_t cd, const std::string &key, const std::string &value);
+    bool removeAnnotation(int32_t cd, const std::string &key);
 
     bool execInContainer(int32_t cd,
                          const std::string& options,
