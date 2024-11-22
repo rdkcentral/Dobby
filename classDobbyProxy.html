@@ -159,6 +159,12 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a520416902b071cd00b57911ba4018125"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classDobbyProxy.html#a520416902b071cd00b57911ba4018125">addContainerMount</a> (int32_t descriptor, const std::string &amp;source, const std::string &amp;destination, const std::vector&lt; std::string &gt; &amp;mountFlags, const std::string &amp;mountData) const override</td></tr>
 <tr class="memdesc:a520416902b071cd00b57911ba4018125"><td class="mdescLeft">&#160;</td><td class="mdescRight">mounts a new host directory/device inside container  <a href="classDobbyProxy.html#a520416902b071cd00b57911ba4018125">More...</a><br /></td></tr>
 <tr class="separator:a520416902b071cd00b57911ba4018125"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0873c2e98d356ee9404dd3a6a0df44d0"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classDobbyProxy.html#a0873c2e98d356ee9404dd3a6a0df44d0">addAnnotation</a> (int32_t cd, const std::string &amp;key, const std::string &amp;value) const override</td></tr>
+<tr class="memdesc:a0873c2e98d356ee9404dd3a6a0df44d0"><td class="mdescLeft">&#160;</td><td class="mdescRight">adds a key value pair to the container annotation  <a href="classDobbyProxy.html#a0873c2e98d356ee9404dd3a6a0df44d0">More...</a><br /></td></tr>
+<tr class="separator:a0873c2e98d356ee9404dd3a6a0df44d0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae63716a8da73081c53b07dc8c18bcd68"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classDobbyProxy.html#ae63716a8da73081c53b07dc8c18bcd68">removeAnnotation</a> (int32_t cd, const std::string &amp;key) const override</td></tr>
+<tr class="memdesc:ae63716a8da73081c53b07dc8c18bcd68"><td class="mdescLeft">&#160;</td><td class="mdescRight">removes a key value pair from the container annotation  <a href="classDobbyProxy.html#ae63716a8da73081c53b07dc8c18bcd68">More...</a><br /></td></tr>
+<tr class="separator:ae63716a8da73081c53b07dc8c18bcd68"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a2cc59ff4d1c0b0111516f93518adcfea"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classDobbyProxy.html#a2cc59ff4d1c0b0111516f93518adcfea">removeContainerMount</a> (int32_t descriptor, const std::string &amp;source) const override</td></tr>
 <tr class="memdesc:a2cc59ff4d1c0b0111516f93518adcfea"><td class="mdescLeft">&#160;</td><td class="mdescRight">unmounts a directory/device inside the container  <a href="classDobbyProxy.html#a2cc59ff4d1c0b0111516f93518adcfea">More...</a><br /></td></tr>
 <tr class="separator:a2cc59ff4d1c0b0111516f93518adcfea"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -298,6 +304,61 @@ std::shared_ptr&lt; <a class="el" href="classAICommon_1_1IDispatcher.html">IDisp
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Wrapper around an <a class="el" href="classIpcService.html">IpcService</a> object that provides simpler method calls to the dobby daemon. </p>
 </div><h2 class="groupheader">Member Function Documentation</h2>
+<a id="a0873c2e98d356ee9404dd3a6a0df44d0"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a0873c2e98d356ee9404dd3a6a0df44d0">&#9670;&nbsp;</a></span>addAnnotation()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool DobbyProxy::addAnnotation </td>
+          <td>(</td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>cd</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const std::string &amp;&#160;</td>
+          <td class="paramname"><em>key</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const std::string &amp;&#160;</td>
+          <td class="paramname"><em>value</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td> const</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">override</span><span class="mlabel">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>adds a key value pair to the container annotation </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">cd</td><td>The container descriptor. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">key</td><td>The key string </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">value</td><td>The value string</td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>true on success, false on failure. </dd></dl>
+
+<p>Implements <a class="el" href="classIDobbyProxy.html">IDobbyProxy</a>.</p>
+
+</div>
+</div>
 <a id="a520416902b071cd00b57911ba4018125"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a520416902b071cd00b57911ba4018125">&#9670;&nbsp;</a></span>addContainerMount()</h2>
 
@@ -1105,6 +1166,54 @@ std::shared_ptr&lt; <a class="el" href="classAICommon_1_1IDispatcher.html">IDisp
   </table>
   </dd>
 </dl>
+
+<p>Implements <a class="el" href="classIDobbyProxy.html">IDobbyProxy</a>.</p>
+
+</div>
+</div>
+<a id="ae63716a8da73081c53b07dc8c18bcd68"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae63716a8da73081c53b07dc8c18bcd68">&#9670;&nbsp;</a></span>removeAnnotation()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool DobbyProxy::removeAnnotation </td>
+          <td>(</td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>cd</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const std::string &amp;&#160;</td>
+          <td class="paramname"><em>key</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td> const</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">override</span><span class="mlabel">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>removes a key value pair from the container annotation </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">cd</td><td>The container descriptor. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">key</td><td>The key string</td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>true on success, false on failure. </dd></dl>
 
 <p>Implements <a class="el" href="classIDobbyProxy.html">IDobbyProxy</a>.</p>
 

@@ -137,6 +137,15 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:ac70e4ea2fb1816c82265d55ca8f9def4"><td class="memItemLeft" align="right" valign="top">std::list&lt; int &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classDobbyRdkPluginUtils.html#ac70e4ea2fb1816c82265d55ca8f9def4">files</a> (const std::string &amp;pluginName) const</td></tr>
 <tr class="memdesc:ac70e4ea2fb1816c82265d55ca8f9def4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Gets all file descriptor registered by concrete client.  <a href="classDobbyRdkPluginUtils.html#ac70e4ea2fb1816c82265d55ca8f9def4">More...</a><br /></td></tr>
 <tr class="separator:ac70e4ea2fb1816c82265d55ca8f9def4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:afcba33cea9a86632050ab0f1756e82f1"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classDobbyRdkPluginUtils.html#afcba33cea9a86632050ab0f1756e82f1">addAnnotation</a> (const std::string &amp;key, const std::string &amp;value)</td></tr>
+<tr class="memdesc:afcba33cea9a86632050ab0f1756e82f1"><td class="mdescLeft">&#160;</td><td class="mdescRight">adds a key value pair to the annotations  <a href="classDobbyRdkPluginUtils.html#afcba33cea9a86632050ab0f1756e82f1">More...</a><br /></td></tr>
+<tr class="separator:afcba33cea9a86632050ab0f1756e82f1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a93cc39e0f9a72c618fedfcbe4e04447d"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classDobbyRdkPluginUtils.html#a93cc39e0f9a72c618fedfcbe4e04447d">removeAnnotation</a> (const std::string &amp;key)</td></tr>
+<tr class="memdesc:a93cc39e0f9a72c618fedfcbe4e04447d"><td class="mdescLeft">&#160;</td><td class="mdescRight">removes a key value pair from the annotations  <a href="classDobbyRdkPluginUtils.html#a93cc39e0f9a72c618fedfcbe4e04447d">More...</a><br /></td></tr>
+<tr class="separator:a93cc39e0f9a72c618fedfcbe4e04447d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a288c0a4eeca64549a9a3223ad6a5aa7b"><td class="memItemLeft" align="right" valign="top"><a id="a288c0a4eeca64549a9a3223ad6a5aa7b"></a>
+std::map&lt; std::string, std::string &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>getAnnotations</b> () const</td></tr>
+<tr class="separator:a288c0a4eeca64549a9a3223ad6a5aa7b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-methods"></a>
 Static Public Member Functions</h2></td></tr>
@@ -173,10 +182,51 @@ std::shared_ptr&lt; <a class="el" href="classIDobbyStartState.html">IDobbyStartS
 <tr class="memitem:a4d09cd1897690ac7e62838a22df8f976"><td class="memItemLeft" align="right" valign="top"><a id="a4d09cd1897690ac7e62838a22df8f976"></a>
 const std::string&#160;</td><td class="memItemRight" valign="bottom"><b>mContainerId</b></td></tr>
 <tr class="separator:a4d09cd1897690ac7e62838a22df8f976"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8105afe37d895a625f844c3e9328fa48"><td class="memItemLeft" align="right" valign="top"><a id="a8105afe37d895a625f844c3e9328fa48"></a>
+std::map&lt; std::string, std::string &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>mAnnotations</b></td></tr>
+<tr class="separator:a8105afe37d895a625f844c3e9328fa48"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Class for useful utility methods for plugins such as adding mounts and environment variables. </p>
 </div><h2 class="groupheader">Member Function Documentation</h2>
+<a id="afcba33cea9a86632050ab0f1756e82f1"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#afcba33cea9a86632050ab0f1756e82f1">&#9670;&nbsp;</a></span>addAnnotation()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool DobbyRdkPluginUtils::addAnnotation </td>
+          <td>(</td>
+          <td class="paramtype">const std::string &amp;&#160;</td>
+          <td class="paramname"><em>key</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const std::string &amp;&#160;</td>
+          <td class="paramname"><em>value</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>adds a key value pair to the annotations </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">key</td><td>The key to add </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">value</td><td>The value to add</td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>true on success, false on failure </dd></dl>
+
+</div>
+</div>
 <a id="af2cea7366a132052e00d7ce83071351c"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#af2cea7366a132052e00d7ce83071351c">&#9670;&nbsp;</a></span>addEnvironmentVar()</h2>
 
@@ -671,6 +721,33 @@ template&lt;class Function , class... Args&gt; </div>
   </dd>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>string read from file </dd></dl>
+
+</div>
+</div>
+<a id="a93cc39e0f9a72c618fedfcbe4e04447d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a93cc39e0f9a72c618fedfcbe4e04447d">&#9670;&nbsp;</a></span>removeAnnotation()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool DobbyRdkPluginUtils::removeAnnotation </td>
+          <td>(</td>
+          <td class="paramtype">const std::string &amp;&#160;</td>
+          <td class="paramname"><em>key</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>removes a key value pair from the annotations </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">key</td><td>The key to remove</td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>true on success, false on failure </dd></dl>
 
 </div>
 </div>

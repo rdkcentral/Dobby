@@ -120,6 +120,12 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a7a3582f066e8fea7425e4bbd26da194c"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classDobbyManager.html#a7a3582f066e8fea7425e4bbd26da194c">removeMount</a> (int32_t cd, const std::string &amp;source)</td></tr>
 <tr class="memdesc:a7a3582f066e8fea7425e4bbd26da194c"><td class="mdescLeft">&#160;</td><td class="mdescRight">removes a mount from a running container  <a href="classDobbyManager.html#a7a3582f066e8fea7425e4bbd26da194c">More...</a><br /></td></tr>
 <tr class="separator:a7a3582f066e8fea7425e4bbd26da194c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6ccf03f364311b2970536730eac2d897"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classDobbyManager.html#a6ccf03f364311b2970536730eac2d897">annotate</a> (int32_t cd, const std::string &amp;key, const std::string &amp;value)</td></tr>
+<tr class="memdesc:a6ccf03f364311b2970536730eac2d897"><td class="mdescLeft">&#160;</td><td class="mdescRight">Adds a key-value pair annotation to a running container.  <a href="classDobbyManager.html#a6ccf03f364311b2970536730eac2d897">More...</a><br /></td></tr>
+<tr class="separator:a6ccf03f364311b2970536730eac2d897"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:affc8f51bd3fce8f2127e7a94230435cc"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classDobbyManager.html#affc8f51bd3fce8f2127e7a94230435cc">removeAnnotation</a> (int32_t cd, const std::string &amp;key)</td></tr>
+<tr class="memdesc:affc8f51bd3fce8f2127e7a94230435cc"><td class="mdescLeft">&#160;</td><td class="mdescRight">removes a key-value pair annotation from a running container  <a href="classDobbyManager.html#affc8f51bd3fce8f2127e7a94230435cc">More...</a><br /></td></tr>
+<tr class="separator:affc8f51bd3fce8f2127e7a94230435cc"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a26f396a3d1f2f145aa05ff23bfc50685"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classDobbyManager.html#a26f396a3d1f2f145aa05ff23bfc50685">execInContainer</a> (int32_t cd, const std::string &amp;options, const std::string &amp;command)</td></tr>
 <tr class="memdesc:a26f396a3d1f2f145aa05ff23bfc50685"><td class="mdescLeft">&#160;</td><td class="mdescRight">Executes a command in a running container.  <a href="classDobbyManager.html#a26f396a3d1f2f145aa05ff23bfc50685">More...</a><br /></td></tr>
 <tr class="separator:a26f396a3d1f2f145aa05ff23bfc50685"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -318,6 +324,51 @@ int&#160;</td><td class="memItemRight" valign="bottom"><b>mCleanupTaskTimerId</b
   </dd>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>true if a container was successfully restored. </dd></dl>
+
+</div>
+</div>
+<a id="a6ccf03f364311b2970536730eac2d897"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a6ccf03f364311b2970536730eac2d897">&#9670;&nbsp;</a></span>annotate()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool DobbyManager::annotate </td>
+          <td>(</td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>cd</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const std::string &amp;&#160;</td>
+          <td class="paramname"><em>key</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const std::string &amp;&#160;</td>
+          <td class="paramname"><em>value</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Adds a key-value pair annotation to a running container. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">cd</td><td>The descriptor of the container to annotate. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">key</td><td>The key of the annotation. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">value</td><td>The value of the annotation.</td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>true if the annotation was successfully added. </dd></dl>
 
 </div>
 </div>
@@ -926,6 +977,44 @@ int&#160;</td><td class="memItemRight" valign="bottom"><b>mCleanupTaskTimerId</b
   </dd>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>true if a container with a matching descriptor was found and it was frozen. </dd></dl>
+
+</div>
+</div>
+<a id="affc8f51bd3fce8f2127e7a94230435cc"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#affc8f51bd3fce8f2127e7a94230435cc">&#9670;&nbsp;</a></span>removeAnnotation()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool DobbyManager::removeAnnotation </td>
+          <td>(</td>
+          <td class="paramtype">int32_t&#160;</td>
+          <td class="paramname"><em>cd</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const std::string &amp;&#160;</td>
+          <td class="paramname"><em>key</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>removes a key-value pair annotation from a running container </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">cd</td><td>The descriptor of the container to annotate. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">key</td><td>The key of the annotation.</td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>true if the annotation was successfully removed. </dd></dl>
 
 </div>
 </div>
