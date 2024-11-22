@@ -3993,3 +3993,112 @@ TEST_F(DaemonDobbyManagerTest, removeMount_FailedToFindContainer)
     EXPECT_EQ(return_value,false);
 }
 
+/* -----------------------------------------------------------------------------
+ *  Test functions for : annotate()
+ *
+ *
+ * Use case coverage:
+ *                @Success :1
+ *                @Failure :1
+ *  -----------------------------------------------------------------------------
+*/
+/**
+ * @brief Test annotate
+ * Check the annotate method is successfull when correct arguments and containerId is used
+ *
+ * @return false.
+ */
+TEST_F(DaemonDobbyManagerTest, annotate_success)
+{
+    int32_t cd = 1234;
+    std::string key = "foo";
+    std::string value = "bar";
+
+    ContainerId id = ContainerId::create("container1");
+    expect_invalidContainerCleanupTask();
+
+    expect_startContainerFromBundle(cd,id);
+    
+    EXPECT_CALL(*p_rdkPluginUtilsMock,addAnnotation(::testing::_, ::testing::_))
+        .Times(1)
+        .WillOnce(::testing::Return(true));
+
+    bool return_value = dobbyManager_test->annotate(cd, key, value);
+    EXPECT_EQ(return_value,true);
+}
+
+/**
+ * @brief Test annotate
+ * Check the annotate method failed when valid Container Id is not found
+ *
+ * @return false.
+ */
+TEST_F(DaemonDobbyManagerTest, annotate_FailedToFindContainer)
+{
+    int32_t cd = 1234;
+    int32_t expect_cd = 2345;
+    std::string key = "foo";
+    std::string value = "bar";
+
+    ContainerId id = ContainerId::create("container1");
+    expect_invalidContainerCleanupTask();
+
+    expect_startContainerFromBundle(cd,id);
+
+    bool return_value = dobbyManager_test->annotate(expect_cd, key, value);
+    EXPECT_EQ(return_value,false);
+}
+
+/* -----------------------------------------------------------------------------
+ *  Test functions for : removeAnnotation()
+ *
+ *
+ * Use case coverage:
+ *                @Success :1
+ *                @Failure :1
+ *  -----------------------------------------------------------------------------
+*/
+/**
+ * @brief Test removeAnnotation
+ * Check method is successfull when correct arguments and containerId is used
+ *
+ * @return false.
+ */
+TEST_F(DaemonDobbyManagerTest, removeAnnotation_success)
+{
+    int32_t cd = 1234;
+    std::string key = "foo";
+
+    ContainerId id = ContainerId::create("container1");
+    expect_invalidContainerCleanupTask();
+
+    expect_startContainerFromBundle(cd,id);
+
+    EXPECT_CALL(*p_rdkPluginUtilsMock,removeAnnotation(::testing::_))
+        .Times(1)
+        .WillOnce(::testing::Return(true));
+
+    bool return_value = dobbyManager_test->removeAnnotation(cd, key);
+    EXPECT_EQ(return_value,true);
+}
+
+/**
+ * @brief Test removeAnnotation
+ * Check the removeAnnotation method failed when valid Container Id is not found
+ *
+ * @return false.
+ */
+TEST_F(DaemonDobbyManagerTest, removeAnnotation_FailedToFindContainer)
+{
+    int32_t cd = 1234;
+    int32_t expect_cd = 2345;
+    std::string key = "foo";
+
+    ContainerId id = ContainerId::create("container1");
+    expect_invalidContainerCleanupTask();
+
+    expect_startContainerFromBundle(cd,id);
+
+    bool return_value = dobbyManager_test->removeAnnotation(expect_cd, key);
+    EXPECT_EQ(return_value,false);
+}

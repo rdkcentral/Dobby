@@ -35,7 +35,7 @@ public:
     virtual void setExitStatus(int status) = 0;
     virtual const std::vector<std::string> listLoadedPlugins() const = 0;
     virtual std::shared_ptr<IDobbyRdkLoggingPlugin> getContainerLogger() const = 0;
-
+    virtual std::shared_ptr<DobbyRdkPluginUtils> getUtils() const = 0;
 };
 
 class DobbyRdkPluginManager {
@@ -55,7 +55,7 @@ public:
     void setExitStatus(int status) const;
     const std::vector<std::string> listLoadedPlugins() const;
     std::shared_ptr<IDobbyRdkLoggingPlugin> getContainerLogger() const;
-
+    std::shared_ptr<DobbyRdkPluginUtils> getUtils() const;
 };
 
 #endif // !defined(DOBBYRDKPLUGINMANAGER_H)

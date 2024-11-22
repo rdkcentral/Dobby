@@ -109,6 +109,13 @@ public:
                            const std::vector<std::string>& mountFlags, 
                            const std::string& mountData) const override;
     
+    bool addAnnotation(int32_t cd,
+                       const std::string& key,
+                       const std::string& value) const override;
+
+    bool removeAnnotation(int32_t cd,
+                       const std::string& key) const override;
+
     bool removeContainerMount(int32_t descriptor, const std::string& source) const override;
 
     bool execInContainer(int32_t cd,

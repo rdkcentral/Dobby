@@ -103,6 +103,13 @@ public:
                              const std::string& options,
                              const std::string& command) = 0;
 
+    virtual bool annotate(int32_t cd,
+                        const std::string& key,
+                        const std::string& value) = 0;
+
+    virtual bool removeAnnotation(int32_t cd,
+                        const std::string& key) = 0;
+
     virtual std::list<std::pair<int32_t, ContainerId>> listContainers() const = 0;
 
     virtual int32_t stateOfContainer(int32_t cd) const = 0;
@@ -170,6 +177,13 @@ public:
     bool execInContainer(int32_t cd,
                                 const std::string& options,
                                 const std::string& command);
+    bool annotate(int32_t cd,
+                const std::string& key,
+                const std::string& value);
+
+    bool removeAnnotation(int32_t cd,
+                const std::string& key);
+
     std::list<std::pair<int32_t, ContainerId>> listContainers();
     int32_t stateOfContainer(int32_t cd);
     std::string statsOfContainer(int32_t cd);

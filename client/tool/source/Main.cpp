@@ -694,7 +694,91 @@ static void unmountCommand(const std::shared_ptr<IDobbyProxy>& dobbyProxy,
         }
     }
 }
+// -----------------------------------------------------------------------------
+/**
+ * @brief
+ *
+ *
+ *
+ */
+static void annotateCommand(const std::shared_ptr<IDobbyProxy>& dobbyProxy,
+                         const std::shared_ptr<const IReadLineContext>& readLine,
+                         const std::vector<std::string>& args)
+{
+    if (args.size() < 3 || args[0].empty() || args[1].empty() || args[2].empty())
+    {
+        readLine->printLnError("must provide at least 3 args; <id> <key> <value>");
+        return;
+    }
 
+    std::string id = args[0];
+    if (id.empty())
+    {
+        readLine->printLnError("invalid container id '%s'", id.c_str());
+        return;
+    }
+    std::string annotateKey(args[1]);
+    std::string annotateValue(args[2]);
+
+    int32_t cd = getContainerDescriptor(dobbyProxy, id);
+    if (cd < 0)
+    {
+        readLine->printLnError("failed to find container '%s'", id.c_str());
+    }
+    else
+    {
+        if (!dobbyProxy->addAnnotation(cd, annotateKey, annotateValue))
+        {
+            readLine->printLnError("failed to add %s %s pair inside the container %s", annotateKey.c_str(), annotateValue.c_str(), id.c_str());
+        }
+        else
+        {
+            readLine->printLn("annotate successful for container '%s'", id.c_str());
+        }
+    }
+}
+// -----------------------------------------------------------------------------
+/**
+ * @brief
+ *
+ *
+ *
+ */
+static void removeAnnotationCommand(const std::shared_ptr<IDobbyProxy>& dobbyProxy,
+                         const std::shared_ptr<const IReadLineContext>& readLine,
+                         const std::vector<std::string>& args)
+{
+    if (args.size() < 2 || args[0].empty() || args[1].empty())
+    {
+        readLine->printLnError("must provide at least 2 args; <id> <key>");
+        return;
+    }
+
+    std::string id = args[0];
+    if (id.empty())
+    {
+        readLine->printLnError("invalid container id '%s'", id.c_str());
+        return;
+    }
+    std::string annotateKey(args[1]);
+
+    int32_t cd = getContainerDescriptor(dobbyProxy, id);
+    if (cd < 0)
+    {
+        readLine->printLnError("failed to find container '%s'", id.c_str());
+    }
+    else
+    {
+        if (!dobbyProxy->removeAnnotation(cd, annotateKey))
+        {
+            readLine->printLnError("failed to remove %s key from the container %s annotations", annotateKey.c_str(), id.c_str());
+        }
+        else
+        {
+            readLine->printLn("removed %s key from container '%s' annotations", annotateKey.c_str(), id.c_str());
+        }
+    }
+}
 // -----------------------------------------------------------------------------
 /**
  * @brief
@@ -1297,7 +1381,19 @@ static void initCommands(const std::shared_ptr<IReadLine>& readLine,
                          "unmount <id> <source>",
                          "unmount a directory inside the container with the given id\n",
                          "\n");
-    
+
+    readLine->addCommand("annotate",
+                         std::bind(annotateCommand, dobbyProxy, std::placeholders::_1, std::placeholders::_2),
+                         "annonate <id> <key> <value>",
+                         "annotate the container with a key value pair\n",
+                         "\n");
+
+    readLine->addCommand("remove-annotation",
+                         std::bind(removeAnnotationCommand, dobbyProxy, std::placeholders::_1, std::placeholders::_2),
+                         "remove-annotation <id> <key>",
+                         "removes a key from the container's annotations\n",
+                         "\n");
+
     readLine->addCommand("exec",
                          std::bind(execCommand, dobbyProxy, std::placeholders::_1, std::placeholders::_2),
                          "exec [options...] <id> <command>",

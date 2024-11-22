@@ -41,6 +41,7 @@
 #include <mutex>
 #include <arpa/inet.h>
 #include <vector>
+#include <map>
 
 
 // TODO:: This would be better stored in the dobby workspace dir rather than /tmp,
@@ -157,6 +158,10 @@ public:
 
     std::list<int> files(const std::string& pluginName) const;
 
+    bool addAnnotation(const std::string &key, const std::string &value);
+    bool removeAnnotation(const std::string &key);
+    std::map<std::string, std::string> getAnnotations() const { return mAnnotations; };
+
     int exitStatus;
 
 private:
@@ -170,6 +175,8 @@ private:
     std::shared_ptr<IDobbyStartState> mStartState;
 
     const std::string mContainerId;
+
+    std::map<std::string, std::string> mAnnotations;
 };
 
 #endif // !defined(DOBBYRDKPLUGINUTILS_H)

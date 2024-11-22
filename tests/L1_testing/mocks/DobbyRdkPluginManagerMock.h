@@ -32,5 +32,6 @@ public:
     MOCK_METHOD(std::shared_ptr<IDobbyRdkLoggingPlugin>, getContainerLogger, (), (const,override));
     MOCK_METHOD(bool, runPlugins,(const IDobbyRdkPlugin::HintFlags &hookPoint,const uint timeoutMs ),( const,override));
     MOCK_METHOD(bool, runPlugins,(const IDobbyRdkPlugin::HintFlags &hookPoint),( const,override));
+    MOCK_METHOD(std::shared_ptr<DobbyRdkPluginUtils>,  getUtils, (), (const, override));
 };
 

@@ -27,6 +27,7 @@ import gui_containers
 import network_tests
 import pid_limit_tests
 import memcr_tests
+import annotation_tests
 import sys
 import json
 
@@ -37,6 +38,7 @@ supported_tests = [basic_sanity_tests,
                    bundle_generation,
                    plugin_launcher,
                    command_line_containers,
+                   annotation_tests,
                    start_from_bundle,
                    thunder_plugin,
                    network_tests,

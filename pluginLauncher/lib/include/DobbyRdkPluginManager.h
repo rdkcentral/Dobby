@@ -68,6 +68,11 @@ public:
         return mContainerConfig;
     };
 
+    std::shared_ptr<DobbyRdkPluginUtils> getUtils() const
+    {
+        return mUtils;
+    }
+
 private:
     bool loadPlugins();
     bool preprocessPlugins();
@@ -95,6 +100,7 @@ private:
     const std::string mPluginPath;
     const std::shared_ptr<DobbyRdkPluginUtils> mUtils;
     std::unique_ptr<DobbyRdkPluginDependencySolver> mDependencySolver;
+    std::map<std::string, std::string> mAnnotations;
 };
 
 #endif // !defined(DOBBYRDKPLUGINMANAGER_H)

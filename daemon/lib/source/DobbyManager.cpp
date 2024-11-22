@@ -1744,7 +1744,87 @@ bool DobbyManager::wakeupContainer(int32_t cd)
     AI_LOG_FN_EXIT();
     return true;
 }
+// -----------------------------------------------------------------------------
+/**
+ *  @brief Adds a key-value pair annotation to a running container
+ *
+ *  @param[in]  cd      The descriptor of the container to annotate.
+ *  @param[in]  key     The key of the annotation.
+ *  @param[in]  value   The value of the annotation.
+ *
+ *  @return true if the annotation was successfully added.
+ */
+bool DobbyManager::annotate(int32_t cd, const std::string &key, const std::string &value)
+{
+    AI_LOG_FN_ENTRY();
 
+    std::lock_guard<std::mutex> locker(mLock);
+
+    // find the container
+    auto it = mContainers.cbegin();
+    for (; it != mContainers.cend(); ++it)
+    {
+        if (it->second && (it->second->descriptor == cd))
+            break;
+    }
+
+    if (it == mContainers.cend())
+    {
+        AI_LOG_WARN("failed to find container with descriptor %d", cd);
+        AI_LOG_FN_EXIT();
+        return false;
+    }
+    const ContainerId &id = it->first;
+    const std::unique_ptr<DobbyContainer> &container = it->second;
+
+    container->rdkPluginManager->getUtils()->addAnnotation(key, value);
+
+    AI_LOG_INFO("successfully added annotation '%s':'%s' to container '%s'", key.c_str(), value.c_str(), id.c_str());
+    AI_LOG_FN_EXIT();
+    return true;
+}
+// -----------------------------------------------------------------------------
+/**
+ *  @brief removes a key-value pair annotation from a running container
+ *
+ *  @param[in]  cd      The descriptor of the container to annotate.
+ *  @param[in]  key     The key of the annotation.
+ *
+ *  @return true if the annotation was successfully removed.
+ */
+bool DobbyManager::removeAnnotation(int32_t cd, const std::string &key)
+{
+    AI_LOG_FN_ENTRY();
+    bool ret = false;
+
+    std::lock_guard<std::mutex> locker(mLock);
+
+    // find the container
+    auto it = mContainers.cbegin();
+    for (; it != mContainers.cend(); ++it)
+    {
+        if (it->second && (it->second->descriptor == cd))
+            break;
+    }
+
+    if (it == mContainers.cend())
+    {
+        AI_LOG_WARN("failed to find container with descriptor %d", cd);
+        AI_LOG_FN_EXIT();
+        return false;
+    }
+    const ContainerId &id = it->first;
+    const std::unique_ptr<DobbyContainer> &container = it->second;
+
+    if(container->rdkPluginManager->getUtils()->removeAnnotation(key)){
+        AI_LOG_INFO("successfully removed key '%s' from container '%s'", key.c_str(), id.c_str());
+        ret = true;
+    }else{
+        AI_LOG_WARN("failed to remove key '%s' from container '%s'", key.c_str(), id.c_str());
+    }
+    AI_LOG_FN_EXIT();
+    return ret;
+}
 // -----------------------------------------------------------------------------
 /**
  *  @brief adds a mount to a running container
@@ -2384,6 +2464,14 @@ std::string DobbyManager::statsOfContainer(int32_t cd) const
             case DobbyContainer::State::Awakening:
                 jsonStats["state"] = "awakening";
                 break;
+        }
+
+        const std::unique_ptr<DobbyContainer> &container = it->second;
+
+        const std::map<std::string, std::string> annotations = container->rdkPluginManager->getUtils()->getAnnotations();
+        for (const auto &annotation : annotations)
+        {
+            jsonStats["annotations"][annotation.first] = annotation.second;
         }
 
         // convert the json stats to a string and return

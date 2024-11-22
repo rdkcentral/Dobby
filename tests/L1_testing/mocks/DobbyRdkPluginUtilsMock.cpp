@@ -156,3 +156,23 @@ std::list<int> DobbyRdkPluginUtils::files(const std::string& pluginName)
     return impl->files(pluginName);
 }
 
+bool DobbyRdkPluginUtils::addAnnotation(const std::string& key, const std::string& value)
+{
+   EXPECT_NE(impl, nullptr);
+
+    return impl->addAnnotation(key, value);
+}
+
+bool DobbyRdkPluginUtils::removeAnnotation(const std::string& key)
+{
+   EXPECT_NE(impl, nullptr);
+
+    return impl->removeAnnotation(key);
+}
+
+std::map<std::string, std::string> DobbyRdkPluginUtils::getAnnotations() const
+{
+   EXPECT_NE(impl, nullptr);
+
+    return impl->getAnnotations();
+}
