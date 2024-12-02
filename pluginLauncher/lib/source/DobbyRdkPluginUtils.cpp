@@ -257,12 +257,12 @@ void DobbyRdkPluginUtils::nsThread(int newNsFd, int nsType, bool* success,
     AI_LOG_FN_ENTRY();
 
     // unshare the specific namespace from the thread
-    if (unshare(nsType) != 0)
+    /*if (unshare(nsType) != 0)
     {
         AI_LOG_SYS_ERROR_EXIT(errno, "failed to unshare");
         *success = false;
         return;
-    }
+    }*/
 
     // switch into the new namespace
     if (setns(newNsFd, nsType) != 0)
