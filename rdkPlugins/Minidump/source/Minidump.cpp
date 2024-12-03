@@ -135,6 +135,9 @@ bool Minidump::postHalt()
  *
  * @return Destination minidump file path string
  */
+#define FIREBOLT_STATE  "fireboltState"
+#define MINIDUMP_FN_SEPERATOR "<#=#>"
+
 std::string Minidump::getDestinationFile()
 {
     // If an app crashes multiple times, a previous dump might still exist in the destination
@@ -142,10 +145,22 @@ std::string Minidump::getDestinationFile()
     std::time_t currentTime = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
     std::stringstream timeString;
     timeString << std::put_time(std::localtime(&currentTime), "%FT%T");
+    std::string destFile;
 
     std::string dir(mContainerConfig->rdk_plugins->minidump->data->destination_path);
 
-    return dir + "/" + mUtils->getContainerId() + "-" + timeString.str() + ".dmp";
+    std::map<std::string, std::string> annotations = mUtils->getAnnotations();
+
+    auto it = annotations.find(FIREBOLT_STATE);
+    if (it != annotations.end()) {
+        destFile = dir + "/" + mUtils->getContainerId() + MINIDUMP_FN_SEPERATOR + it->second.c_str() + MINIDUMP_FN_SEPERATOR + timeString.str() + ".dmp";
+        AI_LOG_INFO("Firebolt state: %s, minidump filename: %s", it->second.c_str(), destFile.c_str());
+    }else{
+        AI_LOG_INFO("Firebolt state not found");
+        destFile = dir + "/" + mUtils->getContainerId() + MINIDUMP_FN_SEPERATOR + timeString.str() + ".dmp";
+    }
+
+    return destFile;
 }
 
 /**
