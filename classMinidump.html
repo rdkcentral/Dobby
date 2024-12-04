@@ -135,8 +135,8 @@ bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="clas
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pri-methods"></a>
 Private Member Functions</h2></td></tr>
-<tr class="memitem:ae99c8911a40c800ee4fb33f487d96024"><td class="memItemLeft" align="right" valign="top">std::string&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classMinidump.html#ae99c8911a40c800ee4fb33f487d96024">getDestinationFile</a> ()</td></tr>
-<tr class="memdesc:ae99c8911a40c800ee4fb33f487d96024"><td class="mdescLeft">&#160;</td><td class="mdescRight">Creates a target location for the file where minidumps will be loaded.  <a href="classMinidump.html#ae99c8911a40c800ee4fb33f487d96024">More...</a><br /></td></tr>
+<tr class="memitem:ae99c8911a40c800ee4fb33f487d96024"><td class="memItemLeft" align="right" valign="top"><a id="ae99c8911a40c800ee4fb33f487d96024"></a>
+std::string&#160;</td><td class="memItemRight" valign="bottom"><b>getDestinationFile</b> ()</td></tr>
 <tr class="separator:ae99c8911a40c800ee4fb33f487d96024"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pri-attribs"></a>
@@ -243,39 +243,6 @@ Additional Inherited Members</h2></td></tr>
 <dl class="section return"><dt>Returns</dt><dd>Names of the plugins this plugin depends on. </dd></dl>
 
 <p>Reimplemented from <a class="el" href="classRdkPluginBase.html#a64a84c7c36adb8873c4da766f4ec18a1">RdkPluginBase</a>.</p>
-
-</div>
-</div>
-<a id="ae99c8911a40c800ee4fb33f487d96024"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ae99c8911a40c800ee4fb33f487d96024">&#9670;&nbsp;</a></span>getDestinationFile()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">std::string Minidump::getDestinationFile </td>
-          <td>(</td>
-          <td class="paramname"></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">private</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p>Creates a target location for the file where minidumps will be loaded. </p>
-<p>It consist of:</p><ul>
-<li>destination path (/opt/minidumps or /opt/secure/minidumps) from config.json</li>
-<li>container id (e.g. "de.sky.ZDF")</li>
-<li>extension *.dmp</li>
-</ul>
-<dl class="section return"><dt>Returns</dt><dd>Destination minidump file path string </dd></dl>
 
 </div>
 </div>
