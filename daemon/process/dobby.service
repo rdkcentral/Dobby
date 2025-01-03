@@ -35,7 +35,7 @@
 Description=RDK Dobby (Container) daemon
 Requires=dbus.socket dbus.service
 Before=wpeframework.service
-After=dbus.socket dbus.service
+After=dbus.socket dbus.service apparmor.service
 
 [Service]
 Type=notify

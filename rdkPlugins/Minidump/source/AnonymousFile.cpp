@@ -26,6 +26,10 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+
+#include <sys/stat.h>
+#include <cstring>
+
 // some platforms are missing the memfd headers
 // #include <linux/memfd.h>
 #if !defined(MFD_CLOEXEC)
@@ -118,6 +122,18 @@ bool AnonymousFile::copyContentTo(const std::string& destFile)
         return false;
     }
 
+    struct stat file_stat;
+    if (fstat(mFd, &file_stat) != -1) {
+	AI_LOG_INFO("Minidump in the Memory");
+	AI_LOG_INFO("Error getting file stats: %s",strerror(errno));
+	AI_LOG_INFO("File Size: %ld bytes", file_stat.st_size);
+	AI_LOG_INFO("Number of Links: %ld", file_stat.st_nlink);
+	AI_LOG_INFO("File inode: %ld", file_stat.st_ino);
+	AI_LOG_INFO("File last access: %ld", file_stat.st_atime);
+	AI_LOG_INFO("File last modification: %ld", file_stat.st_mtime);
+	AI_LOG_INFO("File last change: %ld", file_stat.st_ctime);
+    }
+
     // it turns out that fclose(fp) will do effectively the same job as close(fd)
     // therefore this guy will not be fclose'd in here, but rather reset by nullptr value
     // mind that closing related fd will be accomplished by DobbyStartState destructor
@@ -177,6 +193,18 @@ bool AnonymousFile::copyContentTo(const std::string& destFile)
     }
 
     write(destFd, buffer, fileSize + 1);
+
+
+    if (fstat(destFd, &file_stat) != -1) {
+	AI_LOG_INFO("Destination Logs File %s",destFile.c_str());
+	AI_LOG_INFO("Error getting file stats: %s",strerror(errno));
+	AI_LOG_INFO("File Size: %ld bytes", file_stat.st_size);
+	AI_LOG_INFO("Number of Links: %ld", file_stat.st_nlink);
+	AI_LOG_INFO("File inode: %ld", file_stat.st_ino);
+	AI_LOG_INFO("File last access: %ld", file_stat.st_atime);
+	AI_LOG_INFO("File last modification: %ld", file_stat.st_mtime);
+	AI_LOG_INFO("File last change: %ld", file_stat.st_ctime);
+    }
 
     fp = nullptr;
     free(buffer);
