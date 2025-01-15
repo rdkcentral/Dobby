@@ -24,6 +24,7 @@
 
 #include <sys/types.h>
 #include <stdint.h>
+#include <string>
 
 class DobbyHibernate
 {
@@ -40,14 +41,15 @@ class DobbyHibernate
     {
         AlgNone = 0,
         AlgLz4 = 1,
-        AlgZstd = 2
+        AlgZstd = 2,
+        AlgDefault = 3
     };
 
-    static const char* DFL_LOCATOR;
+    static const std::string DFL_LOCATOR;
     static const uint32_t DFL_TIMEOUTE_MS;
 
     static Error HibernateProcess(const pid_t pid, const uint32_t timeout = DFL_TIMEOUTE_MS,
-        const char* locator = DFL_LOCATOR, const char* dumpDirPath = nullptr, CompressionAlg compression = AlgLz4);
+        const std::string &locator = DFL_LOCATOR, const std::string &dumpDirPath = std::string(), CompressionAlg compression = AlgDefault);
 
-    static Error WakeupProcess(const pid_t pid, const uint32_t timeout = DFL_TIMEOUTE_MS, const char* locator = DFL_LOCATOR);
+    static Error WakeupProcess(const pid_t pid, const uint32_t timeout = DFL_TIMEOUTE_MS, const std::string &locator = DFL_LOCATOR);
 };

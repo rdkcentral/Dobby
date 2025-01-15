@@ -1573,6 +1573,54 @@ bool DobbyManager::hibernateContainer(int32_t cd, const std::string& options)
         return false;
     }
 
+    // parse options: dest, compress
+    // format: dest=/some/path/blah,compress=lz4
+    std::string dest;
+    DobbyHibernate::CompressionAlg compress = DobbyHibernate::CompressionAlg::AlgDefault;
+
+    // lambda to split a string by a delimiter
+    auto splitString = [](const std::string& str, char delimiter) -> std::vector<std::string>
+    {
+        std::vector<std::string> tokens;
+        std::string token;
+        std::istringstream tokenStream(str);
+        while (std::getline(tokenStream, token, delimiter))
+        {
+            tokens.push_back(token);
+        }
+        return tokens;
+    };
+
+    AI_LOG_INFO("Hibernation options: %s", options.c_str());
+
+    std::vector<std::string> optionList = splitString(options, ',');
+    for (const std::string& option : optionList)
+    {
+        std::vector<std::string> keyValue = splitString(option, '=');
+        if (keyValue.size() == 2)
+        {
+            if (keyValue[0] == "dest")
+            {
+                dest = keyValue[1];
+            }
+            else if (keyValue[0] == "compress")
+            {
+                if (keyValue[1] == "lz4")
+                {
+                    compress = DobbyHibernate::CompressionAlg::AlgLz4;
+                }
+                else if (keyValue[1] == "zstd")
+                {
+                    compress = DobbyHibernate::CompressionAlg::AlgZstd;
+                }
+                else
+                {
+                    AI_LOG_WARN("Unsupported compression algorithm: %s", keyValue[1].c_str());
+                }
+            }
+        }
+    }
+
     std::thread hibernateThread =
         std::thread([=]()
         {
@@ -1597,7 +1645,8 @@ bool DobbyManager::hibernateContainer(int32_t cd, const std::string& options)
                 locker.unlock();
 
                 uint32_t pid = pidIt->asUInt();
-                ret  = DobbyHibernate::HibernateProcess(pid);
+                ret  = DobbyHibernate::HibernateProcess(pid, DobbyHibernate::DFL_TIMEOUTE_MS,
+                        DobbyHibernate::DFL_LOCATOR, dest, compress);
                 if (ret != DobbyHibernate::Error::ErrorNone)
                 {
                     AI_LOG_WARN("Error hibernating pid: '%d'", pid);
