@@ -48,7 +48,7 @@ Storage::Storage(std::shared_ptr<rt_dobby_schema> &containerSpec,
       mRootfsPath(rootfsPath),
 #ifndef USE_OPEN_TREE_FOR_DYNAMIC_MOUNTS
       mMountPointInsideContainer(rootfsPath + MOUNT_TUNNEL_CONTAINER_PATH),
-      mTempMountPointOutsideContainer(MOUNT_TUNNEL_HOST_PATH),
+      mTempMountPointOutsideContainer(MOUNT_TUNNEL_HOST_PATH + utils->getContainerId()),
 #endif
       mUtils(utils)
 {
