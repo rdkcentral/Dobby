@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['multicastforwarderplugin_998',['MulticastForwarderPlugin',['../namespaceMulticastForwarderPlugin.html',1,'']]]
+  ['multicastforwarderplugin_0',['MulticastForwarderPlugin',['../namespaceMulticastForwarderPlugin.html',1,'']]]
 ];

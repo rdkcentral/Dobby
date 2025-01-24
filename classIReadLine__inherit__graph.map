@@ -1,4 +1,5 @@
 <map id="IReadLine" name="IReadLine">
-<area shape="rect" id="node1" title=" " alt="" coords="5,5,92,32"/>
-<area shape="rect" id="node2" href="$classReadLine.html" title=" " alt="" coords="7,80,90,107"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,5,92,31"/>
+<area shape="rect" id="Node000002" href="$classReadLine.html" title=" " alt="" coords="7,79,90,104"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="51,44,51,79,46,79,46,44"/>
 </map>

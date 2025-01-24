@@ -1,5 +1,7 @@
 <map id="AI_IPC::IAsyncReplySender" name="AI_IPC::IAsyncReplySender">
-<area shape="rect" id="node1" title="Helper class to send reply of a method call asynchronously." alt="" coords="110,5,306,32"/>
-<area shape="rect" id="node2" href="$classAI__IPC_1_1AsyncReplySender.html" title=" " alt="" coords="5,80,197,107"/>
-<area shape="rect" id="node3" href="$classSDBusAsyncReplySender.html" title=" " alt="" coords="222,80,407,107"/>
+<area shape="rect" id="Node000001" title="Helper class to send reply of a method call asynchronously." alt="" coords="110,5,306,31"/>
+<area shape="rect" id="Node000002" href="$classAI__IPC_1_1AsyncReplySender.html" title=" " alt="" coords="5,79,197,104"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="181,40,120,81,117,76,178,36"/>
+<area shape="rect" id="Node000003" href="$classSDBusAsyncReplySender.html" title=" " alt="" coords="222,79,407,104"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="238,36,299,76,296,81,235,40"/>
 </map>

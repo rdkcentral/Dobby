@@ -1,6 +1,9 @@
 <map id="AICommon::IDispatcher" name="AICommon::IDispatcher">
-<area shape="rect" id="node1" title="A dispatcher interface." alt="" coords="157,80,333,107"/>
-<area shape="rect" id="node3" href="$classAICommon_1_1ThreadedDispatcher.html" title="A dispatcher that does all the work on a single, separate thread started in constructor." alt="" coords="5,155,239,181"/>
-<area shape="rect" id="node4" href="$classDobbyProxyNotifyDispatcher.html" title=" " alt="" coords="263,155,474,181"/>
-<area shape="rect" id="node2" href="$classAICommon_1_1Polymorphic.html" title="Inherit from this from all types that have virtual functions." alt="" coords="153,5,336,32"/>
+<area shape="rect" id="Node000001" title="A dispatcher interface." alt="" coords="157,79,333,104"/>
+<area shape="rect" id="Node000003" href="$classAICommon_1_1ThreadedDispatcher.html" title="A dispatcher that does all the work on a single, separate thread started in constructor." alt="" coords="5,152,239,177"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="215,113,143,154,141,149,212,108"/>
+<area shape="rect" id="Node000004" href="$classDobbyProxyNotifyDispatcher.html" title=" " alt="" coords="263,152,474,177"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="278,108,350,149,347,154,275,113"/>
+<area shape="rect" id="Node000002" href="$classAICommon_1_1Polymorphic.html" title="Inherit from this from all types that have virtual functions." alt="" coords="153,5,336,31"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="247,44,247,79,242,79,242,44"/>
 </map>

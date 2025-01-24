@@ -1,6 +1,9 @@
 <map id="NullSink" name="NullSink">
-<area shape="rect" id="node1" title=" " alt="" coords="161,169,237,196"/>
-<area shape="rect" id="node2" href="$classILoggingSink.html" title=" " alt="" coords="147,95,252,121"/>
-<area shape="rect" id="node3" href="$classAICommon_1_1IPollSource.html" title=" " alt="" coords="5,13,180,39"/>
-<area shape="rect" id="node4" title=" " alt="" coords="204,5,408,47"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="161,167,237,192"/>
+<area shape="rect" id="Node000002" href="$classILoggingSink.html" title=" " alt="" coords="147,93,252,119"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="202,132,202,167,197,167,197,132"/>
+<area shape="rect" id="Node000003" href="$classAICommon_1_1IPollSource.html" title=" " alt="" coords="5,13,180,38"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="121,44,185,91,182,95,118,48"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="204,5,408,45"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="271,56,217,95,214,91,268,51"/>
 </map>

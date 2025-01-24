@@ -1,22 +1,41 @@
 <map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
-<area shape="rect" id="node1" href="$classIDobbyRdkPlugin.html" title="Interface that plugin libraries have to implement." alt="" coords="5,360,139,387"/>
-<area shape="rect" id="node2" href="$classIDobbyRdkLoggingPlugin.html" title="Interface that plugin libraries have to implement." alt="" coords="187,171,371,197"/>
-<area shape="rect" id="node5" href="$classRdkPluginBase.html" title="Basic object that provides the default overrides for a plugin." alt="" coords="219,385,338,412"/>
-<area shape="rect" id="node3" href="$classDobbyLoggerBase.html" title=" " alt="" coords="432,5,572,32"/>
-<area shape="rect" id="node4" href="$classLoggingPlugin.html" title="Dobby Logging plugin." alt="" coords="633,5,747,32"/>
-<area shape="rect" id="node6" href="$classAppServicesRdkPlugin.html" title="Plugin just used to map in access for AS services." alt="" coords="419,56,585,83"/>
-<area shape="rect" id="node7" href="$classDeviceMapperPlugin.html" title=" " alt="" coords="424,107,580,133"/>
-<area shape="rect" id="node8" href="$classGamepadPlugin.html" title="Dobby Gamepad plugin." alt="" coords="439,157,565,184"/>
-<area shape="rect" id="node9" href="$classGpuPlugin.html" title="Dobby GPU plugin." alt="" coords="458,208,546,235"/>
-<area shape="rect" id="node10" href="$classHttpProxyPlugin.html" title="Used to set http proxy environment variables and optionally add additional root ca certificates to th..." alt="" coords="439,259,565,285"/>
-<area shape="rect" id="node11" href="$classIonMemoryPlugin.html" title="Plugin used to setup the ION cgroup controller for the container." alt="" coords="434,309,570,336"/>
-<area shape="rect" id="node12" href="$classIpcPlugin.html" title="IPC Plugin." alt="" coords="461,360,543,387"/>
-<area shape="rect" id="node13" href="$classLocalTimePlugin.html" title="Dobby LocalTime plugin." alt="" coords="437,411,567,437"/>
-<area shape="rect" id="node14" href="$classMinidump.html" title="Dobby RDK Minidump Plugin." alt="" coords="459,461,545,488"/>
-<area shape="rect" id="node15" href="$classNetworkingPlugin.html" title=" " alt="" coords="433,512,571,539"/>
-<area shape="rect" id="node16" href="$classOOMCrash.html" title="Dobby RDK OOMCrash Plugin." alt="" coords="457,563,547,589"/>
-<area shape="rect" id="node17" href="$classRtSchedulingPlugin.html" title="Dobby RtScheduling plugin." alt="" coords="429,613,575,640"/>
-<area shape="rect" id="node18" href="$classStorage.html" title="Dobby RDK Storage Plugin." alt="" coords="466,664,538,691"/>
-<area shape="rect" id="node19" href="$classTestRdkPlugin.html" title="Simple Dobby RDK Plugin." alt="" coords="445,715,559,741"/>
-<area shape="rect" id="node20" href="$classThunderPlugin.html" title="Plugin used to map in the wpeframework (aka thunder) server." alt="" coords="445,765,559,792"/>
+<area shape="rect" id="Node000000" href="$classIDobbyRdkPlugin.html" title="Interface that plugin libraries have to implement." alt="" coords="5,352,139,377"/>
+<area shape="rect" id="Node000001" href="$classIDobbyRdkLoggingPlugin.html" title="Interface that plugin libraries have to implement." alt="" coords="187,167,371,192"/>
+<area shape="poly" id="edge35_Node000000_Node000001" title=" " alt="" coords="96,341,261,190,265,194,100,344"/>
+<area shape="rect" id="Node000004" href="$classRdkPluginBase.html" title="Basic object that provides the default overrides for a plugin." alt="" coords="219,376,338,401"/>
+<area shape="poly" id="edge38_Node000000_Node000004" title=" " alt="" coords="153,371,219,379,219,384,152,377"/>
+<area shape="rect" id="Node000002" href="$classDobbyLoggerBase.html" title=" " alt="" coords="432,5,572,31"/>
+<area shape="poly" id="edge36_Node000001_Node000002" title=" " alt="" coords="296,154,347,98,380,67,417,41,445,28,448,33,420,46,384,71,350,101,300,157"/>
+<area shape="rect" id="Node000003" href="$classLoggingPlugin.html" title="Dobby Logging plugin." alt="" coords="633,5,747,31"/>
+<area shape="poly" id="edge37_Node000002_Node000003" title=" " alt="" coords="586,15,633,15,633,21,586,21"/>
+<area shape="rect" id="Node000005" href="$classAppServicesRdkPlugin.html" title="Plugin just used to map in access for AS services." alt="" coords="419,55,585,80"/>
+<area shape="poly" id="edge39_Node000004_Node000005" title=" " alt="" coords="291,362,368,204,379,171,386,143,395,117,417,91,437,78,440,82,420,95,400,120,391,145,385,172,373,206,295,365"/>
+<area shape="rect" id="Node000006" href="$classDeviceMapperPlugin.html" title=" " alt="" coords="424,104,580,129"/>
+<area shape="poly" id="edge40_Node000004_Node000006" title=" " alt="" coords="289,362,348,242,384,180,417,140,439,127,442,132,420,144,388,183,353,244,294,364"/>
+<area shape="rect" id="Node000007" href="$classGamepadPlugin.html" title="Dobby Gamepad plugin." alt="" coords="439,153,565,179"/>
+<area shape="poly" id="edge41_Node000004_Node000007" title=" " alt="" coords="289,362,308,324,336,277,373,230,417,189,441,176,444,181,420,194,377,234,341,280,313,327,293,365"/>
+<area shape="rect" id="Node000008" href="$classGpuPlugin.html" title="Dobby GPU plugin." alt="" coords="458,203,546,228"/>
+<area shape="poly" id="edge42_Node000004_Node000008" title=" " alt="" coords="294,363,344,301,379,267,417,238,457,222,459,226,420,243,382,271,348,305,298,366"/>
+<area shape="rect" id="Node000009" href="$classHttpProxyPlugin.html" title="Used to set http proxy environment variables and optionally add additional root ca certificates to th..." alt="" coords="439,252,565,277"/>
+<area shape="poly" id="edge43_Node000004_Node000009" title=" " alt="" coords="303,365,354,326,417,288,449,275,451,280,420,292,357,330,307,369"/>
+<area shape="rect" id="Node000010" href="$classIonMemoryPlugin.html" title="Plugin used to setup the ION cgroup controller for the container." alt="" coords="434,301,570,327"/>
+<area shape="poly" id="edge44_Node000004_Node000010" title=" " alt="" coords="327,369,418,337,458,324,459,329,420,342,328,374"/>
+<area shape="rect" id="Node000011" href="$classIpcPlugin.html" title="IPC Plugin." alt="" coords="461,351,543,376"/>
+<area shape="poly" id="edge45_Node000004_Node000011" title=" " alt="" coords="352,378,461,365,461,371,352,383"/>
+<area shape="rect" id="Node000012" href="$classLocalTimePlugin.html" title="Dobby LocalTime plugin." alt="" coords="437,400,567,425"/>
+<area shape="poly" id="edge46_Node000004_Node000012" title=" " alt="" coords="352,394,437,403,437,408,352,399"/>
+<area shape="rect" id="Node000013" href="$classMinidump.html" title="Dobby RDK Minidump Plugin." alt="" coords="459,449,545,475"/>
+<area shape="poly" id="edge47_Node000004_Node000013" title=" " alt="" coords="328,404,419,435,459,448,458,453,418,441,326,409"/>
+<area shape="rect" id="Node000014" href="$classNetworkingPlugin.html" title=" " alt="" coords="433,499,571,524"/>
+<area shape="poly" id="edge48_Node000004_Node000014" title=" " alt="" coords="306,408,357,447,420,485,449,496,447,501,417,490,354,451,303,412"/>
+<area shape="rect" id="Node000015" href="$classOOMCrash.html" title="Dobby RDK OOMCrash Plugin." alt="" coords="457,548,547,573"/>
+<area shape="poly" id="edge49_Node000004_Node000015" title=" " alt="" coords="298,411,348,473,382,506,420,534,457,550,455,555,417,539,379,510,344,477,294,414"/>
+<area shape="rect" id="Node000016" href="$classRtSchedulingPlugin.html" title="Dobby RtScheduling plugin." alt="" coords="429,597,575,623"/>
+<area shape="poly" id="edge50_Node000004_Node000016" title=" " alt="" coords="293,413,313,451,340,497,377,544,420,584,441,595,439,600,417,588,373,548,336,500,308,454,289,415"/>
+<area shape="rect" id="Node000017" href="$classStorage.html" title="Dobby RDK Storage Plugin." alt="" coords="466,647,538,672"/>
+<area shape="poly" id="edge51_Node000004_Node000017" title=" " alt="" coords="290,414,306,461,333,520,371,581,394,609,420,633,442,646,466,653,465,658,440,650,417,637,390,613,367,585,329,523,301,463,285,416"/>
+<area shape="rect" id="Node000018" href="$classTestRdkPlugin.html" title="Simple Dobby RDK Plugin." alt="" coords="445,696,559,721"/>
+<area shape="poly" id="edge52_Node000004_Node000018" title=" " alt="" coords="287,414,301,470,326,543,344,581,365,618,391,653,420,683,446,697,444,702,417,687,387,656,361,621,339,583,322,545,296,472,282,416"/>
+<area shape="rect" id="Node000019" href="$classThunderPlugin.html" title="Plugin used to map in the wpeframework (aka thunder) server." alt="" coords="445,745,559,771"/>
+<area shape="poly" id="edge53_Node000004_Node000019" title=" " alt="" coords="285,415,296,479,320,565,337,610,360,655,387,696,420,732,446,747,443,751,417,736,383,699,355,657,333,612,315,566,291,480,280,415"/>
 </map>

@@ -1,5 +1,7 @@
 <map id="IDobbyStream" name="IDobbyStream">
-<area shape="rect" id="node1" title="Interface for all character streams used in the daemon." alt="" coords="114,5,229,32"/>
-<area shape="rect" id="node2" href="$classDobbyBufferStream.html" title="Stream that just redirects all the input to an internal memory buffer." alt="" coords="5,80,156,107"/>
-<area shape="rect" id="node3" href="$classDobbyDevNullStream.html" title="Stream that just redirects all the input to /dev/null." alt="" coords="181,80,343,107"/>
+<area shape="rect" id="Node000001" title="Interface for all character streams used in the daemon." alt="" coords="114,5,229,31"/>
+<area shape="rect" id="Node000002" href="$classDobbyBufferStream.html" title="Stream that just redirects all the input to an internal memory buffer." alt="" coords="5,79,156,104"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="147,41,97,81,94,76,144,37"/>
+<area shape="rect" id="Node000003" href="$classDobbyDevNullStream.html" title="Stream that just redirects all the input to /dev/null." alt="" coords="181,79,343,104"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="198,37,249,76,246,81,195,41"/>
 </map>

@@ -1,8 +1,13 @@
 <map id="AI_IPC::DbusConnection::_ReplyContext" name="AI_IPC::DbusConnection::_ReplyContext">
-<area shape="rect" id="node1" title=" " alt="" coords="652,74,829,115"/>
-<area shape="rect" id="node2" href="$classAI__IPC_1_1DbusConnection.html" title="Wraps a dbus connection pointer and runs the dispatch loop for it." alt="" coords="391,81,568,108"/>
-<area shape="rect" id="node3" href="$classAICommon_1_1ConditionVariable.html" title=" " alt="" coords="5,5,223,32"/>
-<area shape="rect" id="node4" href="$classAICommon_1_1Spinlock.html" title=" " alt="" coords="35,56,193,83"/>
-<area shape="rect" id="node5" href="$classAICommon_1_1Mutex.html" title=" " alt="" coords="43,107,185,133"/>
-<area shape="rect" id="node6" href="$classAI__IPC_1_1DbusEventDispatcher.html" title="Event dispatcher loop, runs the thread that polls on the dbus fds." alt="" coords="9,157,219,184"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="652,73,829,113"/>
+<area shape="rect" id="Node000002" href="$classAI__IPC_1_1DbusConnection.html" title="Wraps a dbus connection pointer and runs the dispatch loop for it." alt="" coords="391,80,568,105"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="582,90,652,90,652,95,582,95"/>
+<area shape="rect" id="Node000003" href="$classAI__IPC_1_1DbusEventDispatcher.html" title="Event dispatcher loop, runs the thread that polls on the dbus fds." alt="" coords="9,5,219,31"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="230,30,367,55,443,77,441,82,366,61,229,35"/>
+<area shape="rect" id="Node000004" href="$classAICommon_1_1Spinlock.html" title=" " alt="" coords="35,55,193,80"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="206,71,391,84,390,89,206,76"/>
+<area shape="rect" id="Node000005" href="$classAICommon_1_1Mutex.html" title=" " alt="" coords="43,104,185,129"/>
+<area shape="poly" id="edge4_Node000002_Node000005" title=" " alt="" coords="199,115,280,114,366,109,411,103,412,108,367,114,280,119,199,121"/>
+<area shape="rect" id="Node000006" href="$classAICommon_1_1ConditionVariable.html" title=" " alt="" coords="5,153,223,179"/>
+<area shape="poly" id="edge5_Node000002_Node000006" title=" " alt="" coords="236,157,301,148,366,135,412,120,452,103,454,108,414,125,367,141,302,154,237,162"/>
 </map>

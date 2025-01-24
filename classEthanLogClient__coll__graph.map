@@ -1,5 +1,7 @@
 <map id="EthanLogClient" name="EthanLogClient">
-<area shape="rect" id="node1" title=" " alt="" coords="82,95,202,121"/>
-<area shape="rect" id="node2" href="$classContainerId.html" title="A wrapper around a std::string, used to add some type definition to to an id and also to sanity check..." alt="" coords="5,5,103,32"/>
-<area shape="rect" id="node3" href="$structEthanLogClient_1_1TokenBucket.html" title=" " alt="" coords="127,5,336,32"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="82,93,202,119"/>
+<area shape="rect" id="Node000002" href="$classContainerId.html" title="A wrapper around a std::string, used to add some type definition to to an id and also to sanity check..." alt="" coords="5,5,103,31"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="77,38,132,91,128,95,74,42"/>
+<area shape="rect" id="Node000003" href="$structEthanLogClient_1_1TokenBucket.html" title=" " alt="" coords="127,5,336,31"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="223,44,204,71,169,95,166,91,200,67,219,41"/>
 </map>

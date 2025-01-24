@@ -1,5 +1,7 @@
 <map id="AI_IPC::IIpcService" name="AI_IPC::IIpcService">
-<area shape="rect" id="node1" title="IPC service that enables us to invoke remote method and emit signals as well as to handle incoming me..." alt="" coords="45,5,188,32"/>
-<area shape="rect" id="node2" href="$classIpcService.html" title=" " alt="" coords="5,80,95,107"/>
-<area shape="rect" id="node3" href="$classSDBusIpcService.html" title=" " alt="" coords="119,80,250,107"/>
+<area shape="rect" id="Node000001" title="IPC service that enables us to invoke remote method and emit signals as well as to handle incoming me..." alt="" coords="45,5,188,31"/>
+<area shape="rect" id="Node000002" href="$classIpcService.html" title=" " alt="" coords="5,79,95,104"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="98,43,63,80,59,77,94,39"/>
+<area shape="rect" id="Node000003" href="$classSDBusIpcService.html" title=" " alt="" coords="119,79,250,104"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="139,39,176,77,172,80,135,42"/>
 </map>

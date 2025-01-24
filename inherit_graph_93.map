@@ -1,6 +1,9 @@
 <map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
-<area shape="rect" id="node1" href="$classIDobbyUtils__v1.html" title="Interface that exports some utilities that plugins may find useful." alt="" coords="5,5,127,32"/>
-<area shape="rect" id="node2" href="$classIDobbyUtils__v2.html" title="Second version of the interface containing extra functions for working with iptables." alt="" coords="175,5,296,32"/>
-<area shape="rect" id="node3" href="$classIDobbyUtils__v3.html" title="Third version of the interface containing extra functions for working with ebtables." alt="" coords="344,5,465,32"/>
-<area shape="rect" id="node4" href="$classDobbyUtils.html" title="Utility methods for hooks and the general containiser daemon." alt="" coords="513,5,608,32"/>
+<area shape="rect" id="Node000000" href="$classIDobbyUtils__v1.html" title="Interface that exports some utilities that plugins may find useful." alt="" coords="5,5,127,31"/>
+<area shape="rect" id="Node000001" href="$classIDobbyUtils__v2.html" title="Second version of the interface containing extra functions for working with iptables." alt="" coords="175,5,296,31"/>
+<area shape="poly" id="edge58_Node000000_Node000001" title=" " alt="" coords="141,15,174,15,174,21,141,21"/>
+<area shape="rect" id="Node000002" href="$classIDobbyUtils__v3.html" title="Third version of the interface containing extra functions for working with ebtables." alt="" coords="344,5,465,31"/>
+<area shape="poly" id="edge59_Node000001_Node000002" title=" " alt="" coords="310,15,343,15,343,21,310,21"/>
+<area shape="rect" id="Node000003" href="$classDobbyUtils.html" title="Utility methods for hooks and the general containiser daemon." alt="" coords="513,5,608,31"/>
+<area shape="poly" id="edge60_Node000002_Node000003" title=" " alt="" coords="479,15,513,15,513,21,479,21"/>
 </map>

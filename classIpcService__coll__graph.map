@@ -1,8 +1,13 @@
 <map id="IpcService" name="IpcService">
-<area shape="rect" id="node1" title=" " alt="" coords="883,64,972,91"/>
-<area shape="rect" id="node2" href="$classAI__IPC_1_1IIpcService.html" title="IPC service that enables us to invoke remote method and emit signals as well as to handle incoming me..." alt="" coords="508,5,651,32"/>
-<area shape="rect" id="node3" title=" " alt="" coords="485,57,673,98"/>
-<area shape="rect" id="node4" href="$classAICommon_1_1ThreadedDispatcher.html" title="A dispatcher that does all the work on a single, separate thread started in constructor." alt="" coords="463,123,696,149"/>
-<area shape="rect" id="node5" href="$classAICommon_1_1IDispatcher.html" title="A dispatcher interface." alt="" coords="237,123,413,149"/>
-<area shape="rect" id="node6" href="$classAICommon_1_1Polymorphic.html" title="Inherit from this from all types that have virtual functions." alt="" coords="5,123,188,149"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="883,63,972,88"/>
+<area shape="rect" id="Node000002" href="$classAI__IPC_1_1IIpcService.html" title="IPC service that enables us to invoke remote method and emit signals as well as to handle incoming me..." alt="" coords="508,5,651,31"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="664,24,758,36,859,54,884,60,883,65,858,59,757,42,664,29"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="485,55,673,95"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="687,73,882,73,882,78,687,78"/>
+<area shape="rect" id="Node000004" href="$classAICommon_1_1ThreadedDispatcher.html" title="A dispatcher that does all the work on a single, separate thread started in constructor." alt="" coords="463,120,696,145"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="710,117,858,93,886,85,888,91,859,98,710,122"/>
+<area shape="rect" id="Node000005" href="$classAICommon_1_1IDispatcher.html" title="A dispatcher interface." alt="" coords="237,120,413,145"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="427,130,462,130,462,135,427,135"/>
+<area shape="rect" id="Node000006" href="$classAICommon_1_1Polymorphic.html" title="Inherit from this from all types that have virtual functions." alt="" coords="5,120,188,145"/>
+<area shape="poly" id="edge5_Node000005_Node000006" title=" " alt="" coords="202,130,237,130,237,135,202,135"/>
 </map>

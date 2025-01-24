@@ -1,6 +1,9 @@
 <map id="AICommon::PollLoop" name="AICommon::PollLoop">
-<area shape="rect" id="node1" title="A wrapper around epoll that allows for adding, modifying &amp; deleting of source events." alt="" coords="201,109,358,136"/>
-<area shape="rect" id="node2" href="$classAICommon_1_1IPollLoop.html" title=" " alt="" coords="5,13,167,39"/>
-<area shape="rect" id="node3" title=" " alt="" coords="191,5,367,47"/>
-<area shape="rect" id="node4" href="$classAICommon_1_1Spinlock.html" title=" " alt="" coords="391,13,549,39"/>
+<area shape="rect" id="Node000001" title="A wrapper around epoll that allows for adding, modifying &amp; deleting of source events." alt="" coords="201,108,358,133"/>
+<area shape="rect" id="Node000002" href="$classAICommon_1_1IPollLoop.html" title=" " alt="" coords="5,13,167,38"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="123,42,257,105,254,110,121,46"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="191,5,367,45"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="282,59,282,108,277,108,277,59"/>
+<area shape="rect" id="Node000004" href="$classAICommon_1_1Spinlock.html" title=" " alt="" coords="391,13,549,38"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="436,46,304,110,302,105,433,42"/>
 </map>

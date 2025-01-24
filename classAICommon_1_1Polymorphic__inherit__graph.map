@@ -1,12 +1,21 @@
 <map id="AICommon::Polymorphic" name="AICommon::Polymorphic">
-<area shape="rect" id="node1" title="Inherit from this from all types that have virtual functions." alt="" coords="5,107,188,134"/>
-<area shape="rect" id="node2" href="$classAICommon_1_1Notifier.html" title=" " alt="" coords="255,5,405,47"/>
-<area shape="rect" id="node4" href="$classAICommon_1_1Notifier.html" title=" " alt="" coords="241,71,419,112"/>
-<area shape="rect" id="node7" href="$classAICommon_1_1IDispatcher.html" title="A dispatcher interface." alt="" coords="242,137,418,163"/>
-<area shape="rect" id="node10" href="$classAICommon_1_1Notifier.html" title="A template of observable objects that send notifications defined in interface T." alt="" coords="236,187,424,214"/>
-<area shape="rect" id="node3" href="$classObservee.html" title=" " alt="" coords="547,13,631,39"/>
-<area shape="rect" id="node5" href="$classIDobbyProxy.html" title="Wrapper around an IpcService object that provides simpler method calls to the Dobby &#39;hypervisor&#39; daem..." alt="" coords="536,78,641,105"/>
-<area shape="rect" id="node6" href="$classDobbyProxy.html" title="Wrapper around an IpcService object that provides simpler method calls to the dobby daemon." alt="" coords="753,78,855,105"/>
-<area shape="rect" id="node8" href="$classAICommon_1_1ThreadedDispatcher.html" title="A dispatcher that does all the work on a single, separate thread started in constructor." alt="" coords="472,133,705,159"/>
-<area shape="rect" id="node9" href="$classDobbyProxyNotifyDispatcher.html" title=" " alt="" coords="483,183,694,210"/>
+<area shape="rect" id="Node000001" title="Inherit from this from all types that have virtual functions." alt="" coords="5,106,188,131"/>
+<area shape="rect" id="Node000002" href="$classAICommon_1_1Notifier.html" title=" " alt="" coords="241,5,419,45"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="136,98,235,55,267,43,269,48,237,60,138,103"/>
+<area shape="rect" id="Node000005" href="$classAICommon_1_1Notifier.html" title=" " alt="" coords="255,69,405,109"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="202,103,254,96,255,101,202,108"/>
+<area shape="rect" id="Node000007" href="$classAICommon_1_1IDispatcher.html" title="A dispatcher interface." alt="" coords="242,134,418,159"/>
+<area shape="poly" id="edge6_Node000001_Node000007" title=" " alt="" coords="202,129,242,133,241,139,201,134"/>
+<area shape="rect" id="Node000010" href="$classAICommon_1_1Notifier.html" title="A template of observable objects that send notifications defined in interface T." alt="" coords="236,183,424,209"/>
+<area shape="poly" id="edge9_Node000001_Node000010" title=" " alt="" coords="143,134,237,168,280,181,278,186,235,173,141,139"/>
+<area shape="rect" id="Node000003" href="$classIDobbyProxy.html" title="Wrapper around an IpcService object that provides simpler method calls to the Dobby &#39;hypervisor&#39; daem..." alt="" coords="536,13,641,38"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="433,23,536,23,536,28,433,28"/>
+<area shape="rect" id="Node000004" href="$classDobbyProxy.html" title="Wrapper around an IpcService object that provides simpler method calls to the dobby daemon." alt="" coords="753,13,855,38"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="655,23,753,23,753,28,655,28"/>
+<area shape="rect" id="Node000006" href="$classObservee.html" title=" " alt="" coords="547,77,631,102"/>
+<area shape="poly" id="edge5_Node000005_Node000006" title=" " alt="" coords="419,87,546,87,546,92,419,92"/>
+<area shape="rect" id="Node000008" href="$classAICommon_1_1ThreadedDispatcher.html" title="A dispatcher that does all the work on a single, separate thread started in constructor." alt="" coords="472,130,705,155"/>
+<area shape="poly" id="edge7_Node000007_Node000008" title=" " alt="" coords="432,142,472,142,472,147,432,148"/>
+<area shape="rect" id="Node000009" href="$classDobbyProxyNotifyDispatcher.html" title=" " alt="" coords="483,179,694,205"/>
+<area shape="poly" id="edge8_Node000007_Node000009" title=" " alt="" coords="417,159,516,177,515,182,416,164"/>
 </map>

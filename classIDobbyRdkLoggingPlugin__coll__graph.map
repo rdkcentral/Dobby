@@ -1,4 +1,5 @@
 <map id="IDobbyRdkLoggingPlugin" name="IDobbyRdkLoggingPlugin">
-<area shape="rect" id="node1" title="Interface that plugin libraries have to implement." alt="" coords="5,80,189,107"/>
-<area shape="rect" id="node2" href="$classIDobbyRdkPlugin.html" title="Interface that plugin libraries have to implement." alt="" coords="31,5,164,32"/>
+<area shape="rect" id="Node000001" title="Interface that plugin libraries have to implement." alt="" coords="5,79,189,104"/>
+<area shape="rect" id="Node000002" href="$classIDobbyRdkPlugin.html" title="Interface that plugin libraries have to implement." alt="" coords="31,5,164,31"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="100,44,100,79,95,79,95,44"/>
 </map>

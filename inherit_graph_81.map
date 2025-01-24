@@ -1,8 +1,13 @@
 <map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
-<area shape="rect" id="node1" href="$classIDobbyPlugin.html" title="Interface that plugin libraries have to implement." alt="" coords="5,81,113,108"/>
-<area shape="rect" id="node2" href="$classPluginBase.html" title="Basic object that provides the default overrides for a plugin." alt="" coords="161,81,256,108"/>
-<area shape="rect" id="node3" href="$classEthanLogPlugin.html" title="Plugin library that create a DIAG logging pipe for a container." alt="" coords="325,5,448,32"/>
-<area shape="rect" id="node4" href="$classMulticastSocketPlugin.html" title="Plugin used to setup multicast server and client sockets out of the container and passes their file d..." alt="" coords="304,56,469,83"/>
-<area shape="rect" id="node5" href="$classOpenCDMPlugin.html" title="Dobby plugin for creating the necessary OCDM buffers." alt="" coords="323,107,450,133"/>
-<area shape="rect" id="node6" href="$classPerfettoPlugin.html" title="Dobby plugin for granting access to system perfetto tracing in the container." alt="" coords="329,157,444,184"/>
+<area shape="rect" id="Node000000" href="$classIDobbyPlugin.html" title="Interface that plugin libraries have to implement." alt="" coords="5,80,113,105"/>
+<area shape="rect" id="Node000001" href="$classPluginBase.html" title="Basic object that provides the default overrides for a plugin." alt="" coords="161,80,256,105"/>
+<area shape="poly" id="edge30_Node000000_Node000001" title=" " alt="" coords="127,90,161,90,161,95,127,95"/>
+<area shape="rect" id="Node000002" href="$classEthanLogPlugin.html" title="Plugin library that create a DIAG logging pipe for a container." alt="" coords="325,5,448,31"/>
+<area shape="poly" id="edge31_Node000001_Node000002" title=" " alt="" coords="241,71,303,40,335,28,337,33,305,44,244,75"/>
+<area shape="rect" id="Node000003" href="$classMulticastSocketPlugin.html" title="Plugin used to setup multicast server and client sockets out of the container and passes their file d..." alt="" coords="304,55,469,80"/>
+<area shape="poly" id="edge32_Node000001_Node000003" title=" " alt="" coords="269,81,304,76,304,82,270,87"/>
+<area shape="rect" id="Node000004" href="$classOpenCDMPlugin.html" title="Dobby plugin for creating the necessary OCDM buffers." alt="" coords="323,104,450,129"/>
+<area shape="poly" id="edge33_Node000001_Node000004" title=" " alt="" coords="270,98,323,106,323,111,269,103"/>
+<area shape="rect" id="Node000005" href="$classPerfettoPlugin.html" title="Dobby plugin for granting access to system perfetto tracing in the container." alt="" coords="329,153,444,179"/>
+<area shape="poly" id="edge34_Node000001_Node000005" title=" " alt="" coords="245,110,305,138,341,151,339,156,303,143,243,114"/>
 </map>

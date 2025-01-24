@@ -1,5 +1,7 @@
 <map id="MD5ConstTestParams" name="MD5ConstTestParams">
-<area shape="rect" id="node1" title=" " alt="" coords="91,95,254,121"/>
-<area shape="rect" id="node2" title=" " alt="" coords="5,5,172,32"/>
-<area shape="rect" id="node3" href="$structMD5ConstTests.html" title=" " alt="" coords="197,5,319,32"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="91,93,254,119"/>
+<area shape="rect" id="Node000002" title=" " alt="" coords="5,5,172,31"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="112,39,163,91,159,95,108,43"/>
+<area shape="rect" id="Node000003" href="$structMD5ConstTests.html" title=" " alt="" coords="197,5,319,31"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="239,43,186,95,183,91,235,39"/>
 </map>

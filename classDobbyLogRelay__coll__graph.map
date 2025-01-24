@@ -1,5 +1,7 @@
 <map id="DobbyLogRelay" name="DobbyLogRelay">
-<area shape="rect" id="node1" title=" " alt="" coords="141,95,265,121"/>
-<area shape="rect" id="node2" href="$classAICommon_1_1IPollSource.html" title=" " alt="" coords="5,13,180,39"/>
-<area shape="rect" id="node3" title=" " alt="" coords="204,5,427,47"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="141,93,265,119"/>
+<area shape="rect" id="Node000002" href="$classAICommon_1_1IPollSource.html" title=" " alt="" coords="5,13,180,38"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="122,44,188,91,185,95,119,48"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="204,5,427,45"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="279,55,222,95,219,91,276,51"/>
 </map>

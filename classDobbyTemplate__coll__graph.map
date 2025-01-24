@@ -1,3 +1,4 @@
 <map id="DobbyTemplate" name="DobbyTemplate">
-<area shape="rect" id="node1" title="Singleton class that returns the OCI JSON template." alt="" coords="5,5,129,32"/>
+<area shape="rect" id="Node000001" title="Singleton class that returns the OCI JSON template." alt="" coords="5,5,129,31"/>
+<area shape="poly" id="edge1_Node000001_Node000001" title=" " alt="" coords="144,12,156,18,130,25,129,20,151,18,142,17"/>
 </map>

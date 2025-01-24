@@ -1,6 +1,9 @@
 <map id="IDobbyUtils_v1" name="IDobbyUtils_v1">
-<area shape="rect" id="node1" title="Interface that exports some utilities that plugins may find useful." alt="" coords="5,5,127,32"/>
-<area shape="rect" id="node2" href="$classIDobbyUtils__v2.html" title="Second version of the interface containing extra functions for working with iptables." alt="" coords="5,80,127,107"/>
-<area shape="rect" id="node3" href="$classIDobbyUtils__v3.html" title="Third version of the interface containing extra functions for working with ebtables." alt="" coords="5,155,127,181"/>
-<area shape="rect" id="node4" href="$classDobbyUtils.html" title="Utility methods for hooks and the general containiser daemon." alt="" coords="19,229,113,256"/>
+<area shape="rect" id="Node000001" title="Interface that exports some utilities that plugins may find useful." alt="" coords="5,5,127,31"/>
+<area shape="rect" id="Node000002" href="$classIDobbyUtils__v2.html" title="Second version of the interface containing extra functions for working with iptables." alt="" coords="5,79,127,104"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="69,44,69,79,63,79,63,44"/>
+<area shape="rect" id="Node000003" href="$classIDobbyUtils__v3.html" title="Third version of the interface containing extra functions for working with ebtables." alt="" coords="5,152,127,177"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="69,118,69,152,63,152,63,118"/>
+<area shape="rect" id="Node000004" href="$classDobbyUtils.html" title="Utility methods for hooks and the general containiser daemon." alt="" coords="19,225,113,251"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="69,191,69,225,63,225,63,191"/>
 </map>

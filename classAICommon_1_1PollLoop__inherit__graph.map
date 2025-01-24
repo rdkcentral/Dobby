@@ -1,5 +1,7 @@
 <map id="AICommon::PollLoop" name="AICommon::PollLoop">
-<area shape="rect" id="node1" title="A wrapper around epoll that allows for adding, modifying &amp; deleting of source events." alt="" coords="103,95,261,121"/>
-<area shape="rect" id="node2" href="$classAICommon_1_1IPollLoop.html" title=" " alt="" coords="5,13,167,39"/>
-<area shape="rect" id="node3" title=" " alt="" coords="191,5,367,47"/>
+<area shape="rect" id="Node000001" title="A wrapper around epoll that allows for adding, modifying &amp; deleting of source events." alt="" coords="103,93,261,119"/>
+<area shape="rect" id="Node000002" href="$classAICommon_1_1IPollLoop.html" title=" " alt="" coords="5,13,167,38"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="112,45,169,91,166,95,109,49"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="191,5,367,45"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="247,56,198,95,195,91,244,52"/>
 </map>

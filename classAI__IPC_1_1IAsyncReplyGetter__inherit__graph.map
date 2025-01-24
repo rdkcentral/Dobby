@@ -1,5 +1,7 @@
 <map id="AI_IPC::IAsyncReplyGetter" name="AI_IPC::IAsyncReplyGetter">
-<area shape="rect" id="node1" title="Helper class to get reply." alt="" coords="107,5,299,32"/>
-<area shape="rect" id="node2" href="$classAI__IPC_1_1AsyncReplyGetter.html" title=" " alt="" coords="5,80,193,107"/>
-<area shape="rect" id="node3" href="$classSDBusAsyncReplyGetter.html" title="Implements the IAsyncReplyGetter getter interface to provide an API to get the results to a method ca..." alt="" coords="218,80,399,107"/>
+<area shape="rect" id="Node000001" title="Helper class to get reply." alt="" coords="107,5,299,31"/>
+<area shape="rect" id="Node000002" href="$classAI__IPC_1_1AsyncReplyGetter.html" title=" " alt="" coords="5,79,193,104"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="177,41,118,81,115,76,174,36"/>
+<area shape="rect" id="Node000003" href="$classSDBusAsyncReplyGetter.html" title="Implements the IAsyncReplyGetter getter interface to provide an API to get the results to a method ca..." alt="" coords="218,79,399,104"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="233,36,293,76,290,81,230,41"/>
 </map>

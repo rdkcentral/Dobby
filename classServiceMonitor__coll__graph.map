@@ -1,6 +1,10 @@
 <map id="ServiceMonitor" name="ServiceMonitor">
-<area shape="rect" id="node1" title="Utility class to actively monitor the status of a dbus service." alt="" coords="70,171,190,197"/>
-<area shape="rect" id="node2" href="$structAI__IPC_1_1Signal.html" title="Method identified by object, interface and signal name itself." alt="" coords="5,81,116,108"/>
-<area shape="rect" id="node3" href="$structAI__IPC_1_1RemoteEntry.html" title="Remote entry, which can be either a signal or method." alt="" coords="52,5,208,32"/>
-<area shape="rect" id="node4" href="$structAI__IPC_1_1Method.html" title="Method identified by a service, object, interface and method name itself." alt="" coords="141,81,261,108"/>
+<area shape="rect" id="Node000001" title="Utility class to actively monitor the status of a dbus service." alt="" coords="70,168,190,193"/>
+<area shape="rect" id="Node000002" href="$structAI__IPC_1_1Signal.html" title="Method identified by object, interface and signal name itself." alt="" coords="5,80,116,105"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="64,118,72,143,85,156,101,166,99,170,82,160,68,145,59,120"/>
+<area shape="rect" id="Node000003" href="$structAI__IPC_1_1RemoteEntry.html" title="Remote entry, which can be either a signal or method." alt="" coords="52,5,208,31"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="111,43,74,82,70,78,107,39"/>
+<area shape="rect" id="Node000004" href="$structAI__IPC_1_1Method.html" title="Method identified by a service, object, interface and method name itself." alt="" coords="141,80,261,105"/>
+<area shape="poly" id="edge4_Node000004_Node000003" title=" " alt="" coords="153,39,191,78,187,82,149,43"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="190,119,171,146,146,170,143,166,167,142,185,116"/>
 </map>

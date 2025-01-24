@@ -1,9 +1,15 @@
 <map id="AICommon::IPollSource" name="AICommon::IPollSource">
-<area shape="rect" id="node1" title=" " alt="" coords="119,5,293,32"/>
-<area shape="rect" id="node2" href="$classDobbyLogRelay.html" title=" " alt="" coords="5,80,129,107"/>
-<area shape="rect" id="node3" href="$classILoggingSink.html" title=" " alt="" coords="153,80,259,107"/>
-<area shape="rect" id="node7" href="$classReadLine.html" title=" " alt="" coords="282,80,365,107"/>
-<area shape="rect" id="node4" href="$classFileSink.html" title=" " alt="" coords="57,155,131,181"/>
-<area shape="rect" id="node5" href="$classJournaldSink.html" title=" " alt="" coords="155,155,257,181"/>
-<area shape="rect" id="node6" href="$classNullSink.html" title=" " alt="" coords="281,155,357,181"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="119,5,293,31"/>
+<area shape="rect" id="Node000002" href="$classDobbyLogRelay.html" title=" " alt="" coords="5,79,129,104"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="173,39,91,81,89,76,170,34"/>
+<area shape="rect" id="Node000003" href="$classILoggingSink.html" title=" " alt="" coords="153,79,259,104"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="209,44,209,79,203,79,203,44"/>
+<area shape="rect" id="Node000007" href="$classReadLine.html" title=" " alt="" coords="282,79,365,104"/>
+<area shape="poly" id="edge6_Node000001_Node000007" title=" " alt="" coords="238,35,306,76,303,81,235,40"/>
+<area shape="rect" id="Node000004" href="$classFileSink.html" title=" " alt="" coords="57,152,131,177"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="178,114,114,154,111,150,175,109"/>
+<area shape="rect" id="Node000005" href="$classJournaldSink.html" title=" " alt="" coords="155,152,257,177"/>
+<area shape="poly" id="edge4_Node000003_Node000005" title=" " alt="" coords="209,118,209,152,203,152,203,118"/>
+<area shape="rect" id="Node000006" href="$classNullSink.html" title=" " alt="" coords="281,152,357,177"/>
+<area shape="poly" id="edge5_Node000003_Node000006" title=" " alt="" coords="238,109,302,150,299,154,235,114"/>
 </map>

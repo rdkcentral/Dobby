@@ -1,5 +1,7 @@
 <map id="DobbyIpcBus::tagSignalHandler" name="DobbyIpcBus::tagSignalHandler">
-<area shape="rect" id="node1" title=" " alt="" coords="5,171,232,197"/>
-<area shape="rect" id="node2" href="$structAI__IPC_1_1Signal.html" title="Method identified by object, interface and signal name itself." alt="" coords="63,81,174,108"/>
-<area shape="rect" id="node3" href="$structAI__IPC_1_1RemoteEntry.html" title="Remote entry, which can be either a signal or method." alt="" coords="41,5,197,32"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,168,232,193"/>
+<area shape="rect" id="Node000002" href="$structAI__IPC_1_1Signal.html" title="Method identified by object, interface and signal name itself." alt="" coords="63,80,174,105"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="121,119,121,167,116,167,116,119"/>
+<area shape="rect" id="Node000003" href="$structAI__IPC_1_1RemoteEntry.html" title="Remote entry, which can be either a signal or method." alt="" coords="41,5,197,31"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="121,45,121,80,116,80,116,45"/>
 </map>

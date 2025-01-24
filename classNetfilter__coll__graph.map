@@ -1,5 +1,7 @@
 <map id="Netfilter" name="Netfilter">
-<area shape="rect" id="node1" title="Class that can read / write iptables rule sets." alt="" coords="130,109,205,136"/>
-<area shape="rect" id="node2" href="$structNetfilter_1_1RuleSets.html" title=" " alt="" coords="5,5,145,32"/>
-<area shape="rect" id="node3" href="$structNetfilter_1_1IptablesVersion.html" title=" " alt="" coords="169,5,352,32"/>
+<area shape="rect" id="Node000001" title="Class that can read / write iptables rule sets." alt="" coords="130,108,205,133"/>
+<area shape="rect" id="Node000002" href="$structNetfilter_1_1RuleSets.html" title=" " alt="" coords="5,5,145,31"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="89,41,119,82,149,106,146,110,115,86,85,44"/>
+<area shape="rect" id="Node000003" href="$structNetfilter_1_1IptablesVersion.html" title=" " alt="" coords="169,5,352,31"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="256,45,247,66,233,86,216,100,198,110,195,106,213,95,229,82,242,63,251,43"/>
 </map>

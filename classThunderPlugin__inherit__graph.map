@@ -1,5 +1,7 @@
 <map id="ThunderPlugin" name="ThunderPlugin">
-<area shape="rect" id="node1" title="Plugin used to map in the wpeframework (aka thunder) server." alt="" coords="15,155,129,181"/>
-<area shape="rect" id="node2" href="$classRdkPluginBase.html" title="Basic object that provides the default overrides for a plugin." alt="" coords="13,80,131,107"/>
-<area shape="rect" id="node3" href="$classIDobbyRdkPlugin.html" title="Interface that plugin libraries have to implement." alt="" coords="5,5,139,32"/>
+<area shape="rect" id="Node000001" title="Plugin used to map in the wpeframework (aka thunder) server." alt="" coords="15,152,129,177"/>
+<area shape="rect" id="Node000002" href="$classRdkPluginBase.html" title="Basic object that provides the default overrides for a plugin." alt="" coords="13,79,131,104"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="75,118,75,152,69,152,69,118"/>
+<area shape="rect" id="Node000003" href="$classIDobbyRdkPlugin.html" title="Interface that plugin libraries have to implement." alt="" coords="5,5,139,31"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="75,44,75,79,69,79,69,44"/>
 </map>

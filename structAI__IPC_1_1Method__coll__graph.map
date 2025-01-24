@@ -1,4 +1,5 @@
 <map id="AI_IPC::Method" name="AI_IPC::Method">
-<area shape="rect" id="node1" title="Method identified by a service, object, interface and method name itself." alt="" coords="23,80,143,107"/>
-<area shape="rect" id="node2" href="$structAI__IPC_1_1RemoteEntry.html" title="Remote entry, which can be either a signal or method." alt="" coords="5,5,161,32"/>
+<area shape="rect" id="Node000001" title="Method identified by a service, object, interface and method name itself." alt="" coords="23,79,143,104"/>
+<area shape="rect" id="Node000002" href="$structAI__IPC_1_1RemoteEntry.html" title="Remote entry, which can be either a signal or method." alt="" coords="5,5,161,31"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="86,44,86,79,81,79,81,44"/>
 </map>
