@@ -32,6 +32,7 @@ add_library( ${PROJECT_NAME}
         source/TapInterface.cpp
         source/StdStreamPipe.cpp
         source/IPAllocator.cpp
+        source/InterContainerRouting.cpp
 )
 
 install(
