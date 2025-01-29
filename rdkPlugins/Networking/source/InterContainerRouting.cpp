@@ -282,8 +282,8 @@ Netfilter::RuleSet constructRules(const std::shared_ptr<NetworkingHelper> &helpe
     }
     else if (ipVersion == AF_INET6)
     {
-        containerAddress = helper->ipv6AddrStr();
-        containerAddressWithMask = containerAddress + "/128";
+        containerAddress = "[" + helper->ipv6AddrStr() + "]";
+        containerAddressWithMask = helper->ipv6AddrStr() + "/128";
         containersAddressRange = BRIDGE_ADDRESS_RANGE_IPV6 "/120";
         bridgeAddressWithMask = BRIDGE_ADDRESS_IPV6 "/128";
     }
@@ -308,17 +308,17 @@ Netfilter::RuleSet constructRules(const std::shared_ptr<NetworkingHelper> &helpe
         // forwarded to other interfaces on the bridge
         snprintf(ruleBuf, sizeof(ruleBuf),
                  "FORWARD "
-                 "-s %s "                           // container address
-                 "-d %s "                           // any container address
+                 "-s %s "                                   // container address
+                 "-d %s "                                   // any container address
                  "-i " BRIDGE_NAME " "
                  "-o " BRIDGE_NAME " "
-                 "-p %s "                           // protocol
-                 "-m %s "                           // protocol
-                 "--sport %hu "                     // port number
+                 "-p %s "                                   // protocol
+                 "-m %s "                                   // protocol
+                 "--sport %hu "                             // port number
                  "-m physdev "
-                 "--physdev-in %s "                 // container veth number on bridge
+                 "--physdev-in %s "                         // container veth number on bridge
                  "-m comment --comment \"inter-in:%s\" "    // container id
-                 "-j ACCEPT",                       // accept the packet
+                 "-j ACCEPT",                               // accept the packet
                  containerAddressWithMask.c_str(),
                  containersAddressRange.c_str(),
                  (inPort.protocol == InterContainerPort::Protocol::Udp) ? "udp" : "tcp",
@@ -333,14 +333,14 @@ Netfilter::RuleSet constructRules(const std::shared_ptr<NetworkingHelper> &helpe
         // to the bridge address to the container address
         snprintf(ruleBuf, sizeof(ruleBuf),
                  "PREROUTING "
-                 "-s %s "                           // any container address
-                 "-d %s "                           // bridge address
+                 "-s %s "                                   // any container address
+                 "-d %s "                                   // bridge address
                  "-i " BRIDGE_NAME " "
-                 "-p %s "                           // protocol
-                 "-m %s "                           // protocol
-                 "--dport %hu "                     // port number
-                 "-m comment --comment \"inter-in:%s\" "         // container id
-                 "-j DNAT --to-destination %s:%hu", // container address and port
+                 "-p %s "                                   // protocol
+                 "-m %s "                                   // protocol
+                 "--dport %hu "                             // port number
+                 "-m comment --comment \"inter-in:%s\" "    // container id
+                 "-j DNAT --to-destination %s:%hu",         // container address and port
                  containersAddressRange.c_str(),
                  bridgeAddressWithMask.c_str(),
                  (inPort.protocol == InterContainerPort::Protocol::Udp) ? "udp" : "tcp",
@@ -359,17 +359,17 @@ Netfilter::RuleSet constructRules(const std::shared_ptr<NetworkingHelper> &helpe
     {
         snprintf(ruleBuf, sizeof(ruleBuf),
                  "FORWARD "
-                 "-s %s "                           // container address
-                 "-d %s "                           // any container address
+                 "-s %s "                                   // container address
+                 "-d %s "                                   // any container address
                  "-i " BRIDGE_NAME " "
                  "-o " BRIDGE_NAME " "
-                 "-p %s "                           // protocol
-                 "-m %s "                           // protocol
-                 "--dport %hu "                     // port number
+                 "-p %s "                                   // protocol
+                 "-m %s "                                   // protocol
+                 "--dport %hu "                             // port number
                  "-m physdev "
-                 "--physdev-in %s "                 // container veth number on bridge
-                 "-m comment --comment \"inter-out:%s\" "         // container id
-                 "-j ACCEPT",                       // accept the packet
+                 "--physdev-in %s "                         // container veth number on bridge
+                 "-m comment --comment \"inter-out:%s\" "   // container id
+                 "-j ACCEPT",                               // accept the packet
                  containerAddressWithMask.c_str(),
                  containersAddressRange.c_str(),
                  (outPort.protocol == InterContainerPort::Protocol::Udp) ? "udp" : "tcp",
