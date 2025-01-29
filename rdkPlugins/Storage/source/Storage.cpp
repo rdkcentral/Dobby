@@ -278,9 +278,7 @@ bool Storage::postStop()
         // Clean up temp mount points
         if(!(*it)->removeNonPersistentImage())
         {
-            AI_LOG_ERROR_EXIT("failed to clean up non persistent image");
-            // This is probably to late to fail but do it either way
-            return false;
+            AI_LOG_ERROR("failed to clean up non persistent image");
         }
     }
 
@@ -290,9 +288,7 @@ bool Storage::postStop()
         // Clean up temp mount points
         if(!(*it)->onPostStop())
         {
-            AI_LOG_ERROR_EXIT("failed to remove dynamic mounts");
-            // This is probably to late to fail but do it either way
-            return false;
+            AI_LOG_ERROR("failed to remove dynamic mounts");
         }
     }
 
@@ -305,15 +301,14 @@ bool Storage::postStop()
     }
     else
     {
-        AI_LOG_DEBUG("unmounted temp mount @ '%s', now deleting mount point",
+        AI_LOG_INFO("unmounted temp mount @ '%s', now deleting mount point",
                     mTempMountPointOutsideContainer.c_str());
 
         // can now delete the temporary mount point
         if (rmdir(mTempMountPointOutsideContainer.c_str()) != 0)
         {
-            AI_LOG_ERROR_EXIT("failed to delete temp mount point @ '%s'",
-                             mTempMountPointOutsideContainer.c_str());
-            return false;
+            AI_LOG_ERROR("failed to delete temp mount point @ '%s'",
+                         mTempMountPointOutsideContainer.c_str());
         }
     }
 #endif
