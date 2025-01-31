@@ -2006,7 +2006,7 @@ bool DobbyManager::addMount(int32_t cd, const std::string &source, const std::st
 #else
     std::string mountPointInsideContainer = destination;
     std::string tempMountPointInsideContainer = std::string(MOUNT_TUNNEL_CONTAINER_PATH) + "/tmpdir";
-    std::string tempMountPointOutsideContainer = std::string(MOUNT_TUNNEL_HOST_PATH) + "/tmpdir";
+    std::string tempMountPointOutsideContainer = std::string(MOUNT_TUNNEL_HOST_PATH) + id.c_str() + "/tmpdir";
     
     // create the temporary mount point outside the container
      if (!mUtilities->mkdirRecursive(tempMountPointOutsideContainer.c_str(), 0755))

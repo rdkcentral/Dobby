@@ -24,6 +24,7 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <mutex>
+#include <string>
 
 // Need a large buffer to store the entire datagram
 #define BUFFER_SIZE (32 * 1024)
