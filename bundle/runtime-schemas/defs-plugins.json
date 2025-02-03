@@ -302,6 +302,32 @@
                                     }
                                 }
                             }
+                        },
+                        "interContainer": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "required": [
+                                    "direction",
+                                    "port"
+                                ],
+                                "properties": {
+                                    "direction": {
+                                        "type": "string",
+                                        "enum": ["in", "out"]
+                                    },
+                                    "port": {
+                                        "$ref": "defs.json#/definitions/uint16"
+                                    },
+                                    "protocol": {
+                                        "type": "string",
+                                        "enum": ["tcp", "udp"]
+                                    },
+                                    "localhostMasquerade": {
+                                        "type": "boolean"
+                                    }
+                                }
+                            }
                         }
                     }
                 }

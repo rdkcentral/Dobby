@@ -42,6 +42,19 @@ Add the following section to your OCI runtime configuration `config.json` file t
                         "ip": "239.255.255.250",
                         "port": 1900
                     }
+                ],
+                "interContainer": [
+                    {
+                        "direction": "in",
+                        "port": 12345,
+                        "protocol": "tcp",
+                        "localhostMasquerade": true
+                    },
+                    {
+                        "direction": "out",
+                        "port": 2468,
+                        "protocol": "tcp"
+                    }
                 ]
             }
         }
@@ -212,6 +225,18 @@ Only usable with network types 'nat' and 'none'.
 Multicast forwarding requires the following to be present on the device:
 - `ebtables` version 2.0 or later
 - `smcroute` version 2.4.4 or later
+
+
+### Inter-container Communication
+
+_Note: This feature is only available for `nat` network type. Both containers must use `nat` networking._
+
+The `interContainer` field allows containers to communicate. One container needs a configuration with direction `in`,
+port, and protocol to act as a server. Another container needs a configuration with the same protocol and port,
+but with direction `out` to act as a client.
+
+The `localhostMasquerade` field allows the server container to bind to localhost. For the client container, it allows
+connecting to localhost, forwarding the connection to the server container. `localhostMasquerade` is only enabled for IPv4.
 
 
 ## Settings

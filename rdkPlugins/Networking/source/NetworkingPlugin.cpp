@@ -24,6 +24,7 @@
 #include "NetworkSetup.h"
 #include "Netlink.h"
 #include "IPAllocator.h"
+#include "InterContainerRouting.h"
 
 #include <fcntl.h>
 #include <unistd.h>
@@ -234,6 +235,18 @@ bool NetworkingPlugin::createRuntime()
         }
     }
 
+    // enable inter-container communication
+    if ((mPluginData->inter_container != nullptr) && (mPluginData->inter_container_len > 0))
+    {
+        if (!InterContainerRouting::addRules(mNetfilter, mHelper, mUtils,
+                                             mPluginData->inter_container,
+                                             mPluginData->inter_container_len))
+        {
+            AI_LOG_ERROR_EXIT("failed to add inter-container network rules");
+            return false;
+        }
+    }
+
     // apply iptables changes
     if (!mNetfilter->applyRules(AF_INET) || !mNetfilter->applyRules(AF_INET6))
     {
@@ -366,6 +379,18 @@ bool NetworkingPlugin::postHalt()
         if (!MulticastForwarder::removeRules(mNetfilter, mPluginData, mHelper->vethName(), mUtils->getContainerId(), extIfaces))
         {
             AI_LOG_ERROR_EXIT("failed to remove multicast forwards");
+            return false;
+        }
+    }
+
+    // remove inter-container communication rules if configured
+    if ((mPluginData->inter_container != nullptr) && (mPluginData->inter_container_len > 0))
+    {
+        if (!InterContainerRouting::removeRules(mNetfilter, mHelper, mUtils,
+                                                mPluginData->inter_container,
+                                                mPluginData->inter_container_len))
+        {
+            AI_LOG_ERROR_EXIT("failed to remove inter-container iptables rules");
             return false;
         }
     }
