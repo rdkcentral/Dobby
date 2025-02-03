@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['networksetup_0',['NetworkSetup',['../namespaceNetworkSetup.html',1,'']]]
+  ['multicastforwarderplugin_0',['MulticastForwarderPlugin',['../namespaceMulticastForwarderPlugin.html',1,'']]]
 ];

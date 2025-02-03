@@ -26,10 +26,10 @@ var searchData=
   ['addproxytorootcabundle_23',['addProxyToRootCABundle',['../classHttpProxyPlugin.html#ac870c5dec857b67f100560902d5cbbdd',1,'HttpProxyPlugin']]],
   ['addresolvmount_24',['addResolvMount',['../namespaceNetworkSetup.html#aa2747c164df129376a2b48545ed166b2',1,'NetworkSetup']]],
   ['address_25',['address',['../classDobbyIpcBus.html#a50b5d76a7f2551fdb8f2cbe98e7547b1',1,'DobbyIpcBus']]],
-  ['addressrange_26',['addressrange',['../classSettings.html#a29eb9d711fd3533853c862b4dfd47005',1,'Settings::addressRange()'],['../classIDobbySettings.html#a5d990a1b2d08dacbb44c110e091591e0',1,'IDobbySettings::addressRange()']]],
+  ['addressrange_26',['addressrange',['../classIDobbySettings.html#a5d990a1b2d08dacbb44c110e091591e0',1,'IDobbySettings::addressRange()'],['../classSettings.html#a29eb9d711fd3533853c862b4dfd47005',1,'Settings::addressRange() const override']]],
   ['addressrangestr_27',['addressrangestr',['../classSettings.html#a70598d993f65d8a7bae58a94320a6790',1,'Settings::addressRangeStr()'],['../classIDobbySettings.html#a021a6f9309f0f09f9c95150be3477ed4',1,'IDobbySettings::addressRangeStr()']]],
-  ['addroute_28',['addroute',['../classNetlink.html#a1d416a2fc78ba913d27dd69bbf4a718f',1,'Netlink::addRoute(const std::string &amp;iface, const struct in6_addr destination, const int netmask, const struct in6_addr gateway)'],['../classNetlink.html#a4ef4373a38877fbecdc6d2705627ba58',1,'Netlink::addRoute(const std::string &amp;iface, const in_addr_t destination, const in_addr_t netmask, const in_addr_t gateway)']]],
-  ['addrules_29',['addRules',['../classNetfilter.html#a3127e9514d7bc0edf4e7e36f8bc4484f',1,'Netfilter']]],
+  ['addroute_28',['addroute',['../classNetlink.html#a4ef4373a38877fbecdc6d2705627ba58',1,'Netlink::addRoute(const std::string &amp;iface, const in_addr_t destination, const in_addr_t netmask, const in_addr_t gateway)'],['../classNetlink.html#a1d416a2fc78ba913d27dd69bbf4a718f',1,'Netlink::addRoute(const std::string &amp;iface, const struct in6_addr destination, const int netmask, const struct in6_addr gateway)']]],
+  ['addrules_29',['addrules',['../classNetfilter.html#a3127e9514d7bc0edf4e7e36f8bc4484f',1,'Netfilter::addRules()'],['../namespaceInterContainerRouting.html#ae8a445c1f51656b2120a0f6ac71fa5c9',1,'InterContainerRouting::addRules()']]],
   ['addrulesforport_30',['addRulesForPort',['../classAppServicesRdkPlugin.html#a27c8b97883960845a1bfc20efd0a4c30',1,'AppServicesRdkPlugin']]],
   ['addsocketandenv_31',['addSocketAndEnv',['../classIpcPlugin.html#a817e5722087d6fd7d3ccb1bfe032eefd',1,'IpcPlugin']]],
   ['addsource_32',['addSource',['../classAICommon_1_1PollLoop.html#a0dabcfb6a63cd62574091afa35e03efd',1,'AICommon::PollLoop']]],
@@ -45,7 +45,7 @@ var searchData=
   ['apply_42',['apply',['../classDobbyTemplate.html#a53cc8d3f245761324c18cc9d37d12ec0',1,'DobbyTemplate']]],
   ['applyat_43',['applyAt',['../classDobbyTemplate.html#aa1cb060337e849da982f26179e7aadb8',1,'DobbyTemplate']]],
   ['applyrules_44',['applyRules',['../classNetfilter.html#aa34e61aa7e0daa8a6e45622b588c394a',1,'Netfilter']]],
-  ['attachfiletoloopdevice_45',['attachfiletoloopdevice',['../classStorageHelper.html#a183101593a6f2f3c152deea2a4c77224',1,'StorageHelper::attachFileToLoopDevice()'],['../classDobbyUtils.html#ad6d67cb8adbd4005572548e5b2cb6591',1,'DobbyUtils::attachFileToLoopDevice()']]],
+  ['attachfiletoloopdevice_45',['attachfiletoloopdevice',['../classDobbyUtils.html#ad6d67cb8adbd4005572548e5b2cb6591',1,'DobbyUtils::attachFileToLoopDevice()'],['../classStorageHelper.html#a183101593a6f2f3c152deea2a4c77224',1,'StorageHelper::attachFileToLoopDevice()']]],
   ['attachlink_46',['attachLink',['../namespaceBridgeInterface.html#af6f69b028adedc1475ceb8e1701f298d',1,'BridgeInterface']]],
   ['attachloopdevice_47',['attachLoopDevice',['../classStorageHelper.html#a20be18e76cd2904d36966dae93ff83e7',1,'StorageHelper']]]
 ];

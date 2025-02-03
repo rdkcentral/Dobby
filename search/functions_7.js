@@ -12,7 +12,7 @@ var searchData=
   ['getcontainerid_9',['getContainerId',['../classDobbyRdkPluginUtils.html#aac3296a638db185fdc928030a4dbb84f',1,'DobbyRdkPluginUtils']]],
   ['getcontainerinfo_10',['getContainerInfo',['../classDobbyProxy.html#a38647703d5513a2f474fab91f7aadcd2',1,'DobbyProxy']]],
   ['getcontaineripsfromdisk_11',['getContainerIpsFromDisk',['../classIPAllocator.html#a30ee65159a7709f50f713e5bc02e7ca0',1,'IPAllocator']]],
-  ['getcontainerlogger_12',['getcontainerlogger',['../classDobbyRdkPluginManager.html#a6cf5179f775ccf96770d368cea075cf6',1,'DobbyRdkPluginManager::getContainerLogger()'],['../classDobbyManager.html#aa21cf486212d6af9700206f4179079a2',1,'DobbyManager::GetContainerLogger()']]],
+  ['getcontainerlogger_12',['getcontainerlogger',['../classDobbyManager.html#aa21cf486212d6af9700206f4179079a2',1,'DobbyManager::GetContainerLogger()'],['../classDobbyRdkPluginManager.html#a6cf5179f775ccf96770d368cea075cf6',1,'DobbyRdkPluginManager::getContainerLogger()']]],
   ['getcontainernetworkinfo_13',['getcontainernetworkinfo',['../classIPAllocator.html#a9c996084e13096f401fb5a7034b75e52',1,'IPAllocator::getContainerNetworkInfo()'],['../classDobbyRdkPluginUtils.html#a5f640e9568013e5b5f1e3bceadb48e39',1,'DobbyRdkPluginUtils::getContainerNetworkInfo(ContainerNetworkInfo &amp;networkInfo)']]],
   ['getcontainerpid_14',['getContainerPid',['../classDobbyRdkPluginUtils.html#a33e21d9f62844a6d4266c7f99c2cf9c1',1,'DobbyRdkPluginUtils']]],
   ['getcontainersink_15',['GetContainerSink',['../classLoggingPlugin.html#a23f67955a98f8f62f73a74bcba404c90',1,'LoggingPlugin']]],
