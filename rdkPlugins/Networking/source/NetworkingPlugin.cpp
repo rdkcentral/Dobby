@@ -390,7 +390,7 @@ bool NetworkingPlugin::postHalt()
                                                 mPluginData->inter_container,
                                                 mPluginData->inter_container_len))
         {
-            AI_LOG_ERROR_EXIT("failed to remove multicast forwards");
+            AI_LOG_ERROR_EXIT("failed to remove inter-container iptables rules");
             return false;
         }
     }
