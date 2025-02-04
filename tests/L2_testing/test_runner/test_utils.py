@@ -480,23 +480,26 @@ def parse_arguments(file_name, platform_required=False):
         print_log("Current platform set to %d" % selected_platform, Severity.debug)
 
 
-def dobby_tool_command(command, container_id):
+def dobby_tool_command(command, container_id, params=None):
     """Runs DobbyTool command
 
     Parameters:
     command (string): command that should be run
     container_id (string): name of container to run
+    [params] (list(string)): additional parameters that should be passed to command
 
     Returns:
     process (process): process that runs selected command
 
     """
 
-    full_command = [
-            "DobbyTool",
-            command,
-            container_id
-        ]
+    full_command = ["DobbyTool", command]
+    
+    if params:
+        full_command.extend(params)
+    
+    full_command.append(container_id)
+
     if command == "start":
         container_path = get_container_spec_path(container_id)
         full_command.append(container_path)

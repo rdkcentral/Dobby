@@ -28,7 +28,7 @@ jobs:
         run: >
           sudo apt update
           &&
-          sudo apt install -y build-essential cmake make git gcc pkgconf libtool libctemplate-dev libjsoncpp-dev libdbus-1-dev libsystemd-dev libyajl-dev libcap-dev go-md2man autoconf automake libseccomp-dev libboost-dev valgrind libcunit1-dev liblog4c-dev libfreetype6-dev libjpeg-dev xorg-dev python3 python3-pip libarchive-dev libcurl4 libcurl4-gnutls-dev libssl-dev libgpgme11-dev libtool-bin libarchive13 bison flex clang lcov figlet dbus libdbus-glib-1-dev dbus-user-session systemd libpam-systemd gnome-keyring iptables libprotobuf-c-dev
+          sudo apt install -y build-essential cmake make git gcc pkgconf libtool libctemplate-dev libjsoncpp-dev libdbus-1-dev libsystemd-dev libyajl-dev libcap-dev go-md2man autoconf automake libseccomp-dev libboost-dev valgrind libcunit1-dev liblog4c-dev libfreetype6-dev libjpeg-dev xorg-dev python3 python3-pip libarchive-dev libcurl4 libcurl4-gnutls-dev libssl-dev libgpgme11-dev libtool-bin libarchive13 bison flex clang lcov figlet dbus libdbus-glib-1-dev dbus-user-session systemd libpam-systemd gnome-keyring iptables libprotobuf-c-dev libzstd-dev
 
       - name: Set gcc/with-coverage toolchain
         if: ${{ matrix.compiler == 'gcc' && matrix.coverage == 'with-coverage' }}
@@ -124,7 +124,7 @@ jobs:
           sudo chmod 755 /var/volatile/rdk/dobby/bundles
           mkdir -p build
           cd build
-          cmake -DCMAKE_TOOLCHAIN_FILE="${{ env.TOOLCHAIN_FILE }}" -DRDK_PLATFORM=DEV_VM -DCMAKE_INSTALL_PREFIX:PATH=/usr ${{ matrix.extra_flags }}  -DRDK=ON -DUSE_SYSTEMD=ON -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DAI_BUILD_TYPE=AI_DEBUG -DDOBBY_HIBERNATE_MEMCR_IMPL=ON ..
+          cmake -DCMAKE_TOOLCHAIN_FILE="${{ env.TOOLCHAIN_FILE }}" -DRDK_PLATFORM=DEV_VM -DCMAKE_INSTALL_PREFIX:PATH=/usr ${{ matrix.extra_flags }}  -DRDK=ON -DUSE_SYSTEMD=ON -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DAI_BUILD_TYPE=AI_DEBUG -DDOBBY_HIBERNATE_MEMCR_IMPL=ON -DDOBBY_HIBERNATE_MEMCR_PARAMS_ENABLED=ON ..
           make -j $(nproc)
           sudo make install
           # Link for the DobbyInit tool
@@ -136,7 +136,8 @@ jobs:
           mkdir -p ~/memcr
           cd ~/memcr
           git clone https://github.com/LibertyGlobal/memcr.git .
-          make COMPRESS_LZ4=1 CHECKSUM_MD5=1 ENCRYPT=1
+          git apply $GITHUB_WORKSPACE/Dobby/develop/vagrant/memcr/0001-RDK-47153-Support-zstd-compression-and-option-to-set-dump-dir-.patch
+          make COMPRESS_LZ4=1 COMPRESS_ZSTD=1 CHECKSUM_MD5=1 ENCRYPT=1
           mkdir -p scripts
           cp $GITHUB_WORKSPACE/Dobby/develop/vagrant/memcr/start_memcr.sh ~/memcr/scripts/
 
