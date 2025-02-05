@@ -7,7 +7,7 @@ jobs:
     env:
       # For CI, build all optional plugins. Newly developed plugins should be added to this list
       optional_plugins: "-DPLUGIN_TESTPLUGIN=ON -DPLUGIN_GPU=ON -DPLUGIN_LOCALTIME=ON -DPLUGIN_RTSCHEDULING=ON -DPLUGIN_HTTPPROXY=ON -DPLUGIN_APPSERVICES=ON -DPLUGIN_IONMEMORY=ON -DPLUGIN_DEVICEMAPPER=ON -DPLUGIN_OOMCRASH=ON"
-      optional_flags: "-DLEGACY_COMPONENTS=ON -DRDK=ON -DUSE_SYSTEMD=ON -DDOBBY_HIBERNATE_MEMCR_IMPL=ON"
+      optional_flags: "-DLEGACY_COMPONENTS=ON -DRDK=ON -DUSE_SYSTEMD=ON -DDOBBY_HIBERNATE_MEMCR_IMPL=ON -DDOBBY_HIBERNATE_MEMCR_PARAMS_ENABLED=ON"
     strategy:
       fail-fast: false
       matrix:
@@ -25,7 +25,7 @@ jobs:
         # If adding a RUN_TESTS cmake option, it will build with enabling optional_flags and run the L1 tests
         # matrix runs both versions
         build_type: ["Release", "Debug"]
-        extra_flags: [ "RUN_TESTS", "-DLEGACY_COMPONENTS=ON", "-DLEGACY_COMPONENTS=OFF", "-DUSE_SYSTEMD=ON", "-DUSE_SYSTEMD=OFF", "-DDOBBY_HIBERNATE_MEMCR_IMPL=ON", "-DDOBBY_HIBERNATE_MEMCR_IMPL=OFF"]
+        extra_flags: [ "RUN_TESTS", "-DLEGACY_COMPONENTS=ON", "-DLEGACY_COMPONENTS=OFF", "-DUSE_SYSTEMD=ON", "-DUSE_SYSTEMD=OFF", "-DDOBBY_HIBERNATE_MEMCR_IMPL=ON -DDOBBY_HIBERNATE_MEMCR_PARAMS_ENABLED=OFF", "-DDOBBY_HIBERNATE_MEMCR_IMPL=ON -DDOBBY_HIBERNATE_MEMCR_PARAMS_ENABLED=ON", "-DDOBBY_HIBERNATE_MEMCR_IMPL=OFF"]
     name: Build in ${{ matrix.build_type }} Mode (${{ matrix.extra_flags }})
     steps:
       - name: checkout

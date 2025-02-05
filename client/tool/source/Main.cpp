@@ -510,15 +510,17 @@ static void hibernateCommand(const std::shared_ptr<IDobbyProxy>& dobbyProxy,
     size_t i = 0;
     std::string options;
 
-    // Find options from arguments (start with a '-')
-    while (args[i].c_str()[0] == '-')
+    // Find options from arguments (start with a '--')
+    while (args[i].length() > 1 && args[i].c_str()[0] == '-' && args[i].c_str()[1] == '-')
     {
-        // Add space between options
+        // strip off the '--'
+        std::string arg(args[i].c_str() + 2);
+        // Add comma between options
         if (!options.empty())
         {
-            options.append(" ");
+            options.append(",");
         }
-        options.append(args[i]);
+        options.append(arg);
         i++;
     }
 

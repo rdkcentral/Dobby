@@ -37,8 +37,19 @@
 
 typedef enum {
     MEMCR_CHECKPOINT = 100,
-    MEMCR_RESTORE
+    MEMCR_RESTORE,
+    MEMCR_CMDS_V2
 } ServerRequestCode;
+
+typedef enum {
+	MEMCR_CHECKPOINT_DUMPDIR = 200,
+	MEMCR_CHECKPOINT_COMPRESS_ALG,
+} ServerRequestCodeOptions;
+
+typedef struct {
+    std::string dumpDir;
+    DobbyHibernate::CompressionAlg compressAlg;
+} ServerRequestOptions;
 
 typedef enum {
     MEMCR_OK = 0,
@@ -56,8 +67,11 @@ typedef struct {
     ServerResponseCode respCode;
 } __attribute__((packed)) ServerResponse;
 
-const char* DobbyHibernate::DFL_LOCATOR = "/tmp/memcrcom";
+const std::string DobbyHibernate::DFL_LOCATOR = "/tmp/memcrcom";
 const uint32_t DobbyHibernate::DFL_TIMEOUTE_MS = 20000;
+
+#define MEMCR_DUMPDIR_LEN_MAX	1024
+#define CMD_LEN_MAX		 (sizeof(ServerRequest) + (2*sizeof(ServerRequestCodeOptions)) + MEMCR_DUMPDIR_LEN_MAX + 1)
 
 
 static int Connect(const char* serverLocator, uint32_t timeoutMs)
@@ -138,11 +152,12 @@ static int Connect(const char* serverLocator, uint32_t timeoutMs)
     return cd;
 }
 
-static bool SendRcvCmd(const ServerRequest* cmd, ServerResponse* resp, uint32_t timeoutMs, const char* serverLocator)
+static bool SendRcvCmd(const ServerRequest* cmd, ServerResponse* resp, uint32_t timeoutMs, const char* serverLocator, const ServerRequestOptions *opt)
 {
     AI_LOG_FN_ENTRY();
     int cd;
     int ret;
+
     resp->respCode = MEMCR_ERROR;
 
     cd = Connect(serverLocator, timeoutMs);
@@ -152,6 +167,50 @@ static bool SendRcvCmd(const ServerRequest* cmd, ServerResponse* resp, uint32_t 
         return false;
     }
 
+#ifdef DOBBY_HIBERNATE_MEMCR_PARAMS_ENABLED
+    int cmdSize = 0;
+    unsigned char cmdBuf[CMD_LEN_MAX];
+
+    memcpy(cmdBuf, cmd, sizeof(ServerRequest));
+    cmdSize += sizeof(ServerRequest);
+
+    if (opt) {
+        if (opt->dumpDir.length() > 0) {
+            ServerRequestCodeOptions optId = MEMCR_CHECKPOINT_DUMPDIR;
+            memcpy(cmdBuf + cmdSize, &optId, sizeof(ServerRequestCodeOptions));
+            cmdSize += sizeof(ServerRequestCodeOptions);
+            strncpy((char *)cmdBuf + cmdSize, opt->dumpDir.c_str(), MEMCR_DUMPDIR_LEN_MAX);
+            cmdSize += opt->dumpDir.length() + 1;
+        }
+
+        if (opt->compressAlg != DobbyHibernate::CompressionAlg::AlgDefault) {
+            ServerRequestCodeOptions optId = MEMCR_CHECKPOINT_COMPRESS_ALG;
+            memcpy(cmdBuf + cmdSize, &optId, sizeof(ServerRequestCodeOptions));
+            cmdSize += sizeof(ServerRequestCodeOptions);
+            memcpy(cmdBuf + cmdSize, &opt->compressAlg, sizeof(DobbyHibernate::CompressionAlg));
+            cmdSize += sizeof(DobbyHibernate::CompressionAlg);
+        }
+    }
+
+    ServerRequest cmdV2 = {.reqCode = MEMCR_CMDS_V2, .pid = cmdSize};
+
+    ret = write(cd, &cmdV2, sizeof(ServerRequest));
+    if (ret != sizeof(ServerRequest)) {
+        AI_LOG_ERROR("Socket write failed: ret %d, %m", ret);
+        close(cd);
+        AI_LOG_FN_EXIT();
+        return false;
+    }
+
+    ret = write(cd, cmdBuf, cmdSize);
+    if (ret != cmdSize) {
+        AI_LOG_ERROR("Socket write failed: ret %d, %m", ret);
+        close(cd);
+        AI_LOG_FN_EXIT();
+        return false;
+    }
+
+#else
     ret = write(cd, cmd, sizeof(ServerRequest));
     if (ret != sizeof(ServerRequest)) {
         AI_LOG_ERROR("Socket write failed: ret %d, %m", ret);
@@ -159,6 +218,7 @@ static bool SendRcvCmd(const ServerRequest* cmd, ServerResponse* resp, uint32_t 
         AI_LOG_FN_EXIT();
         return false;
     }
+#endif
 
     ret = read(cd, resp, sizeof(ServerResponse));
     if (ret != sizeof(ServerResponse)) {
@@ -175,17 +235,21 @@ static bool SendRcvCmd(const ServerRequest* cmd, ServerResponse* resp, uint32_t 
     return (resp->respCode == MEMCR_OK);
 }
 
-DobbyHibernate::Error DobbyHibernate::HibernateProcess(const pid_t pid, const uint32_t timeout,  const char* locator,
-    const char* dumpDirPath, CompressionAlg compression)
+DobbyHibernate::Error DobbyHibernate::HibernateProcess(const pid_t pid, const uint32_t timeout, const std::string &locator,
+    const std::string &dumpDirPath, CompressionAlg compression)
 {
     AI_LOG_FN_ENTRY();
     ServerRequest req = {
         .reqCode = MEMCR_CHECKPOINT,
         .pid = pid
     };
+    ServerRequestOptions opt = {
+        .dumpDir = dumpDirPath,
+        .compressAlg = compression
+    };
     ServerResponse resp;
 
-    if (SendRcvCmd(&req, &resp, timeout, locator)) {
+    if (SendRcvCmd(&req, &resp, timeout, locator.c_str(), &opt)) {
         AI_LOG_INFO("Hibernate process PID %d success", pid);
         AI_LOG_FN_EXIT();
         return DobbyHibernate::Error::ErrorNone;
@@ -200,7 +264,7 @@ DobbyHibernate::Error DobbyHibernate::HibernateProcess(const pid_t pid, const ui
     }
 }
 
-DobbyHibernate::Error DobbyHibernate::WakeupProcess(const pid_t pid, const uint32_t timeout, const char* locator)
+DobbyHibernate::Error DobbyHibernate::WakeupProcess(const pid_t pid, const uint32_t timeout, const std::string &locator)
 {
     AI_LOG_FN_ENTRY();
     ServerRequest req = {
@@ -209,7 +273,7 @@ DobbyHibernate::Error DobbyHibernate::WakeupProcess(const pid_t pid, const uint3
     };
     ServerResponse resp;
 
-    if (SendRcvCmd(&req, &resp, timeout, locator)) {
+    if (SendRcvCmd(&req, &resp, timeout, locator.c_str(), nullptr)) {
         AI_LOG_INFO("Wakeup process PID %d success", pid);
         AI_LOG_FN_EXIT();
         return DobbyHibernate::Error::ErrorNone;
@@ -226,17 +290,17 @@ DobbyHibernate::Error DobbyHibernate::WakeupProcess(const pid_t pid, const uint3
 
 #else
 
-const char* DobbyHibernate::DFL_LOCATOR = "";
+const std::string DobbyHibernate::DFL_LOCATOR  = "";
 const uint32_t DobbyHibernate::DFL_TIMEOUTE_MS = 0;
 
-DobbyHibernate::Error DobbyHibernate::HibernateProcess(const pid_t pid, const uint32_t timeout,  const char* locator,
-    const char* dumpDirPath, CompressionAlg compression)
+DobbyHibernate::Error DobbyHibernate::HibernateProcess(const pid_t pid, const uint32_t timeout, const std::string &locator,
+    const std::string &dumpDirPath, CompressionAlg compression)
 {
     AI_LOG_ERROR("DobbyHibernate Implementation not enabled");
     return DobbyHibernate::Error::ErrorGeneral;
 }
 
-DobbyHibernate::Error DobbyHibernate::WakeupProcess(const pid_t pid, const uint32_t timeout, const char* locator)
+DobbyHibernate::Error DobbyHibernate::WakeupProcess(const pid_t pid, const uint32_t timeout, const std::string &locator)
 {
     AI_LOG_ERROR("DobbyHibernate Implementation not enabled");
     return DobbyHibernate::Error::ErrorGeneral;

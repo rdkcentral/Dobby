@@ -16,6 +16,7 @@
 # limitations under the License.
 
 option(DOBBY_HIBERNATE_MEMCR_IMPL "Hibernate containers using Memcr tool" OFF)
+option(DOBBY_HIBERNATE_MEMCR_PARAMS_ENABLED "Enable optional parameters in Memcr protocol" OFF)
 
 if (LEGACY_COMPONENTS)
         list(APPEND ADDITIONAL_SOURCES
@@ -100,6 +101,10 @@ endif()
 
 if(DOBBY_HIBERNATE_MEMCR_IMPL)
     add_definitions( -DDOBBY_HIBERNATE_MEMCR_IMPL=1 )
+
+    if (DOBBY_HIBERNATE_MEMCR_PARAMS_ENABLED)
+        add_definitions( -DDOBBY_HIBERNATE_MEMCR_PARAMS_ENABLED=1 )
+    endif()
 endif()
 
 # Install public headers for external use

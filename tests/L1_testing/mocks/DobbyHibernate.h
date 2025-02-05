@@ -2,7 +2,7 @@
 * If not stated otherwise in this file or this component's LICENSE file the
 * following copyright and licenses apply:
 *
-* Copyright 2016 Sky UK
+* Copyright 2025 Sky UK
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -26,6 +26,8 @@
 #include <stdint.h>
 #include <string>
 
+class DobbyHibernateImpl;
+
 class DobbyHibernate
 {
     public:
@@ -48,8 +50,25 @@ class DobbyHibernate
     static const std::string DFL_LOCATOR;
     static const uint32_t DFL_TIMEOUTE_MS;
 
+    static void setImpl(DobbyHibernateImpl* newImpl);
+
     static Error HibernateProcess(const pid_t pid, const uint32_t timeout = DFL_TIMEOUTE_MS,
         const std::string &locator = DFL_LOCATOR, const std::string &dumpDirPath = std::string(), CompressionAlg compression = AlgDefault);
-
     static Error WakeupProcess(const pid_t pid, const uint32_t timeout = DFL_TIMEOUTE_MS, const std::string &locator = DFL_LOCATOR);
+
+    protected:
+    static DobbyHibernateImpl* impl;
+};
+
+
+class DobbyHibernateImpl
+{
+    public:
+
+    virtual ~DobbyHibernateImpl() = default;
+
+    virtual DobbyHibernate::Error HibernateProcess(const pid_t pid, const uint32_t timeout,
+        const std::string &locator, const std::string &dumpDirPath, DobbyHibernate::CompressionAlg compression) = 0;
+
+    virtual DobbyHibernate::Error WakeupProcess(const pid_t pid, const uint32_t timeout, const std::string &locator) = 0;
 };

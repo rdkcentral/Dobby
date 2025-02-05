@@ -37,6 +37,11 @@ tests = (
          True,
          "Starts container, hibernates it and wakes it up",
          "basic_memcr_test"),
+    Test("Memcr hibernate params test",
+         "sleepy",
+         True,
+         "Starts container, hibernates it with optional parameters and wakes it up",
+         "params_memcr_test"),
 )
 
 
@@ -122,7 +127,7 @@ def get_checkpointed_pids(memcr_dump_dir = "/media/apps/memcr/"):
     return checkpointed_pids
 
 
-def check_pids_checkpointed(pids):
+def check_pids_checkpointed(pids, memcr_dump_dir = "/media/apps/memcr/"):
     """ Checks if all pids from pids list are currently checkpointed
 
     Parameters:
@@ -131,7 +136,7 @@ def check_pids_checkpointed(pids):
     Returns:
     True if all pids from input parameter are checkpointed, False otherwise
     """
-    checkpointed_pids = get_checkpointed_pids()
+    checkpointed_pids = get_checkpointed_pids(memcr_dump_dir)
     for p in pids:
         if p not in checkpointed_pids:
             return False
@@ -204,6 +209,61 @@ def basic_memcr_test(container_id):
 
         return True, "Test passed"
 
+def params_memcr_test(container_id):
+    with test_utils.dobby_daemon(), memcr(), test_utils.untar_bundle(container_id) as bundle_path:
+
+        # start container
+        command = ["DobbyTool", "start", container_id, bundle_path]
+        test_utils.run_command_line(command)
+
+        # give dobby some time to start container
+        sleep(1)
+
+        # check container is in running state
+        if get_container_state(container_id) != "running":
+            return False, "Unable to start container"
+
+        # store container pids
+        pids = get_container_pids(container_id)
+        test_utils.print_log("container pids: [" + " ".join(map(str, pids)) + "]", test_utils.Severity.debug)
+
+        hibernate_with_params = [ [ "hibernate", ["--dest=/tmp/memcr", "--compress=zstd" ], "/tmp/memcr" ],
+                                  [ "hibernate", ["--dest=/tmp/memcr", "--compress=lz4" ],  "/tmp/memcr" ],
+                                  [ "hibernate", ["--dest=/media/apps/memcr", "--compress=zstd"], "/media/apps/memcr" ],
+                                  [ "hibernate", ["--dest=/tmp/memcr" ], "/tmp/memcr" ] ]
+        # test all possible combinations of hibernate parameters
+        for cmd in hibernate_with_params:
+            hibernate_command, params, memcr_dump_dir = cmd
+
+            # hibernate container with current params
+            test_utils.dobby_tool_command(hibernate_command, container_id, params)
+
+            # give memcr some time to checkpoint everything
+            sleep(1)
+
+            # check container is hibernated
+            if get_container_state(container_id) != "hibernated":
+                return False, f"Failed to hibernate container with params: {hibernate_command}"
+
+            # check if all processes were checkpointed
+            if not check_pids_checkpointed(pids, memcr_dump_dir):
+                return False, f"Not all pids checkpointed with params: {hibernate_command}"
+
+            # wakeup/restore the container
+            test_utils.dobby_tool_command("wakeup", container_id)
+
+            # give memcr some time to wakeup container
+            sleep(1)
+
+            # check container is running again
+            if get_container_state(container_id) != "running":
+                return False, f"Failed to wakeup container with params: {hibernate_command}"
+
+            # check if all processes were restored
+            if not check_pids_restored(pids):
+                return False, f"Not all pids restored with params: {hibernate_command}"
+     
+        return True, "Test passed"
 
 def execute_test():
     output_table = []
