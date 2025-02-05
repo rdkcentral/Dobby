@@ -89,23 +89,24 @@ Public Types</h2></td></tr>
 <tr class="memitem:accbb5e59dabd18d1ff436c4aa5e981bb" id="r_accbb5e59dabd18d1ff436c4aa5e981bb"><td class="memItemLeft" align="right" valign="top"><a id="accbb5e59dabd18d1ff436c4aa5e981bb" name="accbb5e59dabd18d1ff436c4aa5e981bb"></a>enum &#160;</td><td class="memItemRight" valign="bottom"><b>CompressionAlg</b> { <b>AlgNone</b> = 0
 , <b>AlgLz4</b> = 1
 , <b>AlgZstd</b> = 2
+, <b>AlgDefault</b> = 3
  }</td></tr>
 <tr class="separator:accbb5e59dabd18d1ff436c4aa5e981bb"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-static-methods" name="pub-static-methods"></a>
 Static Public Member Functions</h2></td></tr>
-<tr class="memitem:ae32e0099b6aef70bf1fb9890b1a6dece" id="r_ae32e0099b6aef70bf1fb9890b1a6dece"><td class="memItemLeft" align="right" valign="top"><a id="ae32e0099b6aef70bf1fb9890b1a6dece" name="ae32e0099b6aef70bf1fb9890b1a6dece"></a>
-static Error&#160;</td><td class="memItemRight" valign="bottom"><b>HibernateProcess</b> (const pid_t pid, const uint32_t timeout=DFL_TIMEOUTE_MS, const char *locator=DFL_LOCATOR, const char *dumpDirPath=nullptr, CompressionAlg compression=AlgLz4)</td></tr>
-<tr class="separator:ae32e0099b6aef70bf1fb9890b1a6dece"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a2775766488ecb8d15757e68a32753e8f" id="r_a2775766488ecb8d15757e68a32753e8f"><td class="memItemLeft" align="right" valign="top"><a id="a2775766488ecb8d15757e68a32753e8f" name="a2775766488ecb8d15757e68a32753e8f"></a>
-static Error&#160;</td><td class="memItemRight" valign="bottom"><b>WakeupProcess</b> (const pid_t pid, const uint32_t timeout=DFL_TIMEOUTE_MS, const char *locator=DFL_LOCATOR)</td></tr>
-<tr class="separator:a2775766488ecb8d15757e68a32753e8f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af079431f08fe70cbd6220df038f5a8fa" id="r_af079431f08fe70cbd6220df038f5a8fa"><td class="memItemLeft" align="right" valign="top"><a id="af079431f08fe70cbd6220df038f5a8fa" name="af079431f08fe70cbd6220df038f5a8fa"></a>
+static Error&#160;</td><td class="memItemRight" valign="bottom"><b>HibernateProcess</b> (const pid_t pid, const uint32_t timeout=DFL_TIMEOUTE_MS, const std::string &amp;locator=DFL_LOCATOR, const std::string &amp;dumpDirPath=std::string(), CompressionAlg compression=AlgDefault)</td></tr>
+<tr class="separator:af079431f08fe70cbd6220df038f5a8fa"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac3b2621415e0c5e403b2a67d56ffb6b8" id="r_ac3b2621415e0c5e403b2a67d56ffb6b8"><td class="memItemLeft" align="right" valign="top"><a id="ac3b2621415e0c5e403b2a67d56ffb6b8" name="ac3b2621415e0c5e403b2a67d56ffb6b8"></a>
+static Error&#160;</td><td class="memItemRight" valign="bottom"><b>WakeupProcess</b> (const pid_t pid, const uint32_t timeout=DFL_TIMEOUTE_MS, const std::string &amp;locator=DFL_LOCATOR)</td></tr>
+<tr class="separator:ac3b2621415e0c5e403b2a67d56ffb6b8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-static-attribs" name="pub-static-attribs"></a>
 Static Public Attributes</h2></td></tr>
-<tr class="memitem:a17f74a96238cde8666c9b2b8550bbaf4" id="r_a17f74a96238cde8666c9b2b8550bbaf4"><td class="memItemLeft" align="right" valign="top"><a id="a17f74a96238cde8666c9b2b8550bbaf4" name="a17f74a96238cde8666c9b2b8550bbaf4"></a>
-static const char *&#160;</td><td class="memItemRight" valign="bottom"><b>DFL_LOCATOR</b> = &quot;&quot;</td></tr>
-<tr class="separator:a17f74a96238cde8666c9b2b8550bbaf4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3eb703c99e1217d18b8aeab5dd3e780b" id="r_a3eb703c99e1217d18b8aeab5dd3e780b"><td class="memItemLeft" align="right" valign="top"><a id="a3eb703c99e1217d18b8aeab5dd3e780b" name="a3eb703c99e1217d18b8aeab5dd3e780b"></a>
+static const std::string&#160;</td><td class="memItemRight" valign="bottom"><b>DFL_LOCATOR</b> = &quot;&quot;</td></tr>
+<tr class="separator:a3eb703c99e1217d18b8aeab5dd3e780b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a39cb25fdba2c496ac3395076101045d3" id="r_a39cb25fdba2c496ac3395076101045d3"><td class="memItemLeft" align="right" valign="top"><a id="a39cb25fdba2c496ac3395076101045d3" name="a39cb25fdba2c496ac3395076101045d3"></a>
 static const uint32_t&#160;</td><td class="memItemRight" valign="bottom"><b>DFL_TIMEOUTE_MS</b> = 0</td></tr>
 <tr class="separator:a39cb25fdba2c496ac3395076101045d3"><td class="memSeparator" colspan="2">&#160;</td></tr>
