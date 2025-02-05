@@ -31,6 +31,7 @@
 #include <unordered_map>
 #include <chrono>
 #include <thread>
+#include <vector>
 
 #include "DobbyRdkPluginUtilsMock.h"
 #include "DobbyLoggerMock.h"
@@ -63,6 +64,7 @@
 #include "ContainerIdMock.h"
 #include "IDobbyRdkLoggingPluginMock.h"
 #include "DobbyProtocol.h"
+#include "DobbyHibernateMock.h"
 
 #define MAX_TIMEOUT_CONTAINER_STARTED (5000) /* 5sec */
 #define LIST_CONTAINERS_HUGE_COUNT 8
@@ -91,6 +93,7 @@ DobbyStatsImpl* DobbyStats::impl = nullptr;
 AI_IPC::IpcFileDescriptorApiImpl* AI_IPC::IpcFileDescriptor::impl = nullptr;
 DobbyIPCUtilsImpl* DobbyIPCUtils::impl = nullptr;
 DobbyUtilsImpl* DobbyUtils::impl = nullptr;
+DobbyHibernateImpl* DobbyHibernate::impl = nullptr;
 
 
 using ::testing::NiceMock;
@@ -110,6 +113,10 @@ protected:
     bool waitForContainerStarted(int32_t timeout_ms);
 
     bool waitForContainerStopped(int32_t timeout_ms);
+
+    bool waitForContainerHibernated(int32_t timeout_ms);
+
+    bool waitForContainerAwoken(int32_t timeout_ms);
 
     typedef std::function<void(int32_t cd, const ContainerId& id)> ContainerStartedFunc;
     typedef std::function<void(int32_t cd, const ContainerId& id, int32_t status)> ContainerStoppedFunc;
@@ -137,6 +144,8 @@ protected:
         std::condition_variable m_condition_variable;
         bool m_containerStarted = false;
         bool m_containerStopped = false;
+        bool m_containerHibernated = false;
+        bool m_containerAwoken = false;
 
         //Initializing pointers to mock objects
         DobbyContainerMock*  p_containerMock = nullptr;
@@ -161,6 +170,7 @@ protected:
         DobbyEnvMock*  p_envMock = nullptr;
         DobbyIPCUtilsMock*  p_ipcutilsMock = nullptr;
         DobbyUtilsMock*  p_utilsMock = nullptr;
+        DobbyHibernateMock*  p_hibernateMock = nullptr;
 
         DobbyBundle *p_bundle = nullptr;
         DobbyBundleConfig *p_bundleConfig = nullptr;
@@ -200,6 +210,7 @@ protected:
             p_envMock = new NiceMock <DobbyEnvMock>;
             p_ipcutilsMock = new NiceMock <DobbyIPCUtilsMock>;
             p_utilsMock = new NiceMock <DobbyUtilsMock>;
+            p_hibernateMock = new NiceMock <DobbyHibernateMock>;
 
             DobbyContainer::setImpl(p_containerMock);
             DobbyRdkPluginManager::setImpl(p_rdkPluginManagerMock);
@@ -225,6 +236,7 @@ protected:
             DobbyEnv::setImpl(p_envMock);
             DobbyIPCUtils::setImpl(p_ipcutilsMock);
             DobbyUtils::setImpl(p_utilsMock);
+            DobbyHibernate::setImpl(p_hibernateMock);
             p_dobbysettingsMock =  std::make_shared<NiceMock<DobbySettingsMock>>();
 
            const std::shared_ptr<DobbyEnv> p_env = std::make_shared<DobbyEnv>(p_dobbysettingsMock);
@@ -295,6 +307,7 @@ protected:
             DobbyEnv::setImpl(nullptr);
             DobbyIPCUtils::setImpl(nullptr);
             DobbyUtils::setImpl(nullptr);
+            DobbyHibernate::setImpl(nullptr);
 
             p_dobbysettingsMock.reset();
 
@@ -420,6 +433,11 @@ protected:
                 p_utilsMock = nullptr;
             }
 
+            if(p_hibernateMock != nullptr)
+            {
+                delete  p_hibernateMock;
+                p_hibernateMock = nullptr;
+            }
 
         }
 
@@ -1007,9 +1025,43 @@ protected:
         }
 
         void DaemonDobbyManagerTest::onContainerHibernated(int32_t cd, const ContainerId& id) {
+            std::unique_lock<std::mutex> lock(m_mutex);
+            m_containerHibernated = true;
+            m_condition_variable.notify_one();
         }
 
         void DaemonDobbyManagerTest::onContainerAwoken(int32_t cd, const ContainerId& id) {
+            std::unique_lock<std::mutex> lock(m_mutex);
+            m_containerAwoken = true;
+            m_condition_variable.notify_one();
+        }
+
+        bool DaemonDobbyManagerTest::waitForContainerHibernated(int32_t timeout_ms) {
+            std::unique_lock<std::mutex> lock(m_mutex);
+            auto now = std::chrono::system_clock::now();
+            std::chrono::milliseconds timeout(timeout_ms);
+
+            if (!m_containerHibernated) {
+                if (m_condition_variable.wait_until(lock, now + timeout) == std::cv_status::timeout) {
+                    std::cout << "Timeout waiting for container hibernated." << std::endl;
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        bool DaemonDobbyManagerTest::waitForContainerAwoken(int32_t timeout_ms) {
+            std::unique_lock<std::mutex> lock(m_mutex);
+            auto now = std::chrono::system_clock::now();
+            std::chrono::milliseconds timeout(timeout_ms);
+
+            if (!m_containerAwoken) {
+                if (m_condition_variable.wait_until(lock, now + timeout) == std::cv_status::timeout) {
+                    std::cout << "Timeout waiting for container awoken." << std::endl;
+                    return false;
+                }
+            }
+            return true;
         }
 
 #if defined(LEGACY_COMPONENTS)
@@ -4102,3 +4154,268 @@ TEST_F(DaemonDobbyManagerTest, removeAnnotation_FailedToFindContainer)
     bool return_value = dobbyManager_test->removeAnnotation(expect_cd, key);
     EXPECT_EQ(return_value,false);
 }
+
+/**
+ * @brief Test hibernateContainer
+ * hibernate container success with no parameters
+ *
+ * @return false.
+ */
+TEST_F(DaemonDobbyManagerTest, hibernateContainer_success)
+{
+    Json::Value expected_json;
+    expected_json["id"] = "container1";
+    expected_json["state"] = "running";
+    expected_json["pids"] = Json::arrayValue;
+    expected_json["pids"].append(1);
+    expected_json["pids"].append(2);
+    expected_json["pids"].append(3);
+    int32_t cd = 1234;
+    int pids_hibernate = 1;
+    std::string hibernate_options = "";
+
+    ContainerId id = ContainerId::create("container1");
+
+    expect_invalidContainerCleanupTask();
+    expect_startContainerFromBundle(cd,id);
+
+    EXPECT_CALL(*p_statsMock,stats())
+        .Times(2)
+        .WillRepeatedly(::testing::ReturnRef(expected_json));
+
+    EXPECT_CALL(*p_hibernateMock, HibernateProcess(::testing::_,::testing::_, ::testing::_, ::testing::_, ::testing::_))
+        .Times(3)
+        .WillRepeatedly(::testing::Invoke(
+            [&](const pid_t pid, const uint32_t timeout, const std::string &locator, const std::string &dumpDirPath, DobbyHibernate::CompressionAlg compression) {
+                    EXPECT_EQ(pid, pids_hibernate);
+                    pids_hibernate++;
+                    EXPECT_EQ(dumpDirPath, "");
+                    EXPECT_EQ(compression, DobbyHibernate::CompressionAlg::AlgDefault);
+                    return DobbyHibernate::Error::ErrorNone;
+            }));
+
+    bool return_value = dobbyManager_test->hibernateContainer(cd, hibernate_options);
+    EXPECT_EQ(return_value,true);
+
+    EXPECT_TRUE(waitForContainerHibernated(MAX_TIMEOUT_CONTAINER_STARTED));
+
+    EXPECT_CALL(*p_hibernateMock, WakeupProcess(::testing::_,::testing::_, ::testing::_))
+        .Times(3)
+        .WillRepeatedly(::testing::Invoke(
+            [&](const pid_t pid, const uint32_t timeout, const std::string &locator) {
+                    pids_hibernate--;
+                    EXPECT_EQ(pid, pids_hibernate);
+                    return DobbyHibernate::Error::ErrorNone;
+            }));
+
+    return_value = dobbyManager_test->wakeupContainer(cd);
+    EXPECT_EQ(return_value,true);
+    EXPECT_TRUE(waitForContainerAwoken(MAX_TIMEOUT_CONTAINER_STARTED));
+}
+
+/**
+ * @brief Test hibernateContainer
+ * hibernate container which doesn't exist
+ *
+ * @return false.
+ */
+TEST_F(DaemonDobbyManagerTest, hibernateContainer_FailedToFindContainer)
+{
+    int32_t cd = 1234;
+    int32_t expect_cd = 2345;
+    std::string hibernate_options = "";
+
+    ContainerId id = ContainerId::create("container1");
+    expect_invalidContainerCleanupTask();
+
+    expect_startContainerFromBundle(cd,id);
+
+    bool return_value = dobbyManager_test->hibernateContainer(expect_cd, hibernate_options);
+    EXPECT_EQ(return_value,false);
+}
+
+/**
+ * @brief Test hibernateContainer
+ * hibernate container which HibernationProcess failed on last pid
+ *
+ * @return false.
+ */
+TEST_F(DaemonDobbyManagerTest, hibernateContainer_HibernationProcessFailed)
+{
+    Json::Value expected_json;
+    expected_json["id"] = "container1";
+    expected_json["state"] = "running";
+    expected_json["pids"] = Json::arrayValue;
+    expected_json["pids"].append(1);
+    expected_json["pids"].append(2);
+    expected_json["pids"].append(3);
+    int32_t cd = 1234;
+    int pids_hibernate = 1;
+    std::string hibernate_options = "";
+
+    ContainerId id = ContainerId::create("container1");
+
+    expect_invalidContainerCleanupTask();
+    expect_startContainerFromBundle(cd,id);
+
+    EXPECT_CALL(*p_statsMock,stats())
+        .Times(1)
+        .WillOnce(::testing::ReturnRef(expected_json));
+
+    EXPECT_CALL(*p_hibernateMock, HibernateProcess(::testing::_,::testing::_, ::testing::_, ::testing::_, ::testing::_))
+        .Times(3)
+        .WillRepeatedly(::testing::Invoke(
+            [&](const pid_t pid, const uint32_t timeout, const std::string &locator, const std::string &dumpDirPath, DobbyHibernate::CompressionAlg compression) {
+                    EXPECT_EQ(pid, pids_hibernate);
+                    pids_hibernate++;
+                    EXPECT_EQ(dumpDirPath, "");
+                    EXPECT_EQ(compression, DobbyHibernate::CompressionAlg::AlgDefault);
+                    if (pid == 3)
+                        return DobbyHibernate::Error::ErrorGeneral;
+
+                    return DobbyHibernate::Error::ErrorNone;
+            }));
+
+    EXPECT_CALL(*p_hibernateMock, WakeupProcess(::testing::_,::testing::_, ::testing::_))
+        .Times(3)
+        .WillRepeatedly(::testing::Invoke(
+            [&](const pid_t pid, const uint32_t timeout, const std::string &locator) {
+                    pids_hibernate--;
+                    EXPECT_EQ(pid, pids_hibernate);
+                    return DobbyHibernate::Error::ErrorNone;
+            }));
+
+    bool return_value = dobbyManager_test->hibernateContainer(cd, hibernate_options);
+    EXPECT_EQ(return_value,true);
+    EXPECT_FALSE(waitForContainerHibernated(MAX_TIMEOUT_CONTAINER_STARTED));
+}
+
+/**
+ * @brief Test hibernateContainer
+ * hibernate container with parameters dest=/tmp/memcr,compress=lz4 and wakeup
+ *
+ * @return false.
+ */
+TEST_F(DaemonDobbyManagerTest, hibernateContainer_successWithParameters)
+{
+    Json::Value expected_json;
+    expected_json["id"] = "container1";
+    expected_json["state"] = "running";
+    expected_json["pids"] = Json::arrayValue;
+    expected_json["pids"].append(1);
+    expected_json["pids"].append(2);
+    expected_json["pids"].append(3);
+    int32_t cd = 1234;
+    int pids_hibernate = 1;
+    std::string hibernate_options = "dest=/tmp/memcr,compress=lz4";
+
+    ContainerId id = ContainerId::create("container1");
+
+    expect_invalidContainerCleanupTask();
+    expect_startContainerFromBundle(cd,id);
+
+    EXPECT_CALL(*p_statsMock,stats())
+        .Times(2)
+        .WillRepeatedly(::testing::ReturnRef(expected_json));
+
+    EXPECT_CALL(*p_hibernateMock, HibernateProcess(::testing::_,::testing::_, ::testing::_, ::testing::_, ::testing::_))
+        .Times(3)
+        .WillRepeatedly(::testing::Invoke(
+            [&](const pid_t pid, const uint32_t timeout, const std::string &locator, const std::string &dumpDirPath, DobbyHibernate::CompressionAlg compression) {
+                    EXPECT_EQ(pid, pids_hibernate);
+                    pids_hibernate++;
+                    EXPECT_EQ(dumpDirPath, "/tmp/memcr");
+                    EXPECT_EQ(compression, DobbyHibernate::CompressionAlg::AlgLz4);
+                    return DobbyHibernate::Error::ErrorNone;
+            }));
+
+    bool return_value = dobbyManager_test->hibernateContainer(cd, hibernate_options);
+    EXPECT_EQ(return_value,true);
+
+    EXPECT_TRUE(waitForContainerHibernated(MAX_TIMEOUT_CONTAINER_STARTED));
+
+    EXPECT_CALL(*p_hibernateMock, WakeupProcess(::testing::_,::testing::_, ::testing::_))
+        .Times(3)
+        .WillRepeatedly(::testing::Invoke(
+            [&](const pid_t pid, const uint32_t timeout, const std::string &locator) {
+                    pids_hibernate--;
+                    EXPECT_EQ(pid, pids_hibernate);
+                    return DobbyHibernate::Error::ErrorNone;
+            }));
+
+    return_value = dobbyManager_test->wakeupContainer(cd);
+    EXPECT_EQ(return_value,true);
+    EXPECT_TRUE(waitForContainerAwoken(MAX_TIMEOUT_CONTAINER_STARTED));
+}
+
+/**
+ * @brief Test hibernateContainer
+ * hibernate container with parameters combination of parameters
+ *
+ * @return false.
+ */
+TEST_F(DaemonDobbyManagerTest, hibernateContainer_successWithParametersCombination)
+{
+    Json::Value expected_json;
+    expected_json["id"] = "container1";
+    expected_json["state"] = "running";
+    expected_json["pids"] = Json::arrayValue;
+    expected_json["pids"].append(1);
+    expected_json["pids"].append(2);
+    expected_json["pids"].append(3);
+    int32_t cd = 1234;
+    int pids_hibernate = 1;
+    std::map<std::string, std::pair<std::string,DobbyHibernate::CompressionAlg>> hibernate_options;
+    hibernate_options["dest=/tmp/memcr"] = std::make_pair(std::string("/tmp/memcr"), DobbyHibernate::CompressionAlg::AlgDefault);
+    hibernate_options["compress=lz4"] = std::make_pair(std::string(""), DobbyHibernate::CompressionAlg::AlgLz4);
+    hibernate_options["compress=zstd"] = std::make_pair(std::string(""), DobbyHibernate::CompressionAlg::AlgZstd);
+    hibernate_options["compress=invalid"] = std::make_pair(std::string(""), DobbyHibernate::CompressionAlg::AlgDefault);
+
+
+    ContainerId id = ContainerId::create("container1");
+
+    expect_invalidContainerCleanupTask();
+    expect_startContainerFromBundle(cd,id);
+
+    // for each hibernate option call hibernate and wakeup
+    for (auto &option : hibernate_options)
+    {
+        EXPECT_CALL(*p_statsMock,stats())
+            .Times(2)
+            .WillRepeatedly(::testing::ReturnRef(expected_json));
+
+        EXPECT_CALL(*p_hibernateMock, HibernateProcess(::testing::_,::testing::_, ::testing::_, ::testing::_, ::testing::_))
+            .Times(3)
+            .WillRepeatedly(::testing::Invoke(
+                [&](const pid_t pid, const uint32_t timeout, const std::string &locator, const std::string &dumpDirPath, DobbyHibernate::CompressionAlg compression) {
+                        EXPECT_EQ(pid, pids_hibernate);
+                        pids_hibernate++;
+                        EXPECT_EQ(dumpDirPath, option.second.first);
+                        EXPECT_EQ(compression, option.second.second);
+                        return DobbyHibernate::Error::ErrorNone;
+                }));
+
+        m_containerHibernated = false;
+        m_containerAwoken = false;
+        bool return_value = dobbyManager_test->hibernateContainer(cd, option.first);
+        EXPECT_EQ(return_value,true);
+
+        EXPECT_TRUE(waitForContainerHibernated(MAX_TIMEOUT_CONTAINER_STARTED));
+
+        EXPECT_CALL(*p_hibernateMock, WakeupProcess(::testing::_,::testing::_, ::testing::_))
+            .Times(3)
+            .WillRepeatedly(::testing::Invoke(
+                [&](const pid_t pid, const uint32_t timeout, const std::string &locator) {
+                        pids_hibernate--;
+                        EXPECT_EQ(pid, pids_hibernate);
+                        return DobbyHibernate::Error::ErrorNone;
+                }));
+
+        return_value = dobbyManager_test->wakeupContainer(cd);
+        EXPECT_EQ(return_value,true);
+        EXPECT_TRUE(waitForContainerAwoken(MAX_TIMEOUT_CONTAINER_STARTED));
+    }
+}
+
+
+
