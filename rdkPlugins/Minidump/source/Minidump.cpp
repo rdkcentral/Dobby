@@ -136,7 +136,8 @@ bool Minidump::postHalt()
  * @return Destination minidump file path string
  */
 #define FIREBOLT_STATE  "fireboltState"
-#define MINIDUMP_FN_SEPERATOR "<#=#>"
+#define MINIDUMP_FILENAME_LENGTH 70
+
 
 std::string Minidump::getDestinationFile()
 {
@@ -146,6 +147,7 @@ std::string Minidump::getDestinationFile()
     std::stringstream timeString;
     timeString << std::put_time(std::localtime(&currentTime), "%FT%T");
     std::string destFile;
+    std::string fileName;
 
     std::string dir(mContainerConfig->rdk_plugins->minidump->data->destination_path);
 
@@ -153,11 +155,17 @@ std::string Minidump::getDestinationFile()
 
     auto it = annotations.find(FIREBOLT_STATE);
     if (it != annotations.end()) {
-        destFile = dir + "/" + mUtils->getContainerId() + MINIDUMP_FN_SEPERATOR + it->second.c_str() + MINIDUMP_FN_SEPERATOR + timeString.str() + ".dmp";
+        fileName = mUtils->getContainerId() + "_" + it->second.c_str() + "_" + timeString.str();
+        if (fileName.length() > MINIDUMP_FILENAME_LENGTH)
+            fileName.resize(MINIDUMP_FILENAME_LENGTH);
+        destFile = dir + "/" + fileName + ".dmp";
         AI_LOG_INFO("Firebolt state: %s, minidump filename: %s", it->second.c_str(), destFile.c_str());
     }else{
         AI_LOG_INFO("Firebolt state not found");
-        destFile = dir + "/" + mUtils->getContainerId() + MINIDUMP_FN_SEPERATOR + timeString.str() + ".dmp";
+        fileName = mUtils->getContainerId() + "_" + timeString.str();
+        if (fileName.length() > MINIDUMP_FILENAME_LENGTH)
+            fileName.resize(MINIDUMP_FILENAME_LENGTH);
+        destFile = dir + "/" + fileName + ".dmp";
     }
 
     return destFile;
