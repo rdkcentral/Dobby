@@ -31,7 +31,8 @@ NetworkingHelper::NetworkingHelper(bool ipv4Enabled, bool ipv6Enabled)
     mIpv4AddrStr(std::string()),
     mIpv6Enabled(ipv6Enabled),
     mIpv6Addr(IN6ADDR_BASE),
-    mIpv6AddrStr(std::string())
+    mIpv6AddrStr(std::string()),
+    mVethPeerMac{ 0x00 }
 {
     if (!mIpv4Enabled && !mIpv6Enabled)
     {
@@ -83,6 +84,11 @@ std::string NetworkingHelper::vethName() const
     return mVethName;
 }
 
+std::array<uint8_t, 6> NetworkingHelper::vethPeerMac() const
+{
+    return mVethPeerMac;
+}
+
 // -----------------------------------------------------------------------------
 /**
  *  @brief Constructs addresses for the container based on input address. Also
@@ -115,6 +121,22 @@ bool NetworkingHelper::storeContainerInterface(in_addr_t addr, const std::string
 
     mVethName = vethName;
 
+    return true;
+}
+
+// -----------------------------------------------------------------------------
+/**
+ *  @brief Simply stores the MAC address of eth0 within the container.
+ *
+ *  This is used to update the ARP table on the bridge.
+ *
+ *  @param[in]  mac         The MAC address of the eth0 interface within the container.
+ *
+ *  @return true if successful, otherwise false
+ */
+bool NetworkingHelper::storeContainerVethPeerMac(const std::array<uint8_t, 6> &mac)
+{
+    mVethPeerMac = mac;
     return true;
 }
 

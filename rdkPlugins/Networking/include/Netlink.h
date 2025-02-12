@@ -114,6 +114,11 @@ public:
     bool addRoute(const std::string& iface, const struct in6_addr destination,
                   const int netmask, const struct in6_addr gateway);
 
+    bool addArpEntry(const std::string &iface, in_addr_t address,
+                     const std::array<uint8_t, 6> &mac);
+
+    bool delArpEntry(const std::string &iface, in_addr_t address);
+
 private:
     bool applyChangesToLink(const std::string& ifaceName,
                             const NlLink& changes);

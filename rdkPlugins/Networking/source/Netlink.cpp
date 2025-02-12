@@ -82,6 +82,11 @@ public:
         mAddressFamily(AF_INET6)
     { }
 
+    explicit NlAddress(const std::array<uint8_t, 6> &mac)
+        : mAddress(nl_addr_build(AF_LLC, mac.data(), mac.size())),
+          mAddressFamily(AF_LLC)
+    { }
+
     ~NlAddress()
     {
         if (mAddress)
@@ -1945,6 +1950,160 @@ bool Netlink::addRoute(const std::string &iface, const struct in6_addr destinati
         AI_LOG_NL_ERROR_EXIT(ret, "failed to add route");
         return false;
     }
+
+    AI_LOG_FN_EXIT();
+    return true;
+}
+
+// -----------------------------------------------------------------------------
+/**
+ *  @brief Sets an entry in the ARP table.
+ *
+ *  This is equivalent of the performing the following on the command line
+ *
+ *      arp -i <iface> -s <address> <mac>
+ *
+ *  @param[in]  iface       The name of the iface containing the ARP cache
+ *  @param[in]  address     The destination ip address
+ *  @param[in]  mac         The hardware address of the destination
+ *
+ *  @return true on success, false on failure.
+ */
+bool Netlink::addArpEntry(const std::string &iface, const in_addr_t address,
+                          const std::array<uint8_t, 6> &mac)
+{
+    AI_LOG_FN_ENTRY();
+
+    std::lock_guard<std::mutex> locker(mLock);
+
+    if (mSocket == nullptr)
+    {
+        AI_LOG_ERROR_EXIT("invalid socket");
+        return false;
+    }
+
+    // sanity check the MAC address is locally assigned
+    if ((mac[0] & 0x02) == 0)
+    {
+        AI_LOG_ERROR_EXIT("invalid MAC address - not locally assigned, won't add to ARP table");
+        return false;
+    }
+
+    // get the link we want to update the arp table for
+    NlLink link(mSocket, iface);
+    if (!link)
+    {
+        AI_LOG_ERROR_EXIT("failed to get link '%s'", iface.c_str());
+        return false;
+    }
+
+    // allocate a new neighbor object
+    NlNeigh neigh;
+    if (!neigh)
+    {
+        AI_LOG_ERROR_EXIT("failed to allocate ARP table entry object");
+        return false;
+    }
+
+    rtnl_neigh_set_ifindex(neigh, rtnl_link_get_ifindex(link));
+
+    // set the destination IP address
+    NlAddress dst(address);
+    if (!dst)
+    {
+        AI_LOG_ERROR_EXIT("failed to build ARP destination address");
+        return false;
+    }
+    rtnl_neigh_set_dst(neigh, dst);
+
+    // set the MAC address
+    NlAddress lladdr(mac);
+    if (!lladdr)
+    {
+        AI_LOG_ERROR_EXIT("failed to build MAC address for ARP table");
+        return false;
+    }
+    rtnl_neigh_set_lladdr(neigh, lladdr);
+
+    // set the state to permanent
+    rtnl_neigh_set_state(neigh, NUD_PERMANENT);
+
+    // add the entry to the ARP table
+    int err = rtnl_neigh_add(mSocket, neigh, NLM_F_CREATE | NLM_F_REPLACE);
+    if (err < 0)
+    {
+        AI_LOG_NL_ERROR_EXIT(err, "failed to add ARP entry");
+        return false;
+    }
+
+    AI_LOG_INFO("added ARP entry for %s -> %02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx on %s",
+                dst.toString().c_str(), mac[0], mac[1], mac[2], mac[3], mac[4], mac[5], iface.c_str());
+
+    AI_LOG_FN_EXIT();
+    return true;
+}
+
+// -----------------------------------------------------------------------------
+/**
+ *  @brief Removes (invalidates) an entry in the ARP table.
+ *
+ *  This is equivalent of the performing the following on the command line
+ *
+ *      arp -i <iface> -d <address>
+ *
+ *  @param[in]  iface       The name of the iface containing the ARP cache
+ *  @param[in]  address     The destination ip address
+ *
+ *  @return true on success, false on failure.
+ */
+bool Netlink::delArpEntry(const std::string &iface, const in_addr_t address)
+{
+    AI_LOG_FN_ENTRY();
+
+    std::lock_guard<std::mutex> locker(mLock);
+
+    if (mSocket == nullptr)
+    {
+        AI_LOG_ERROR_EXIT("invalid socket");
+        return false;
+    }
+
+    // get the link we want to update the arp table for
+    NlLink link(mSocket, iface);
+    if (!link)
+    {
+        AI_LOG_ERROR_EXIT("failed to get link '%s'", iface.c_str());
+        return false;
+    }
+
+    // allocate a new neighbor object
+    NlNeigh neigh;
+    if (!neigh)
+    {
+        AI_LOG_ERROR_EXIT("failed to allocate ARP table entry object");
+        return false;
+    }
+
+    rtnl_neigh_set_ifindex(neigh, rtnl_link_get_ifindex(link));
+
+    // set the destination IP address
+    NlAddress dst(address);
+    if (!dst)
+    {
+        AI_LOG_ERROR_EXIT("failed to build ARP destination address");
+        return false;
+    }
+    rtnl_neigh_set_dst(neigh, dst);
+
+    // attempt to remove the actual entry
+    int err = rtnl_neigh_delete(mSocket, neigh, 0);
+    if (err < 0)
+    {
+        AI_LOG_NL_ERROR_EXIT(err, "failed to delete ARP entry");
+        return false;
+    }
+
+    AI_LOG_INFO("deleted ARP entry for %s on %s", dst.toString().c_str(), iface.c_str());
 
     AI_LOG_FN_EXIT();
     return true;
