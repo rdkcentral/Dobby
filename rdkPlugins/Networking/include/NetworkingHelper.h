@@ -21,6 +21,7 @@
 #define NETWORKINGHELPER_H
 
 #include <netinet/in.h>
+#include <array>
 #include <string>
 #include "NetworkingPluginCommon.h"
 
@@ -32,6 +33,7 @@ public:
 
 public:
     bool storeContainerInterface(in_addr_t addr, const std::string &vethName);
+    bool storeContainerVethPeerMac(const std::array<uint8_t, 6> &mac);
 
     bool ipv4() const;
     in_addr_t ipv4Addr() const;
@@ -42,6 +44,7 @@ public:
     std::string ipv6AddrStr() const;
 
     std::string vethName() const;
+    std::array<uint8_t, 6> vethPeerMac() const;
 
 public:
     static struct in6_addr in6addrCreate(const in_addr_t inaddr);
@@ -56,6 +59,7 @@ private:
     std::string mIpv6AddrStr;
 
     std::string mVethName;
+    std::array<uint8_t, 6> mVethPeerMac;
 };
 
 #endif // !defined(NETWORKINGHELPER_H)

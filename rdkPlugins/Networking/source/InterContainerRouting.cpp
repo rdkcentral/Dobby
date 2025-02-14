@@ -179,6 +179,8 @@ static Netfilter::RuleSet constructLocalHostMasqueradeRules(const std::shared_pt
     }
 
     // For outgoing (client) ports then we need to set up DNAT rules in the OUTPUT chain
+    bool requiresTcpSNATRule = false;
+    bool requiresUdpSNATRule = false;
     for (const InterContainerPort &outPort : containerPorts.outPorts)
     {
         if (outPort.localHostMasquerade)
@@ -195,7 +197,41 @@ static Netfilter::RuleSet constructLocalHostMasqueradeRules(const std::shared_pt
                      BRIDGE_ADDRESS, outPort.port);
 
             natRules.emplace_back(ruleBuf);
+
+            if (outPort.protocol == InterContainerPort::Protocol::Tcp)
+                requiresTcpSNATRule = true;
+            else if (outPort.protocol == InterContainerPort::Protocol::Udp)
+                requiresUdpSNATRule = true;
         }
+    }
+
+    // If we have any outgoing ports with localhost masquerading then need
+    // to add an SNAT rule for it
+    if (requiresTcpSNATRule)
+    {
+        snprintf(ruleBuf, sizeof(ruleBuf),
+                 "POSTROUTING "
+                 "-p tcp "              // protocol
+                 "-s 127.0.0.1 "        // container localhost
+                 "-d %s "               // bridge address
+                 "-j SNAT --to %s",     // container address
+                 BRIDGE_ADDRESS,
+                 containerAddress.c_str());
+
+        natRules.emplace_back(ruleBuf);
+    }
+    if (requiresUdpSNATRule)
+    {
+        snprintf(ruleBuf, sizeof(ruleBuf),
+                 "POSTROUTING "
+                 "-p udp "              // protocol
+                 "-s 127.0.0.1 "        // container localhost
+                 "-d %s "               // bridge address
+                 "-j SNAT --to %s",     // container address
+                 BRIDGE_ADDRESS,
+                 containerAddress.c_str());
+
+        natRules.emplace_back(ruleBuf);
     }
 
     // No need to bother with merge logic here as this is the only set of
