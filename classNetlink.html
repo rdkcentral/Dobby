@@ -158,6 +158,12 @@ bool&#160;</td><td class="memItemRight" valign="bottom"><b>checkVeth</b> (const 
 <tr class="memitem:a1d416a2fc78ba913d27dd69bbf4a718f" id="r_a1d416a2fc78ba913d27dd69bbf4a718f"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classNetlink.html#a1d416a2fc78ba913d27dd69bbf4a718f">addRoute</a> (const std::string &amp;iface, const struct in6_addr destination, const int netmask, const struct in6_addr gateway)</td></tr>
 <tr class="memdesc:a1d416a2fc78ba913d27dd69bbf4a718f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Adds a new route to the routing table (IPv6)  <br /></td></tr>
 <tr class="separator:a1d416a2fc78ba913d27dd69bbf4a718f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9f5d07132822f2bacac23d392fcb4f1a" id="r_a9f5d07132822f2bacac23d392fcb4f1a"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classNetlink.html#a9f5d07132822f2bacac23d392fcb4f1a">addArpEntry</a> (const std::string &amp;iface, in_addr_t address, const std::array&lt; uint8_t, 6 &gt; &amp;mac)</td></tr>
+<tr class="memdesc:a9f5d07132822f2bacac23d392fcb4f1a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sets an entry in the ARP table.  <br /></td></tr>
+<tr class="separator:a9f5d07132822f2bacac23d392fcb4f1a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4c50f1895aa5c170a2a0b487086cbe01" id="r_a4c50f1895aa5c170a2a0b487086cbe01"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classNetlink.html#a4c50f1895aa5c170a2a0b487086cbe01">delArpEntry</a> (const std::string &amp;iface, in_addr_t address)</td></tr>
+<tr class="memdesc:a4c50f1895aa5c170a2a0b487086cbe01"><td class="mdescLeft">&#160;</td><td class="mdescRight">Removes (invalidates) an entry in the ARP table.  <br /></td></tr>
+<tr class="separator:a4c50f1895aa5c170a2a0b487086cbe01"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pri-methods" name="pri-methods"></a>
 Private Member Functions</h2></td></tr>
@@ -194,6 +200,52 @@ std::mutex&#160;</td><td class="memItemRight" valign="bottom"><b>mLock</b></td><
 <p>There is only expected to be one of these objects (i.e. a shared_ptr is passed around). The object represents a single netlink socket.</p>
 <p>At construction time a new netlink socket is opened, on destruction it is closed. </p>
 </div><h2 class="groupheader">Member Function Documentation</h2>
+<a id="a9f5d07132822f2bacac23d392fcb4f1a" name="a9f5d07132822f2bacac23d392fcb4f1a"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a9f5d07132822f2bacac23d392fcb4f1a">&#9670;&#160;</a></span>addArpEntry()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool Netlink::addArpEntry </td>
+          <td>(</td>
+          <td class="paramtype">const std::string &amp;&#160;</td>
+          <td class="paramname"><em>iface</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">in_addr_t&#160;</td>
+          <td class="paramname"><em>address</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const std::array&lt; uint8_t, 6 &gt; &amp;&#160;</td>
+          <td class="paramname"><em>mac</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Sets an entry in the ARP table. </p>
+<p>This is equivalent of the performing the following on the command line </p><pre class="fragment">arp -i &lt;iface&gt; -s &lt;address&gt; &lt;mac&gt;
+</pre> <dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">iface</td><td>The name of the iface containing the ARP cache </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">address</td><td>The destination ip address </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">mac</td><td>The hardware address of the destination</td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>true on success, false on failure. </dd></dl>
+
+</div>
+</div>
 <a id="a68d817257f63f023cc99be47138befc7" name="a68d817257f63f023cc99be47138befc7"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a68d817257f63f023cc99be47138befc7">&#9670;&#160;</a></span>addIfaceToBridge()</h2>
 
@@ -403,6 +455,45 @@ std::mutex&#160;</td><td class="memItemRight" valign="bottom"><b>mLock</b></td><
   </dd>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>on success the interface name of the veth pair, this is the name outside the container and will be of the form vethd, ie veth0, veth1, etc. On failure an empty string is returned. </dd></dl>
+
+</div>
+</div>
+<a id="a4c50f1895aa5c170a2a0b487086cbe01" name="a4c50f1895aa5c170a2a0b487086cbe01"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a4c50f1895aa5c170a2a0b487086cbe01">&#9670;&#160;</a></span>delArpEntry()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool Netlink::delArpEntry </td>
+          <td>(</td>
+          <td class="paramtype">const std::string &amp;&#160;</td>
+          <td class="paramname"><em>iface</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">in_addr_t&#160;</td>
+          <td class="paramname"><em>address</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Removes (invalidates) an entry in the ARP table. </p>
+<p>This is equivalent of the performing the following on the command line </p><pre class="fragment">arp -i &lt;iface&gt; -d &lt;address&gt;
+</pre> <dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">iface</td><td>The name of the iface containing the ARP cache </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">address</td><td>The destination ip address</td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>true on success, false on failure. </dd></dl>
 
 </div>
 </div>
