@@ -685,6 +685,10 @@ bool setupContainerNet(const std::shared_ptr<NetworkingHelper> &helper)
         }
     }
 
+    // get the mac address of the eth0 virtual interface, this
+    // may be used to update the ARP table on the bridge
+    helper->storeContainerVethPeerMac(netlink->getIfaceMAC(PEER_NAME));
+
     AI_LOG_FN_EXIT();
     return true;
 }
@@ -835,9 +839,20 @@ bool NetworkSetup::setupVeth(const std::shared_ptr<DobbyRdkPluginUtils> &utils,
         return false;
     }
 
+    // step 11 - preload the ARP rules for routing packets to the container's veth
+    if (helper->ipv4())
+    {
+        const std::array<uint8_t, 6> peerMac = helper->vethPeerMac();
+        if (!netlink->addArpEntry(BRIDGE_NAME, helper->ipv4Addr(), peerMac))
+        {
+            AI_LOG_WARN("failed to add arp rule for %s for container %s",
+                        vethName.c_str(), containerId.c_str());
+        }
+    }
+
     Netfilter::Operation operation = Netfilter::Operation::Append;
 
-    // step 11 - add an iptables rule to either drop anything that comes from the
+    // step 12 - add an iptables rule to either drop anything that comes from the
     // veth if a private network is enabled, or to drop anything that doesn't
     // have the correct ip address
     if (helper->ipv4())
@@ -957,6 +972,12 @@ bool NetworkSetup::removeVethPair(const std::shared_ptr<Netfilter> &netfilter,
             AI_LOG_ERROR("failed to delete netfilter rules for container veth");
             success = false;
         }
+    }
+
+    // remove the container ip address from the ARP table in the bridge
+    if (helper->ipv4())
+    {
+        netlink->delArpEntry(BRIDGE_NAME, helper->ipv4Addr());
     }
 
     // delete veth from bridge if it's still up. No error checking needed
