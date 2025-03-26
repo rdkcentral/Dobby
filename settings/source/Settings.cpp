@@ -164,6 +164,12 @@ Settings::Settings(const Json::Value& settings)
             getHardwareAccess(settings, Json::Path(".vpu"));
     }
 
+    // process the Android settings
+    {
+        mAndroidHardwareAccess =
+            getAndroidAccess(settings, Json::Path(".android"));
+    }
+
     // process the network settings
     {
         Json::Value externalIfaces = Json::Path(".network.externalInterfaces").resolve(settings);
@@ -473,6 +479,16 @@ std::shared_ptr<IDobbySettings::HardwareAccessSettings> Settings::vpuAccessSetti
     return mVpuHardwareAccess;
 }
 
+// -----------------------------------------------------------------------------
+/**
+ *  @brief
+ *
+ */
+std::shared_ptr<IDobbySettings::AndroidAccessSettings> Settings::androidAccessSettings() const
+{
+    return mAndroidHardwareAccess;
+}
+
  // -----------------------------------------------------------------------------
  /**
  *  @brief
@@ -592,6 +608,7 @@ void Settings::dump(int aiLogLevel) const
 
     dumpHardwareAccess(aiLogLevel, "gpu", mGpuHardwareAccess);
     dumpHardwareAccess(aiLogLevel, "vpu", mVpuHardwareAccess);
+    //dumpHardwareAccess(aiLogLevel, "android", mAndroidHardwareAccess);
 }
 
 // -----------------------------------------------------------------------------
@@ -941,6 +958,66 @@ std::list<std::string> Settings::getDevNodes(const Json::Value& root,
     return result;
 }
 
+std::list<Settings::AndroidDeviceNode> Settings::getAndroidNodes(const Json::Value& root,
+                                                 const Json::Path& path) const
+{
+    const Json::Value &devNodes = Json::Path(path).resolve(root);
+    if (devNodes.isNull())
+    {
+        return std::list<AndroidDeviceNode>();
+    }
+    else if (!devNodes.isArray())
+    {
+        AI_LOG_ERROR("JSON value in settings file is not an array (of dev nodes)");
+        return std::list<AndroidDeviceNode>();
+    }
+
+    std::list<AndroidDeviceNode> result;
+    for (const Json::Value &devNode : devNodes)
+    {
+        if (!devNode.isObject())
+        {
+            AI_LOG_ERROR("invalid JSON value in dev nodes array in settings file");
+            return std::list<AndroidDeviceNode>();
+        }
+
+        AndroidDeviceNode androidDevNode;
+        if (processAndroidDevice(devNode, &androidDevNode))
+        {
+            result.emplace_back(androidDevNode);
+        }
+    }
+
+    return result;
+}
+
+bool Settings::processAndroidDevice(const Json::Value& value, AndroidDeviceNode* devNode) const
+{
+    const Json::Value& path = value["path"];
+    const Json::Value& major = value["major"];
+    const Json::Value& minor = value["minor"];
+    const Json::Value& fileMode = value["fileMode"];
+
+    if (!path.isString())
+    {
+        AI_LOG_ERROR("invalid 'path' JSON field");
+	return false;
+    }
+
+    if (!major.isInt() || !minor.isInt() || !fileMode.isInt())
+    {
+        AI_LOG_ERROR("invalid 'major', 'minor' or 'fileMode' JSON field");
+	return false;
+    }
+
+    devNode->path = path.asString();
+    devNode->major = major.asInt();
+    devNode->minor = minor.asInt();
+    devNode->filemode = fileMode.asInt();
+
+    return true;
+}
+
 // -----------------------------------------------------------------------------
 /**
  *  @brief Attempts to read the mount JSON structure(s) from the object.
@@ -1022,7 +1099,8 @@ bool Settings::processMountObject(const Json::Value& value, ExtraMount* mount) c
     static const std::set<std::string> mountFlags =
         {
             "rbind", "bind", "silent", "ro", "sync", "nosuid", "dirsync",
-            "nodiratime", "relatime", "noexec", "nodev", "noatime", "strictatime"
+            "nodiratime", "relatime", "noexec", "nodev", "noatime", "strictatime",
+            "mode=0755"
         };
 
     // convert the mount flags
@@ -1121,6 +1199,99 @@ std::shared_ptr<IDobbySettings::HardwareAccessSettings> Settings::getHardwareAcc
 
     // get any extra environment vars
     accessSettings->extraEnvVariables = getEnvVarsFromJson(hw, Json::Path(".extraEnvVariables"));
+
+    return accessSettings;
+}
+
+// -----------------------------------------------------------------------------
+/**
+ *  @brief Processes a json 'android' object.
+ *
+ *  The JSON is expected to look like the following:
+ *
+ *      {
+ *          "groupIds": [ "video" ],
+ *          "devNodes": [
+ *              {
+ *                  "path": "/dev/kmsg",
+ *                  "fileMode": 438,
+ *                  "major": 1,
+ *                  "minor": 11
+ *              },
+ *          "extraEnvVariables": [
+ *              "ENABLE_MEDIAINFO=0"
+ *          ],
+ *          "extraMounts": [
+ *              {
+ *                  "source": "/etc/xdg/gstomx.conf",
+ *                  "destination": "/etc/xdg/gstomx.conf",
+ *                  "type": "bind",
+ *                  "options": [ "bind", "ro", "nosuid", "nodev", "noexec" ]
+ *              },
+ *              ...
+ *          ]
+ *      }
+ *
+ *  @return
+ */
+
+std::shared_ptr<IDobbySettings::AndroidAccessSettings> Settings::getAndroidAccess(const Json::Value& root,
+                                                                                    const Json::Path& path) const
+{
+    auto accessSettings =
+            std::make_shared<IDobbySettings::AndroidAccessSettings>();
+
+    // get the 'android' object from the json
+    const Json::Value hw = Json::Path(path).resolve(root);
+    if (hw.isNull())
+    {
+        // it's not an error if the value does not exist in the JSON
+        return accessSettings;
+    }
+    else if (!hw.isObject())
+    {
+        // however it is an error if present but not a json object
+        AI_LOG_ERROR("invalid 'android' JSON field in dobby settings file");
+        return accessSettings;
+    }
+
+
+    // get the group id(s) required
+    const Json::Value groupIds = hw["groupIds"];
+    if (!groupIds.isNull())
+    {
+        accessSettings->groupIds = getGroupIds(groupIds);
+    }
+    else
+    {
+        const Json::Value groupId = hw["groupId"];
+        if (!groupId.isNull())
+            accessSettings->groupIds = getGroupIds(groupId);
+    }
+
+    // Nb: validation that the paths are actually dev nodes is done in the
+    // DobbyConfig code
+    accessSettings->deviceNodes = getAndroidNodes(hw, Json::Path(".devNodes"));
+
+    // get any extra mounts
+    accessSettings->extraMounts = getExtraMounts(hw, Json::Path(".extraMounts"));
+
+    // get any extra environment vars
+    accessSettings->extraEnvVariables = getEnvVarsFromJson(hw, Json::Path(".extraEnvVariables"));
+
+    const Json::Value appArmorProfile = hw["appArmorProfile"];
+    if (appArmorProfile.isNull())
+    {
+        AI_LOG_INFO("No Android AppArmor profile provided - will use default");
+    }
+    else if (appArmorProfile.isString())
+    {
+        accessSettings->appArmorProfile = appArmorProfile.asString();
+    }
+    else
+    {
+        AI_LOG_ERROR("Invalid entry in android.appArmorProfile");
+    }
 
     return accessSettings;
 }

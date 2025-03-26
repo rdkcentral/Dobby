@@ -860,7 +860,14 @@ int32_t DobbyManager::startContainerFromSpec(const ContainerId &id,
     // Set Apparmor profile
     if (mSettings->apparmorSettings().enabled)
     {
-        config->setApparmorProfile(mSettings->apparmorSettings().profileName);
+        if (config->androidEnabled() && !mSettings->androidAccessSettings()->appArmorProfile.empty())
+        {
+            config->setApparmorProfile(mSettings->androidAccessSettings()->appArmorProfile);
+        }
+        else
+        {
+            config->setApparmorProfile(mSettings->apparmorSettings().profileName);
+        }
     }
 
     // Set pids limit

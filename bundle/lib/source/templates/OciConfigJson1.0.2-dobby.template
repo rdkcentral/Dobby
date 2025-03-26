@@ -27,8 +27,21 @@ static const char* ociJsonTemplate = R"JSON(
         "arch": "arm"
     },
 
-    "process": {
+    {{#ANDROID_ENABLED}}
+    "annotations": {
+        "run.oci.hooks.stderr": "/dev/stderr",
+        "run.oci.hooks.stdout": "/dev/stdout"
+    },
+    {{/ANDROID_ENABLED}}
+
+
+   "process": {
+        {{#ANDROID_DISABLED}}
         "terminal": false,
+        {{/ANDROID_DISABLED}}
+        {{#ANDROID_ENABLED}}
+        "terminal": true,
+        {{/ANDROID_ENABLED}}
         "user": {
             {{#USERNS_DISABLED}}
             "uid": {{USER_ID}},
@@ -41,16 +54,122 @@ static const char* ociJsonTemplate = R"JSON(
             "additionalGids": [ {{#ADDITIONAL_GIDS}} {{ADDITIONAL_GID}}{{#ADDITIONAL_GIDS_separator}},{{/ADDITIONAL_GIDS_separator}} {{/ADDITIONAL_GIDS}} ]
         },
         "args": [
+        {{#ANDROID_DISABLED}}
             "/usr/libexec/DobbyInit",
             {{#ARGS_VAR_SECTION}}"{{ARGS_VAR_VALUE:json_escape}}"{{#ARGS_VAR_SECTION_separator}},{{/ARGS_VAR_SECTION_separator}} {{/ARGS_VAR_SECTION}}
         ],
+        {{/ANDROID_DISABLED}}
+        {{#ANDROID_ENABLED}}
+            {{#ARGS_VAR_SECTION}}"{{ARGS_VAR_VALUE:json_escape}}"{{#ARGS_VAR_SECTION_separator}},{{/ARGS_VAR_SECTION_separator}} {{/ARGS_VAR_SECTION}}
+        ],
+        {{/ANDROID_ENABLED}}
         "cwd": "{{WORKING_DIRECTORY}}",
+        {{#ANDROID_DISABLED}}
         "env": [
             {{#ENV_VAR_SECTION}}"{{ENV_VAR_VALUE:json_escape}}", {{/ENV_VAR_SECTION}}
             {{EXTRA_ENV_VARS}}
             "HOME=/home/private",
             "PATH=/usr/sbin:/usr/bin:/sbin:/bin"
         ],
+        {{/ANDROID_DISABLED}}
+        {{#ANDROID_ENABLED}}
+        "env": [
+            {{#ENV_VAR_SECTION}}"{{ENV_VAR_VALUE:json_escape}}", {{/ENV_VAR_SECTION}}
+            {{EXTRA_ENV_VARS}}
+            "PATH=/system/bin:/"
+        ],
+        {{/ANDROID_ENABLED}}
+        {{#ANDROID_ENABLED}}
+        "capabilities": {
+            "bounding": [
+                "CAP_AUDIT_CONTROL",
+                "CAP_CHOWN",
+                "CAP_DAC_OVERRIDE",
+                "CAP_DAC_READ_SEARCH",
+                "CAP_FOWNER",
+                "CAP_KILL",
+                "CAP_MKNOD",
+                "CAP_NET_ADMIN",
+                "CAP_SETGID",
+                "CAP_SETPCAP",
+                "CAP_SETUID",
+                "CAP_SYSLOG",
+                "CAP_SYS_ADMIN",
+                "CAP_SYS_PTRACE",
+                "CAP_SYS_RESOURCE"
+                {{#EXTRA_CAPS_SECTION}},"{{EXTRA_CAPS_VALUE}}"{{/EXTRA_CAPS_SECTION}}
+            ],
+            "effective": [
+                "CAP_AUDIT_CONTROL",
+                "CAP_CHOWN",
+                "CAP_DAC_OVERRIDE",
+                "CAP_DAC_READ_SEARCH",
+                "CAP_FOWNER",
+                "CAP_KILL",
+                "CAP_MKNOD",
+                "CAP_NET_ADMIN",
+                "CAP_SETGID",
+                "CAP_SETPCAP",
+                "CAP_SETUID",
+                "CAP_SYSLOG",
+                "CAP_SYS_ADMIN",
+                "CAP_SYS_PTRACE",
+                "CAP_SYS_RESOURCE"
+            ],
+            "inheritable": [
+                "CAP_AUDIT_CONTROL",
+                "CAP_CHOWN",
+                "CAP_DAC_OVERRIDE",
+                "CAP_DAC_READ_SEARCH",
+                "CAP_FOWNER",
+                "CAP_KILL",
+                "CAP_MKNOD",
+                "CAP_NET_ADMIN",
+                "CAP_SETGID",
+                "CAP_SETPCAP",
+                "CAP_SETUID",
+                "CAP_SYSLOG",
+                "CAP_SYS_ADMIN",
+                "CAP_SYS_PTRACE",
+                "CAP_SYS_RESOURCE"
+            ],
+            "permitted": [
+                "CAP_AUDIT_CONTROL",
+                "CAP_CHOWN",
+                "CAP_DAC_OVERRIDE",
+                "CAP_DAC_READ_SEARCH",
+                "CAP_FOWNER",
+                "CAP_KILL",
+                "CAP_MKNOD",
+                "CAP_NET_ADMIN",
+                "CAP_SETGID",
+                "CAP_SETPCAP",
+                "CAP_SETUID",
+                "CAP_SYSLOG",
+                "CAP_SYS_ADMIN",
+                "CAP_SYS_PTRACE",
+                "CAP_SYS_RESOURCE"
+            ],
+            "ambient": [
+                "CAP_AUDIT_CONTROL",
+                "CAP_CHOWN",
+                "CAP_DAC_OVERRIDE",
+                "CAP_DAC_READ_SEARCH",
+                "CAP_FOWNER",
+                "CAP_KILL",
+                "CAP_MKNOD",
+                "CAP_NET_ADMIN",
+                "CAP_SETGID",
+                "CAP_SETPCAP",
+                "CAP_SETUID",
+                "CAP_SYSLOG",
+                "CAP_SYS_ADMIN",
+                "CAP_SYS_PTRACE",
+                "CAP_SYS_RESOURCE"
+            ]
+        },
+        {{/ANDROID_ENABLED}}
+        {{#ANDROID_DISABLED}}
         "capabilities": {
             "bounding": [
                 "CAP_AUDIT_WRITE",
@@ -79,6 +198,8 @@ static const char* ociJsonTemplate = R"JSON(
                 "CAP_NET_BIND_SERVICE"
             ]
         },
+        {{/ANDROID_DISABLED}}
+        {{#ANDROID_DISABLED}}
         "rlimits": [
             {
                 "type": "RLIMIT_NOFILE",
@@ -97,13 +218,22 @@ static const char* ociJsonTemplate = R"JSON(
                 "soft": {{RLIMIT_RTPRIO}}
             }{{/RTLIMIT_ENABLED}}
         ],
+        {{/ANDROID_DISABLED}}
         "noNewPrivileges": {{NO_NEW_PRIVS}}
     },
 
+    {{#ANDROID_DISABLED}}
     "root": {
         "path": "rootfs",
         "readonly": true
     },
+    {{/ANDROID_DISABLED}}
+    {{#ANDROID_ENABLED}}
+    "root": {
+        "path": "rootfs",
+        "readonly": false
+    },
+    {{/ANDROID_ENABLED}}
 
     "hostname": "dobby",
 
@@ -113,11 +243,16 @@ static const char* ociJsonTemplate = R"JSON(
             "type": "tmpfs",
             "source": "tmpfs",
             "options": [
+                {{#ANDROID_DISABLED}}
                 "nosuid",
                 "noexec",
                 "nodev",
                 "size=65536k",
                 "nr_inodes=8k"
+                {{/ANDROID_DISABLED}}
+                {{#ANDROID_ENABLED}}
+                "mode=0755"
+                {{/ANDROID_ENABLED}}
             ]
         },
         {
@@ -125,24 +260,18 @@ static const char* ociJsonTemplate = R"JSON(
             "type": "tmpfs",
             "source": "tmpfs",
             "options": [
+                {{#ANDROID_DISABLED}}
                 "nosuid",
                 "noexec",
                 "strictatime",
                 "mode=755",
                 "size=65536k"
-            ]
-        },
-        {
-            "destination": "/dev/pts",
-            "type": "devpts",
-            "source": "devpts",
-            "options": [
-                "nosuid",
+                {{/ANDROID_DISABLED}}
+                {{#ANDROID_ENABLED}}
                 "noexec",
-                "newinstance",
-                "ptmxmode=0666",
-                "mode=0620",
-                "gid=5"
+                "strictatime",
+                "mode=755"
+                {{/ANDROID_ENABLED}}
             ]
         },
         {
@@ -164,8 +293,10 @@ static const char* ociJsonTemplate = R"JSON(
             "options": [
                 "nosuid",
                 "noexec",
-                "nodev",
-                "ro"
+                {{#ANDROID_DISABLED}}
+                "ro",
+                {{/ANDROID_DISABLED}}
+                "nodev"
             ]
         },
         {
@@ -175,10 +306,18 @@ static const char* ociJsonTemplate = R"JSON(
             "options": [
                 "nosuid",
                 "noexec",
+                {{#ANDROID_DISABLED}}
                 "nodev",
                 "relatime"
+                {{/ANDROID_DISABLED}}
+                {{#ANDROID_ENABLED}}
+                "none",
+                "name=",
+                "strictatime"
+                {{/ANDROID_ENABLED}}
             ]
         },
+        {{#ANDROID_DISABLED}}
         {
             "destination": "/lib",
             "type": "bind",
@@ -223,6 +362,26 @@ static const char* ociJsonTemplate = R"JSON(
                 "ro"
             ]
         },
+        {{/ANDROID_DISABLED}}
+        {{#ANDROID_DISABLED}}
+        {
+            "destination": "/proc",
+            "type": "proc",
+            "source": "proc",
+            "options": [
+                "nosuid",
+                "noexec",
+                "nodev"
+            ]
+        },
+        {{/ANDROID_DISABLED}}
+        {{#ANDROID_ENABLED}} {{! /proc before MOUNT_SECTION so we can override /proc/cmdline for Android }}
+        {
+            "destination": "/proc",
+            "type": "proc",
+            "source": "proc"
+        },
+        {{/ANDROID_ENABLED}}
         {{#SYSLOG_SECTION}}{
             "destination": "/dev/log",
             "type": "bind",
@@ -242,13 +401,16 @@ static const char* ociJsonTemplate = R"JSON(
             ]
         },{{/MOUNT_SECTION}}
         {
-            "destination": "/proc",
-            "type": "proc",
-            "source": "proc",
+            "destination": "/dev/pts",
+            "type": "devpts",
+            "source": "devpts",
             "options": [
                 "nosuid",
                 "noexec",
-                "nodev"
+                "newinstance",
+                "ptmxmode=0666",
+                "mode=0620",
+                "gid=5"
             ]
         }
     ],
@@ -304,6 +466,7 @@ static const char* ociJsonTemplate = R"JSON(
             {{/ADDITIONAL_DEVICE_NODES}}
         ],
         "resources": {
+            {{#ANDROID_DISABLED}}
             "devices": [
                 {
                     "allow": false,
@@ -328,9 +491,22 @@ static const char* ociJsonTemplate = R"JSON(
                 }
                 {{/DEV_WHITELIST_SECTION}}
             ],
+            {{/ANDROID_DISABLED}}
+            {{#ANDROID_DISABLED}}
             "memory": {
                 "limit": {{MEM_LIMIT}}
             },
+            {{/ANDROID_DISABLED}}
+            {{#ANDROID_ENABLED}}
+            "memory": {
+                "kernel": -1,
+                "kernelTCP": -1,
+                "limit": {{MEM_LIMIT}},
+                "swap": 1073741824,
+                "swappiness": 0,
+                "disableOOMKiller": false
+            },
+            {{/ANDROID_ENABLED}}
             "cpu": {
                 {{#CPU_SHARES_ENABLED}}
                 "shares": {{CPU_SHARES_VALUE}},
@@ -343,6 +519,10 @@ static const char* ociJsonTemplate = R"JSON(
             }
         },
         "namespaces": [
+            {{#ANDROID_ENABLED}}
+            {
+                "type": "cgroup"
+            },{{/ANDROID_ENABLED}}
             {
                 "type": "pid"
             },{{#NETNS_ENABLED}}
@@ -362,6 +542,7 @@ static const char* ociJsonTemplate = R"JSON(
                 "type": "mount"
             }
         ],
+        {{#ANDROID_DISABLED}}
         "maskedPaths": [
             "/proc/kcore",
             "/proc/latency_stats",
@@ -377,6 +558,31 @@ static const char* ociJsonTemplate = R"JSON(
             "/proc/sysrq-trigger"
         ],
         "rootfsPropagation": "slave"
+        {{/ANDROID_DISABLED}}
+        {{#ANDROID_ENABLED}}
+        "maskedPaths": [
+            "/sys/block",
+            "/sys/bus/mmc",
+            "/sys/class/block",
+            "/sys/class/misc/binder",
+            "/sys/class/misc/hwbinder",
+            "/sys/class/misc/vndbinder",
+            "/sys/class/mmc_host",
+            "/sys/devices/platform/ffe05000.sdio",
+            "/sys/devices/platform/ffe07000.emmc",
+            "/sys/devices/virtual/misc/binder",
+            "/sys/devices/virtual/misc/hwbinder",
+            "/sys/devices/virtual/misc/vndbinder",
+            "/sys/firmware/devicetree/base/emmc@ffe07000",
+            "/sys/module/mmcblk",
+            "/sys/power",
+            "/sys/devices/platform/rdb/84b1000.sdhci",
+            "/sys/devices/virtual/devlink/brcm_scmi@0--84b1000.sdhci",
+            "/sys/firmware/devicetree/base/rdb/sdhci@84b1000",
+            "/sys/firmware/devicetree/base/rdb/sdhci@84b0000"
+        ],
+        "rootfsPropagation": "rshared"
+        {{/ANDROID_ENABLED}}
     },
     {{#ENABLE_LEGACY_PLUGINS}}
     "legacyPlugins": {

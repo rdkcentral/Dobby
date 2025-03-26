@@ -110,6 +110,9 @@ public:
     std::vector<MountPoint> mountPoints() const;
 
 public:
+    bool androidEnabled() const;
+
+public:
     const std::string& rootfsPath() const override;
 
 private:
@@ -143,6 +146,7 @@ private:
     JSON_FIELD_PROCESSOR(processDevices);
     JSON_FIELD_PROCESSOR(processCapabilities);
     JSON_FIELD_PROCESSOR(processSeccomp);
+    JSON_FIELD_PROCESSOR(processAndroid);
 
     #undef JSON_FIELD_PROCESSOR
 
@@ -180,6 +184,7 @@ private:
     const std::shared_ptr<IDobbyUtils> mUtilities;
     const std::shared_ptr<const IDobbySettings::HardwareAccessSettings> mGpuSettings;
     const std::shared_ptr<const IDobbySettings::HardwareAccessSettings> mVpuSettings;
+    const std::shared_ptr<const IDobbySettings::AndroidAccessSettings> mAndroidSettings;
     const std::vector<std::string> mDefaultPlugins;
     const Json::Value mRdkPluginsData;
 
@@ -229,6 +234,9 @@ private:
     std::string mEtcPasswd;
     std::string mEtcGroup;
     std::string mEtcLdSoPreload;
+
+private:
+    bool mAndroidEnabled;
 
 private:
     static int mNumCores;
