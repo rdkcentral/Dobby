@@ -116,7 +116,6 @@ static const char* ociJsonTemplate = R"JSON(
                 "nosuid",
                 "noexec",
                 "nodev",
-                "size=65536k",
                 "nr_inodes=8k"
             ]
         },
@@ -128,8 +127,7 @@ static const char* ociJsonTemplate = R"JSON(
                 "nosuid",
                 "noexec",
                 "strictatime",
-                "mode=755",
-                "size=65536k"
+                "mode=755"
             ]
         },
         {
