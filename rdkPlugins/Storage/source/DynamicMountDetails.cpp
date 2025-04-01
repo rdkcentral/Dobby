@@ -211,7 +211,7 @@ bool DynamicMountDetails::onPostStop() const
 
     if (stat(targetPath.c_str(), &buffer) == 0)
     {
-        if (umount(targetPath.c_str()) == 0)
+        if (remove(targetPath.c_str()) == 0)
         {
             success = true;
         }
