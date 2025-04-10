@@ -1,6 +1,9 @@
 name: DobbyL2Test
 on: [push, pull_request]
 
+env:
+  MEMCR_REF: "b58f2b8e26cab6b67eceaa36fd6ce5a6d04dcd28"
+
 jobs:
   build:
     runs-on: ubuntu-20.04
@@ -136,6 +139,7 @@ jobs:
           mkdir -p ~/memcr
           cd ~/memcr
           git clone https://github.com/LibertyGlobal/memcr.git .
+          git checkout ${{env.MEMCR_REF}}
           git apply $GITHUB_WORKSPACE/Dobby/develop/vagrant/memcr/0001-RDK-47153-Support-zstd-compression-and-option-to-set-dump-dir-.patch
           make COMPRESS_LZ4=1 COMPRESS_ZSTD=1 CHECKSUM_MD5=1 ENCRYPT=1
           mkdir -p scripts
