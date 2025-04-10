@@ -247,6 +247,7 @@ Vagrant.configure("2") do |config|
         mkdir -p ~/memcr
         cd ~/memcr
         git clone https://github.com/LibertyGlobal/memcr.git .
+        git checkout b58f2b8e26cab6b67eceaa36fd6ce5a6d04dcd28
         make COMPRESS_LZ4=1 CHECKSUM_MD5=1 ENCRYPT=1
     SHELL
 
