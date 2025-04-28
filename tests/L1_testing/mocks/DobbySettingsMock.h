@@ -31,6 +31,7 @@ class DobbySettingsMock : public IDobbySettings {
     MOCK_METHOD(std::string, consoleSocketPath, (), (const, override));
     MOCK_METHOD(std::shared_ptr<HardwareAccessSettings>, gpuAccessSettings, (), (const, override));
     MOCK_METHOD(std::shared_ptr<HardwareAccessSettings>, vpuAccessSettings, (), (const, override));
+    MOCK_METHOD(std::shared_ptr<AndroidAccessSettings>, androidAccessSettings, (), (const, override));
     MOCK_METHOD(std::vector<std::string>, externalInterfaces, (), (const, override));
     MOCK_METHOD(std::string, addressRangeStr, (), (const, override));
     MOCK_METHOD(in_addr_t, addressRange, (), (const, override));

@@ -36,5 +36,6 @@ public:
     MOCK_METHOD(bool ,isValid, (), (const,override));
     MOCK_METHOD(std::shared_ptr<rt_dobby_schema> ,config, (), (const));
     MOCK_METHOD(bool ,restartOnCrash, (), (const));
+    MOCK_METHOD(bool ,androidEnabled, (), (const));
 
 };

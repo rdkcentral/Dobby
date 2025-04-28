@@ -85,3 +85,10 @@ bool DobbySpecConfig::restartOnCrash() const
 
     return impl->restartOnCrash();
 }
+
+bool DobbySpecConfig::androidEnabled() const
+{
+   EXPECT_NE(impl, nullptr);
+
+    return impl->androidEnabled();
+}

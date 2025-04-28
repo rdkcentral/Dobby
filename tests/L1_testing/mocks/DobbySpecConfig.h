@@ -43,6 +43,7 @@ public:
     virtual bool isValid() const =0;
     virtual std::shared_ptr<rt_dobby_schema> config() const =0;
     virtual bool restartOnCrash() const =0;
+    virtual bool androidEnabled() const =0;
 
 };
 
@@ -70,6 +71,7 @@ public:
 
     std::shared_ptr<rt_dobby_schema> config() const;
     bool restartOnCrash() const;
+    bool androidEnabled() const;
 };
 
 #endif // !defined(DOBBYSPECCONFIG_H)
