@@ -121,7 +121,7 @@ bool DobbyBundleConfig::constructConfig(const ContainerId& id, const std::string
         mValid = parseOCIConfig(bundlePath);
 
         // de-serialise config.json
-        parser_error err;
+        parser_error err = nullptr;
         std::string configPath = bundlePath + "/config.json";
         mConf = std::shared_ptr<rt_dobby_schema>(
                     rt_dobby_schema_parse_file(configPath.c_str(), nullptr, &err),
@@ -130,6 +130,11 @@ bool DobbyBundleConfig::constructConfig(const ContainerId& id, const std::string
         if (mConf.get() == nullptr || err)
         {
             AI_LOG_ERROR_EXIT("Failed to parse bundle config, err '%s'", err);
+            if (err)
+            {
+                free(err);
+                err = nullptr;
+            }
             mValid = false;
         }
         else
