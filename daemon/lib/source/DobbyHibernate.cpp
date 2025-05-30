@@ -106,7 +106,8 @@ static int Connect(const char* serverLocator, uint32_t timeoutMs)
         }
 
         addrUn.sun_family = PF_UNIX;
-        strncpy(addrUn.sun_path, serverLocator, sizeof(addrUn.sun_path));
+        strncpy(addrUn.sun_path, serverLocator, sizeof(addrUn.sun_path) - 1);
+        addrUn.sun_path[sizeof(addrUn.sun_path) - 1] = '\0';
         addr = (struct sockaddr*)&addrUn;
         addrSize = sizeof(struct sockaddr_un);
     } else {
@@ -118,10 +119,12 @@ static int Connect(const char* serverLocator, uint32_t timeoutMs)
             return -1;
         }
 
-        strncpy(host, serverLocator, 64);
+        strncpy(host, serverLocator, sizeof(host) - 1);
+	host[sizeof(host) - 1] = '\0';
         port = strstr(host, ":");
         if (port == NULL) {
             AI_LOG_ERROR("Invalid Server Ip Address: %s", host);
+            close(cd);
             AI_LOG_FN_EXIT();
             return false;
         }

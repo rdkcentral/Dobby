@@ -199,6 +199,7 @@ int DobbyLogRelay::createDgramSocket(const std::string &path)
 
     if (bind(sockFd, (const struct sockaddr *)&address, sizeof(address)) < 0)
     {
+        close(sockFd);
         AI_LOG_SYS_ERROR_EXIT(errno, "Failed to bind socket @ '%s'", address.sun_path);
         return -1;
     }

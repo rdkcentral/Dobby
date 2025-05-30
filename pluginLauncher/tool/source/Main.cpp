@@ -197,7 +197,7 @@ std::shared_ptr<const rt_state_schema> getContainerState()
         }
     }
 
-    parser_error err;
+    parser_error err = nullptr;
     auto state = std::shared_ptr<const rt_state_schema>(
                     rt_state_schema_parse_data(hookStdin.c_str(), nullptr, &err),
                     free_rt_state_schema);
@@ -207,6 +207,11 @@ std::shared_ptr<const rt_state_schema> getContainerState()
         if (hookStdin.length() == sizeof(buf)-1)
         {
             AI_LOG_ERROR("Most probably the read buffer is too small and causes the parse error below!");
+        }
+        if (err)
+        {
+            free(err);
+            err = nullptr;
         }
         AI_LOG_ERROR_EXIT("Failed to parse container state, err '%s'", err);
         return nullptr;
