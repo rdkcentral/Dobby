@@ -1921,6 +1921,7 @@ bool Netlink::addRoute(const std::string &iface, const struct in6_addr destinati
         if (!gwAddress)
         {
             AI_LOG_ERROR_EXIT("failed to create gateway address");
+            rtnl_route_nh_free(nextHop);
             return false;
         }
 

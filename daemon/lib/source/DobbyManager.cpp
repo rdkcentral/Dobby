@@ -306,11 +306,16 @@ bool DobbyManager::cleanupContainer(const DobbyRunC::ContainerListItem &containe
         char configPath[PATH_MAX];
         snprintf(configPath, sizeof(configPath), "%s/%s/config.json", mRunc->getWorkingDir().c_str(), container.id.c_str());
 
-        parser_error err;
+        parser_error err = nullptr;
         auto containerConfig = std::shared_ptr<rt_dobby_schema>(rt_dobby_schema_parse_file(configPath, nullptr, &err), free_rt_dobby_schema);
         if (containerConfig.get() == nullptr || err)
         {
             AI_LOG_WARN("Couldn't load container confirm from %s, cannot run postHalt hook for %s", configPath, container.id.c_str());
+            if (err)
+            {
+                free(err);
+                err = nullptr;
+            }
         }
         else
         {

@@ -143,7 +143,8 @@ std::string Minidump::getDestinationFile()
 {
     // If an app crashes multiple times, a previous dump might still exist in the destination
     // path. Append the current date/time to the filename to prevent conflicts
-    std::time_t currentTime = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+    auto now = std::chrono::system_clock::now();
+    std::time_t currentTime = std::chrono::system_clock::to_time_t(now);
     std::stringstream timeString;
     timeString << std::put_time(std::localtime(&currentTime), "%FT%T");
     std::string destFile;

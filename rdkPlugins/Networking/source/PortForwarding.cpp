@@ -595,7 +595,7 @@ std::string createPreroutingRule(const PortForward &portForward,
                                  const std::string &ipAddress,
                                  const int ipVersion)
 {
-    char buf[256];
+    char buf[256] = {0};
 
     // We need to add -m <PROTOCOL> because it's automatically added by
     // iptables. If omitted, we won't be able to match the rule for deletion.
@@ -660,7 +660,7 @@ std::string createForwardingRule(const PortForward &portForward,
                                  const std::string &ipAddress,
                                  const int ipVersion)
 {
-    char buf[256];
+    char buf[256] = {0};
 
     // We need to add -m <PROTOCOL> because it's automatically added by
     // iptables. If omitted, we won't be able to match the rule for deletion.
@@ -807,7 +807,7 @@ std::string createDnatRule(const PortForward &portForward,
                            const std::string &ipAddress,
                            const int ipVersion)
 {
-    char buf[256];
+    char buf[256] = {0};
 
     std::string sourceAddr;
     std::string bridgeAddr;
@@ -879,7 +879,7 @@ std::string createAcceptRule(const PortForward &portForward,
                              const std::string &vethName,
                              const int ipVersion)
 {
-    char buf[256];
+    char buf[256] = {0};
 
     std::string sourceAddr;
     std::string loAddr;
@@ -940,7 +940,7 @@ std::string createMasqueradeDnatRule(const PortForward &portForward,
                                     const std::string &ipAddress,
                                     const int ipVersion)
 {
-    char buf[256];
+    char buf[256] = {0};
 
     std::string destination;
 
@@ -993,7 +993,7 @@ std::string createNoIpv6LocalRule(const PortForward &portForward,
                                     const std::string &ipAddress,
                                     const int ipVersion)
 {
-    char buf[256];
+    char buf[256] = {0};
 
     std::string destination;
 
@@ -1041,7 +1041,7 @@ std::string createMasqueradeSnatRule(const PortForward &portForward,
                                     const std::string &ipAddress,
                                     const int ipVersion)
 {
-    char buf[256];
+    char buf[256] = {0};
 
     std::string bridgeAddr;
     std::string sourceAddr;
@@ -1099,7 +1099,7 @@ std::string createLocalLinkSnatRule(const PortForward &portForward,
                                     const std::string &ipAddress,
                                     const int ipVersion)
 {
-    char buf[256];
+    char buf[256] = {0};
 
     std::string bridgeAddr;
     std::string sourceAddr;

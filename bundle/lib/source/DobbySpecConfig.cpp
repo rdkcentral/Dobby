@@ -254,7 +254,7 @@ DobbySpecConfig::DobbySpecConfig(const std::shared_ptr<IDobbyUtils> &utils,
         if(!bundle->getPersistence())
         {
             // deserialise config.json
-            parser_error err;
+            parser_error err = nullptr;
             std::string configPath = bundle->path() + "/config.json";
             mConf = std::shared_ptr<rt_dobby_schema>(
                         rt_dobby_schema_parse_file(configPath.c_str(), nullptr, &err),
@@ -263,6 +263,11 @@ DobbySpecConfig::DobbySpecConfig(const std::shared_ptr<IDobbyUtils> &utils,
             if (mConf.get() == nullptr || err)
             {
                 AI_LOG_ERROR_EXIT("Failed to parse bundle config, err '%s'", err);
+                if (err)
+                {
+                    free(err);
+                    err = nullptr;
+                }
                 mValid = false;
             }
             else
@@ -2227,7 +2232,7 @@ bool DobbySpecConfig::processLegacyPlugins(const Json::Value& value,
 
 
         // add the hook to the list
-        mLegacyPlugins.emplace(name.asString(), std::move(data));
+        mLegacyPlugins.emplace(name.asString(), data);
 
         // Convert the explicit plugins into RDK extended OCI bundle syntax
         dictionary->ShowSection(ENABLE_LEGACY_PLUGINS);
