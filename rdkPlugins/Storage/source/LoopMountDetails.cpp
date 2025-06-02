@@ -118,7 +118,11 @@ bool LoopMountDetails::onPreCreate()
         if ((loopDevFd < 0) || (loopDevice.empty()))
         {
             AI_LOG_ERROR("failed to attach file to loop device");
-            return false;
+            if (loopDevFd >= 0 && close(loopDevFd) != 0)
+            {
+                AI_LOG_SYS_ERROR(errno, "failed to close loop device dir");
+                return false;
+            }
         }
 
         // Reset the reference count if it isn't 0 (shouldn't happen)

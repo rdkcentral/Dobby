@@ -288,6 +288,8 @@ int checkAddressFamily(const std::string &address)
     int ret = getaddrinfo(address.c_str(), nullptr, &hint, &res);
     if (ret < 0 || (res->ai_family != AF_INET && res->ai_family != AF_INET6))
     {
+        if (res != nullptr)
+            freeaddrinfo(res);
         return -1;
     }
 
