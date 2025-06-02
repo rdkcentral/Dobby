@@ -280,6 +280,7 @@ void DobbyLogger::connectionMonitorThread(const int socketFd)
         if (getsockopt(connection, SOL_SOCKET, SO_PEERCRED, &conCredentials, &length) < 0)
         {
             AI_LOG_WARN("Could not retrieve connection credentials - cannot determine connection PID to match logs with container");
+            close(connection);
             break;
         }
 

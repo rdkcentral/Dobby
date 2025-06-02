@@ -130,6 +130,12 @@ ReadLine::~ReadLine()
 
     mPollLoop->stop();
 
+    if (mLibHandle) //CID: 143015
+    {
+        dlclose(mLibHandle);
+        mLibHandle = nullptr;
+    }
+    
     AI_LOG_FN_EXIT();
 }
 

@@ -338,6 +338,7 @@ bool IonMemoryPlugin::setupContainerIonLimits(const std::string &cGroupDirPath,
                 AI_LOG_ERROR("failed to set the ion heap '%s' memory limit for container "
                              "'%s'",
                              heapName.c_str(), containerId.c_str());
+                closedir(dir);
                 return false;
             }
         }
