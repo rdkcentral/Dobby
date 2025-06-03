@@ -154,7 +154,7 @@ void DobbyLogRelay::process(const std::shared_ptr<AICommon::IPollLoop> &pollLoop
         if (ret < 0)
         {
             AI_LOG_SYS_ERROR(errno, "Errror reading from socket @ %s", mSourceSocketPath.c_str());
-            return; //CID: 258503
+            return;
         }
         else if (message.msg_flags & MSG_TRUNC)
         {

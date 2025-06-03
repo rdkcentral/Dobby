@@ -477,7 +477,10 @@ const std::string DobbyConfig::configJson() const
             free(err);
             err = nullptr;
         }
-        free(json_buf);
+        if(nullptr != json_buf)
+        {
+            free(json_buf);
+        }
         return std::string();
     }
 

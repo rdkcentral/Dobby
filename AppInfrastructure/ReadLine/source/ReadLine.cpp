@@ -130,7 +130,7 @@ ReadLine::~ReadLine()
 
     mPollLoop->stop();
 
-    if (mLibHandle) //CID: 143015
+    if (mLibHandle)
     {
         dlclose(mLibHandle);
         mLibHandle = nullptr;
