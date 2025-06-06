@@ -302,10 +302,13 @@ static void closeConsole()
     }
     else
     {
-        dup2(fd, STDIN_FILENO);
-        dup2(fd, STDOUT_FILENO);
-        dup2(fd, STDERR_FILENO);
-        if (fd > STDERR_FILENO)
+        if (dup2(fd, STDIN_FILENO) < 0)
+            fprintf(stderr, "failed to redirect stdin (%d - %s)\n", errno, strerror(errno));
+        if (dup2(fd, STDOUT_FILENO) < 0)
+            fprintf(stderr, "failed to redirect stdout (%d - %s)\n", errno, strerror(errno));
+        if (dup2(fd, STDERR_FILENO) < 0)
+            fprintf(stderr, "failed to redirect stderr (%d - %s)\n", errno, strerror(errno));
+        if (fd != STDIN_FILENO && fd != STDOUT_FILENO && fd != STDERR_FILENO)
             close(fd);
     }
 }
@@ -339,6 +342,7 @@ static void daemonise()
             {
                 fprintf(fp, "%d", pid);
                 fflush(fp);
+                fclose(fp);
             }
         }
 

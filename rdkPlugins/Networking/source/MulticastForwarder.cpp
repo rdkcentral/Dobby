@@ -279,6 +279,7 @@ int checkAddressFamily(const std::string &address)
 {
     struct addrinfo *res = nullptr;
     struct addrinfo hint;
+    int addrFamily = -1;
     memset(&hint, '\0', sizeof(hint));
 
     // configure hints - check for AF_INET/AF_INET6 from string
@@ -288,10 +289,17 @@ int checkAddressFamily(const std::string &address)
     int ret = getaddrinfo(address.c_str(), nullptr, &hint, &res);
     if (ret < 0 || (res->ai_family != AF_INET && res->ai_family != AF_INET6))
     {
-        return -1;
+         AI_LOG_ERROR_EXIT("failed to get ai_family getaddrinfo");
     }
-
-    return res->ai_family;
+    else
+    {
+		addrFamily = res->ai_family;
+	}
+    if (nullptr != res)
+	{
+		freeaddrinfo(res);
+	}
+    return addrFamily;
 }
 
 

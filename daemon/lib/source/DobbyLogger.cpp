@@ -147,6 +147,7 @@ int DobbyLogger::createUnixSocket(const std::string path)
     // Attempt to bind the socket
     if (TEMP_FAILURE_RETRY(bind(sockFd, (const struct sockaddr *)&address, sizeof(address))) < 0)
     {
+        close(sockFd);
         AI_LOG_SYS_ERROR(errno, "Failed to bind socket");
         return -1;
     }
@@ -162,6 +163,7 @@ int DobbyLogger::createUnixSocket(const std::string path)
     // Put the socket into listening state ready to accept connections
     if (listen(sockFd, 1) < 0)
     {
+        close(sockFd);
         AI_LOG_SYS_ERROR(errno, "Cannot set listen mode on socket");
         return -1;
     }
@@ -278,6 +280,7 @@ void DobbyLogger::connectionMonitorThread(const int socketFd)
         if (getsockopt(connection, SOL_SOCKET, SO_PEERCRED, &conCredentials, &length) < 0)
         {
             AI_LOG_WARN("Could not retrieve connection credentials - cannot determine connection PID to match logs with container");
+            close(connection);
             break;
         }
 

@@ -460,7 +460,7 @@ const std::string DobbyConfig::configJson() const
         return std::string();
     }
 
-    parser_error err;
+    parser_error err = nullptr;
     std::shared_ptr<rt_dobby_schema> cfg = config();
     if (cfg == nullptr)
     {
@@ -472,6 +472,15 @@ const std::string DobbyConfig::configJson() const
     if (json_buf == nullptr || err)
     {
         AI_LOG_ERROR("Failed to generate json from container config with code '%s'", err);
+        if (err)
+        {
+            free(err);
+            err = nullptr;
+        }
+        if(nullptr != json_buf)
+        {
+            free(json_buf);
+        }
         return std::string();
     }
 
