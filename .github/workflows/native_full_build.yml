@@ -1,0 +1,23 @@
+name: Build Component in Native Environment
+
+on:
+  push:
+    branches: [ main, 'sprint/**', 'release/**', master ]
+  pull_request:
+    branches: [ main, 'sprint/**', 'release/**', master ]
+
+jobs:
+  build-dobby-on-pr:
+    name: Build dobby component in github rdkcentral
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/rdkcentral/docker-rdk-ci:latest
+   
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: native build
+        run: |
+          sh -x build_dependencies.sh
+          sh -x cov_build.sh
