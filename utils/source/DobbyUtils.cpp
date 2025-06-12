@@ -588,7 +588,7 @@ bool DobbyUtils::callInNamespaceImpl(int namespaceFd,
 {
     AI_LOG_FN_ENTRY();
 
-    bool success;
+    bool success = true;
 
     // spawn the thread to run the callback in
     std::thread _nsThread = std::thread(std::bind(&DobbyUtils::nsThread,
@@ -669,7 +669,7 @@ bool DobbyUtils::callInNamespaceImpl(pid_t pid, int nsType,
             return false;
     }
 
-    bool success;
+    bool success = true;
 
     // get the namespace of the containered app
     sprintf(nsPath, "/proc/%d/ns/%s", pid, nsName);
@@ -894,7 +894,7 @@ int DobbyUtils::runE2fsTool(int dirFd, std::list<std::string>* consoleOutput,
 
     // create a pipe to store the stderr and stdout of the mke2fs utility, this
     // is just to help with debugging issues
-    int pipeFds[2];
+    int pipeFds[2] = { -1, -1 };
     if (pipe2(pipeFds, O_CLOEXEC) != 0)
     {
         AI_LOG_SYS_ERROR_EXIT(errno, "failed to create stderr/stdout pipe");
@@ -1005,24 +1005,31 @@ int DobbyUtils::runE2fsTool(int dirFd, std::list<std::string>* consoleOutput,
     // logging debug messages from the tool, the write end should now be closed
     // so the read shouldn't block
     char outputBuf[512];
-    ssize_t rd = TEMP_FAILURE_RETRY(read(pipeFds[0], outputBuf, sizeof(outputBuf) - 1));
-    if (rd < 0)
+    if (pipeFds[0] >= 0)
+    {
+        ssize_t rd = TEMP_FAILURE_RETRY(read(pipeFds[0], outputBuf, sizeof(outputBuf) - 1));
+        if (rd < 0)
+        {
+            AI_LOG_SYS_ERROR(errno, "failed to read from pipe");
+            outputBuf[0] = '\0';
+        }
+        else
+        {
+            outputBuf[rd] = '\0';
+        }
+
+        // close the read end of the pipe
+        if (close(pipeFds[0]) != 0)
+        {
+            AI_LOG_SYS_ERROR(errno, "failed to close read end of the pipe");
+        }
+    }
+    else
     {
         AI_LOG_SYS_ERROR(errno, "failed to read from pipe");
         outputBuf[0] = '\0';
     }
-    else
-    {
-        outputBuf[rd] = '\0';
-    }
-
-    // close the read end of the pipe
-    if ((pipeFds[0] >= 0) && (close(pipeFds[0]) != 0))
-    {
-        AI_LOG_SYS_ERROR(errno, "failed to close read end of the pipe");
-    }
-
-
+    
     // chop up the output, assuming each message is delimited by a newline
     if (consoleOutput != nullptr)
     {

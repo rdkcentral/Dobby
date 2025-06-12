@@ -195,7 +195,7 @@ std::vector<MulticastSocketPlugin::MulticastSocket> MulticastSocketPlugin::parse
             continue;
         }
 
-        in_addr_t ipAddr;
+        in_addr_t ipAddr = 0;
         if (ip.isString() && inet_pton(AF_INET, ip.asString().c_str(), &ipAddr) != 1)
         {
             AI_LOG_WARN("invalid IP entry at index %u in 'serverSockets' array", it.index());

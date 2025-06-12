@@ -131,6 +131,7 @@ std::string DobbyIpcBus::socketPathFromAddress(const std::string& address)
     {
         AI_LOG_ERROR_EXIT("failed to parse address ('%s')", err.message);
         dbus_error_free(&err);
+        dbus_address_entries_free(entries);
         return socketPath;
     }
 

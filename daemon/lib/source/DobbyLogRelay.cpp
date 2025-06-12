@@ -154,6 +154,7 @@ void DobbyLogRelay::process(const std::shared_ptr<AICommon::IPollLoop> &pollLoop
         if (ret < 0)
         {
             AI_LOG_SYS_ERROR(errno, "Errror reading from socket @ %s", mSourceSocketPath.c_str());
+            return;
         }
         else if (message.msg_flags & MSG_TRUNC)
         {
@@ -199,6 +200,7 @@ int DobbyLogRelay::createDgramSocket(const std::string &path)
 
     if (bind(sockFd, (const struct sockaddr *)&address, sizeof(address)) < 0)
     {
+        close(sockFd);
         AI_LOG_SYS_ERROR_EXIT(errno, "Failed to bind socket @ '%s'", address.sun_path);
         return -1;
     }
