@@ -167,6 +167,69 @@ gid_t DobbyBundleConfig::groupId() const
     return mGroupId;
 }
 
+void DobbyBundleConfig::setUidGidMappings(uid_t userId, gid_t groupId)
+{
+    std::shared_ptr<rt_dobby_schema> cfg = config();
+    if (cfg == nullptr)
+    {
+        AI_LOG_ERROR("Invalid bundle config");
+        return;
+    }
+
+    rt_config_linux* linux = cfg->linux;
+    if (linux == nullptr)
+    {
+        linux = (rt_config_linux*)calloc(1, sizeof(rt_config_linux));
+        cfg->linux = linux;
+    }
+    if (linux == nullptr)
+    {
+        AI_LOG_ERROR("unable to perform mappings");
+        return;
+    }
+    if ((linux->uid_mappings != nullptr) || (linux->gid_mappings != nullptr)) 
+    {
+        AI_LOG_ERROR("unable to perform mappings by overriding");
+        return;
+    }
+    size_t len = 1;
+    linux->uid_mappings_len = len;
+    linux->gid_mappings_len = len;
+    linux->uid_mappings = (rt_defs_id_mapping**) calloc (len+1, sizeof (*linux->uid_mappings));
+    if (linux->uid_mappings == nullptr)
+    {
+        AI_LOG_ERROR("unable to perform uid mappings");
+        return;
+    }
+    
+    linux->gid_mappings = (rt_defs_id_mapping**) calloc (len+1, sizeof (*linux->gid_mappings));
+    if (linux->gid_mappings == nullptr)
+    {
+        AI_LOG_ERROR("unable to perform gid mappings");
+        return;
+    }
+    linux->uid_mappings[0] = (rt_defs_id_mapping*) calloc (1, sizeof (rt_defs_id_mapping));
+    linux->gid_mappings[0] = (rt_defs_id_mapping*) calloc (1, sizeof (rt_defs_id_mapping));
+
+    rt_defs_id_mapping* uidMapping = linux->uid_mappings[0];
+    uidMapping->container_id = 0;
+    uidMapping->host_id = userId;
+    uidMapping->host_id_present = 1;
+    uidMapping->container_id_present = 1;
+    uidMapping->size = 1;
+    uidMapping->size_present = 1;
+
+    rt_defs_id_mapping* gidMapping = linux->gid_mappings[0];
+    gidMapping->container_id = 0;
+    gidMapping->host_id = groupId;
+    gidMapping->host_id_present = 1;
+    gidMapping->container_id_present = 1;
+    gidMapping->size = 10;
+    gidMapping->size_present = 1;
+    mUserId = userId;
+    mGroupId = groupId;
+}
+
 const std::string& DobbyBundleConfig::rootfsPath() const
 {
     return mRootfsPath;
