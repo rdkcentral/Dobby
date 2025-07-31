@@ -198,14 +198,14 @@ void DobbyBundleConfig::setUidGidMappings(uid_t userId, gid_t groupId)
     linux->uid_mappings = (rt_defs_id_mapping**) calloc (len, sizeof (*linux->uid_mappings));
     if (linux->uid_mappings == nullptr)
     {
-        AI_LOG_ERROR("unable to perform uid mappings");
+        AI_LOG_ERROR("unable to perform user id mappings");
         return;
     }
     
     linux->gid_mappings = (rt_defs_id_mapping**) calloc (len, sizeof (*linux->gid_mappings));
     if (linux->gid_mappings == nullptr)
     {
-        AI_LOG_ERROR("unable to perform gid mappings");
+        AI_LOG_ERROR("unable to perform group id mappings");
         return;
     }
     linux->uid_mappings[0] = (rt_defs_id_mapping*) calloc (1, sizeof (rt_defs_id_mapping));
