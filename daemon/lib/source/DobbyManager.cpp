@@ -1166,7 +1166,7 @@ int32_t DobbyManager::startContainerFromBundle(const ContainerId &id,
                     return false;
                 }
 
-                container->customConfigFilePath = tmpConfigPath;
+                container->customConfigFilePath = std::move(tmpConfigPath);
                 AI_LOG_DEBUG("Created custom config for container '%s' at %s", id.c_str(), container->customConfigFilePath.c_str());
             }
 

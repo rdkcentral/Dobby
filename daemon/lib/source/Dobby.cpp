@@ -1079,7 +1079,7 @@ void Dobby::startFromBundle(std::shared_ptr<AI_IPC::IAsyncReplySender> replySend
     std::string command;
     std::string displaySocket;
     std::vector<std::string> envVars;
-    uid_t userId, groupId;
+    uid_t userId=0, groupId=0;
 
     bool parseArgsSuccess = false;
 

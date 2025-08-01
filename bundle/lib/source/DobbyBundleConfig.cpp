@@ -226,6 +226,8 @@ void DobbyBundleConfig::setUidGidMappings(uid_t userId, gid_t groupId)
     gidMapping->container_id_present = 1;
     gidMapping->size = 10;
     gidMapping->size_present = 1;
+
+    std::lock_guard<std::mutex> locker(mLock);
     mUserId = userId;
     mGroupId = groupId;
 }
