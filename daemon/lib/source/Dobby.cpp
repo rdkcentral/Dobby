@@ -1070,16 +1070,17 @@ void Dobby::startFromBundle(std::shared_ptr<AI_IPC::IAsyncReplySender> replySend
 {
     AI_LOG_FN_ENTRY();
 
-    // Expecting 3/6 args:
+    // Expecting 3/6/8 args:
     // (string id, string bundlePath, vector<unixfd> files)
     // (string id, string bundlePath, vector<unixfd> files, string command, string displaySocket, vector<string> envVars)
+    // (string id, string bundlePath, vector<unixfd> files, string command, string displaySocket, vector<string> envVars, uid_t userId, uid_t groupId)
     std::string id;
     std::string bundlePath;
     std::vector<AI_IPC::UnixFd> files;
     std::string command;
     std::string displaySocket;
     std::vector<std::string> envVars;
-    uid_t userId, groupId;
+    uid_t userId=0, groupId=0;
 
     bool parseArgsSuccess = false;
 
