@@ -3061,7 +3061,7 @@ TEST_F(DaemonDobbyTest, startFromSpecFailed_postWorkFailSendReplyFailed)
 TEST_F(DaemonDobbyTest, startFromBundleFailed_invalidArg)
 {
     EXPECT_CALL(*p_asyncReplySenderMock, getMethodCallArguments())
-        .Times(2)
+        .Times(3)
         .WillOnce(::testing::Return(AI_IPC::VariantList{1}))
                 .WillOnce(::testing::Return(AI_IPC::VariantList{1,2}));
 

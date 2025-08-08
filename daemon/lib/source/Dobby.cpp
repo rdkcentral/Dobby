@@ -1070,15 +1070,17 @@ void Dobby::startFromBundle(std::shared_ptr<AI_IPC::IAsyncReplySender> replySend
 {
     AI_LOG_FN_ENTRY();
 
-    // Expecting 3/6 args:
+    // Expecting 3/6/8 args:
     // (string id, string bundlePath, vector<unixfd> files)
     // (string id, string bundlePath, vector<unixfd> files, string command, string displaySocket, vector<string> envVars)
+    // (string id, string bundlePath, vector<unixfd> files, string command, string displaySocket, vector<string> envVars, uid_t userId, uid_t groupId)
     std::string id;
     std::string bundlePath;
     std::vector<AI_IPC::UnixFd> files;
     std::string command;
     std::string displaySocket;
     std::vector<std::string> envVars;
+    uid_t userId=0, groupId=0;
 
     bool parseArgsSuccess = false;
 
@@ -1098,6 +1100,16 @@ void Dobby::startFromBundle(std::shared_ptr<AI_IPC::IAsyncReplySender> replySend
                                                     std::string,
                                                     std::vector<std::string>>(
             replySender->getMethodCallArguments(), &id, &bundlePath, &files, &command, &displaySocket, &envVars);
+    }
+    else if (replySender->getMethodCallArguments().size() == 8)
+    {
+        parseArgsSuccess = AI_IPC::parseVariantList<std::string,
+                                                    std::string,
+                                                    std::vector<AI_IPC::UnixFd>,
+                                                    std::string,
+                                                    std::string,
+                                                    std::vector<std::string>, uid_t, uid_t>(
+            replySender->getMethodCallArguments(), &id, &bundlePath, &files, &command, &displaySocket, &envVars, &userId, &groupId);
     }
 
     if (!parseArgsSuccess)
@@ -1124,6 +1136,8 @@ void Dobby::startFromBundle(std::shared_ptr<AI_IPC::IAsyncReplySender> replySend
                  command = std::move(command),
                  displaySocket = std::move(displaySocket),
                  envVars = std::move(envVars),
+                 userId = userId,
+                 groupId = groupId,
                  replySender]()
                 {
                     // Convert the vector of AI_IPC::UnixFd to a list of plain
@@ -1133,7 +1147,7 @@ void Dobby::startFromBundle(std::shared_ptr<AI_IPC::IAsyncReplySender> replySend
                         fileList.push_back(file.fd());
 
                     // try and start the container
-                    int32_t descriptor = manager->startContainerFromBundle(id, path, fileList, command, displaySocket, envVars);
+                    int32_t descriptor = manager->startContainerFromBundle(id, path, fileList, command, displaySocket, envVars, userId, groupId);
 
                     // Fire off the reply
                     AI_IPC::VariantList results = { descriptor };

@@ -74,3 +74,6 @@ bool DobbyBundleConfig::isValid() const
     return impl->isValid();
 }
 
+void DobbyBundleConfig::setUidGidMappings(uid_t userId, gid_t groupId)
+{
+}
