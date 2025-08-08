@@ -227,40 +227,6 @@ static void checkForOOM(void)
     }
 }
 
-#if defined(USE_ETHANLOG)
-
-static void reportLoggingPipeInode(int logPipeFd)
-{
-    // this code to log pipe inode number is to provide extra info in the
-    // case of debug context name is incorrect. It should be removed
-    // as soon as we are sure a pipe mis-connection is not the cause of this
-    // problem
-    if (logPipeFd >= 0)
-    {
-        struct stat pipeStat;
-        if (fstat(logPipeFd, &pipeStat) < 0)
-        {
-            fprintf(stderr, "Couldn't fstat ethanlog pipe (%d - %s)",
-                    errno, strerror(errno));
-        }
-        else
-        {
-            ethanlog(ETHAN_LOG_MILESTONE, NULL, NULL, 0,
-                     "Logging pipe inode is %d",
-                     int(pipeStat.st_ino));
-        }
-    }
-}
-
-#else // defined(USE_ETHANLOG)
-
-static void reportLoggingPipeInode(int logPipeFd)
-{
-    (void) logPipeFd;
-}
-
-#endif // defined(USE_ETHANLOG)
-
 #endif // (AI_BUILD_TYPE == AI_DEBUG)
 
 static int doForkExec(int argc, char * argv[])
@@ -279,13 +245,6 @@ static int doForkExec(int argc, char * argv[])
     }
 #endif
 
-    // print the logging pipe indode number to make sure that proper app
-    // name is shown in logs
-#if (AI_BUILD_TYPE == AI_DEBUG)
-    reportLoggingPipeInode(logPipeFd);
-#endif
-
-
     const int maxArgs = 64;
 
     if ((argc < 2) || (argc > maxArgs))
@@ -294,7 +253,7 @@ static int doForkExec(int argc, char * argv[])
         return EXIT_FAILURE;
     }
 
-    pid_t exePid = vfork();
+    pid_t exePid = fork();
     if (exePid < 0)
     {
         LOG_ERR("failed to fork and launch app (%d - %s)", errno, strerror(errno));
@@ -323,6 +282,17 @@ static int doForkExec(int argc, char * argv[])
 
         // terminate with a null
         args[(argc - 1)] = nullptr;
+
+        // if the magic env var is set telling us to pause the process for debugging
+        // then we raise a SIGSTOP to pause the process.  This is useful for debugging
+        // the container startup process, as it allows you to attach a debugger to the
+        // process before it starts executing the main process.
+        const char *pauseEnv = getenv("DOBBY_INIT_PAUSE");
+        if (pauseEnv && (strcmp(pauseEnv, "1") == 0))
+        {
+            LOG_NFO("pausing the process for debugging");
+            raise(SIGSTOP);
+        }
 
         // within forked client so exec the main process
         execvp(argv[1], args);
