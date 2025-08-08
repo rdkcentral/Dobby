@@ -184,12 +184,12 @@ void DobbyBundleConfig::setUidGidMappings(uid_t userId, gid_t groupId)
     }
     if (linux == nullptr)
     {
-        AI_LOG_ERROR("unable to perform mappings");
+        AI_LOG_ERROR("Unable to perform mappings");
         return;
     }
     if ((linux->uid_mappings != nullptr) || (linux->gid_mappings != nullptr)) 
     {
-        AI_LOG_ERROR("unable to perform mappings by overriding");
+        AI_LOG_ERROR("Unable to perform mappings by overriding");
         return;
     }
     size_t len = 1;
