@@ -121,9 +121,9 @@ int EthanLogLoop::addClient(const ContainerId& id, const std::string &tag,
         return -1;
     }
 
-    // attempt to increase the pipe size to 128kB, this is double the default
-    // of 64kB
-    const int loggingPipeSize = 128 * 1024;
+    // attempt to increase the pipe size limit to 256kB, this is quadruple
+    // the default limit of 64kB
+    const int loggingPipeSize = 256 * 1024;
     if (fcntl(fds[1], F_SETPIPE_SZ, loggingPipeSize) != 0)
     {
         AI_LOG_SYS_WARN(errno, "failed to set pipe size for logging pipe");
