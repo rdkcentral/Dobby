@@ -328,7 +328,10 @@ def run_command_line(command):
                             stdout=subprocess.PIPE,
                             stderr=subprocess.PIPE,
                             universal_newlines=True)
-
+    if status.stdout: 
+      print_log("STDOUT:\n%s" % status.stdout, Severity.debug) 
+    if status.stderr: 
+      print_log("STDERR:\n%s" % status.stderr, Severity.debug)
     return status
 
 
