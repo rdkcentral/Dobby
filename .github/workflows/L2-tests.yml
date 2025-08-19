@@ -220,11 +220,31 @@ jobs:
           &&
           sudo cmake --install build/rdkservices
 
-      - name: Run the l2 test
+      - name: Run the L2 test with debug
         working-directory: Dobby/tests/L2_testing/test_runner/
         run: |
-            python3 runner.py -p 3 -v 5
-            cp $GITHUB_WORKSPACE/Dobby/tests/L2_testing/test_runner/DobbyL2TestResults.json $GITHUB_WORKSPACE
+          echo "Checking Docker availability..."
+          docker --version
+          docker info || echo "Docker info failed. Runner may not support Docker."
+      
+          echo "Listing existing containers..."
+          docker ps -a
+      
+          echo "Running the test..."
+          python3 runner.py -p 3 -v 5 || echo "Runner.py failed"
+      
+          echo "Checking containers after test..."
+          docker ps -a
+      
+          # Try to capture logs from any container that was created
+          for container in $(docker ps -a -q); do
+            echo "Logs for container $container:"
+            docker logs $container || echo "No logs for $container"
+          done
+      
+          echo "Copying test results..."
+          cp $GITHUB_WORKSPACE/Dobby/tests/L2_testing/test_runner/DobbyL2TestResults.json $GITHUB_WORKSPACE
+
 
       - name: Generate coverage
         if: ${{ matrix.coverage == 'with-coverage' }}
