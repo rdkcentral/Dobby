@@ -166,6 +166,8 @@ bool ThunderPlugin::postInstallation()
 
             mUtils->addMount(mSocketPath, mSocketPath, "bind",
                              {"bind", "ro", "nosuid", "nodev", "noexec"});
+            mUtils->addMount("/tmp/communicator", "/tmp/communicator", "bind",
+                             {"bind", "ro", "nosuid", "nodev", "noexec"});
         }
     }
 
