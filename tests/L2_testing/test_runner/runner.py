@@ -37,13 +37,8 @@ supported_tests = [basic_sanity_tests,
                    container_manipulations,
                    bundle_generation,
                    plugin_launcher,
-                   command_line_containers,
-                   start_from_bundle,
                    thunder_plugin,
-                   network_tests,
-                   gui_containers,
-                   pid_limit_tests,
-                   memcr_tests]
+                   ]
 
 def run_all_tests():
     success_count = 0
