@@ -57,6 +57,7 @@ def test_container(container_id, expected_output):
         command = ["DobbyTool",
                 "start",
                 container_id,
+                "--spec",
                 bundle_path]
 
         status = test_utils.run_command_line(command)
