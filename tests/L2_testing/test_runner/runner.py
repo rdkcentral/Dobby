@@ -36,7 +36,8 @@ from time import sleep
 supported_tests = [basic_sanity_tests,
                    container_manipulations,
                    bundle_generation,
-                   plugin_launcher
+                   plugin_launcher,
+                   command_line_containers
                    ]
 
 def run_all_tests():
