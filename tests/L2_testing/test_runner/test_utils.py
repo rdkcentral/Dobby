@@ -365,13 +365,13 @@ def launch_container(container_id, spec_path):
     print("RETURN CODE:", process.returncode)
 
     if f"started '{container_id}' container" not in process.stdout:
-    debug_msg = (
-        f"Container did not launch successfully\n"
-        f"Return code: {process.returncode}\n"
-        f"STDOUT:\n{process.stdout}\n"
-        f"STDERR:\n{process.stderr}\n"
-        f"DobbyDaemon logs:\n{get_dobby_logs()}\n"
-    )
+        debug_msg = (
+            f"Container did not launch successfully\n"
+            f"Return code: {process.returncode}\n"
+            f"STDOUT:\n{process.stdout}\n"
+            f"STDERR:\n{process.stderr}\n"
+            f"DobbyDaemon logs:\n{get_dobby_logs()}\n"
+        )
     return False, debug_msg
 
 
