@@ -74,10 +74,10 @@ class dobby_daemon:
         print_log("Starting Dobby Daemon (logging to Journal)...", Severity.debug)
 
         if log_to_stdout:
-            cmd = ["sudo", "DobbyDaemon", "--nofork","--debug"]
+            cmd = ["sudo", "DobbyDaemon", "--nofork"]
             kvargs = {"universal_newlines": True}
         else:
-            cmd = ["sudo", "DobbyDaemon", "--nofork", "--journald", "--noconsole","--debug"]
+            cmd = ["sudo", "DobbyDaemon", "--nofork", "--journald", "--noconsole"]
             kvargs = {"universal_newlines": True, "stdout": subprocess.PIPE, "stderr": subprocess.PIPE}
 
         # as this process is running infinitely we cannot use run_command_line as it waits for execution to end
