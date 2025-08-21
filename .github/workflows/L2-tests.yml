@@ -11,14 +11,7 @@ jobs:
       fail-fast: false
       matrix:
         compiler: [ gcc, clang ]
-        coverage: [ with-coverage, without-coverage ]
-        exclude:
-          - compiler: clang
-            coverage: with-coverage
-          - compiler: clang
-            coverage: without-coverage
-          - compiler: gcc
-            coverage: without-coverage
+        coverage: [ without-coverage ]
         # The matrix will try all possible combinations of the below arrays
         # If adding a new cmake option, include both the ON and OFF version to ensure the
         # matrix runs both versions
