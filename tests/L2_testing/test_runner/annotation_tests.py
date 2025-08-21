@@ -57,7 +57,7 @@ def test_container(container_id, expected_output):
     test_utils.print_log("Running %s container test" % container_id, test_utils.Severity.debug)
 
     with test_utils.untar_bundle(container_id) as bundle_path:
-        command = ["DobbyTool","--verbosity=2",
+        command = ["DobbyTool","-v",
                 "start",
                 container_id,
                 bundle_path]
@@ -66,6 +66,19 @@ def test_container(container_id, expected_output):
             # List files in the bundle
             print("Bundle contents:", os.listdir(bundle_path))
             print("Rootfs contents:", os.listdir(os.path.join(bundle_path, "rootfs")))
+
+            binary = "/bin/sleep"
+            output = subprocess.check_output(["ldd", binary], text=True)
+            
+            for line in output.splitlines():
+                parts = line.strip().split("=>")
+                if len(parts) == 2:
+                    lib_path = parts[1].split("(")[0].strip()
+                else:
+                    lib_path = parts[0].strip()
+            
+                if lib_path and lib_path.startswith("/"):
+                    print("Dependency:", lib_path)
 
             sleep_path = os.path.join(bundle_path, "rootfs", "bin", "sleep")
 
@@ -76,7 +89,7 @@ def test_container(container_id, expected_output):
                 sleep_in_rootfs = os.path.join(bundle_path, "rootfs", "bin", "sleep")
                 try:
                     os.makedirs(os.path.dirname(sleep_in_rootfs), exist_ok=True)
-                    shutil.copy("/bin/sleep", sleep_in_rootfs)
+                    shutil.copy2("/bin/sleep", sleep_in_rootfs)
                     print("✅ sleep copied successfully.")
                 except Exception as e:
                     print(f"❌ Failed to copy sleep: {e}")
