@@ -65,6 +65,13 @@ def test_container(container_id, expected_output):
             # List files in the bundle
             print("Bundle contents:", os.listdir(bundle_path))
             print("Rootfs contents:", os.listdir(os.path.join(bundle_path, "rootfs")))
+
+            sleep_path = os.path.join(bundle_path, "rootfs", "bin", "sleep")
+
+            if os.path.exists(sleep_path):
+                print(f"✅ Found sleep at {sleep_path}")
+            else:
+                print(f"❌ sleep binary missing at {sleep_path}")
     
             # Dump config.json
             config_path = os.path.join(bundle_path, "config.json")
