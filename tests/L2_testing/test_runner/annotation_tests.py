@@ -70,6 +70,12 @@ def test_container(container_id, expected_output):
 
             if os.path.exists(sleep_path):
                 print(f"✅ Found sleep at {sleep_path}")
+                try:
+                    os.makedirs(os.path.dirname(sleep_in_rootfs), exist_ok=True)
+                    shutil.copy("/bin/sleep", sleep_in_rootfs)
+                    print("✅ sleep copied successfully.")
+                except Exception as e:
+                    print(f"❌ Failed to copy sleep: {e}")
             else:
                 print(f"❌ sleep binary missing at {sleep_path}")
     
