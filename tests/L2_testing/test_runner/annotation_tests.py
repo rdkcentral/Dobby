@@ -78,7 +78,6 @@ def test_container(container_id, expected_output):
                 print(f"Could not read config.json: {e}")
         os.system("sudo DobbyDaemon --debug > dobbydaemon_debug.log 2>&1 &")
         status = test_utils.run_command_line(command)
-        os.system("sudo DobbyDaemon --debug > dobbydaemon_debug.log 2>&1 &")
         if "started '" + container_id + "' container" not in status.stdout:
             debug_msg = (
                 f"Container did not launch successfully\n"
