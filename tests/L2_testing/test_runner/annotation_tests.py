@@ -67,6 +67,17 @@ def test_container(container_id, expected_output):
             rootfs = os.path.join(bundle_path, "rootfs")
             bin_dir = os.path.join(rootfs, "bin")
             os.makedirs(bin_dir, exist_ok=True)
+
+            dobbyinit_path = os.path.join(rootfs, "usr/libexec/DobbyInit")
+            if os.path.exists(dobbyinit_path):
+                try:
+                    output = subprocess.check_output(["file", dobbyinit_path], text=True)
+                    print(f"DobbyInit binary info: {output.strip()}")
+                except Exception as e:
+                    print(f"Could not check DobbyInit binary: {e}")
+            else:
+                print("❌ No DobbyInit found in bundle rootfs!")
+
         
             # Ensure /bin/sleep exists inside rootfs
             sleep_in_rootfs = os.path.join(bin_dir, "sleep")
