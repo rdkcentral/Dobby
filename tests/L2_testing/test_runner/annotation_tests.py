@@ -68,7 +68,7 @@ def test_container(container_id, expected_output):
                 f"STDERR:\n{status.stderr}\n"
                 f"DobbyDaemon logs:\n{test_utils.get_dobby_logs()}\n"
             )
-            return False, "Container did not launch successfully"
+            return False, debug_msg 
 
         return validate_annotation(container_id, expected_output)
 
