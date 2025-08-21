@@ -83,11 +83,9 @@ def test_container(container_id, expected_output):
                 output = subprocess.check_output(["ldd", "/bin/sleep"], text=True)
                 for line in output.splitlines():
                     parts = line.strip().split("=>")
-                    if len(parts) == 2:
-                        lib_path = parts[1].split("(")[0].strip()
-                    else:
-                        lib_path = parts[0].strip()
-        
+                    raw = parts[1] if len(parts) == 2 else parts[0]
+                    lib_path = raw.split("(")[0].strip()
+                
                     if lib_path and lib_path.startswith("/"):
                         print(f"Dependency: {lib_path}")
                         dst_path = os.path.join(rootfs, lib_path.lstrip("/"))
