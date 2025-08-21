@@ -142,6 +142,34 @@ def test_container(container_id, expected_output):
                 except Exception as e:
                     print(f"❌ Failed to patch config.json: {e}")
 
+            # 1. Check loader
+            loader_candidates = ["/lib64/ld-linux-x86-64.so.2", "/lib/x86_64-linux-gnu/ld-linux-x86-64.so.2"]
+            for loader in loader_candidates:
+                if os.path.exists(loader):
+                    dst = os.path.join(rootfs, loader.lstrip("/"))
+                    os.makedirs(os.path.dirname(dst), exist_ok=True)
+                    shutil.copy2(loader, dst)
+                    os.chmod(dst, 0o755)
+                    print(f"✅ Ensured dynamic loader {loader} -> {dst}")
+            
+            # 2. Run ldd on DobbyInit as well
+            try:
+                output = subprocess.check_output(["ldd", dobbyinit_path], text=True)
+                for line in output.splitlines():
+                    lib_path = line.split("=>")[-1].split("(")[0].strip()
+                    if lib_path.startswith("/") and os.path.exists(lib_path):
+                        dst = os.path.join(rootfs, lib_path.lstrip("/"))
+                        os.makedirs(os.path.dirname(dst), exist_ok=True)
+                        shutil.copy2(lib_path, dst)
+                        print(f"   ✅ Copied dependency {lib_path} -> {dst}")
+            except Exception as e:
+                print(f"❌ Could not run ldd on DobbyInit: {e}")
+            
+            # 3. Enforce +x always
+            for binary in [dobbyinit_path, sleep_in_rootfs]:
+                if os.path.exists(binary):
+                    os.chmod(binary, 0o755)
+                    print(f"✅ Ensured executable bit on {binary}")
 
         status = test_utils.run_command_line(command)
         if "started '" + container_id + "' container" not in status.stdout:
