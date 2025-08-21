@@ -72,6 +72,7 @@ def test_container(container_id, expected_output):
                 print(f"✅ Found sleep at {sleep_path}")
             else:
                 print(f"❌ sleep binary missing at {sleep_path}")
+                sleep_in_rootfs = os.path.join(bundle_path, "rootfs", "bin", "sleep")
                 try:
                     os.makedirs(os.path.dirname(sleep_in_rootfs), exist_ok=True)
                     shutil.copy("/bin/sleep", sleep_in_rootfs)
