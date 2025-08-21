@@ -38,7 +38,7 @@ supported_tests = [basic_sanity_tests,
                    bundle_generation,
                    plugin_launcher,
                    command_line_containers,
-                   annotation_tests
+                   start_from_bundle
                    ]
 
 def run_all_tests():
