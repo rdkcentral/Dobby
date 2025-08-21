@@ -352,6 +352,9 @@ def launch_container(container_id, spec_path):
     # Use DobbyTool to launch container
     process = run_command_line(["DobbyTool", "start", container_id,spec_path])
     output = process.stdout
+    print("STDOUT:", process.stdout)
+    print("STDERR:", process.stderr)
+    print("RETURN CODE:", process.returncode)
 
     # Check DobbyTool has started the container
     if "started" in output:
