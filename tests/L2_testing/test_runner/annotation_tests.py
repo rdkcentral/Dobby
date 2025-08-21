@@ -91,6 +91,16 @@ def test_container(container_id, expected_output):
                 try:
                     os.makedirs(os.path.dirname(sleep_in_rootfs), exist_ok=True)
                     shutil.copy2("/bin/sleep", sleep_in_rootfs)
+                    # Ensure lib dirs exist
+                    os.makedirs(os.path.join(rootfs, "lib/x86_64-linux-gnu"), exist_ok=True)
+                    os.makedirs(os.path.join(rootfs, "lib64"), exist_ok=True)
+                    
+                    # Copy dependencies
+                    shutil.copy("/lib/x86_64-linux-gnu/libc.so.6",
+                                os.path.join(rootfs, "lib/x86_64-linux-gnu/libc.so.6"))
+                    
+                    shutil.copy("/lib64/ld-linux-x86-64.so.2",
+                                os.path.join(rootfs, "lib64/ld-linux-x86-64.so.2"))
                     print("✅ sleep copied successfully.")
                 except Exception as e:
                     print(f"❌ Failed to copy sleep: {e}")
