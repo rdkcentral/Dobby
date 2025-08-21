@@ -59,34 +59,34 @@ def test_container(container_id, expected_output):
                 container_id,
                 bundle_path]
         
-    if container_id == "sleepy":
-        # List files in the bundle
-        print("Bundle contents:", os.listdir(bundle_path))
-        print("Rootfs contents:", os.listdir(os.path.join(bundle_path, "rootfs")))
-
-        # Dump config.json
-        config_path = os.path.join(bundle_path, "config.json")
-        try:
-            with open(config_path) as f:
-                print("config.json:\n", f.read())
-                # optionally parse JSON
-                config = json.load(open(config_path))
-                print("process.args:", config.get("process", {}).get("args"))
-            except Exception as e:
-                print(f"Could not read config.json: {e}")
-                
-    status = test_utils.run_command_line(command)
-    if "started '" + container_id + "' container" not in status.stdout:
-        debug_msg = (
-            f"Container did not launch successfully\n"
-            f"Return code: {status.returncode}\n"
-            f"STDOUT:\n{status.stdout}\n"
-            f"STDERR:\n{status.stderr}\n"
-            f"DobbyDaemon logs:\n{test_utils.get_dobby_logs()}\n"
-        )
-        return False, debug_msg
-
-    return validate_annotation(container_id, expected_output)
+        if container_id == "sleepy":
+            # List files in the bundle
+            print("Bundle contents:", os.listdir(bundle_path))
+            print("Rootfs contents:", os.listdir(os.path.join(bundle_path, "rootfs")))
+    
+            # Dump config.json
+            config_path = os.path.join(bundle_path, "config.json")
+            try:
+                with open(config_path) as f:
+                    print("config.json:\n", f.read())
+                    # optionally parse JSON
+                    config = json.load(open(config_path))
+                    print("process.args:", config.get("process", {}).get("args"))
+                except Exception as e:
+                    print(f"Could not read config.json: {e}")
+                    
+        status = test_utils.run_command_line(command)
+        if "started '" + container_id + "' container" not in status.stdout:
+            debug_msg = (
+                f"Container did not launch successfully\n"
+                f"Return code: {status.returncode}\n"
+                f"STDOUT:\n{status.stdout}\n"
+                f"STDERR:\n{status.stderr}\n"
+                f"DobbyDaemon logs:\n{test_utils.get_dobby_logs()}\n"
+            )
+            return False, debug_msg
+    
+        return validate_annotation(container_id, expected_output)
 
 
 def validate_annotation(container_id, expected_output):
