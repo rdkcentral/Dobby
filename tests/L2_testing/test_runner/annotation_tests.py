@@ -57,7 +57,7 @@ def test_container(container_id, expected_output):
     test_utils.print_log("Running %s container test" % container_id, test_utils.Severity.debug)
 
     with test_utils.untar_bundle(container_id) as bundle_path:
-        command = ["DobbyTool","-v",
+        command = ["DobbyTool","--verbosity=2",
                 "start",
                 container_id,
                 bundle_path]
