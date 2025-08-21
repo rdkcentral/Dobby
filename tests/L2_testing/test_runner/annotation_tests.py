@@ -16,6 +16,7 @@
 # limitations under the License.
 
 import test_utils
+import os
 
 tests = [
     test_utils.Test("annotations",
@@ -74,8 +75,9 @@ def test_container(container_id, expected_output):
                     print("process.args:", config.get("process", {}).get("args"))
             except Exception as e:
                 print(f"Could not read config.json: {e}")
-                    
+        os.system("sudo DobbyDaemon --debug > dobbydaemon_debug.log 2>&1 &")
         status = test_utils.run_command_line(command)
+        os.system("sudo DobbyDaemon --debug > dobbydaemon_debug.log 2>&1 &")
         if "started '" + container_id + "' container" not in status.stdout:
             debug_msg = (
                 f"Container did not launch successfully\n"
@@ -85,7 +87,7 @@ def test_container(container_id, expected_output):
                 f"DobbyDaemon logs:\n{test_utils.get_dobby_logs()}\n"
             )
             return False, debug_msg
-    
+        
         return validate_annotation(container_id, expected_output)
 
 
