@@ -98,7 +98,7 @@ def test_container(container_id, expected_output):
             except Exception as e:
                 print(f"❌ Could not run ldd: {e}")
         
-            # Dump config.json for debugging
+           # Dump and patch config.json
             config_path = os.path.join(bundle_path, "config.json")
             try:
                 with open(config_path) as f:
@@ -106,28 +106,26 @@ def test_container(container_id, expected_output):
                     print("config.json:\n", config_content)
                     config = json.loads(config_content)
                     print("process.args:", config.get("process", {}).get("args"))
-                            # Patch config.json arch to match host (important for ubuntu-latest)
-            try:
-                import platform
-                host_arch = platform.machine()
-                if host_arch == "x86_64":
-                    fixed_arch = "amd64"   # OCI spec expects amd64 not x86_64
-                else:
-                    fixed_arch = host_arch
-
-                if "platform" in config:
-                    old_arch = config["platform"].get("arch")
-                    config["platform"]["arch"] = fixed_arch
-                    with open(config_path, "w") as f:
-                        json.dump(config, f, indent=2)
-                    print(f"✅ Patched config.json arch: {old_arch} -> {fixed_arch}")
-                else:
-                    print("⚠️ No 'platform' field found in config.json")
             except Exception as e:
-                print(f"❌ Failed to patch config.json: {e}")
+                print(f"❌ Could not read config.json: {e}")
+            else:
+                # Patch config.json arch to match host (important for ubuntu-latest)
+                try:
+                    import platform
+                    host_arch = platform.machine()
+                    fixed_arch = "amd64" if host_arch == "x86_64" else host_arch
+            
+                    if "platform" in config:
+                        old_arch = config["platform"].get("arch")
+                        config["platform"]["arch"] = fixed_arch
+                        with open(config_path, "w") as f:
+                            json.dump(config, f, indent=2)
+                        print(f"✅ Patched config.json arch: {old_arch} -> {fixed_arch}")
+                    else:
+                        print("⚠️ No 'platform' field found in config.json")
+                except Exception as e:
+                    print(f"❌ Failed to patch config.json: {e}")
 
-            except Exception as e:
-                print(f"Could not read config.json: {e}")
 
         status = test_utils.run_command_line(command)
         if "started '" + container_id + "' container" not in status.stdout:
