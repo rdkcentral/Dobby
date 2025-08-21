@@ -57,10 +57,10 @@ def test_container(container_id, expected_output):
     test_utils.print_log("Running %s container test" % container_id, test_utils.Severity.debug)
 
     with test_utils.untar_bundle(container_id) as bundle_path:
-        command = ["DobbyTool",
+        command = ["DobbyTool","-v",
                 "start",
                 container_id,
-                bundle_path,"-v"]
+                bundle_path]
         
         if container_id == "sleepy":
             # List files in the bundle
