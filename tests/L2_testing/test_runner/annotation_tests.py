@@ -60,7 +60,7 @@ def test_container(container_id, expected_output):
         command = ["DobbyTool",
                 "start",
                 container_id,
-                bundle_path]
+                bundle_path,"-v"]
         
         if container_id == "sleepy":
             # List files in the bundle
