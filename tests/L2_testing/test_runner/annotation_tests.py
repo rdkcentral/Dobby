@@ -61,6 +61,13 @@ def test_container(container_id, expected_output):
 
         status = test_utils.run_command_line(command)
         if "started '" + container_id + "' container" not in status.stdout:
+            debug_msg = (
+                f"Container did not launch successfully\n"
+                f"Return code: {status.returncode}\n"
+                f"STDOUT:\n{status.stdout}\n"
+                f"STDERR:\n{status.stderr}\n"
+                f"DobbyDaemon logs:\n{test_utils.get_dobby_logs()}\n"
+            )
             return False, "Container did not launch successfully"
 
         return validate_annotation(container_id, expected_output)
