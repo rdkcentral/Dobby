@@ -334,6 +334,14 @@ def run_command_line(command):
       print_log("STDERR:\n%s" % status.stderr, Severity.debug)
     return status
 
+def get_dobby_logs():
+    try:
+        return subprocess.check_output(
+            ["journalctl", "-u", "DobbyDaemon", "-n", "50", "--no-pager"],
+            text=True
+        )
+    except Exception as e:
+        return f"Failed to get DobbyDaemon logs: {e}"
 
 def launch_container(container_id, spec_path):
     """Starts container using DobbyTool
@@ -355,6 +363,17 @@ def launch_container(container_id, spec_path):
     print("STDOUT:", process.stdout)
     print("STDERR:", process.stderr)
     print("RETURN CODE:", process.returncode)
+
+    if f"started '{container_id}' container" not in process.stdout:
+    debug_msg = (
+        f"Container did not launch successfully\n"
+        f"Return code: {process.returncode}\n"
+        f"STDOUT:\n{process.stdout}\n"
+        f"STDERR:\n{process.stderr}\n"
+        f"DobbyDaemon logs:\n{get_dobby_logs()}\n"
+    )
+    return False, debug_msg
+
 
     # Check DobbyTool has started the container
     if "started" in output:
