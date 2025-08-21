@@ -72,8 +72,8 @@ def test_container(container_id, expected_output):
                     # optionally parse JSON
                     config = json.load(open(config_path))
                     print("process.args:", config.get("process", {}).get("args"))
-                except Exception as e:
-                    print(f"Could not read config.json: {e}")
+            except Exception as e:
+                print(f"Could not read config.json: {e}")
                     
         status = test_utils.run_command_line(command)
         if "started '" + container_id + "' container" not in status.stdout:
