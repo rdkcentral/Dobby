@@ -372,7 +372,7 @@ def launch_container(container_id, spec_path):
             f"STDERR:\n{process.stderr}\n"
             f"DobbyDaemon logs:\n{get_dobby_logs()}\n"
         )
-    return False, debug_msg
+        return False, debug_msg
 
 
     # Check DobbyTool has started the container
