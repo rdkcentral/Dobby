@@ -64,57 +64,53 @@ def test_container(container_id, expected_output):
                 bundle_path]
         
         if container_id == "sleepy":
-            # List files in the bundle
-            print("Bundle contents:", os.listdir(bundle_path))
-            print("Rootfs contents:", os.listdir(os.path.join(bundle_path, "rootfs")))
-
-            binary = "/bin/sleep"
-            output = subprocess.check_output(["ldd", binary], text=True)
-            
-            for line in output.splitlines():
-                parts = line.strip().split("=>")
-                if len(parts) == 2:
-                    lib_path = parts[1].split("(")[0].strip()
-                else:
-                    lib_path = parts[0].strip()
-            
-                if lib_path and lib_path.startswith("/"):
-                    print("Dependency:", lib_path)
-
-            sleep_path = os.path.join(bundle_path, "rootfs", "bin", "sleep")
-
-            if os.path.exists(sleep_path):
-                print(f"✅ Found sleep at {sleep_path}")
-            else:
-                print(f"❌ sleep binary missing at {sleep_path}")
-                sleep_in_rootfs = os.path.join(bundle_path, "rootfs", "bin", "sleep")
+            rootfs = os.path.join(bundle_path, "rootfs")
+            bin_dir = os.path.join(rootfs, "bin")
+            os.makedirs(bin_dir, exist_ok=True)
+        
+            # Ensure /bin/sleep exists inside rootfs
+            sleep_in_rootfs = os.path.join(bin_dir, "sleep")
+            if not os.path.exists(sleep_in_rootfs):
                 try:
-                    os.makedirs(os.path.dirname(sleep_in_rootfs), exist_ok=True)
                     shutil.copy2("/bin/sleep", sleep_in_rootfs)
-                    # Ensure lib dirs exist
-                    os.makedirs(os.path.join(rootfs, "lib/x86_64-linux-gnu"), exist_ok=True)
-                    os.makedirs(os.path.join(rootfs, "lib64"), exist_ok=True)
-                    
-                    # Copy dependencies
-                    shutil.copy("/lib/x86_64-linux-gnu/libc.so.6",
-                                os.path.join(rootfs, "lib/x86_64-linux-gnu/libc.so.6"))
-                    
-                    shutil.copy("/lib64/ld-linux-x86-64.so.2",
-                                os.path.join(rootfs, "lib64/ld-linux-x86-64.so.2"))
-                    print("✅ sleep copied successfully.")
+                    os.chmod(sleep_in_rootfs, 0o755)
+                    print(f"✅ Copied /bin/sleep -> {sleep_in_rootfs}")
                 except Exception as e:
                     print(f"❌ Failed to copy sleep: {e}")
-    
-            # Dump config.json
+        
+            # Copy library dependencies from ldd
+            try:
+                output = subprocess.check_output(["ldd", "/bin/sleep"], text=True)
+                for line in output.splitlines():
+                    parts = line.strip().split("=>")
+                    if len(parts) == 2:
+                        lib_path = parts[1].split("(")[0].strip()
+                    else:
+                        lib_path = parts[0].strip()
+        
+                    if lib_path and lib_path.startswith("/"):
+                        print(f"Dependency: {lib_path}")
+                        dst_path = os.path.join(rootfs, lib_path.lstrip("/"))
+                        os.makedirs(os.path.dirname(dst_path), exist_ok=True)
+                        try:
+                            shutil.copy2(lib_path, dst_path)
+                            print(f"   ✅ Copied {lib_path} -> {dst_path}")
+                        except Exception as e:
+                            print(f"   ❌ Failed to copy {lib_path}: {e}")
+            except Exception as e:
+                print(f"❌ Could not run ldd: {e}")
+        
+            # Dump config.json for debugging
             config_path = os.path.join(bundle_path, "config.json")
             try:
                 with open(config_path) as f:
-                    print("config.json:\n", f.read())
-                    # optionally parse JSON
-                    config = json.load(open(config_path))
+                    config_content = f.read()
+                    print("config.json:\n", config_content)
+                    config = json.loads(config_content)
                     print("process.args:", config.get("process", {}).get("args"))
             except Exception as e:
                 print(f"Could not read config.json: {e}")
+
         status = test_utils.run_command_line(command)
         if "started '" + container_id + "' container" not in status.stdout:
             debug_msg = (
