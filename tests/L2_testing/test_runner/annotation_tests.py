@@ -17,6 +17,7 @@
 
 import test_utils
 import os
+import json
 
 tests = [
     test_utils.Test("annotations",
