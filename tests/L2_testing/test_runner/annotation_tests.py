@@ -19,6 +19,7 @@ import test_utils
 import os
 import json
 import shutil
+import subprocess
 
 tests = [
     test_utils.Test("annotations",
