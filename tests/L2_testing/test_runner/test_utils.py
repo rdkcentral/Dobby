@@ -358,7 +358,7 @@ def launch_container(container_id, spec_path):
     print_log("Launching container %s with spec %s" % (container_id, spec_path), Severity.debug)
 
     # Use DobbyTool to launch container
-    process = run_command_line(["DobbyTool", "start", container_id,spec_path])
+    process = run_command_line(["DobbyTool","-v", "start", container_id,spec_path])
     output = process.stdout
     print("STDOUT:", process.stdout)
     print("STDERR:", process.stderr)
