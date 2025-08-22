@@ -43,7 +43,21 @@ def execute_test():
 
     return test_utils.count_print_results(output_table)
 
-
+def set_dobby_log_level(level="debug"):
+    """
+    Set Dobby daemon log level globally.
+    
+    Parameters:
+    level (str): log level, e.g., "debug", "info", "warning", "error"
+    """
+    command = ["DobbyTool", "set-log-level", level]
+    try:
+        output = subprocess.check_output(command, stderr=subprocess.STDOUT, text=True)
+        print(f"✅ Dobby log level set to {level}")
+        print("Output:\n", output)
+    except subprocess.CalledProcessError as e:
+        print(f"❌ Failed to set Dobby log level: {e.output}")
+        
 def test_container(container_id, expected_output):
     """Runs container and check if output contains expected output
 
@@ -62,7 +76,7 @@ def test_container(container_id, expected_output):
                 "start",
                 container_id,
                 bundle_path]
-        
+        set_dobby_log_level()
         if container_id == "sleepy":
             rootfs = os.path.join(bundle_path, "rootfs")
             bin_dir = os.path.join(rootfs, "bin")
