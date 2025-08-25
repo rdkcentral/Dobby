@@ -172,7 +172,7 @@ void DobbyBundleConfig::setUidGidMappings(uid_t userId, gid_t groupId)
     std::shared_ptr<rt_dobby_schema> cfg = config();
     if (cfg == nullptr)
     {
-        AI_LOG_ERROR("Invalid bundle config");
+        AI_LOG_ERROR("Invalid bundle config.");
         return;
     }
 
