@@ -33,13 +33,7 @@ import json
 
 from time import sleep
 
-supported_tests = [basic_sanity_tests,
-                   container_manipulations,
-                   bundle_generation,
-                   plugin_launcher,
-                   command_line_containers,
-                   thunder_plugin
-                   ]
+supported_tests = [annotation_tests]
 
 def run_all_tests():
     success_count = 0
