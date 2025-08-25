@@ -74,7 +74,7 @@ class dobby_daemon:
         print_log("Starting Dobby Daemon (logging to Journal)...", Severity.debug)
 
         if log_to_stdout:
-            cmd = ["sudo", "DobbyDaemon", "--nofork"]
+            cmd = ["sudo", "DobbyDaemon", "--nofork", "--debug"]
             kvargs = {"universal_newlines": True}
         else:
             cmd = ["sudo", "DobbyDaemon", "--nofork", "--journald", "--noconsole"]
