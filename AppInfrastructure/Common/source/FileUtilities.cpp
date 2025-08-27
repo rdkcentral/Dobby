@@ -208,9 +208,13 @@ static int delete_all(const char *fpath, const struct stat *, int tflag, struct 
 {
     switch (tflag)
     {
-    case FTW_DP:    // empty directory - we can delete it
-        rmdir(fpath);
-        break;
+    case FTW_DP:
+	if (rmdir(fpath) != 0)  //Return value checked
+	{
+		perror("rmdir failed");  //Error message printed
+		return 1;                //Error propagated
+	}
+	break;
 
     case FTW_F:     // file
     case FTW_SL:    // un-followed sym-link
@@ -341,7 +345,7 @@ bool AICommon::deleteFile(const std::string & filePath)
 }
 
 // TODO:Possibly(?) allow file perms to be passed in
-int AICommon::copyFile(const std::string & to, const std::string & from)
+int AICommon::copyFile(const std::string &to, const std::string &from)
 {
     int fdTo = -1, fdFrom = -1;
     char buf[4096];
@@ -360,25 +364,30 @@ int AICommon::copyFile(const std::string & to, const std::string & from)
         goto out_error;
     }
 
-    while (nread = TEMP_FAILURE_RETRY(read(fdFrom, buf, sizeof buf)), nread > 0)
+    while ((nread = TEMP_FAILURE_RETRY(read(fdFrom, buf, sizeof(buf)))) > 0)
     {
         char *out_ptr = buf;
-        ssize_t nwritten;
+        size_t remaining = static_cast<size_t>(nread);
 
-        do
+        while (remaining > 0)
         {
-            nwritten = TEMP_FAILURE_RETRY(write(fdTo, out_ptr, nread));
-
+            ssize_t nwritten = TEMP_FAILURE_RETRY(write(fdTo, out_ptr, remaining));
             if (nwritten >= 0)
             {
-                nread -= nwritten;
+                if (static_cast<size_t>(nwritten) > remaining)
+                {
+                    // Should never happen, but guard against overflow
+                    goto out_error;
+                }
+
+                remaining -= static_cast<size_t>(nwritten);
                 out_ptr += nwritten;
             }
             else if (errno != EINTR)
             {
                 goto out_error;
             }
-        } while (nread > 0);
+        }
     }
 
     if (nread == 0)
@@ -389,19 +398,15 @@ int AICommon::copyFile(const std::string & to, const std::string & from)
             goto out_error;
         }
         close(fdFrom);
-
         return 0;
     }
 
 out_error:
     saved_errno = errno;
-
-    close(fdFrom);
+    if (fdFrom >= 0)
+        close(fdFrom);
     if (fdTo >= 0)
-    {
         close(fdTo);
-    }
-
     errno = saved_errno;
     return -1;
 }
@@ -573,7 +578,7 @@ std::vector<uint8_t> AICommon::fileContents(int dirFd, const std::string& filepa
         AI_LOG_SYS_ERROR(errno, "failed to close '%s' file", filepath.c_str());
     }
 
-    return contents;
+    return std::move(contents);
 }
 
 bool AICommon::compareFilesExactly(const std::string & filePathApples, const std::string & filePathOranges)
@@ -630,14 +635,15 @@ bool AICommon::createTextFileAt(int dirFd, const std::string& filePath, const st
         return false;
     }
 
-    size_t amountWritten = 0;
-    while (contents.size() > amountWritten)
+    const char* dataPtr = contents.data();
+    size_t remaining = contents.size();
+
+    while (remaining > 0)
     {
-        ssize_t ret = TEMP_FAILURE_RETRY(write(fd, contents.data() + amountWritten, contents.size() - amountWritten));
+        ssize_t ret = TEMP_FAILURE_RETRY(write(fd, dataPtr, remaining));
         if (ret < 0)
         {
-            AI_LOG_SYS_ERROR(errno, "failed to write %zu bytes to '%s' file",
-                             (contents.size() - amountWritten), filePath.c_str());
+            AI_LOG_SYS_ERROR(errno, "failed to write %zu bytes to '%s' file", remaining, filePath.c_str());
             break;
         }
         else if (ret == 0)
@@ -647,12 +653,18 @@ bool AICommon::createTextFileAt(int dirFd, const std::string& filePath, const st
         }
         else
         {
-            amountWritten += ret;
+            if (static_cast<size_t>(ret) > remaining)
+            {
+                AI_LOG_SYS_ERROR(errno, "write returned more bytes than expected");
+                break;
+            }
+
+            remaining -= static_cast<size_t>(ret);
+            dataPtr += ret;
         }
     }
 
-    // because of the restrictive umask set in fusion; setting the mode in the above open
-    // call is not enough, so do an explicit chmod here to enforce the perms
+    // Explicit chmod to enforce permissions due to restrictive umask
     if (fchmod(fd, mode) < 0)
     {
         AI_LOG_SYS_WARN(errno, "failed to set mode on file to 0%03o", mode);
@@ -663,7 +675,7 @@ bool AICommon::createTextFileAt(int dirFd, const std::string& filePath, const st
         AI_LOG_SYS_WARN(errno, "failed to close file '%s'", filePath.c_str());
     }
 
-    return (amountWritten == contents.size());
+    return (remaining == 0);
 }
 
 bool AICommon::createTextFile(const std::string& filePath, const std::string& contents, mode_t mode /*= S_IRWXU*/)
@@ -811,7 +823,7 @@ std::string AICommon::fileMD5(const std::string & filePath)
         AI_LOG_SYS_ERROR(errno, "Failed to close file");
     }
 
-    return sum;
+    return std::move(sum);
 }
 
 #if defined(ANDROID)

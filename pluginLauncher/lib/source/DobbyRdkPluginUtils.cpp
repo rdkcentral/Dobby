@@ -392,8 +392,8 @@ bool DobbyRdkPluginUtils::callInNamespaceImpl(pid_t pid, int nsType,
  *
  *  @return true on success, false on failure.
  */
-bool DobbyRdkPluginUtils::writeTextFile(const std::string &path,
-                                        const std::string &str,
+bool DobbyRdkPluginUtils::writeTextFile(const std::string& path,
+                                        const std::string& str,
                                         int flags,
                                         mode_t mode) const
 {
@@ -407,12 +407,12 @@ bool DobbyRdkPluginUtils::writeTextFile(const std::string &path,
         return false;
     }
 
-    const char* size = str.c_str();
-    ssize_t remaining = static_cast<ssize_t>(str.length());
+    const char* dataPtr = str.data();
+    size_t remaining = str.size();
 
     while (remaining > 0)
     {
-        ssize_t written = TEMP_FAILURE_RETRY(write(fd, size, remaining));
+        ssize_t written = TEMP_FAILURE_RETRY(write(fd, dataPtr, remaining));
         if (written < 0)
         {
             AI_LOG_SYS_ERROR(errno, "failed to write to file");
@@ -420,11 +420,19 @@ bool DobbyRdkPluginUtils::writeTextFile(const std::string &path,
         }
         else if (written == 0)
         {
+            AI_LOG_ERROR("didn't write any data, odd");
             break;
         }
+        else
+        {
+            if (static_cast<size_t>(written) > remaining)
+            {
+                               break;
+            }
 
-        size += written;
-        remaining -= written;
+            remaining -= static_cast<size_t>(written);
+            dataPtr += written;
+        }
     }
 
     if (close(fd) != 0)
@@ -695,7 +703,7 @@ std::list<int> DobbyRdkPluginUtils::files() const
     const auto fileList = mStartState->files();
 
     AI_LOG_FN_EXIT();
-    return fileList;
+    return std::move(fileList);
 }
 
 // -------------------------------------------------------------------------
@@ -721,7 +729,7 @@ std::list<int> DobbyRdkPluginUtils::files(const std::string& pluginName) const
     const auto fileList = mStartState->files(pluginName);
 
     AI_LOG_FN_EXIT();
-    return fileList;
+    return std::move(fileList);
 }
 
 

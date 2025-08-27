@@ -406,14 +406,18 @@ bool removeSmcrouteRules(const std::string& containerId)
 {
     // Open the config file for reading
     std::ifstream configFile(SMCROUTE_CONFIG, std::ios::in);
+    if (!configFile.is_open())
+    {
+        AI_LOG_ERROR("Failed to open smcroute config file: %s", SMCROUTE_CONFIG);
+        return false;
+    }
 
     // Read the config file into memory
     std::vector<std::string> rules;
     std::string line;
-
-    // Loop through the file, removing the section between (and inc) the START/END
-    // comments for this container
     bool skipLine = false;
+
+    // Loop through the file, removing the section between (and inc) the START/END comments for this container
     while (std::getline(configFile, line))
     {
         if (!skipLine)
@@ -438,12 +442,25 @@ bool removeSmcrouteRules(const std::string& containerId)
             }
         }
     }
+
     configFile.close();
 
     // Re-write the updated config
-    std::remove(SMCROUTE_CONFIG);
+    if (std::remove(SMCROUTE_CONFIG) != 0)
+    {
+        perror("Failed to remove existing smcroute config");
+        AI_LOG_ERROR("Could not remove smcroute config: %s (%d - %s)", SMCROUTE_CONFIG, errno, strerror(errno));
+        return false;
+    }
+
     std::ofstream updatedConfigFile(SMCROUTE_CONFIG, std::ios::out);
-    for (const auto &rule : rules)
+    if (!updatedConfigFile.is_open())
+    {
+        AI_LOG_ERROR("Failed to open smcroute config for writing: %s", SMCROUTE_CONFIG);
+        return false;
+    }
+
+    for (const auto& rule : rules)
     {
         updatedConfigFile << rule << "\n";
     }

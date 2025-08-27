@@ -178,42 +178,49 @@ std::shared_ptr<const rt_state_schema> getContainerState()
     char buf[4096];
     bzero(buf, sizeof(buf));
 
-    if (read(STDIN_FILENO, buf, sizeof(buf)-1) < 0)
+    ssize_t bytesRead = read(STDIN_FILENO, buf, sizeof(buf) - 1);
+    if (bytesRead < 0)
     {
         AI_LOG_SYS_ERROR(errno, "failed to read stdin");
         return nullptr;
     }
+    else if (bytesRead == 0)
+    {
+        AI_LOG_WARN("No data read from stdin");
+        return nullptr;
+    }
 
-    // Occasionally, there's some extra special characters after the json.
-    // We need to clear them out of the string.
+    buf[bytesRead] = '\0'; // Ensure null-termination
+
     std::string hookStdin(buf);
-    if (hookStdin[hookStdin.length()-1] != '}')
+    if (!hookStdin.empty() && hookStdin[hookStdin.length() - 1] != '}')
     {
         size_t pos = hookStdin.rfind('}');
         if (pos != std::string::npos)
         {
-            // clear any characters after the last '}'
-            hookStdin.erase(pos+1);
+            hookStdin.erase(pos + 1);
         }
     }
 
     parser_error err = nullptr;
     auto state = std::shared_ptr<const rt_state_schema>(
-                    rt_state_schema_parse_data(hookStdin.c_str(), nullptr, &err),
-                    free_rt_state_schema);
+        rt_state_schema_parse_data(hookStdin.c_str(), nullptr, &err),
+        free_rt_state_schema);
 
     if (state.get() == nullptr || err)
     {
-        if (hookStdin.length() == sizeof(buf)-1)
+        if (hookStdin.length() == sizeof(buf) - 1)
         {
             AI_LOG_ERROR("Most probably the read buffer is too small and causes the parse error below!");
         }
+
         if (err)
         {
             free(err);
             err = nullptr;
         }
-        AI_LOG_ERROR_EXIT("Failed to parse container state, err '%s'", err);
+
+        AI_LOG_ERROR_EXIT("Failed to parse container state");
         return nullptr;
     }
 
@@ -237,7 +244,7 @@ bool runPlugins(const IDobbyRdkPlugin::HintFlags &hookPoint, std::shared_ptr<rt_
     std::shared_ptr<DobbyRdkPluginUtils> rdkPluginUtils;
     rdkPluginUtils = std::make_shared<DobbyRdkPluginUtils>(containerConfig, state, state->id);
 
-    DobbyRdkPluginManager pluginManager(containerConfig, rootfsPath, PLUGIN_PATH, rdkPluginUtils);
+    DobbyRdkPluginManager pluginManager(std::move(containerConfig), rootfsPath, PLUGIN_PATH, rdkPluginUtils);
 
     std::vector<std::string> loadedPlugins = pluginManager.listLoadedPlugins();
     std::vector<std::string> loadedLoggers = pluginManager.listLoadedLoggers();
@@ -279,7 +286,7 @@ std::string getRootfsPath(std::string configPath, std::shared_ptr<rt_dobby_schem
     // check if root path is absolute
     if (rootfsPath.front() == '/')
     {
-        return rootfsPath;
+        return std::move(rootfsPath);
     }
 
     configPath.replace(configPath.find(configName), configName.length(), rootfsPath);
@@ -485,7 +492,7 @@ int main(int argc, char *argv[])
     AI_LOG_MILESTONE("Running hook %s for container '%s'", gHookName.c_str(), gContainerId.c_str());
 
     // Get the path of the container rootfs to give to plugins
-    const std::string rootfsPath = getRootfsPath(fullConfigPath, containerConfig);
+    const std::string rootfsPath = getRootfsPath(std::move(fullConfigPath), containerConfig);
 
     const int rdkPluginCount = containerConfig->rdk_plugins->plugins_count;
 
@@ -506,7 +513,7 @@ int main(int argc, char *argv[])
 #endif // DEBUG
 
     // Everything looks good, try to run the plugins
-    bool success = runPlugins(hookPoint, containerConfig, rootfsPath, state);
+    bool success = runPlugins(hookPoint, std::move(containerConfig), rootfsPath, std::move(state));
 
     if (success)
     {

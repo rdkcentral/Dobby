@@ -180,11 +180,7 @@ int DobbyLogger::createUnixSocket(const std::string path)
  */
 int DobbyLogger::receiveFdFromSocket(const int connectionFd)
 {
-    // We don't use the data buffer for this, but we need one (even if it's empty)
     char dataBuffer[1];
-
-    // Linux uses this ancillary data mechanism to pass file descriptors over
-    // UNIX domain sockets, so this is what we're interested in
     char ancillaryDataBuffer[CMSG_SPACE(sizeof(int))] = {};
 
     struct iovec iov[1];
@@ -199,18 +195,13 @@ int DobbyLogger::receiveFdFromSocket(const int connectionFd)
     msg.msg_control = ancillaryDataBuffer;
     msg.msg_controllen = CMSG_SPACE(sizeof(int));
 
-    ssize_t messageSize = 0;
-
-    // Block waiting to receive a message over the open connection
-    messageSize = TEMP_FAILURE_RETRY(recvmsg(connectionFd, &msg, 0));
-
+    ssize_t messageSize = TEMP_FAILURE_RETRY(recvmsg(connectionFd, &msg, 0));
     if (messageSize < 0)
     {
         AI_LOG_SYS_WARN(errno, "Something went wrong receiving the message from the socket");
         return -1;
     }
 
-    // Extract the data from the ancillary data
     struct cmsghdr *cmsg = CMSG_FIRSTHDR(&msg);
     if (cmsg == nullptr)
     {
@@ -218,20 +209,27 @@ int DobbyLogger::receiveFdFromSocket(const int connectionFd)
         return -1;
     }
 
-    // We expect a specific message type and level
     if (cmsg->cmsg_type != SCM_RIGHTS || cmsg->cmsg_level != SOL_SOCKET)
     {
         AI_LOG_WARN("Received unexpected message");
         return -1;
     }
 
-    // Get the fd sent by crun
     int stdioFd;
     memcpy(&stdioFd, CMSG_DATA(cmsg), sizeof(stdioFd));
 
-    // Put the fd into non-blocking mode
     int flags = fcntl(stdioFd, F_GETFL, 0);
-    fcntl(stdioFd, F_SETFL, flags | O_NONBLOCK);
+    if (flags == -1)
+    {
+        AI_LOG_SYS_WARN(errno, "Failed to get file descriptor flags");
+        return -1;
+    }
+
+    if (fcntl(stdioFd, F_SETFL, flags | O_NONBLOCK) == -1)
+    {
+        AI_LOG_SYS_WARN(errno, "Failed to set file descriptor to non-blocking");
+        return -1;
+    }
 
     return stdioFd;
 }
