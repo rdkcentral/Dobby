@@ -211,8 +211,8 @@ static int delete_all(const char *fpath, const struct stat *, int tflag, struct 
     case FTW_DP:
 	if (rmdir(fpath) != 0)  
 	{
-		perror("rmdir failed");  //Error message printed
-		return 1;                //Error propagated
+		perror("rmdir failed");  
+		return 1;                
 	}
 	break;
 
@@ -376,7 +376,6 @@ int AICommon::copyFile(const std::string &to, const std::string &from)
             {
                 if (static_cast<size_t>(nwritten) > remaining)
                 {
-                    // Should never happen, but guard against overflow
                     goto out_error;
                 }
 
