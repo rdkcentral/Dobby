@@ -218,7 +218,7 @@ int DobbyLogger::receiveFdFromSocket(const int connectionFd)
         return -1;
     }
 
-     // We expect a specific message type and level
+    // We expect a specific message type and level
     if (cmsg->cmsg_type != SCM_RIGHTS || cmsg->cmsg_level != SOL_SOCKET)
     {
         AI_LOG_WARN("Received unexpected message");
