@@ -209,7 +209,7 @@ static int delete_all(const char *fpath, const struct stat *, int tflag, struct 
     switch (tflag)
     {
     case FTW_DP:
-	if (rmdir(fpath) != 0)  //Return value checked
+	if (rmdir(fpath) != 0)  
 	{
 		perror("rmdir failed");  //Error message printed
 		return 1;                //Error propagated
