@@ -664,7 +664,7 @@ bool AICommon::createTextFileAt(int dirFd, const std::string& filePath, const st
         }
     }
 
-     // because of the restrictive umask set in fusion; setting the mode in the above open
+    // because of the restrictive umask set in fusion; setting the mode in the above open
     // call is not enough, so do an explicit chmod here to enforce the perms
     if (fchmod(fd, mode) < 0)
     {
