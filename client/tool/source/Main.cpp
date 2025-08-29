@@ -625,7 +625,7 @@ static void mountCommand(const std::shared_ptr<IDobbyProxy>& dobbyProxy,
     while ((pos = flags.find(",")) != std::string::npos)
     {
         std::string flag = flags.substr(0, pos);
-        mountFlags.push_back(std::move(flags));
+        mountFlags.push_back(std::move(flag));
         flags.erase(0, pos + 1);
     }
     mountFlags.push_back(std::move(flags));
