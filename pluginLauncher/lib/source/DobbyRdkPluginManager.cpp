@@ -726,7 +726,7 @@ bool DobbyRdkPluginManager::executeHookTimeout(const std::string& pluginName,
         struct timespec timeout_val, remaining;
         timeout_val.tv_nsec = (long)(timeoutMs % 1000) * 1000000;
         timeout_val.tv_sec = timeoutMs / 1000;
-
+        // In case signal comes during wait
         while (nanosleep(&timeout_val, &remaining) && errno == EINTR)
         {
             timeout_val = remaining;
@@ -735,7 +735,7 @@ bool DobbyRdkPluginManager::executeHookTimeout(const std::string& pluginName,
         _exit(0);
     }
     
-  // Wait for either worker or timeout to finish
+    // Wait for either worker or timeout to finish
     do
     {
         exitedPid = TEMP_FAILURE_RETRY(wait(&status));
