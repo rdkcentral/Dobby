@@ -1590,7 +1590,7 @@ void Dobby::addAnnotation(std::shared_ptr<AI_IPC::IAsyncReplySender> replySender
     {
 
         auto doAnnotateLambda =
-            [manager = mManager, descriptor, key = std::move(Key), value = std::move(value), replySender]()
+            [manager = mManager, descriptor, key = std::move(key), value = std::move(value), replySender]()
             {
                 //add the key value pair to the annotations
                 bool result = manager->annotate(descriptor, key, value);
