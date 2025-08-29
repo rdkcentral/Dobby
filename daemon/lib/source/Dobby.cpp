@@ -1645,7 +1645,7 @@ void Dobby::removeAnnotation(std::shared_ptr<AI_IPC::IAsyncReplySender> replySen
     {
 
         auto doremoveAnnotationLambda =
-            [manager = mManager, descriptor, key = std::move(Key), replySender]()
+            [manager = mManager, descriptor, key = std::move(key), replySender]()
             {
                 //remove the key from the annotations
                 bool result = manager->removeAnnotation(descriptor, key);
@@ -1705,8 +1705,8 @@ void Dobby::exec(std::shared_ptr<AI_IPC::IAsyncReplySender> replySender)
         auto doExecLambda =
             [manager = mManager,
              descriptor,
-	     options = std::move(Options),
-	     command = std::move(Command),
+	     options = std::move(options),
+	     command = std::move(command),
 
              replySender]()
             {
