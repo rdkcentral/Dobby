@@ -227,8 +227,6 @@ std::vector<char> DobbyBufferStream::getBuffer() const
         AI_LOG_SYS_ERROR(errno, "failed to get memfd size");
         return {};
     }
-
-
     
     if (lseek(mMemFd, 0, SEEK_SET) < 0)
     {
