@@ -415,9 +415,11 @@ bool removeSmcrouteRules(const std::string& containerId)
     // Read the config file into memory
     std::vector<std::string> rules;
     std::string line;
+
+	// Loop through the file, removing the section between (and inc) the START/END
+    // comments for this container
     bool skipLine = false;
 
-    // Loop through the file, removing the section between (and inc) the START/END comments for this container
     while (std::getline(configFile, line))
     {
         if (!skipLine)
