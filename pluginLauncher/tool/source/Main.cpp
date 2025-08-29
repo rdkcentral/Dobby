@@ -189,15 +189,17 @@ std::shared_ptr<const rt_state_schema> getContainerState()
         AI_LOG_WARN("No data read from stdin");
         return nullptr;
     }
-
-    buf[bytesRead] = '\0'; // Ensure null-termination
-
+    buf[bytesRead] = '\0'; 
+    
+    // Occasionally, there's some extra special characters after the json.
+    // We need to clear them out of the string.
     std::string hookStdin(buf);
     if (!hookStdin.empty() && hookStdin[hookStdin.length() - 1] != '}')
     {
         size_t pos = hookStdin.rfind('}');
         if (pos != std::string::npos)
         {
+            // clear any characters after the last '}'
             hookStdin.erase(pos + 1);
         }
     }
