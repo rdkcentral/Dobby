@@ -1361,12 +1361,11 @@ void Dobby::hibernate(std::shared_ptr<AI_IPC::IAsyncReplySender> replySender)
     else
     {
         AI_LOG_INFO(DOBBY_CTRL_METHOD_EXEC "(%d)", descriptor);
-	auto movedoptions =  std::move(options);
 
         auto doHibernateLambda =
             [manager = mManager,
              descriptor,
-             options = std::move(movedoptions),
+             options = std::move(options),
              replySender]()
             {
                 // Try and hibernate
