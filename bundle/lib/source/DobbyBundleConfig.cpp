@@ -82,7 +82,7 @@ DobbyBundleConfig::DobbyBundleConfig(const std::shared_ptr<IDobbyUtils>& utils,
             
             if (remove(postInstallPath.c_str()) != 0)  
 	    {
-		    AI_LOG_ERROR("Failed to remove postinstallhooksuccess");  //Logs error
+		    AI_LOG_ERROR("Failed to remove postinstallhooksuccess");
 	    }
 
 
