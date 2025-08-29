@@ -699,11 +699,13 @@ bool DobbyRdkPluginManager::executeHookTimeout(const std::string& pluginName,
     }
 
     // Set result as fail in case we need to kill worker
+  
     *static_cast<char*>(sharedMemory) = 0;
 
     workerPid = fork();
     if (workerPid == 0)
     {
+        // Create a new SID for the child process
         if (setsid() < 0)
             _exit(EXIT_FAILURE);
 
@@ -732,7 +734,8 @@ bool DobbyRdkPluginManager::executeHookTimeout(const std::string& pluginName,
 
         _exit(0);
     }
-
+    
+  // Wait for either worker or timeout to finish
     do
     {
         exitedPid = TEMP_FAILURE_RETRY(wait(&status));
@@ -748,36 +751,41 @@ bool DobbyRdkPluginManager::executeHookTimeout(const std::string& pluginName,
 
     if (exitedPid == timeoutPid)
     {
+        // Timeout occurred
         AI_LOG_ERROR("Timeout executing plugin %s hookpoint %s",
                      pluginName.c_str(), HookPointToString(hook).c_str());
 
-        if (kill(workerPid, 0) == -1)
+      // Check if we can kill workerPid (if it ended already
+      // then we will be unable to kill)
+      if (kill(workerPid, 0) == -1)
+      {
+        // Cannot kill process, probably already dead
+        // treat it as if it would return proper waitpid
+        AI_LOG_DEBUG("Cannot kill after timeout");
+        exitedPid = waitpid(workerPid, &status, WNOHANG);
+      }
+      else
+      {
+        // Worker is stuck, we need to kill whole group
+        // in case any child process was stuck too
+        AI_LOG_DEBUG("Can kill after timeout");
+        killpg(workerPid, SIGKILL);
+        // Collect the worker process
+        pid_t waited = waitpid(workerPid, &status, 0);
+        if (waited == -1)
         {
-            AI_LOG_DEBUG("Cannot kill after timeout");
-            exitedPid = waitpid(workerPid, &status, WNOHANG);
+          AI_LOG_SYS_WARN(errno, "Failed to wait for workerPid after killing");
         }
-        else
-        {
-            AI_LOG_DEBUG("Can kill after timeout");
-            killpg(workerPid, SIGKILL);
-
-            //Fix: Check return value of waitpid
-            pid_t waited = waitpid(workerPid, &status, 0);
-            if (waited == -1)
-            {
-                AI_LOG_SYS_WARN(errno, "Failed to wait for workerPid after killing");
-            }
-
-            // Collect child of worker if any
-            wait(nullptr);
-        }
+        // Collect child of worker if any
+        wait(nullptr);
+      }
     }
     else if (exitedPid == workerPid)
     {
         kill(timeoutPid, SIGKILL);
         wait(nullptr);
     }
-
+    // get result and free shared memory
     bool result = static_cast<bool>(*static_cast<char*>(sharedMemory));
     munmap(sharedMemory, sharedMemorySize);
     return result;
