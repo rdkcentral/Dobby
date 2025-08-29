@@ -221,7 +221,6 @@ int DobbyBufferStream::dupWriteFD(int newFd, bool closeExec) const
  */
 std::vector<char> DobbyBufferStream::getBuffer() const
 {
-    // Get the size of the memory file descriptor
     off_t size = lseek(mMemFd, 0, SEEK_END);
     if (size < 0)
     {
@@ -229,18 +228,17 @@ std::vector<char> DobbyBufferStream::getBuffer() const
         return {};
     }
 
-    // Seek back to the beginning
+
+    
     if (lseek(mMemFd, 0, SEEK_SET) < 0)
     {
         AI_LOG_SYS_ERROR(errno, "failed to seek to beginning of memfd");
         return {};
     }
 
-    // Cap the size to 1MB to avoid excessive memory usage
     constexpr off_t kMaxSize = 1 * 1024 * 1024;
     size = std::min(size, kMaxSize);
 
-    // Ensure size is non-negative and fits in size_t
     if (size < 0 || static_cast<uintmax_t>(size) > static_cast<uintmax_t>(std::numeric_limits<size_t>::max()))
     {
         AI_LOG_SYS_ERROR(errno, "invalid buffer size");
@@ -261,7 +259,6 @@ std::vector<char> DobbyBufferStream::getBuffer() const
         }
         else if (rd == 0)
         {
-            // EOF reached unexpectedly
             break;
         }
         else
@@ -276,8 +273,6 @@ std::vector<char> DobbyBufferStream::getBuffer() const
             remaining -= static_cast<size_t>(rd);
         }
     }
-
-    // Resize buffer to actual read size
     size_t actualSize = static_cast<size_t>(size) - remaining;
     buf.resize(actualSize);
 
