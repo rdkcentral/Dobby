@@ -129,7 +129,7 @@ static int Connect(const char* serverLocator, uint32_t timeoutMs)
             return -1;
         }
 
-        // Add NULL delimiter between host and port
+        // Add NULL delimer between host and port
         *port = 0;
         port++;
 
