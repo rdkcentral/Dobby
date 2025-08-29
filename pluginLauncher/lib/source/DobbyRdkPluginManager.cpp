@@ -710,6 +710,7 @@ bool DobbyRdkPluginManager::executeHookTimeout(const std::string& pluginName,
             _exit(EXIT_FAILURE);
 
         char result = static_cast<char>(executeHook(pluginName, hook));
+         // Set result in shared memory
         *static_cast<char*>(sharedMemory) = result;
         _exit(0);
     }
