@@ -2080,9 +2080,7 @@ bool DobbyManager::addMount(int32_t cd, const std::string &source, const std::st
         AI_LOG_FN_EXIT();
         return false;
     }
-    auto movedtempMountPointInsideContainer = std::move(tempMountPointInsideContainer);
-    auto movedmountPointInsideContainer = std::move(mountPointInsideContainer);
-    auto doMoveMountLambda = [containerUID, containerGID, tempMountPointInsideContainer = std::move(movedtempMountPointInsideContainer),mountPointInsideContainer = std::move(movedmountPointInsideContainer)]()
+    auto doMoveMountLambda = [containerUID, containerGID, tempMountPointInsideContainer = std::move(tempMountPointInsideContainer),mountPointInsideContainer = std::move(mountPointInsideContainer)]()
     {
         // switch to uid / gid of the host since we are still in the host user namespace
         if (syscall(SYS_setresgid, -1, containerGID, -1) != 0)
