@@ -345,7 +345,6 @@ bool SDBusIpcService::stop()
     if (!runOnEventLoopThread(std::move(nopExec)))
     {
 	    AI_LOG_ERROR("Failed to queue noop event on event loop thread");
-    // Optional: return false if this failure is critical
      }
 
 
