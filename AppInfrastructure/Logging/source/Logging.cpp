@@ -229,7 +229,7 @@ extern "C" void __ai_debug_log_sys_printf(int err, int level, const char *file,
 
 void AICommon::initLogging(diag_printer_t diagPrinter)
 {
-    __ai_diag_printer = diagPrinter;
+    __ai_diag_printer = std::move(diagPrinter);
 }
 
 void AICommon::termLogging()

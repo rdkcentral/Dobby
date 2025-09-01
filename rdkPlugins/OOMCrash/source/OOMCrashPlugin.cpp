@@ -62,14 +62,22 @@ unsigned OOMCrash::hookHints() const
  *   */
 bool OOMCrash::postInstallation()
 {
-    if (!mContainerConfig)
+    if (!mContainerConfig || !mContainerConfig->rdk_plugins || 
+        !mContainerConfig->rdk_plugins->oomcrash || 
+        !mContainerConfig->rdk_plugins->oomcrash->data)
     {
-        AI_LOG_WARN("Container config is null");
+        AI_LOG_WARN("Container config or plugin data is null");
         return false;
     }
 
     const std::string path = mContainerConfig->rdk_plugins->oomcrash->data->path;
-    if (!mUtils->mkdirRecursive(mRootfsPath + path.c_str(), 0755) && errno != EEXIST)
+    if (path.empty())
+    {
+        AI_LOG_ERROR("OOMCrash path is empty");
+        return false;
+    }
+
+    if (!mUtils->mkdirRecursive((mRootfsPath + path).c_str(), 0755) && errno != EEXIST)
     {
         AI_LOG_ERROR("failed to create directory '%s' (%d - %s)", (mRootfsPath + path).c_str(), errno, strerror(errno));
         return false;
@@ -81,11 +89,12 @@ bool OOMCrash::postInstallation()
         return false;
     }
 
-    if (!mUtils->addMount(path, path, "bind", {"bind", "ro", "nodev","nosuid", "noexec" }))
+    if (!mUtils->addMount(path, path, "bind", {"bind", "ro", "nodev", "nosuid", "noexec"}))
     {
         AI_LOG_WARN("failed to add mount %s", path.c_str());
         return false;
     }
+
     AI_LOG_INFO("OOMCrash postInstallation hook is running for container with hostname %s", mUtils->getContainerId().c_str());
     return true;
 }
@@ -95,33 +104,47 @@ bool OOMCrash::postInstallation()
  */
 bool OOMCrash::postHalt()
 {
-    if (!mContainerConfig)
+    if (!mContainerConfig || !mContainerConfig->rdk_plugins || 
+        !mContainerConfig->rdk_plugins->oomcrash || 
+        !mContainerConfig->rdk_plugins->oomcrash->data)
     {
-        AI_LOG_WARN("Container config is null");
+        AI_LOG_WARN("Container config or plugin data is null");
         return false;
     }
-    
+
     bool oomDetected = false;
     if (mUtils->exitStatus != 0)
         oomDetected = checkForOOM();
 
-    if (oomDetected == true)
+    if (oomDetected)
         createFileForOOM();
-    
+
     // Remove the crashFile if container exits normally or if no OOM detected
-    if (mUtils->exitStatus == 0 || oomDetected == false)
+    if (mUtils->exitStatus == 0 || !oomDetected)
     {
         struct stat buffer;
         std::string path = mContainerConfig->rdk_plugins->oomcrash->data->path;
-        std::string crashFile = path + "/oom_crashed_" + mUtils->getContainerId() + ".txt";
+        if (path.empty())
+        {
+            AI_LOG_ERROR("OOMCrash path is empty");
+            return false;
+        }
 
+        std::string crashFile = path + "/oom_crashed_" + mUtils->getContainerId() + ".txt";
         if (stat(crashFile.c_str(), &buffer) == 0)
         {
-            remove(crashFile.c_str());
-            AI_LOG_INFO("%s file removed", crashFile.c_str());
+            if (remove(crashFile.c_str()) != 0)
+            {
+                perror("Failed to remove crash file");
+                AI_LOG_WARN("Could not remove crash file: %s (%d - %s)", crashFile.c_str(), errno, strerror(errno));
+            }
+            else
+            {
+                AI_LOG_INFO("%s file removed", crashFile.c_str());
+            }
         }
     }
-    
+
     AI_LOG_INFO("OOMCrash postHalt hook is running for container with hostname %s", mUtils->getContainerId().c_str());
     return true;
 }
