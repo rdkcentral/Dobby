@@ -48,7 +48,7 @@ extern "C" {
  *
  * These functions will only work when called from inside a container, as they
  * require a pre-created pipe with which to send the messages across.  The
- * file descriptor number of the pipe is automatically set in an enviroment
+ * file descriptor number of the pipe is automatically set in an environment
  * variable called ETHAN_LOGGING_PIPE.
  *
  */
@@ -57,6 +57,28 @@ void ethanlog(int level, const char *filename, const char *function, int line,
 
 void vethanlog(int level, const char *filename, const char *function, int line,
                const char *format, va_list ap) __attribute__ ((format (printf, 5, 0)));
+
+/**
+ * @fn ethanlog_vprint
+ * @brief Updated version of vethanlog that returns the number of bytes written.
+ * @param level The log level to send the message at
+ * @param filename The name of the file associated with the message
+ * @param function The name of the function associated with the message
+ * @param line The line number associated with the message
+ * @param text The constant string to send
+ *
+ * This is identical to vethanlog, except that it returns the number of bytes
+ * written to the logging pipe.
+ *
+ * On success returns the number of bytes written to the logging pipe, this
+ * includes the meta data (level, filename, etc), framing bytes as well as
+ * text itself.  On failure returns -1 and sets errno to indicate the error.
+ *
+ * If the pipe is full, EAGAIN is returned, in which case the caller should
+ * retry later.
+ */
+int ethanlog_vprint(int level, const char *filename, const char *function, int line,
+                    const char *format, va_list ap) __attribute__ ((format (printf, 5, 0)));
 
 #ifdef __cplusplus
 }
