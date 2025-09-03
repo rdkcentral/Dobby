@@ -22,13 +22,13 @@ cmake_minimum_required( VERSION 3.7.0 )
 include(GNUInstallDirs)
 
 # Project setup
-project( Dobby VERSION "3.14.1" )
+project( Dobby VERSION "3.15.0" )
 
 
 # Set the major and minor version numbers of dobby (also used by plugins)
 set( DOBBY_MAJOR_VERSION 3 )
-set( DOBBY_MINOR_VERSION 14 )
-set( DOBBY_MICRO_VERSION 1 )
+set( DOBBY_MINOR_VERSION 15 )
+set( DOBBY_MICRO_VERSION 0 )
 
 set(INSTALL_CMAKE_DIR lib/cmake/Dobby)
 
