@@ -124,11 +124,14 @@ $(document).ready(function() { init_codefold(0); });
 <div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span><span class="keywordtype">void</span> vethanlog(<span class="keywordtype">int</span> level, const <span class="keywordtype">char</span> *filename, const <span class="keywordtype">char</span> *function, <span class="keywordtype">int</span> line,</div>
 <div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>               const <span class="keywordtype">char</span> *format, va_list ap) __attribute__ ((format (printf, 5, 0)));</div>
 <div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span> </div>
-<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span><span class="preprocessor">#ifdef __cplusplus</span></div>
-<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span>}</div>
-<div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span><span class="preprocessor">#endif</span></div>
-<div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span> </div>
-<div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span><span class="preprocessor">#endif </span><span class="comment">/* !defined(ETHANLOG_H) */</span><span class="preprocessor"></span></div>
+<div class="line"><a id="l00080" name="l00080"></a><span class="lineno">   80</span><span class="keywordtype">int</span> ethanlog_vprint(<span class="keywordtype">int</span> level, const <span class="keywordtype">char</span> *filename, const <span class="keywordtype">char</span> *function, <span class="keywordtype">int</span> line,</div>
+<div class="line"><a id="l00081" name="l00081"></a><span class="lineno">   81</span>                    const <span class="keywordtype">char</span> *format, va_list ap) __attribute__ ((format (printf, 5, 0)));</div>
+<div class="line"><a id="l00082" name="l00082"></a><span class="lineno">   82</span> </div>
+<div class="line"><a id="l00083" name="l00083"></a><span class="lineno">   83</span><span class="preprocessor">#ifdef __cplusplus</span></div>
+<div class="line"><a id="l00084" name="l00084"></a><span class="lineno">   84</span>}</div>
+<div class="line"><a id="l00085" name="l00085"></a><span class="lineno">   85</span><span class="preprocessor">#endif</span></div>
+<div class="line"><a id="l00086" name="l00086"></a><span class="lineno">   86</span> </div>
+<div class="line"><a id="l00087" name="l00087"></a><span class="lineno">   87</span><span class="preprocessor">#endif </span><span class="comment">/* !defined(ETHANLOG_H) */</span><span class="preprocessor"></span></div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
