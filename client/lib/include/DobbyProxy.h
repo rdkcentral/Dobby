@@ -91,7 +91,7 @@ public:
                                      const std::list<int>& files,
                                      const std::string& command = "",
                                      const std::string& displaySocket = "",
-                                     const std::vector<std::string>& envVars = std::vector<std::string>()) const override;
+                                     const std::vector<std::string>& envVars = std::vector<std::string>(), uid_t userId=0, uid_t groupId=0) const override;
 
     bool stopContainer(int32_t cd, bool withPrejudice) const override;
 

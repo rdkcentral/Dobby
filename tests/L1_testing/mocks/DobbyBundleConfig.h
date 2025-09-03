@@ -57,6 +57,7 @@ public:
     static void setImpl(DobbyBundleConfigImpl* newImpl);
     std::shared_ptr<rt_dobby_schema> config();
     bool restartOnCrash() const;
+    void setUidGidMappings(uid_t userId, gid_t groupId);
 };
 
 
