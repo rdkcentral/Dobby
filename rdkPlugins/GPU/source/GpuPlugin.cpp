@@ -89,7 +89,7 @@ bool GpuPlugin::createRuntime()
     const int memLimit = mContainerConfig->rdk_plugins->gpu->data->memory;
 
     // setup the gpu memory limit
-    setupContainerGpuLimit(cgroupDirPath, containerPid, memLimit);
+    setupContainerGpuLimit(std::move(cgroupDirPath), containerPid, memLimit);
 
     return true;
 }

@@ -238,7 +238,12 @@ std::pair<pid_t, pid_t> DobbyRunC::create(const ContainerId &id,
             AI_LOG_DEBUG("Can kill after timeout");
             killpg(worker_pid, SIGKILL);
             // Collect the worker process
-            waitpid(worker_pid, &status, 0);
+            if (waitpid(worker_pid, &status, 0) == -1)
+
+	    {
+		    AI_LOG_SYS_WARN(errno, "Failed to wait for worker process (pid %d)", worker_pid);
+	    }
+
             // Collect child of worker if any
             wait(nullptr); 
         }
@@ -274,7 +279,7 @@ std::pair<pid_t, pid_t> DobbyRunC::create(const ContainerId &id,
         {
             // We are not sure if process started, so check if we can get
             // container pid, read the file
-            pid_t containerPid = readPidFile(pidFilePath);
+            pid_t containerPid = readPidFile(std::move(pidFilePath));
             if (containerPid > 0)
             {
                 // wait for the half-started container to terminate
@@ -316,7 +321,7 @@ std::pair<pid_t, pid_t> DobbyRunC::create(const ContainerId &id,
 
     // now need to read the pid file it created so we know were to find the
     // container
-    pid_t containerPid = readPidFile(pidFilePath);
+    pid_t containerPid = readPidFile(std::move(pidFilePath));
     if (containerPid < 0)
     {
         AI_LOG_ERROR_EXIT("Wrong container pid, read from file failed");
@@ -1047,7 +1052,7 @@ std::list<DobbyRunC::ContainerListItem> DobbyRunC::list() const
         }
 
         ContainerListItem container {
-            .id = id_,
+            .id = std::move(id_),
             .pid = pid.asInt(),
             .bundlePath = bundle.asString(),
             .status = getContainerStatusFromJson(entry),

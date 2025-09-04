@@ -225,27 +225,34 @@ std::vector<char> DobbyBufferStream::getBuffer() const
     if (size < 0)
     {
         AI_LOG_SYS_ERROR(errno, "failed to get memfd size");
-        return std::vector<char>();
+        return {};
     }
-
+    
     if (lseek(mMemFd, 0, SEEK_SET) < 0)
     {
         AI_LOG_SYS_ERROR(errno, "failed to seek to beginning of memfd");
-        return std::vector<char>();
+        return {};
     }
 
-    size = std::min<off_t>(size, 1 * 1024 * 1024);
+    constexpr off_t kMaxSize = 1 * 1024 * 1024;
+    size = std::min(size, kMaxSize);
 
-    std::vector<char> buf(size, 0x00);
-
-    char *dataPtr = buf.data();
-    ssize_t dataSize = size;
-    while (dataSize > 0)
+    if (size < 0 || static_cast<uintmax_t>(size) > static_cast<uintmax_t>(std::numeric_limits<size_t>::max()))
     {
-        ssize_t rd = TEMP_FAILURE_RETRY(read(mMemFd, dataPtr, dataSize));
+        AI_LOG_SYS_ERROR(errno, "invalid buffer size");
+        return {};
+    }
+
+    std::vector<char> buf(static_cast<size_t>(size), 0x00);
+    char* dataPtr = buf.data();
+    size_t remaining = static_cast<size_t>(size);
+
+    while (remaining > 0)
+    {
+        ssize_t rd = TEMP_FAILURE_RETRY(read(mMemFd, dataPtr, remaining));
         if (rd < 0)
         {
-            AI_LOG_SYS_ERROR(errno, "failed to read from file");
+            AI_LOG_SYS_ERROR(errno, "failed to read from memfd");
             break;
         }
         else if (rd == 0)
@@ -254,15 +261,18 @@ std::vector<char> DobbyBufferStream::getBuffer() const
         }
         else
         {
+            if (static_cast<size_t>(rd) > remaining)
+            {
+                AI_LOG_SYS_ERROR(errno, "read returned more bytes than expected");
+                break;
+            }
+
             dataPtr += rd;
-            dataSize -= rd;
+            remaining -= static_cast<size_t>(rd);
         }
     }
-
-    if (dataSize > 0)
-    {
-        buf.resize(size - dataSize);
-    }
+    size_t actualSize = static_cast<size_t>(size) - remaining;
+    buf.resize(actualSize);
 
     return buf;
 }

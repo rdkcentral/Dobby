@@ -179,7 +179,11 @@ SDBusIpcService::~SDBusIpcService()
             };
 
         // invoke the quit lambda
-        runOnEventLoopThread(std::move(quitExec));
+        if (!runOnEventLoopThread(std::move(quitExec)))
+	{
+		AI_LOG_ERROR("Failed to post quitExec to event loop thread");
+	}
+
 
         // wait for the thread to quit
         mThread.join();
@@ -338,7 +342,11 @@ bool SDBusIpcService::stop()
             // do nothing
         };
 
-    runOnEventLoopThread(std::move(nopExec));
+    if (!runOnEventLoopThread(std::move(nopExec)))
+    {
+	    AI_LOG_ERROR("Failed to queue noop event on event loop thread");
+     }
+
 
     return true;
 }

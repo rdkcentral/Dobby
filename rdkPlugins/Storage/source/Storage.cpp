@@ -465,7 +465,7 @@ std::vector<LoopMountProperties> Storage::getLoopMounts() const
                 mount.imgManagement = true;
             }
 
-            mounts.push_back(mount);
+            mounts.push_back(std::move(mount));
         }
     }
     else
@@ -544,7 +544,7 @@ std::vector<DynamicMountProperties> Storage::getDynamicMounts() const
                 mount.mountOptions.push_back(std::string(dynamic->options[j]));
             }
 
-            mounts.push_back(mount);
+            mounts.push_back(std::move(mount));
         }
     }
     else
@@ -631,7 +631,7 @@ std::vector<MountOwnerProperties> Storage::getMountOwners() const
                 mountOwnerProps.group  = std::string(mountOwner->group);
             }
             mountOwnerProps.recursive = mountOwner->recursive_present ? mountOwner->recursive : false;
-            mountOwners.push_back(mountOwnerProps);
+            mountOwners.push_back(std::move(mountOwnerProps));
         }
     }
     else

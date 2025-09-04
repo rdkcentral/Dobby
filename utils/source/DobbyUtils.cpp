@@ -1239,24 +1239,32 @@ bool DobbyUtils::writeTextFileAt(int dirFd, const std::string& path,
         return false;
     }
 
-    const char* s = str.c_str();
-    ssize_t n = static_cast<ssize_t>(str.length());
+    const char* dataPtr = str.data();
+    size_t remaining = str.size();
 
-    while (n > 0)
+    while (remaining > 0)
     {
-        ssize_t written = TEMP_FAILURE_RETRY(write(fd, s, n));
+        ssize_t written = TEMP_FAILURE_RETRY(write(fd, dataPtr, remaining));
         if (written < 0)
         {
             AI_LOG_SYS_ERROR(errno, "failed to write to file");
-            break;
-        }
+            }
         else if (written == 0)
         {
+            AI_LOG_ERROR("didn't write any data, odd");
             break;
         }
+        else
+        {
+            if (static_cast<size_t>(written) > remaining)
+            {
+                AI_LOG_SYS_ERROR(errno, "write returned more bytes than expected");
+                break;
+            }
 
-        s += written;
-        n -= written;
+            remaining -= static_cast<size_t>(written);
+            dataPtr += written;
+        }
     }
 
     if (close(fd) != 0)
@@ -1264,7 +1272,7 @@ bool DobbyUtils::writeTextFileAt(int dirFd, const std::string& path,
         AI_LOG_SYS_ERROR(errno, "failed to close '%s'", path.c_str());
     }
 
-    return (n == 0);
+    return (remaining == 0);
 }
 
 bool DobbyUtils::writeTextFile(const std::string& path,

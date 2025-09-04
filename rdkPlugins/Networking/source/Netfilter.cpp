@@ -678,29 +678,38 @@ bool Netfilter::applyRules(const int ipVersion)
  *
  *  @return true if the entire string was written, otherwise false.
  */
-bool Netfilter::writeString(int fd, const std::string &str) const
+bool Netfilter::writeString(int fd, const std::string& str) const
 {
-    const char* s = str.data();
-    ssize_t n = str.size();
+    const char* dataPtr = str.data();
+    size_t remaining = str.size();
 
-    while (n > 0)
+    while (remaining > 0)
     {
-        ssize_t wr = TEMP_FAILURE_RETRY(write(fd, s, n));
-        if (wr < 0)
+        ssize_t written = TEMP_FAILURE_RETRY(write(fd, dataPtr, remaining));
+        if (written < 0)
         {
             AI_LOG_SYS_ERROR(errno, "failed to write to file");
             break;
         }
-        else if (wr == 0)
+        else if (written == 0)
         {
+            AI_LOG_ERROR("didn't write any data, odd");
             break;
         }
+        else
+        {
+            if (static_cast<size_t>(written) > remaining)
+            {
+                AI_LOG_SYS_ERROR(errno, "write returned more bytes than expected");
+                break;
+            }
 
-        s += wr;
-        n -= wr;
+            remaining -= static_cast<size_t>(written);
+            dataPtr += written;
+        }
     }
 
-    return (n == 0);
+    return (remaining == 0);
 }
 
 // -----------------------------------------------------------------------------
@@ -841,13 +850,13 @@ bool Netfilter::createNewChain(TableType table, const std::string &name, const i
     {
         // the table doesn't exist, so add it as a new table
         ruleCache.unchangedRuleSet.emplace(
-            std::pair<TableType, std::list<std::string>>({ table, { chainRule }})
+            std::pair<TableType, std::list<std::string>>({ table, { std::move(chainRule) }})
         );
     }
     else
     {
         // table exists, merge new rules to the end of it
-        cacheRuleset->second.merge({ chainRule });
+        cacheRuleset->second.merge({ std::move(chainRule) });
     }
 
     AI_LOG_FN_EXIT();
