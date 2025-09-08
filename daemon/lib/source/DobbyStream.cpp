@@ -237,7 +237,7 @@ std::vector<char> DobbyBufferStream::getBuffer() const
     constexpr off_t kMaxSize = 1 * 1024 * 1024;
     size = std::min(size, kMaxSize);
 
-    if (size < 0 || static_cast<uintmax_t>(size) > static_cast<uintmax_t>(std::numeric_limits<size_t>::max()))
+    if (size < 0)
     {
         AI_LOG_SYS_ERROR(errno, "invalid buffer size");
         return {};
