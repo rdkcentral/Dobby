@@ -402,9 +402,9 @@ int AICommon::copyFile(const std::string &to, const std::string &from)
 
 out_error:
     saved_errno = errno;
-    if (fdFrom != -1)
+    if (fdFrom >= 0)
         close(fdFrom);
-    if (fdTo != -1)
+    if (fdTo >= 0)
         close(fdTo);
     errno = saved_errno;
     return -1;
