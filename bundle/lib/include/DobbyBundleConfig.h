@@ -57,6 +57,7 @@ public:
 public:
     uid_t userId() const override;
     gid_t groupId() const override;
+    void setUidGidMappings(uid_t userId, gid_t groupId);
 
 public:
     IDobbyIPCUtils::BusType systemDbus() const override;
