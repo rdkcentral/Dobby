@@ -79,7 +79,12 @@ DobbyBundleConfig::DobbyBundleConfig(const std::shared_ptr<IDobbyUtils>& utils,
 
             // we need to re-run post installation hook, so remove success flag
             std::string postInstallPath = bundlePath + "/postinstallhooksuccess";
-            remove(postInstallPath.c_str());
+            
+            if (remove(postInstallPath.c_str()) != 0)  
+	    {
+		    AI_LOG_ERROR("Failed to remove postinstallhooksuccess");
+	    }
+
 
             // Retry creation of config
             constructConfig(id, bundlePath);

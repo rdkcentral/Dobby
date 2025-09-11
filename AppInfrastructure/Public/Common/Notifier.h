@@ -177,7 +177,7 @@ private:
             {
                 dispatcher->post(std::bind(fun, strong));
             }
-            observerStrongPtrs.push_back(strong);
+            observerStrongPtrs.push_back(std::move(strong));
         }
 
         lock.lock();

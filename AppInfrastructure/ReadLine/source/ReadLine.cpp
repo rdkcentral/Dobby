@@ -639,8 +639,8 @@ bool ReadLine::addCommand(const std::string& name, CommandHandler handler,
 
     std::lock_guard<std::mutex> locker(mLock);
 
-    ReadLineCommand cmd = { name, handler, desc, help, opts };
-    mCommands.push_back(cmd);
+    ReadLineCommand cmd = { name, std::move(handler), desc, help, opts };
+    mCommands.push_back(std::move(cmd));
 
     AI_LOG_FN_ENTRY();
     return true;

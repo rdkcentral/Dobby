@@ -181,7 +181,7 @@ public:
         {
             return std::cv_status::no_timeout;
         }
-        if (err == ETIMEDOUT)
+	else if (err == ETIMEDOUT)
         {
             return std::cv_status::timeout;
         }
