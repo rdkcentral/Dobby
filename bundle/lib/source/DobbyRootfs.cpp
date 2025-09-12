@@ -153,7 +153,7 @@ DobbyRootfs::DobbyRootfs(const std::shared_ptr<IDobbyUtils>& utils,
     }
 
     // store the complete path
-    mPath = rootfsDirPath;
+    mPath = std::move(rootfsDirPath);
 
     AI_LOG_FN_EXIT();
 }
