@@ -182,11 +182,9 @@ int DobbyLogger::receiveFdFromSocket(const int connectionFd)
 {
     // We don't use the data buffer for this, but we need one (even if it's empty)
     char dataBuffer[1];
-    
     // Linux uses this ancillary data mechanism to pass file descriptors over
     // UNIX domain sockets, so this is what we're interested in
     char ancillaryDataBuffer[CMSG_SPACE(sizeof(int))] = {};
-    
     struct iovec iov[1];
     iov[0].iov_base = dataBuffer;
     iov[0].iov_len = sizeof(dataBuffer);
@@ -200,7 +198,6 @@ int DobbyLogger::receiveFdFromSocket(const int connectionFd)
     msg.msg_controllen = CMSG_SPACE(sizeof(int));
 
 
-    
     // Block waiting to receive a message over the open connection
     ssize_t messageSize = TEMP_FAILURE_RETRY(recvmsg(connectionFd, &msg, 0));
     
