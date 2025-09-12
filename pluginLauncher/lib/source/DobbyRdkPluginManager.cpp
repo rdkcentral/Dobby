@@ -680,7 +680,7 @@ bool DobbyRdkPluginManager::executeHook(const std::string &pluginName,
  *
  * @return True if the hook executed successfully
  */
-bool DobbyRdkPluginManager::executeHookTimeout(const std::string& pluginName,
+bool DobbyRdkPluginManager::executeHookTimeout(const std::string &pluginName,
                                                 const IDobbyRdkPlugin::HintFlags hook,
                                                 const uint timeoutMs) const
 {
