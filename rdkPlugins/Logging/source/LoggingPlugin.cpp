@@ -166,7 +166,7 @@ void LoggingPlugin::RegisterPollSources(int fd, std::shared_ptr<AICommon::IPollL
 
     if (!mPollLoop)
     {
-        mPollLoop = pollLoop;
+        mPollLoop = std::move(pollLoop);
     }
 
     // Register the poll source
