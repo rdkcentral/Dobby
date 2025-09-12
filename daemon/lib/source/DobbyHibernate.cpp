@@ -120,7 +120,7 @@ static int Connect(const char* serverLocator, uint32_t timeoutMs)
         }
 
         strncpy(host, serverLocator, sizeof(host) - 1);
-        host[sizeof(host) - 1] = '\0';
+    host[sizeof(host) - 1] = '\0';
         port = strstr(host, ":");
         if (port == NULL) {
             AI_LOG_ERROR("Invalid Server Ip Address: %s", host);
