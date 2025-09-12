@@ -501,8 +501,8 @@ DobbyStats::Process DobbyStats::getProcessInfo(pid_t pid,
     Process process {
         pid,
         nsPid,
-        processPath,
-        processCmdline
+        std::move(processPath),
+        std::move(processCmdline)
     };
 
     AI_LOG_FN_EXIT();
