@@ -88,7 +88,7 @@ private:
 public:
     IDGenerator(unsigned offset = 0)
         : mOffset(offset)
-        , mLfsr(1 + (rand() % (mSize- 2)))
+	, mLfsr(1 + (rand() % (mSize- 2)))
     { }
 
 public:

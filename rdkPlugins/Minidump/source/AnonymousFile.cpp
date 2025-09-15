@@ -133,6 +133,7 @@ bool AnonymousFile::copyContentTo(const std::string& destFile)
     if (!fileSize)
     {
         AI_LOG_DEBUG("Empty file for fd %d", mFd);
+	fclose(fp);
         fp = nullptr;
         AI_LOG_FN_EXIT();
         return true;
@@ -142,6 +143,7 @@ bool AnonymousFile::copyContentTo(const std::string& destFile)
     if (!buffer)
     {
         AI_LOG_SYS_ERROR_EXIT(errno, "failed to allocate buffer for reading fd %d", mFd);
+	fclose(fp);
         fp = nullptr;
         return false;
     }
@@ -150,6 +152,7 @@ bool AnonymousFile::copyContentTo(const std::string& destFile)
     if (elementsRead != fileSize)
     {
         AI_LOG_ERROR_EXIT("failed to read fd %d correctly", mFd);
+	fclose(fp);
         fp = nullptr;
         free(buffer);
         return false;
@@ -161,6 +164,7 @@ bool AnonymousFile::copyContentTo(const std::string& destFile)
     if (strncmp(buffer, "MDMP", 4) != 0)
     {
         AI_LOG_WARN("Incorrect file header for fd %d", mFd);
+	fclose(fp);
         fp = nullptr;
         free(buffer);
         AI_LOG_FN_EXIT();
@@ -171,12 +175,14 @@ bool AnonymousFile::copyContentTo(const std::string& destFile)
     if (destFd == -1)
     {
         AI_LOG_ERROR_EXIT("Cannot open %s", destFile.c_str());
+	fclose(fp);
         fp = nullptr;
         free(buffer);
         return false;
     }
 
     write(destFd, buffer, fileSize + 1);
+    fclose(fp);
 
     fp = nullptr;
     free(buffer);

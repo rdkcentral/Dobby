@@ -133,7 +133,7 @@ bool IpcPlugin::postInstallation()
         success = addSocketAndEnv(mUtils,
                                   mRootfsPath,
                                   mContainerConfig,
-                                  systemBus,
+                                  std::move(systemBus),
                                   mDbusSystemSocketPath,
                                   mDbusSystemEnvVar);
     }
@@ -144,7 +144,7 @@ bool IpcPlugin::postInstallation()
         success = addSocketAndEnv(mUtils,
                                   mRootfsPath,
                                   mContainerConfig,
-                                  sessionBus,
+                                  std::move(sessionBus),
                                   mDbusSessionSocketPath,
                                   mDbusSessionEnvVar);
     }
@@ -154,7 +154,7 @@ bool IpcPlugin::postInstallation()
         success = addSocketAndEnv(mUtils,
                                   mRootfsPath,
                                   mContainerConfig,
-                                  debugBus,
+                                  std::move(debugBus),
                                   mDbusDebugSocketPath,
                                   mDbusDebugEnvVar);
     }
@@ -268,7 +268,7 @@ bool IpcPlugin::addSocketAndEnv(const std::shared_ptr<DobbyRdkPluginUtils> utils
             return false;
         }
 
-        busStr = tmpBusStr;
+        busStr = std::move(tmpBusStr);
     }
 
     // create a mount point for the socket

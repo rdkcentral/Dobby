@@ -315,10 +315,14 @@ public:
         {
             sd_bus_message_open_container(mMsg, SD_BUS_TYPE_DICT_ENTRY, "sv");
 
-            sd_bus_message_append_basic(mMsg, SD_BUS_TYPE_STRING, entry.first.c_str());
+            int rc = sd_bus_message_append_basic(mMsg, SD_BUS_TYPE_STRING, entry.first.c_str());
+	    if (rc != 0)
+	    {
+		    throw std::system_error(-rc, std::generic_category());
+	    }
+
             boost::apply_visitor(variantVisitor, entry.second);
 
-            sd_bus_message_close_container(mMsg);
         }
 
         rc = sd_bus_message_close_container(mMsg);
