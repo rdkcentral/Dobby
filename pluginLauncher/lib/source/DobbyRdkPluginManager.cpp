@@ -54,7 +54,7 @@ DobbyRdkPluginManager::DobbyRdkPluginManager(std::shared_ptr<rt_dobby_schema> co
                                              const std::string &rootfsPath,
                                              const std::string &pluginPath,
                                              const std::shared_ptr<DobbyRdkPluginUtils> &utils)
-    : mContainerConfig(containerConfig),
+    : mContainerConfig(std::move(containerConfig)),
       mRootfsPath(rootfsPath),
       mPluginPath(pluginPath),
       mUtils(utils),
@@ -613,12 +613,8 @@ bool DobbyRdkPluginManager::implementsHook(const std::string &pluginName,
         return false;
     }
 
-    if (plugin)
-    {
-        unsigned pluginHookHints = plugin->hookHints();
-        return pluginHookHints & hook;
-    }
-    return false;
+    unsigned pluginHookHints = plugin->hookHints();
+    return pluginHookHints & hook;
 }
 
 // -----------------------------------------------------------------------------
@@ -696,9 +692,15 @@ bool DobbyRdkPluginManager::executeHookTimeout(const std::string &pluginName,
 
     // Create shared memory to get result from hook execution
     void* sharedMemory = mmap(NULL, sharedMemorySize, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
+    if (sharedMemory == MAP_FAILED)
+    {
+        AI_LOG_ERROR_EXIT("Failed to allocate shared memory");
+        return false;
+    }
 
     // Set result as fail in case we need to kill worker
-    *static_cast<char *>(sharedMemory) = 0;
+  
+    *static_cast<char*>(sharedMemory) = 0;
 
     workerPid = fork();
     if (workerPid == 0)
@@ -707,34 +709,33 @@ bool DobbyRdkPluginManager::executeHookTimeout(const std::string &pluginName,
         if (setsid() < 0)
             _exit(EXIT_FAILURE);
 
-        char result = (char) executeHook(pluginName, hook);
-
-        // Set result in shared memory
-        *static_cast<char *>(sharedMemory) = result;
-
+        char result = static_cast<char>(executeHook(pluginName, hook));
+         // Set result in shared memory
+        *static_cast<char*>(sharedMemory) = result;
         _exit(0);
     }
     else if (workerPid < 0)
     {
-        AI_LOG_ERROR_EXIT("Failed to create for for executeHookTimeout");
+        AI_LOG_ERROR_EXIT("Failed to fork for executeHookTimeout");
         munmap(sharedMemory, sharedMemorySize);
         return false;
     }
 
     timeoutPid = fork();
-    if (timeoutPid == 0) {
+    if (timeoutPid == 0)
+    {
         struct timespec timeout_val, remaining;
         timeout_val.tv_nsec = (long)(timeoutMs % 1000) * 1000000;
-        timeout_val.tv_sec = timeoutMs/1000;
-
+        timeout_val.tv_sec = timeoutMs / 1000;
         // In case signal comes during wait
-        while(nanosleep(&timeout_val, &remaining) && errno==EINTR){
-            timeout_val=remaining;
+        while (nanosleep(&timeout_val, &remaining) && errno == EINTR)
+        {
+            timeout_val = remaining;
         }
 
         _exit(0);
     }
-
+    
     // Wait for either worker or timeout to finish
     do
     {
@@ -746,47 +747,47 @@ bool DobbyRdkPluginManager::executeHookTimeout(const std::string &pluginName,
             AI_LOG_DEBUG("Found non-waited process with pid %d", exitedPid);
         }
     } while (exitedPid >= 0 &&
-            exitedPid != timeoutPid &&
-            exitedPid != workerPid);
+             exitedPid != timeoutPid &&
+             exitedPid != workerPid);
 
     if (exitedPid == timeoutPid)
     {
         // Timeout occurred
         AI_LOG_ERROR("Timeout executing plugin %s hookpoint %s",
-                    pluginName.c_str(), HookPointToString(hook).c_str());
+                     pluginName.c_str(), HookPointToString(hook).c_str());
 
-        // Check if we can kill workerPid (if it ended already
-        // then we will be unable to kill)
-        if (kill(workerPid, 0) == -1)
+      // Check if we can kill workerPid (if it ended already
+      // then we will be unable to kill)
+      if (kill(workerPid, 0) == -1)
+      {
+        // Cannot kill process, probably already dead
+        // treat it as if it would return proper waitpid
+        AI_LOG_DEBUG("Cannot kill after timeout");
+        exitedPid = waitpid(workerPid, &status, WNOHANG);
+      }
+      else
+      {
+        // Worker is stuck, we need to kill whole group
+        // in case any child process was stuck too
+        AI_LOG_DEBUG("Can kill after timeout");
+        killpg(workerPid, SIGKILL);
+        // Collect the worker process
+        pid_t waited = waitpid(workerPid, &status, 0);
+        if (waited == -1)
         {
-            // Cannot kill process, probably already dead
-            // treat it as if it would return proper waitpid
-            AI_LOG_DEBUG("Cannot kill after timeout");
-            exitedPid = waitpid(workerPid, &status, WNOHANG);
+          AI_LOG_SYS_WARN(errno, "Failed to wait for workerPid after killing");
         }
-        else
-        {
-            // Worker is stuck, we need to kill whole group
-            // in case any child process was stuck too
-            AI_LOG_DEBUG("Can kill after timeout");
-            killpg(workerPid, SIGKILL);
-            // Collect the worker process
-            waitpid(workerPid, &status, 0);
-            // Collect child of worker if any
-            wait(nullptr);
-        }
-
+        // Collect child of worker if any
+        wait(nullptr);
+      }
     }
     else if (exitedPid == workerPid)
     {
-        // Worker finished
         kill(timeoutPid, SIGKILL);
-        // Collect the timeout process
         wait(nullptr);
     }
-
     // get result and free shared memory
-    bool result = static_cast<bool>(*static_cast<char *>(sharedMemory));
+    bool result = static_cast<bool>(*static_cast<char*>(sharedMemory));
     munmap(sharedMemory, sharedMemorySize);
     return result;
 }
