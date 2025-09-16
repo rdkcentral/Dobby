@@ -102,7 +102,7 @@ static int Connect(const char* serverLocator, uint32_t timeoutMs)
         if (cd < 0) {
             AI_LOG_ERROR("Unix Socket create failed: %d", cd);
             AI_LOG_FN_EXIT();
-            return false;
+            return -1;
         }
 
         addrUn.sun_family = PF_UNIX;
@@ -120,13 +120,13 @@ static int Connect(const char* serverLocator, uint32_t timeoutMs)
         }
 
         strncpy(host, serverLocator, sizeof(host) - 1);
-	host[sizeof(host) - 1] = '\0';
+    host[sizeof(host) - 1] = '\0';
         port = strstr(host, ":");
         if (port == NULL) {
             AI_LOG_ERROR("Invalid Server Ip Address: %s", host);
             close(cd);
             AI_LOG_FN_EXIT();
-            return false;
+            return -1;
         }
 
         // Add NULL delimer between host and port
@@ -141,7 +141,14 @@ static int Connect(const char* serverLocator, uint32_t timeoutMs)
         addrSize = sizeof(struct sockaddr_in);
     }
 
-    setsockopt(cd, SOL_SOCKET, SO_RCVTIMEO, &rcvTimeout, sizeof(rcvTimeout));
+    //Fix: Check return value of setsockopt
+    if (setsockopt(cd, SOL_SOCKET, SO_RCVTIMEO, &rcvTimeout, sizeof(rcvTimeout)) != 0)
+    {
+        AI_LOG_SYS_WARN(errno, "Failed to set socket receive timeout");
+        close(cd);
+        AI_LOG_FN_EXIT();
+        return -1;
+    }
 
     int ret = connect(cd, addr, addrSize);
     if (ret < 0) {
