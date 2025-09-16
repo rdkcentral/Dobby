@@ -367,7 +367,7 @@ bool DobbyConfig::enableSTrace(const std::string& logsDir)
 
     {
         // add  "/usr/bin/strace -o logs -f " before the rest of command args
-        const std::vector<std::string> params{"/usr/bin/strace", "-o", logsPath, "-f"};
+        const std::vector<std::string> params = {"/usr/bin/strace", "-o", std::move(logsPath), "-f"};
 
         std::lock_guard<std::mutex> locker(mLock);
         size_t new_args_len = cfg->process->args_len + params.size();
@@ -555,7 +555,11 @@ bool DobbyConfig::writeConfigJsonImpl(const std::string& filePath) const
     free(json_buf);
 
     // set file permissions
-    chmod(filePath.c_str(), S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+    if (chmod(filePath.c_str(), S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH) != 0)
+    {
+	    AI_LOG_SYS_WARN(errno, "Failed to set permissions on config file '%s'", filePath.c_str());
+    }
+
 
     AI_LOG_FN_EXIT();
     return true;
@@ -919,7 +923,7 @@ bool DobbyConfig::convertToCompliant(const ContainerId& id, std::shared_ptr<rt_d
         std::ofstream dstCfg(bundlePath + "/config-dobby.json", std::ios::binary);
         dstCfg << srcCfg.rdbuf();
 
-        if (!updateBundleConfig(id, cfg, bundlePath))
+        if (!updateBundleConfig(id,std::move(cfg), bundlePath))
         {
             return false;
         }
@@ -965,7 +969,7 @@ bool DobbyConfig::convertToCompliant(const ContainerId& id, std::shared_ptr<rt_d
             }
 
             // now, transform the config to set it up for DobbyPluginLauncher
-            if (!updateBundleConfig(id, cfg, bundlePath))
+            if (!updateBundleConfig(id,std::move(cfg), bundlePath))
             {
                 return false;
             }
@@ -973,7 +977,7 @@ bool DobbyConfig::convertToCompliant(const ContainerId& id, std::shared_ptr<rt_d
         else
         {
             // hooks are set up just fine, just need to update the hostname if necessary
-            if (!setHostnameToContainerId(id, cfg, bundlePath))
+            if (!setHostnameToContainerId(id,std::move(cfg), bundlePath))
             {
                 AI_LOG_ERROR_EXIT("Failed to set container hostname");
                 return false;

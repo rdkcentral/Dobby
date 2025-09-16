@@ -386,6 +386,7 @@ void Dobby::logJournaldPrinter(int level, const char *file, const char *func,
             logLevel = "DBG: ";
             break;
         default:
+	    AI_LOG_WARN("Unknown debug level: %d", level);
             logLevel = ": ";
             break;
     }
@@ -520,7 +521,7 @@ void Dobby::setupLogging(unsigned targets /*= LogTarget::Console*/)
                                                  std::placeholders::_5);
 
     // initialise the actual logging code
-    AICommon::initLogging(printer);
+    AICommon::initLogging(std::move(printer));
 }
 
 
@@ -686,7 +687,7 @@ void Dobby::initIpcMethods()
         }
         else
         {
-            mHandlers.push_back(methodId);
+            mHandlers.push_back(std::move(methodId));
         }
     }
 
@@ -735,6 +736,7 @@ void Dobby::ping(std::shared_ptr<AI_IPC::IAsyncReplySender> replySender)
 
     AI_LOG_FN_EXIT();
 }
+
 
 // -----------------------------------------------------------------------------
 /**
@@ -1196,7 +1198,11 @@ void Dobby::stop(std::shared_ptr<AI_IPC::IAsyncReplySender> replySender)
                 bool result = manager->stopContainer(descriptor, force);
 
                 // Fire off the reply
-                replySender->sendReply({ result });
+                if (!replySender->sendReply({ result }))
+		{
+			AI_LOG_ERROR("Failed to send reply from stop lambda");
+		}
+
             };
 
         // Queue the work, if successful then we're done
@@ -1250,7 +1256,11 @@ void Dobby::pause(std::shared_ptr<AI_IPC::IAsyncReplySender> replySender)
                 bool result = manager->pauseContainer(descriptor);
 
                 // Fire off the reply
-                replySender->sendReply({ result });
+                if (!replySender->sendReply({ result }))
+		{
+			AI_LOG_ERROR("Failed to send reply from pause lambda");
+		}
+
             };
 
         // Queue the work, if successful then we're done
@@ -1355,7 +1365,7 @@ void Dobby::hibernate(std::shared_ptr<AI_IPC::IAsyncReplySender> replySender)
         auto doHibernateLambda =
             [manager = mManager,
              descriptor,
-             options,
+             options = std::move(options),
              replySender]()
             {
                 // Try and hibernate
@@ -1468,7 +1478,7 @@ void Dobby::addMount(std::shared_ptr<AI_IPC::IAsyncReplySender> replySender)
     else
     {
         auto doMountLambda =
-            [manager = mManager, descriptor, source, destination, mountFlags, mountData, replySender]()
+            [manager = mManager, descriptor,source = std::move(source), destination = std::move(destination), mountFlags = std::move(mountFlags), mountData = std::move(mountData), replySender]()
             {
                 // add the mount inside the container
                 bool result = manager->addMount(descriptor, source, destination, mountFlags, mountData);
@@ -1523,7 +1533,7 @@ void Dobby::removeMount(std::shared_ptr<AI_IPC::IAsyncReplySender> replySender)
     else
     {
         auto doUnmountLambda =
-            [manager = mManager, descriptor, source, replySender]()
+            [manager = mManager, descriptor, source = std::move(source), replySender]()
             {
                 //remove the mount inside the container
                 bool result = manager->removeMount(descriptor, source);
@@ -1578,8 +1588,9 @@ void Dobby::addAnnotation(std::shared_ptr<AI_IPC::IAsyncReplySender> replySender
     }
     else
     {
+
         auto doAnnotateLambda =
-            [manager = mManager, descriptor, key, value, replySender]()
+            [manager = mManager, descriptor, key = std::move(key), value = std::move(value), replySender]()
             {
                 //add the key value pair to the annotations
                 bool result = manager->annotate(descriptor, key, value);
@@ -1632,8 +1643,9 @@ void Dobby::removeAnnotation(std::shared_ptr<AI_IPC::IAsyncReplySender> replySen
     }
     else
     {
+
         auto doremoveAnnotationLambda =
-            [manager = mManager, descriptor, key, replySender]()
+            [manager = mManager, descriptor, key = std::move(key), replySender]()
             {
                 //remove the key from the annotations
                 bool result = manager->removeAnnotation(descriptor, key);
@@ -1689,11 +1701,13 @@ void Dobby::exec(std::shared_ptr<AI_IPC::IAsyncReplySender> replySender)
     {
         AI_LOG_INFO(DOBBY_CTRL_METHOD_EXEC "(%d)", descriptor);
 
+
         auto doExecLambda =
             [manager = mManager,
              descriptor,
-             options,
-             command,
+	     options = std::move(options),
+	     command = std::move(command),
+
              replySender]()
             {
                 // Try and execute the command
@@ -1756,7 +1770,11 @@ void Dobby::getState(std::shared_ptr<AI_IPC::IAsyncReplySender> replySender)
                 int32_t result = manager->stateOfContainer(descriptor);
 
                 // Fire off the reply
-                replySender->sendReply({ result });
+                if (!replySender->sendReply({ result }))
+		{
+			AI_LOG_ERROR("Failed to send reply from getState lambda");
+		}
+
             };
 
         // Queue the work, if successful then we're done
@@ -1841,7 +1859,11 @@ void Dobby::getInfo(std::shared_ptr<AI_IPC::IAsyncReplySender> replySender)
                 std::string result = manager->statsOfContainer(descriptor);
 
                 // Fire off the reply
-                replySender->sendReply({ result });
+                if (!replySender->sendReply({ result }))
+		{
+			AI_LOG_ERROR("Failed to send reply from getState lambda");
+		}
+
             };
 
         // Queue the work, if successful then we're done
@@ -1853,7 +1875,11 @@ void Dobby::getInfo(std::shared_ptr<AI_IPC::IAsyncReplySender> replySender)
     }
 
     // Fire off an error reply
-    replySender->sendReply({ "" });
+    if (!replySender->sendReply({ "" }))
+    {
+	    AI_LOG_ERROR("Failed to send fallback reply from getInfo");
+    }
+
 
     AI_LOG_FN_EXIT();
 }
@@ -1894,7 +1920,11 @@ void Dobby::list(std::shared_ptr<AI_IPC::IAsyncReplySender> replySender)
                 n++;
             }
             // Fire off the reply
-            replySender->sendReply({ cds, ids });
+            if (!replySender->sendReply({ cds, ids }))
+	    {
+		    AI_LOG_ERROR("Failed to send reply from list lambda");
+	    }
+
         };
 
     // Queue the work, if successful then we're done
@@ -2061,7 +2091,11 @@ void Dobby::getOCIConfig(std::shared_ptr<AI_IPC::IAsyncReplySender> replySender)
                 std::string configJson = manager->ociConfigOfContainer(descriptor);
 
                 // Fire off the reply
-                replySender->sendReply({ configJson });
+                if (!replySender->sendReply({ configJson }))
+		{
+			AI_LOG_ERROR("Failed to send reply from getOCIConfig lambda");
+		}
+
             };
 
         // Queue the work, if successful then we're done
