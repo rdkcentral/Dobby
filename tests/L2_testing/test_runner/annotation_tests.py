@@ -16,6 +16,10 @@
 # limitations under the License.
 
 import test_utils
+import os
+import json
+import shutil
+import subprocess
 
 tests = [
     test_utils.Test("annotations",
@@ -39,7 +43,21 @@ def execute_test():
 
     return test_utils.count_print_results(output_table)
 
-
+def set_dobby_log_level(level="debug"):
+    """
+    Set Dobby daemon log level globally.
+    
+    Parameters:
+    level (str): log level, e.g., "debug", "info", "warning", "error"
+    """
+    command = ["DobbyTool", "set-log-level", level]
+    try:
+        output = subprocess.check_output(command, stderr=subprocess.STDOUT, text=True)
+        print(f"✅ Dobby log level set to {level}")
+        print("Output:\n", output)
+    except subprocess.CalledProcessError as e:
+        print(f"❌ Failed to set Dobby log level: {e.output}")
+        
 def test_container(container_id, expected_output):
     """Runs container and check if output contains expected output
 
@@ -54,15 +72,130 @@ def test_container(container_id, expected_output):
     test_utils.print_log("Running %s container test" % container_id, test_utils.Severity.debug)
 
     with test_utils.untar_bundle(container_id) as bundle_path:
-        command = ["DobbyTool",
+        command = ["DobbyTool","--v",
                 "start",
                 container_id,
                 bundle_path]
+        set_dobby_log_level()
+        if container_id == "sleepy":
+            rootfs = os.path.join(bundle_path, "rootfs")
+            bin_dir = os.path.join(rootfs, "bin")
+            os.makedirs(bin_dir, exist_ok=True)
+
+            dobbyinit_path = os.path.join(rootfs, "usr/libexec/DobbyInit")
+            if os.path.exists(dobbyinit_path):
+                try:
+                    output = subprocess.check_output(["file", dobbyinit_path], text=True)
+                    print(f"DobbyInit binary info: {output.strip()}")
+                except Exception as e:
+                    print(f"Could not check DobbyInit binary: {e}")
+            else:
+                print("❌ No DobbyInit found in bundle rootfs!")
+                dobby_init_src = "/usr/libexec/DobbyInit"  # adjust if different on your system
+                dobby_init_dst = os.path.join(rootfs, "usr/libexec/DobbyInit")
+                os.makedirs(os.path.dirname(dobby_init_dst), exist_ok=True)
+                shutil.copy2(dobby_init_src, dobby_init_dst)
+                os.chmod(dobby_init_dst, 0o755)
+                print(f"✅ Copied {dobby_init_src} -> {dobby_init_dst}")
+        
+            # Ensure /bin/sleep exists inside rootfs
+            sleep_in_rootfs = os.path.join(bin_dir, "sleep")
+            if not os.path.exists(sleep_in_rootfs):
+                try:
+                    shutil.copy2("/bin/sleep", sleep_in_rootfs)
+                    os.chmod(sleep_in_rootfs, 0o755)
+                    print(f"✅ Copied /bin/sleep -> {sleep_in_rootfs}")
+                except Exception as e:
+                    print(f"❌ Failed to copy sleep: {e}")
+        
+            # Copy library dependencies from ldd
+            try:
+                output = subprocess.check_output(["ldd", "/bin/sleep"], text=True)
+                for line in output.splitlines():
+                    parts = line.strip().split("=>")
+                    raw = parts[1] if len(parts) == 2 else parts[0]
+                    lib_path = raw.split("(")[0].strip()
+                
+                    if lib_path and lib_path.startswith("/"):
+                        print(f"Dependency: {lib_path}")
+                        dst_path = os.path.join(rootfs, lib_path.lstrip("/"))
+                        os.makedirs(os.path.dirname(dst_path), exist_ok=True)
+                        try:
+                            shutil.copy2(lib_path, dst_path)
+                            print(f"   ✅ Copied {lib_path} -> {dst_path}")
+                        except Exception as e:
+                            print(f"   ❌ Failed to copy {lib_path}: {e}")
+            except Exception as e:
+                print(f"❌ Could not run ldd: {e}")
+        
+           # Dump and patch config.json
+            config_path = os.path.join(bundle_path, "config.json")
+            try:
+                with open(config_path) as f:
+                    config_content = f.read()
+                    print("config.json:\n", config_content)
+                    config = json.loads(config_content)
+                    print("process.args:", config.get("process", {}).get("args"))
+            except Exception as e:
+                print(f"❌ Could not read config.json: {e}")
+            else:
+                # Patch config.json arch to match host (important for ubuntu-latest)
+                try:
+                    import platform
+                    host_arch = platform.machine()
+                    fixed_arch = "amd64" if host_arch == "x86_64" else host_arch
+            
+                    if "platform" in config:
+                        old_arch = config["platform"].get("arch")
+                        config["platform"]["arch"] = fixed_arch
+                        with open(config_path, "w") as f:
+                            json.dump(config, f, indent=2)
+                        print(f"✅ Patched config.json arch: {old_arch} -> {fixed_arch}")
+                    else:
+                        print("⚠️ No 'platform' field found in config.json")
+                except Exception as e:
+                    print(f"❌ Failed to patch config.json: {e}")
+
+            # 1. Check loader
+            loader_candidates = ["/lib64/ld-linux-x86-64.so.2", "/lib/x86_64-linux-gnu/ld-linux-x86-64.so.2"]
+            for loader in loader_candidates:
+                if os.path.exists(loader):
+                    dst = os.path.join(rootfs, loader.lstrip("/"))
+                    os.makedirs(os.path.dirname(dst), exist_ok=True)
+                    shutil.copy2(loader, dst)
+                    os.chmod(dst, 0o755)
+                    print(f"✅ Ensured dynamic loader {loader} -> {dst}")
+            
+            # 2. Run ldd on DobbyInit as well
+            try:
+                output = subprocess.check_output(["ldd", dobbyinit_path], text=True)
+                for line in output.splitlines():
+                    lib_path = line.split("=>")[-1].split("(")[0].strip()
+                    if lib_path.startswith("/") and os.path.exists(lib_path):
+                        dst = os.path.join(rootfs, lib_path.lstrip("/"))
+                        os.makedirs(os.path.dirname(dst), exist_ok=True)
+                        shutil.copy2(lib_path, dst)
+                        print(f"   ✅ Copied dependency {lib_path} -> {dst}")
+            except Exception as e:
+                print(f"❌ Could not run ldd on DobbyInit: {e}")
+            
+            # 3. Enforce +x always
+            for binary in [dobbyinit_path, sleep_in_rootfs]:
+                if os.path.exists(binary):
+                    os.chmod(binary, 0o755)
+                    print(f"✅ Ensured executable bit on {binary}")
 
         status = test_utils.run_command_line(command)
         if "started '" + container_id + "' container" not in status.stdout:
-            return False, "Container did not launch successfully"
-
+            debug_msg = (
+                f"Container did not launch successfully\n"
+                f"Return code: {status.returncode}\n"
+                f"STDOUT:\n{status.stdout}\n"
+                f"STDERR:\n{status.stderr}\n"
+                f"DobbyDaemon logs:\n{test_utils.get_dobby_logs()}\n"
+            )
+            return False, debug_msg
+        
         return validate_annotation(container_id, expected_output)
 
 
