@@ -679,7 +679,7 @@ int32_t DobbyProxy::startContainerFromBundle(const std::string& id,
                                              const std::list<int>& files,
                                              const std::string& command /*= ""*/,
                                              const std::string& displaySocket /*= ""*/,
-                                             const std::vector<std::string>& envVars /*= std::vector<std::string>()*/) const
+                                             const std::vector<std::string>& envVars /*= std::vector<std::string>()*/, uid_t userId, uid_t groupId) const
 {
     AI_LOG_FN_ENTRY();
 
@@ -691,7 +691,7 @@ int32_t DobbyProxy::startContainerFromBundle(const std::string& id,
     }
 
     // send off the request
-    const AI_IPC::VariantList params = { id, bundlePath, fds, command, displaySocket, envVars };
+    const AI_IPC::VariantList params = { id, bundlePath, fds, command, displaySocket, envVars, userId, groupId };
     AI_IPC::VariantList returns;
 
     int32_t result = -1;
