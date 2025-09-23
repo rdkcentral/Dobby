@@ -102,9 +102,9 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a15da48d127df6934fcb8903281b4e37d" id="r_a15da48d127df6934fcb8903281b4e37d"><td class="memItemLeft" align="right" valign="top"><a id="a15da48d127df6934fcb8903281b4e37d" name="a15da48d127df6934fcb8903281b4e37d"></a>
 &#160;</td><td class="memItemRight" valign="bottom"><b>DobbyManager</b> (const std::shared_ptr&lt; <a class="el" href="classIDobbyEnv.html">IDobbyEnv</a> &gt; &amp;env, const std::shared_ptr&lt; <a class="el" href="classIDobbyUtils__v3.html">IDobbyUtils</a> &gt; &amp;utils, const std::shared_ptr&lt; <a class="el" href="classIDobbyIPCUtils.html">IDobbyIPCUtils</a> &gt; &amp;ipcUtils, const std::shared_ptr&lt; const <a class="el" href="classIDobbySettings.html">IDobbySettings</a> &gt; &amp;settings, const ContainerStartedFunc &amp;containerStartedCb, const ContainerStoppedFunc &amp;containerStoppedCb, const ContainerHibernatedFunc &amp;containerHibernatedCb, const ContainerHibernatedFunc &amp;containerAwokenCb)</td></tr>
 <tr class="separator:a15da48d127df6934fcb8903281b4e37d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a66e3c66c1edf14b1f292fb28004968d3" id="r_a66e3c66c1edf14b1f292fb28004968d3"><td class="memItemLeft" align="right" valign="top">int32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classDobbyManager.html#a66e3c66c1edf14b1f292fb28004968d3">startContainerFromBundle</a> (const <a class="el" href="classContainerId.html">ContainerId</a> &amp;id, const std::string &amp;bundlePath, const std::list&lt; int &gt; &amp;files, const std::string &amp;command, const std::string &amp;displaySocket, const std::vector&lt; std::string &gt; &amp;envVars)</td></tr>
-<tr class="memdesc:a66e3c66c1edf14b1f292fb28004968d3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Where the magic begins ... attempts to create a container from an OCI bundle*.  <br /></td></tr>
-<tr class="separator:a66e3c66c1edf14b1f292fb28004968d3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a84dfaac2c853d060726e99cfe8f8691f" id="r_a84dfaac2c853d060726e99cfe8f8691f"><td class="memItemLeft" align="right" valign="top">int32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classDobbyManager.html#a84dfaac2c853d060726e99cfe8f8691f">startContainerFromBundle</a> (const <a class="el" href="classContainerId.html">ContainerId</a> &amp;id, const std::string &amp;bundlePath, const std::list&lt; int &gt; &amp;files, const std::string &amp;command, const std::string &amp;displaySocket, const std::vector&lt; std::string &gt; &amp;envVars, uid_t userId=0, uid_t groupId=0)</td></tr>
+<tr class="memdesc:a84dfaac2c853d060726e99cfe8f8691f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Where the magic begins ... attempts to create a container from an OCI bundle*.  <br /></td></tr>
+<tr class="separator:a84dfaac2c853d060726e99cfe8f8691f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:abc24032118b91fc1660ae4be7dedaf2f" id="r_abc24032118b91fc1660ae4be7dedaf2f"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classDobbyManager.html#abc24032118b91fc1660ae4be7dedaf2f">stopContainer</a> (int32_t cd, bool withPrejudice)</td></tr>
 <tr class="memdesc:abc24032118b91fc1660ae4be7dedaf2f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Stops a running container.  <br /></td></tr>
 <tr class="separator:abc24032118b91fc1660ae4be7dedaf2f"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -1208,8 +1208,8 @@ echo "1" &gt; /proc/sys/net/ipv4/ip_forward
 
 </div>
 </div>
-<a id="a66e3c66c1edf14b1f292fb28004968d3" name="a66e3c66c1edf14b1f292fb28004968d3"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a66e3c66c1edf14b1f292fb28004968d3">&#9670;&#160;</a></span>startContainerFromBundle()</h2>
+<a id="a84dfaac2c853d060726e99cfe8f8691f" name="a84dfaac2c853d060726e99cfe8f8691f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a84dfaac2c853d060726e99cfe8f8691f">&#9670;&#160;</a></span>startContainerFromBundle()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -1248,7 +1248,19 @@ echo "1" &gt; /proc/sys/net/ipv4/ip_forward
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">const std::vector&lt; std::string &gt; &amp;&#160;</td>
-          <td class="paramname"><em>envVars</em>&#160;</td>
+          <td class="paramname"><em>envVars</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">uid_t&#160;</td>
+          <td class="paramname"><em>userId</em> = <code>0</code>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">uid_t&#160;</td>
+          <td class="paramname"><em>groupId</em> = <code>0</code>&#160;</td>
         </tr>
         <tr>
           <td></td>

@@ -43,7 +43,7 @@ var searchData=
   ['removewatch_40',['removeWatch',['../classAI__IPC_1_1DbusWatches.html#a61c35733dc42fea285eae359b832666e',1,'AI_IPC::DbusWatches']]],
   ['requirements_41',['Requirements',['../index.html#autotoc_md2',1,'']]],
   ['reserveservicename_42',['reserveServiceName',['../classAI__IPC_1_1DbusConnection.html#acd0c9614e62a865225bf14e88f4af037',1,'AI_IPC::DbusConnection']]],
-  ['reset_43',['reset',['../classAI__IPC_1_1IpcFileDescriptor.html#ad022a2b1896bec1193ac024379aa0685',1,'AI_IPC::IpcFileDescriptor::reset()'],['../classRefCountFile.html#a912cfd23af80c0e1cb9439c5e8ceea38',1,'RefCountFile::Reset()']]],
+  ['reset_43',['reset',['../classRefCountFile.html#a912cfd23af80c0e1cb9439c5e8ceea38',1,'RefCountFile::Reset()'],['../classAI__IPC_1_1IpcFileDescriptor.html#ad022a2b1896bec1193ac024379aa0685',1,'AI_IPC::IpcFileDescriptor::reset()']]],
   ['restart_44',['restart',['../classUpstart.html#a47ec4dca862ca9046e1ee94c8b160661',1,'Upstart']]],
   ['restartcontainer_45',['restartContainer',['../classDobbyManager.html#a188b03a5a04a14b67fdb198e692edb69',1,'DobbyManager']]],
   ['resume_46',['resume',['../classDobbyRunC.html#ab4353e59e4db26bad9d48bb59de3f1fe',1,'DobbyRunC']]],

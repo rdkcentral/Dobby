@@ -137,8 +137,8 @@ int32_t&#160;</td><td class="memItemRight" valign="bottom"><b>setLogMethod</b> (
 <tr class="separator:afa373001a3a2f8cbeaa375f47d06fc1d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a411bc1dc79fc36c74a50ae8e1e8fe125" id="r_a411bc1dc79fc36c74a50ae8e1e8fe125"><td class="memItemLeft" align="right" valign="top">virtual int32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classIDobbyProxy.html#a411bc1dc79fc36c74a50ae8e1e8fe125">startContainerFromSpec</a> (const std::string &amp;id, const std::string &amp;jsonSpec, const std::list&lt; int &gt; &amp;files, const std::string &amp;command=&quot;&quot;, const std::string &amp;displaySocket=&quot;&quot;, const std::vector&lt; std::string &gt; &amp;envVars=std::vector&lt; std::string &gt;()) const =0</td></tr>
 <tr class="separator:a411bc1dc79fc36c74a50ae8e1e8fe125"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa224de3412aedd58de8cc7f32cd88d2f" id="r_aa224de3412aedd58de8cc7f32cd88d2f"><td class="memItemLeft" align="right" valign="top">virtual int32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classIDobbyProxy.html#aa224de3412aedd58de8cc7f32cd88d2f">startContainerFromBundle</a> (const std::string &amp;id, const std::string &amp;bundlePath, const std::list&lt; int &gt; &amp;files, const std::string &amp;command=&quot;&quot;, const std::string &amp;displaySocket=&quot;&quot;, const std::vector&lt; std::string &gt; &amp;envVars=std::vector&lt; std::string &gt;()) const =0</td></tr>
-<tr class="separator:aa224de3412aedd58de8cc7f32cd88d2f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7d59af1824b9a807115f198842677f00" id="r_a7d59af1824b9a807115f198842677f00"><td class="memItemLeft" align="right" valign="top">virtual int32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classIDobbyProxy.html#a7d59af1824b9a807115f198842677f00">startContainerFromBundle</a> (const std::string &amp;id, const std::string &amp;bundlePath, const std::list&lt; int &gt; &amp;files, const std::string &amp;command=&quot;&quot;, const std::string &amp;displaySocket=&quot;&quot;, const std::vector&lt; std::string &gt; &amp;envVars=std::vector&lt; std::string &gt;(), uid_t userId=0, uid_t groupId=0) const =0</td></tr>
+<tr class="separator:a7d59af1824b9a807115f198842677f00"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a53bba7a812fe43e57b158dce32ecfed9" id="r_a53bba7a812fe43e57b158dce32ecfed9"><td class="memItemLeft" align="right" valign="top">virtual bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classIDobbyProxy.html#a53bba7a812fe43e57b158dce32ecfed9">stopContainer</a> (int32_t descriptor, bool withPrejudice) const =0</td></tr>
 <tr class="separator:a53bba7a812fe43e57b158dce32ecfed9"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:afb3c26f62e2683a87f0d3c59a9db2228" id="r_afb3c26f62e2683a87f0d3c59a9db2228"><td class="memItemLeft" align="right" valign="top">virtual bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classIDobbyProxy.html#afb3c26f62e2683a87f0d3c59a9db2228">pauseContainer</a> (int32_t descriptor) const =0</td></tr>
@@ -929,8 +929,8 @@ std::shared_ptr&lt; <a class="el" href="classAICommon_1_1IDispatcher.html">IDisp
 
 </div>
 </div>
-<a id="aa224de3412aedd58de8cc7f32cd88d2f" name="aa224de3412aedd58de8cc7f32cd88d2f"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aa224de3412aedd58de8cc7f32cd88d2f">&#9670;&#160;</a></span>startContainerFromBundle()</h2>
+<a id="a7d59af1824b9a807115f198842677f00" name="a7d59af1824b9a807115f198842677f00"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a7d59af1824b9a807115f198842677f00">&#9670;&#160;</a></span>startContainerFromBundle()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -972,7 +972,19 @@ std::shared_ptr&lt; <a class="el" href="classAICommon_1_1IDispatcher.html">IDisp
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">const std::vector&lt; std::string &gt; &amp;&#160;</td>
-          <td class="paramname"><em>envVars</em> = <code>std::vector&lt;&#160;std::string&#160;&gt;()</code>&#160;</td>
+          <td class="paramname"><em>envVars</em> = <code>std::vector&lt;&#160;std::string&#160;&gt;()</code>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">uid_t&#160;</td>
+          <td class="paramname"><em>userId</em> = <code>0</code>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">uid_t&#160;</td>
+          <td class="paramname"><em>groupId</em> = <code>0</code>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -987,7 +999,7 @@ std::shared_ptr&lt; <a class="el" href="classAICommon_1_1IDispatcher.html">IDisp
 </table>
 </div><div class="memdoc">
 
-<p>Implemented in <a class="el" href="classDobbyProxy.html#a4a3e69c29c230829a80d13653ec6f782">DobbyProxy</a>.</p>
+<p>Implemented in <a class="el" href="classDobbyProxy.html#a06b2c709b027e318938a644259233dce">DobbyProxy</a>.</p>
 
 </div>
 </div>

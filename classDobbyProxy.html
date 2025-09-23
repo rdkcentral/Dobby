@@ -151,9 +151,9 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:ad3dcdb24d55934fe0c801f254f2d0562" id="r_ad3dcdb24d55934fe0c801f254f2d0562"><td class="memItemLeft" align="right" valign="top">int32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classDobbyProxy.html#ad3dcdb24d55934fe0c801f254f2d0562">startContainerFromSpec</a> (const std::string &amp;id, const std::string &amp;jsonSpec, const std::list&lt; int &gt; &amp;files, const std::string &amp;command=&quot;&quot;, const std::string &amp;displaySocket=&quot;&quot;, const std::vector&lt; std::string &gt; &amp;envVars=std::vector&lt; std::string &gt;()) const override</td></tr>
 <tr class="memdesc:ad3dcdb24d55934fe0c801f254f2d0562"><td class="mdescLeft">&#160;</td><td class="mdescRight">Starts a container with the given id, json spec file and the list of files.  <br /></td></tr>
 <tr class="separator:ad3dcdb24d55934fe0c801f254f2d0562"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a4a3e69c29c230829a80d13653ec6f782" id="r_a4a3e69c29c230829a80d13653ec6f782"><td class="memItemLeft" align="right" valign="top">int32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classDobbyProxy.html#a4a3e69c29c230829a80d13653ec6f782">startContainerFromBundle</a> (const std::string &amp;id, const std::string &amp;bundlePath, const std::list&lt; int &gt; &amp;files, const std::string &amp;command=&quot;&quot;, const std::string &amp;displaySocket=&quot;&quot;, const std::vector&lt; std::string &gt; &amp;envVars=std::vector&lt; std::string &gt;()) const override</td></tr>
-<tr class="memdesc:a4a3e69c29c230829a80d13653ec6f782"><td class="mdescLeft">&#160;</td><td class="mdescRight">Starts a container with the given id, bundle path and the list of files.  <br /></td></tr>
-<tr class="separator:a4a3e69c29c230829a80d13653ec6f782"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a06b2c709b027e318938a644259233dce" id="r_a06b2c709b027e318938a644259233dce"><td class="memItemLeft" align="right" valign="top">int32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classDobbyProxy.html#a06b2c709b027e318938a644259233dce">startContainerFromBundle</a> (const std::string &amp;id, const std::string &amp;bundlePath, const std::list&lt; int &gt; &amp;files, const std::string &amp;command=&quot;&quot;, const std::string &amp;displaySocket=&quot;&quot;, const std::vector&lt; std::string &gt; &amp;envVars=std::vector&lt; std::string &gt;(), uid_t userId=0, uid_t groupId=0) const override</td></tr>
+<tr class="memdesc:a06b2c709b027e318938a644259233dce"><td class="mdescLeft">&#160;</td><td class="mdescRight">Starts a container with the given id, bundle path and the list of files.  <br /></td></tr>
+<tr class="separator:a06b2c709b027e318938a644259233dce"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a9aee125b40e6052f53735a349803aa55" id="r_a9aee125b40e6052f53735a349803aa55"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classDobbyProxy.html#a9aee125b40e6052f53735a349803aa55">stopContainer</a> (int32_t cd, bool withPrejudice) const override</td></tr>
 <tr class="memdesc:a9aee125b40e6052f53735a349803aa55"><td class="mdescLeft">&#160;</td><td class="mdescRight">Stops the container with the descriptor (container integer id)  <br /></td></tr>
 <tr class="separator:a9aee125b40e6052f53735a349803aa55"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -1493,8 +1493,8 @@ DOBBY_LOG_ETHANLOG : route diag logging to the supplied pipe
 
 </div>
 </div>
-<a id="a4a3e69c29c230829a80d13653ec6f782" name="a4a3e69c29c230829a80d13653ec6f782"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a4a3e69c29c230829a80d13653ec6f782">&#9670;&#160;</a></span>startContainerFromBundle()</h2>
+<a id="a06b2c709b027e318938a644259233dce" name="a06b2c709b027e318938a644259233dce"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a06b2c709b027e318938a644259233dce">&#9670;&#160;</a></span>startContainerFromBundle()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -1536,7 +1536,19 @@ DOBBY_LOG_ETHANLOG : route diag logging to the supplied pipe
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">const std::vector&lt; std::string &gt; &amp;&#160;</td>
-          <td class="paramname"><em>envVars</em> = <code>std::vector&lt;std::string&gt;()</code>&#160;</td>
+          <td class="paramname"><em>envVars</em> = <code>std::vector&lt;std::string&gt;()</code>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">uid_t&#160;</td>
+          <td class="paramname"><em>userId</em> = <code>0</code>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">uid_t&#160;</td>
+          <td class="paramname"><em>groupId</em> = <code>0</code>&#160;</td>
         </tr>
         <tr>
           <td></td>
