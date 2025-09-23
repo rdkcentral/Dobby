@@ -577,7 +577,7 @@ bool DobbyManager::createAndStart(const ContainerId &id,
         // Dump the runtime output to a new file even if the container failed to start
         if (loggingPlugin)
         {
-            mLogger->DumpBuffer(createBuffer->getMemFd(), -1, loggingPlugin);
+            mLogger->DumpBuffer(createBuffer->getMemFd(), -1, std::move(loggingPlugin));
         }
 
         container->containerPid = -1;
@@ -617,7 +617,7 @@ bool DobbyManager::createAndStart(const ContainerId &id,
 
         if (started)
         {
-            mLogger->StartContainerLogging(id.str(), pids.first, pids.second, loggingPlugin);
+            mLogger->StartContainerLogging(id.str(), pids.first, pids.second, std::move(loggingPlugin));
         }
     }
 
@@ -772,7 +772,7 @@ bool DobbyManager::createAndStartContainer(const ContainerId &id,
         auto loggingPlugin = GetContainerLogger(container);
         if (loggingPlugin)
         {
-            mLogger->DumpBuffer(destroyBuffer->getMemFd(), container->containerPid, loggingPlugin);
+            mLogger->DumpBuffer(destroyBuffer->getMemFd(), container->containerPid, std::move(loggingPlugin));
         }
 
         // clear the pid now it's been killed
@@ -1278,7 +1278,7 @@ bool DobbyManager::restartContainer(const ContainerId &id,
                 // If main container logging thread is still running,
                 // wait for it to finish before we dump the hook output
                 // to the log
-                mLogger->DumpBuffer(bufferStream->getMemFd(), container->containerPid, loggingPlugin);
+                mLogger->DumpBuffer(bufferStream->getMemFd(), container->containerPid, std::move(loggingPlugin));
             }
         }
     }
@@ -1401,7 +1401,8 @@ bool DobbyManager::stopContainer(int32_t cd, bool withPrejudice)
             }
 
             // Container has been resumed, so kill it now
-            if (!mRunc->killCont(id, withPrejudice ? SIGKILL : SIGTERM))
+            if (!mRunc->killCont(id, SIGKILL))
+
             {
                 AI_LOG_WARN("failed to send signal to '%s'", id.c_str());
                 AI_LOG_FN_EXIT();
@@ -1655,7 +1656,7 @@ bool DobbyManager::hibernateContainer(int32_t cd, const std::string& options)
 
                 uint32_t pid = pidIt->asUInt();
                 ret  = DobbyHibernate::HibernateProcess(pid, DobbyHibernate::DFL_TIMEOUTE_MS,
-                        DobbyHibernate::DFL_LOCATOR, dest, compress);
+                        DobbyHibernate::DFL_LOCATOR, std::move(dest), compress);
                 if (ret != DobbyHibernate::Error::ErrorNone)
                 {
                     AI_LOG_WARN("Error hibernating pid: '%d'", pid);
@@ -2083,8 +2084,7 @@ bool DobbyManager::addMount(int32_t cd, const std::string &source, const std::st
         AI_LOG_FN_EXIT();
         return false;
     }
-
-    auto doMoveMountLambda = [containerUID, containerGID, tempMountPointInsideContainer, mountPointInsideContainer]()
+    auto doMoveMountLambda = [containerUID, containerGID, tempMountPointInsideContainer = std::move(tempMountPointInsideContainer),mountPointInsideContainer = std::move(mountPointInsideContainer)]()
     {
         // switch to uid / gid of the host since we are still in the host user namespace
         if (syscall(SYS_setresgid, -1, containerGID, -1) != 0)
@@ -2127,7 +2127,7 @@ bool DobbyManager::addMount(int32_t cd, const std::string &source, const std::st
     };
 
     bool success = true;
-    if(!mUtilities->callInNamespace(containerPid, CLONE_NEWNS, doMoveMountLambda))
+    if(!mUtilities->callInNamespace(containerPid, CLONE_NEWNS, std::move(doMoveMountLambda)))
     {
         AI_LOG_ERROR("failed to addMount for %s in %s", source.c_str(), id.c_str());
         success = false;
@@ -2256,7 +2256,7 @@ bool DobbyManager::removeMount(int32_t cd, const std::string &source)
 
     };
 
-    if(!mUtilities->callInNamespace(containerPid, CLONE_NEWNS, doUnmountLambda))
+    if(!mUtilities->callInNamespace(containerPid, CLONE_NEWNS, std::move(doUnmountLambda)))
     {
         AI_LOG_ERROR("failed to unmount %s in %s", source.c_str(), id.c_str());
         AI_LOG_FN_EXIT();
@@ -2322,7 +2322,7 @@ bool DobbyManager::execInContainer(int32_t cd, const std::string &options, const
                 else
                 {
                     // Spin up thread to capture output from the exec command (could be long running)
-                    mLogger->StartContainerLogging(id.str(), pids.first, container->containerPid, loggingPlugin);
+                    mLogger->StartContainerLogging(id.str(), pids.first, container->containerPid, std::move(loggingPlugin));
                 }
             }
 
@@ -3067,7 +3067,7 @@ void DobbyManager::handleContainerTerminate(const ContainerId &id, const std::un
                 // If main container logging thread is still running,
                 // wait for it to finish before we dump the hook output
                 // to the log
-                mLogger->DumpBuffer(bufferStream->getMemFd(), container->containerPid, loggingPlugin);
+                mLogger->DumpBuffer(bufferStream->getMemFd(), container->containerPid, std::move(loggingPlugin));
             }
         }
 
