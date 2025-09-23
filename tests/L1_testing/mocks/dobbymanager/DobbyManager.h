@@ -162,7 +162,7 @@ public:
                                             const std::list<int>& files,
                                             const std::string& command,
                                             const std::string& displaySocket,
-                                            const std::vector<std::string>& envVars);
+                                            const std::vector<std::string>& envVars, uid_t userId=0, uid_t groupId=0);
     bool stopContainer(int32_t cd, bool withPrejudice);
     bool pauseContainer(int32_t cd);
     bool resumeContainer(int32_t cd);
