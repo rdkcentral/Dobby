@@ -83,7 +83,7 @@ int32_t DobbyManager::startContainerFromBundle(const ContainerId& id,
                                         const std::list<int>& files,
                                         const std::string& command,
                                         const std::string& displaySocket,
-                                        const std::vector<std::string>& envVars)
+                                        const std::vector<std::string>& envVars, uid_t userId, uid_t groupId)
 {
    EXPECT_NE(impl, nullptr);
 

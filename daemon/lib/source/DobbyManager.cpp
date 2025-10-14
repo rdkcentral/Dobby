@@ -1000,7 +1000,7 @@ int32_t DobbyManager::startContainerFromBundle(const ContainerId &id,
                                                const std::list<int> &files,
                                                const std::string &command,
                                                const std::string &displaySocket,
-                                               const std::vector<std::string>& envVars)
+                                               const std::vector<std::string>& envVars, uid_t userId, uid_t groupId)
 {
     AI_LOG_FN_ENTRY();
 
@@ -1063,6 +1063,10 @@ int32_t DobbyManager::startContainerFromBundle(const ContainerId &id,
         config->setPidsLimit(mSettings->pidsSettings().limit);
     }
 
+    if ((userId > 0) && (groupId > 0))
+    {
+        config->setUidGidMappings(userId, groupId);
+    }
     // Load the RDK plugins from disk (if necessary)
     std::map<std::string, Json::Value> rdkPlugins = config->rdkPlugins();
     AI_LOG_DEBUG("There are %zd rdk plugins to run", rdkPlugins.size());
