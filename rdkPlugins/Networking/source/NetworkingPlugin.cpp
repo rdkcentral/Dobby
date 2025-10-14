@@ -211,6 +211,64 @@ bool NetworkingPlugin::createRuntime()
         // Add localhost masquerade if enabled (run in container network namespace)
         if (mPluginData->port_forwarding->localhost_masquerade_present && mPluginData->port_forwarding->localhost_masquerade)
         {
+             AI_LOG_INFO("Localhost masquerade enabled — setting up container-to-host NAT rules");
+
+              rt_defs_plugins_networking_data_port_forwarding *portsConfig = mPluginData->port_forwarding;
+
+              // Get container IP from helper
+              std::string containerIp = mHelper->ipv4AddrStr();
+
+              // Ensure Netfilter instance exists
+              if (!mNetfilter)
+              {
+                  AI_LOG_ERROR("mNetfilter is null, cannot add NAT rules");
+                  return false;
+              }
+
+              // Create a RuleSet
+              Netfilter::RuleSet ruleSet;
+              std::list<std::string> natRules;
+              char ruleBuf[256];
+
+              for (size_t i = 0; i < portsConfig->container_to_host_len; i++)
+              {
+                  const auto *entry = portsConfig->container_to_host[i];
+
+                  // Validate protocol
+                  const char *protocol = nullptr;
+                  if (strcasecmp(entry->protocol, "tcp") == 0)
+                      protocol = "tcp";
+                  else if (strcasecmp(entry->protocol, "udp") == 0)
+                      protocol = "udp";
+                  else
+                  {
+                      AI_LOG_WARN("Invalid protocol '%s' in container_to_host[%zu]", entry->protocol, i);
+                      continue;
+                  }
+
+                  // Build rule string
+                  snprintf(ruleBuf, sizeof(ruleBuf),
+                           "INPUT -s %s -p %s --dport %u -j SNAT --to-source 127.0.0.1 -m comment --comment container-to-host-hostns",
+                           containerIp.c_str(),
+                           protocol,
+                           entry->port);
+
+                  natRules.emplace_back(ruleBuf);
+              }
+
+              // Add NAT rules list to RuleSet under Nat table
+              ruleSet[Netfilter::TableType::Nat] = natRules;
+
+              // Apply rules using addRules
+              if (mNetfilter->addRules(ruleSet, AF_INET, Netfilter::Operation::Append))
+              {
+                  AI_LOG_INFO("Container-to-host NAT rules added successfully");
+              }
+              else
+              {
+                  AI_LOG_ERROR("Failed to add container-to-host NAT rules");
+              }
+          
             // Ideally this would be done in the createContainer hook, but that fails
             // on some platforms with permissions issues (works fine on VM...)
             if (!mUtils->callInNamespace(mUtils->getContainerPid(), CLONE_NEWNET,
