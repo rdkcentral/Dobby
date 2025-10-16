@@ -257,7 +257,7 @@ bool NetworkingPlugin::createRuntime()
               }
 
               // Add NAT rules list to RuleSet under Nat table
-              ruleSet[Netfilter::TableType::Nat] = natRules;
+              ruleSet[Netfilter::TableType::Nat] = std::move(natRules);
 
               // Apply rules using addRules
               if (mNetfilter->addRules(ruleSet, AF_INET, Netfilter::Operation::Append))
