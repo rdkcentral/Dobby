@@ -431,6 +431,64 @@ bool NetworkingPlugin::postHalt()
         }
     }
 
+    if (mPluginData->port_forwarding != nullptr &&
+        mPluginData->port_forwarding->localhost_masquerade_present &&
+        mPluginData->port_forwarding->localhost_masquerade)
+    {
+        AI_LOG_INFO("Cleaning up container-to-host localhost masquerade rules");
+
+        rt_defs_plugins_networking_data_port_forwarding *portsConfig = mPluginData->port_forwarding;
+
+        std::string containerIp = mHelper->ipv4AddrStr();
+
+        if (containerIp.empty())
+        {
+            AI_LOG_WARN("Container IP unavailable — skipping localhost masquerade cleanup");
+        }
+        else
+        {
+            Netfilter::RuleSet ruleSet;
+            std::list<std::string> natRules;
+            char ruleBuf[256];
+
+            for (size_t i = 0; i < portsConfig->container_to_host_len; i++)
+            {
+                const auto *entry = portsConfig->container_to_host[i];
+                const char *protocol = nullptr;
+
+                if (strcasecmp(entry->protocol, "tcp") == 0)
+                    protocol = "tcp";
+                else if (strcasecmp(entry->protocol, "udp") == 0)
+                    protocol = "udp";
+                else
+                {
+                    AI_LOG_WARN("Invalid protocol '%s' in container_to_host[%zu]", entry->protocol, i);
+                    continue;
+                }
+
+                snprintf(ruleBuf, sizeof(ruleBuf),
+                         "INPUT -s %s -p %s --dport %u -j SNAT --to-source 127.0.0.1 -m comment --comment container-to-host-hostns",
+                         containerIp.c_str(),
+                         protocol,
+                         entry->port);
+
+                natRules.emplace_back(ruleBuf);
+            }
+
+            ruleSet[Netfilter::TableType::Nat] = std::move(natRules);
+
+            if (mNetfilter->addRules(ruleSet, AF_INET, Netfilter::Operation::Delete))
+            {
+                AI_LOG_INFO("Successfully removed container-to-host NAT rules");
+            }
+            else
+            {
+                AI_LOG_WARN("Failed to remove container-to-host NAT rules");
+                success = false;
+            }
+        }
+    }
+
     // remove multicast forwarding rules if configured
     if (mPluginData->multicast_forwarding != nullptr)
     {
