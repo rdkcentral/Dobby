@@ -795,31 +795,41 @@ bool DobbyConfig::updateBundleConfig(const ContainerId& id, std::shared_ptr<rt_d
 
 bool DobbyConfig::isApparmorProfileLoaded(const char *profile) const
  {
+     DIR *d = NULL;
      bool status = false;
-     int fd = open("/proc/self/attr/current", O_WRONLY);
+     struct dirent *cur_dir = NULL;
+     size_t profile_len = strlen(profile);
 
-     if (fd < 0)
-     {
-         AI_LOG_ERROR("/proc/self/attr/current open failed");
-         return status;
-     }
-     char profile_name[256];
-     snprintf(profile_name, sizeof(profile_name), "permprofile %s", profile);
-
-     if (write(fd, profile_name, strlen(profile_name)) < 0)
-     {
-         if (errno == ENOENT)
-             AI_LOG_INFO("Apparmor profile [%s] doesn't exist", profile);
-         else
-             AI_LOG_ERROR("/proc/self/attr/current write failed");
-     }
-     else
-     {
-         status = true;
-         AI_LOG_INFO("Apparmor profile [%s] is loaded", profile);
+     d = opendir("/sys/kernel/security/apparmor/policy/profiles/");
+     if(!d) {
+          AI_LOG_SYS_ERROR(errno, "opendir() failed on apparmorfs policy directory.");
+          return false;
      }
 
-     close(fd);
+     errno = 0;
+     while((cur_dir = readdir(d)) != NULL) {
+          if(strlen(cur_dir->d_name) >= (profile_len + 2)) {
+               if(!strncmp(cur_dir->d_name, profile, profile_len) &&
+                    cur_dir->d_name[profile_len] == '.' &&
+                    isdigit(cur_dir->d_name[profile_len + 1])) {
+                    
+                    status = true;
+                    AI_LOG_INFO("AppArmor profile [%s] is loaded.", profile);
+                    break;
+               }
+          }
+     }
+
+     if(!status) {
+          AI_LOG_INFO("AppArmor profile [%s] not found.", profile);
+     }
+
+     if(!cur_dir && errno) {
+          AI_LOG_SYS_ERROR(errno, "readdir() failed on apparmorfs policy directory");
+     }
+
+     closedir(d);
+
      return status;
  }
 
