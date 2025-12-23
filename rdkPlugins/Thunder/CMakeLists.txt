@@ -19,7 +19,7 @@ cmake_minimum_required( VERSION 3.7.0 )
 
 project(ThunderPlugin)
 
-find_package(securityagent CONFIG)
+#find_package(securityagent CONFIG)
 
 add_library(${PROJECT_NAME}
         SHARED
@@ -29,11 +29,11 @@ add_library(${PROJECT_NAME}
         ../Networking/source/StdStreamPipe.cpp
         )
 
-if(securityagent_FOUND)
-        add_definitions("-DHAS_SECURITY_AGENT")
-else()
-        message("Could not find ThunderClientLibraries SecurityAgent - building without token support")
-endif()
+#if(securityagent_FOUND)
+#        add_definitions("-DHAS_SECURITY_AGENT")
+#else()
+#        message("Could not find ThunderClientLibraries SecurityAgent - building without token support")
+#endif()
 
 if (EXTERNAL_THUNDER_PLUGIN_BUILD)
         # TODO:: Improve this. All plugins should be able to be built standalone
@@ -76,10 +76,10 @@ target_link_libraries(${PROJECT_NAME}
         DobbyRdkPluginCommonLib
         )
 
-if (securityagent_FOUND)
-        target_link_libraries(${PROJECT_NAME}
-                securityagent::securityagent
-        )
-endif()
+#if (securityagent_FOUND)
+#        target_link_libraries(${PROJECT_NAME}
+#                securityagent::securityagent
+#        )
+#endif()
 
 set_target_properties( ${PROJECT_NAME} PROPERTIES SOVERSION 1 )
