@@ -29,6 +29,7 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <limits.h>
+#include <errno.h>
 
 /**
  * @brief A logging sink that sends the contents of the container stdout/err to a given file. The file
@@ -41,7 +42,11 @@
 FileSink::FileSink(const std::string &containerId, std::shared_ptr<rt_dobby_schema> &containerConfig)
     : mContainerConfig(containerConfig),
       mContainerId(containerId),
+      mFileSizeLimit(SSIZE_MAX),
+      mOutputFileFd(-1),
+      mDevNullFd(-1),
       mLimitHit(false),
+      mClosed(false),
       mBuf{}
 {
     AI_LOG_FN_ENTRY();
@@ -71,13 +76,18 @@ FileSink::FileSink(const std::string &containerId, std::shared_ptr<rt_dobby_sche
             mFileSizeLimit = SSIZE_MAX;
         }
     }
+    else
+    {
+        // Config says "log to file" but file options are missing; default to /dev/null
+        AI_LOG_WARN("No file options provided for container log; sending output to /dev/null");
+    }
 
     mOutputFileFd = openFile(mOutputFilePath);
     if (mOutputFileFd < 0)
     {
         // Couldn't open our output file, send to /dev/null to avoid blocking
         AI_LOG_SYS_ERROR(errno, "Failed to open container logfile - sending to /dev/null");
-        if (mDevNullFd > 0)
+        if (mDevNullFd >= 0)
         {
             mOutputFileFd = mDevNullFd;
         }
@@ -88,17 +98,34 @@ FileSink::FileSink(const std::string &containerId, std::shared_ptr<rt_dobby_sche
 
 FileSink::~FileSink()
 {
-    // Close everything we opened
-    if (close(mDevNullFd) < 0)
+    int devNullFdToClose = -1;
+    int outputFdToClose = -1;
+
     {
-        AI_LOG_SYS_ERROR(errno, "Failed to close /dev/null");
+        // Prevent races with DumpLog/process (both take mLock)
+        std::lock_guard<std::mutex> locker(mLock);
+        mClosed = true;
+
+        devNullFdToClose = mDevNullFd;
+        outputFdToClose = mOutputFileFd;
+        mDevNullFd = -1;
+        mOutputFileFd = -1;
     }
 
-    if (mOutputFileFd > 0)
+    // Close everything we opened; avoid closing the same fd twice
+    if (outputFdToClose >= 0 && outputFdToClose != devNullFdToClose)
     {
-        if (close(mOutputFileFd) < 0)
+        if (close(outputFdToClose) < 0)
         {
             AI_LOG_SYS_ERROR(errno, "Failed to close output file");
+        }
+    }
+
+    if (devNullFdToClose >= 0)
+    {
+        if (close(devNullFdToClose) < 0)
+        {
+            AI_LOG_SYS_ERROR(errno, "Failed to close /dev/null");
         }
     }
 }
@@ -117,6 +144,11 @@ void FileSink::DumpLog(const int bufferFd)
 
     std::lock_guard<std::mutex> locker(mLock);
 
+    if (mClosed)
+    {
+        return;
+    }
+
     ssize_t ret;
     ssize_t offset = 0;
 
@@ -134,9 +166,16 @@ void FileSink::DumpLog(const int bufferFd)
         if (offset <= mFileSizeLimit)
         {
             // Write to the output file
-            if (write(mOutputFileFd, mBuf, ret) < 0)
+            if (mOutputFileFd >= 0)
             {
-                AI_LOG_SYS_ERROR(errno, "Write failed");
+                if (TEMP_FAILURE_RETRY(write(mOutputFileFd, mBuf, ret)) < 0)
+                {
+                    AI_LOG_SYS_ERROR(errno, "Write failed");
+                    if (mDevNullFd >= 0)
+                    {
+                        mOutputFileFd = mDevNullFd;
+                    }
+                }
             }
         }
         else
@@ -148,7 +187,10 @@ void FileSink::DumpLog(const int bufferFd)
                             mContainerId.c_str(), mFileSizeLimit);
             }
             mLimitHit = true;
-            write(mDevNullFd, mBuf, ret);
+            if (mDevNullFd >= 0)
+            {
+                TEMP_FAILURE_RETRY(write(mDevNullFd, mBuf, ret));
+            }
         }
     }
 
@@ -158,7 +200,17 @@ void FileSink::DumpLog(const int bufferFd)
     if (!mLimitHit)
     {
         std::string marker = "---------------------------------------------\n";
-        write(mOutputFileFd, marker.c_str(), marker.length());
+        if (mOutputFileFd >= 0)
+        {
+            if (TEMP_FAILURE_RETRY(write(mOutputFileFd, marker.c_str(), marker.length())) < 0)
+            {
+                AI_LOG_SYS_ERROR(errno, "Write failed");
+                if (mDevNullFd >= 0)
+                {
+                    mOutputFileFd = mDevNullFd;
+                }
+            }
+        }
     }
 #endif
 }
@@ -171,6 +223,11 @@ void FileSink::DumpLog(const int bufferFd)
 void FileSink::process(const std::shared_ptr<AICommon::IPollLoop> &pollLoop, epoll_event event)
 {
     std::lock_guard<std::mutex> locker(mLock);
+
+    if (mClosed)
+    {
+        return;
+    }
 
     if (event.events & EPOLLIN)
     {
@@ -199,9 +256,16 @@ void FileSink::process(const std::shared_ptr<AICommon::IPollLoop> &pollLoop, epo
             if (offset <= mFileSizeLimit)
             {
                 // Write to the output file
-                if (write(mOutputFileFd, mBuf, ret) < 0)
+                if (mOutputFileFd >= 0)
                 {
-                    AI_LOG_SYS_ERROR(errno, "Write to %s failed", mOutputFilePath.c_str());
+                    if (TEMP_FAILURE_RETRY(write(mOutputFileFd, mBuf, ret)) < 0)
+                    {
+                        AI_LOG_SYS_ERROR(errno, "Write to %s failed", mOutputFilePath.c_str());
+                        if (mDevNullFd >= 0)
+                        {
+                            mOutputFileFd = mDevNullFd;
+                        }
+                    }
                 }
             }
             else
@@ -213,7 +277,10 @@ void FileSink::process(const std::shared_ptr<AICommon::IPollLoop> &pollLoop, epo
                                 mContainerId.c_str(), mFileSizeLimit);
                 }
                 mLimitHit = true;
-                write(mDevNullFd, mBuf, ret);
+                if (mDevNullFd >= 0)
+                {
+                    TEMP_FAILURE_RETRY(write(mDevNullFd, mBuf, ret));
+                }
             }
         }
 

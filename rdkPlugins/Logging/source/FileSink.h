@@ -46,6 +46,7 @@ private:
     int mDevNullFd;
 
     bool mLimitHit;
+    bool mClosed;
     char mBuf[PTY_BUFFER_SIZE];
 
     std::mutex mLock;
