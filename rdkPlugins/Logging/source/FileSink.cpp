@@ -268,9 +268,17 @@ void FileSink::process(const std::shared_ptr<AICommon::IPollLoop> &pollLoop, epo
                     if (TEMP_FAILURE_RETRY(write(mOutputFileFd, mBuf, ret)) < 0)
                     {
                         AI_LOG_SYS_ERROR(errno, "Write to %s failed", mOutputFilePath.c_str());
-                        if (mDevNullFd >= 0)
+                        // If writing to the output file fails, attempt to fall back to /dev/null.
+                        // Avoid repeatedly attempting writes to an already-failed descriptor.
+                        if (mOutputFileFd != mDevNullFd && mDevNullFd >= 0)
                         {
                             mOutputFileFd = mDevNullFd;
+                        }
+                        else
+                        {
+                            // Either we were already writing to /dev/null, or /dev/null is invalid;
+                            // disable further writes from this sink.
+                            mOutputFileFd = -1;
                         }
                     }
                 }
