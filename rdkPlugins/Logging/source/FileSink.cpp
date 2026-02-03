@@ -206,9 +206,15 @@ void FileSink::DumpLog(const int bufferFd)
             if (TEMP_FAILURE_RETRY(write(mOutputFileFd, marker.c_str(), marker.length())) < 0)
             {
                 AI_LOG_SYS_ERROR(errno, "Write failed");
-                if (mDevNullFd >= 0)
+                if (mDevNullFd >= 0 && mOutputFileFd != mDevNullFd)
                 {
+                    // Fall back to /dev/null if it's a different, valid fd
                     mOutputFileFd = mDevNullFd;
+                }
+                else
+                {
+                    // Avoid repeatedly attempting writes on a failing fd
+                    mOutputFileFd = -1;
                 }
             }
         }
