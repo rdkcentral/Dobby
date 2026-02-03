@@ -80,6 +80,7 @@ FileSink::FileSink(const std::string &containerId, std::shared_ptr<rt_dobby_sche
     {
         // Config says "log to file" but file options are missing; default to /dev/null
         AI_LOG_WARN("No file options provided for container log; sending output to /dev/null");
+        mOutputFilePath = "/dev/null";
     }
 
     mOutputFileFd = openFile(mOutputFilePath);
