@@ -75,23 +75,23 @@ FileSink::FileSink(const std::string &containerId, std::shared_ptr<rt_dobby_sche
             AI_LOG_INFO("No file size limit size for container log - setting to unlimited");
             mFileSizeLimit = SSIZE_MAX;
         }
+
+        mOutputFileFd = openFile(mOutputFilePath);
+        if (mOutputFileFd < 0)
+        {
+            // Couldn't open our output file, send to /dev/null to avoid blocking
+            AI_LOG_SYS_ERROR(errno, "Failed to open container logfile - sending to /dev/null");
+            if (mDevNullFd >= 0)
+            {
+                mOutputFileFd = mDevNullFd;
+            }
+        }
     }
     else
     {
         // Config says "log to file" but file options are missing; default to /dev/null
         AI_LOG_WARN("No file options provided for container log; sending output to /dev/null");
-        mOutputFilePath = "/dev/null";
-    }
-
-    mOutputFileFd = openFile(mOutputFilePath);
-    if (mOutputFileFd < 0)
-    {
-        // Couldn't open our output file, send to /dev/null to avoid blocking
-        AI_LOG_SYS_ERROR(errno, "Failed to open container logfile - sending to /dev/null");
-        if (mDevNullFd >= 0)
-        {
-            mOutputFileFd = mDevNullFd;
-        }
+        mOutputFileFd = mDevNullFd;
     }
 
     AI_LOG_FN_EXIT();
@@ -172,9 +172,17 @@ void FileSink::DumpLog(const int bufferFd)
                 if (TEMP_FAILURE_RETRY(write(mOutputFileFd, mBuf, ret)) < 0)
                 {
                     AI_LOG_SYS_ERROR(errno, "Write failed");
-                    if (mDevNullFd >= 0)
+                    if (mDevNullFd >= 0 && mOutputFileFd != mDevNullFd)
                     {
+                        if (close(mOutputFileFd) < 0)
+                        {
+                            AI_LOG_SYS_ERROR(errno, "Failed to close output file");
+                        }
                         mOutputFileFd = mDevNullFd;
+                    }
+                    else
+                    {
+                        mOutputFileFd = -1;
                     }
                 }
             }
@@ -272,6 +280,10 @@ void FileSink::process(const std::shared_ptr<AICommon::IPollLoop> &pollLoop, epo
                         // Avoid repeatedly attempting writes to an already-failed descriptor.
                         if (mOutputFileFd != mDevNullFd && mDevNullFd >= 0)
                         {
+                            if (close(mOutputFileFd) < 0)
+                            {
+                                AI_LOG_SYS_ERROR(errno, "Failed to close output file");
+                            }
                             mOutputFileFd = mDevNullFd;
                         }
                         else
