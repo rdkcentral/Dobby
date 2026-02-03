@@ -75,23 +75,23 @@ FileSink::FileSink(const std::string &containerId, std::shared_ptr<rt_dobby_sche
             AI_LOG_INFO("No file size limit size for container log - setting to unlimited");
             mFileSizeLimit = SSIZE_MAX;
         }
-
-        mOutputFileFd = openFile(mOutputFilePath);
-        if (mOutputFileFd < 0)
-        {
-            // Couldn't open our output file, send to /dev/null to avoid blocking
-            AI_LOG_SYS_ERROR(errno, "Failed to open container logfile - sending to /dev/null");
-            if (mDevNullFd >= 0)
-            {
-                mOutputFileFd = mDevNullFd;
-            }
-        }
     }
     else
     {
         // Config says "log to file" but file options are missing; default to /dev/null
         AI_LOG_WARN("No file options provided for container log; sending output to /dev/null");
-        mOutputFileFd = mDevNullFd;
+        mOutputFilePath = "/dev/null";
+    }
+
+    mOutputFileFd = openFile(mOutputFilePath);
+    if (mOutputFileFd < 0)
+    {
+        // Couldn't open our output file, send to /dev/null to avoid blocking
+        AI_LOG_SYS_ERROR(errno, "Failed to open container logfile - sending to /dev/null");
+        if (mDevNullFd >= 0)
+        {
+            mOutputFileFd = mDevNullFd;
+        }
     }
 
     AI_LOG_FN_EXIT();
@@ -171,19 +171,32 @@ void FileSink::DumpLog(const int bufferFd)
             {
                 if (TEMP_FAILURE_RETRY(write(mOutputFileFd, mBuf, ret)) < 0)
                 {
-                    AI_LOG_SYS_ERROR(errno, "Write failed");
-                    if (mDevNullFd >= 0 && mOutputFileFd != mDevNullFd)
+                    AI_LOG_SYS_ERROR(errno, "Write failed to fd %d", mOutputFileFd);
+                    
+                    // Handle persistent errors that require fallback
+                    if (errno == EBADF || errno == EPIPE || errno == ENOSPC || errno == EIO)
                     {
-                        if (close(mOutputFileFd) < 0)
+                        if (mOutputFileFd != mDevNullFd && mDevNullFd >= 0)
                         {
-                            AI_LOG_SYS_ERROR(errno, "Failed to close output file");
+                            // Fall back to /dev/null if it's a different, valid fd
+                            AI_LOG_WARN("Switching to /dev/null for container %s", mContainerId.c_str());
+                            mOutputFileFd = mDevNullFd;
                         }
-                        mOutputFileFd = mDevNullFd;
+                        else if (mOutputFileFd == mDevNullFd)
+                        {
+                            // Already writing to /dev/null and that failed
+                            AI_LOG_ERROR("Write to /dev/null failed - disabling logging for container %s",
+                                       mContainerId.c_str());
+                            mOutputFileFd = -1;
+                        }
+                        else
+                        {
+                            AI_LOG_ERROR("Cannot switch logging for container %s to /dev/null: invalid fd %d",
+                                       mContainerId.c_str(), mDevNullFd);
+                            mOutputFileFd = -1;
+                        }
                     }
-                    else
-                    {
-                        mOutputFileFd = -1;
-                    }
+                    // Note: EINTR is handled by TEMP_FAILURE_RETRY
                 }
             }
         }
@@ -204,27 +217,15 @@ void FileSink::DumpLog(const int bufferFd)
     }
 
 #if (AI_BUILD_TYPE == AI_DEBUG)
-    // Separate sections of log file for reabability
+    // Separate sections of log file for readability
     // (useful if we're writing lots of buffer dumps)
-    if (!mLimitHit)
+    if (!mLimitHit && mOutputFileFd >= 0)
     {
         std::string marker = "---------------------------------------------\n";
-        if (mOutputFileFd >= 0)
+        if (TEMP_FAILURE_RETRY(write(mOutputFileFd, marker.c_str(), marker.length())) < 0)
         {
-            if (TEMP_FAILURE_RETRY(write(mOutputFileFd, marker.c_str(), marker.length())) < 0)
-            {
-                AI_LOG_SYS_ERROR(errno, "Write failed");
-                if (mDevNullFd >= 0 && mOutputFileFd != mDevNullFd)
-                {
-                    // Fall back to /dev/null if it's a different, valid fd
-                    mOutputFileFd = mDevNullFd;
-                }
-                else
-                {
-                    // Avoid repeatedly attempting writes on a failing fd
-                    mOutputFileFd = -1;
-                }
-            }
+            // Silent failure acceptable for debug marker, but handle gracefully
+            AI_LOG_SYS_ERROR(errno, "Failed to write debug marker");
         }
     }
 #endif
@@ -276,21 +277,29 @@ void FileSink::process(const std::shared_ptr<AICommon::IPollLoop> &pollLoop, epo
                     if (TEMP_FAILURE_RETRY(write(mOutputFileFd, mBuf, ret)) < 0)
                     {
                         AI_LOG_SYS_ERROR(errno, "Write to %s failed", mOutputFilePath.c_str());
-                        // If writing to the output file fails, attempt to fall back to /dev/null.
-                        // Avoid repeatedly attempting writes to an already-failed descriptor.
-                        if (mOutputFileFd != mDevNullFd && mDevNullFd >= 0)
+                        
+                        // Handle persistent errors that require fallback
+                        if (errno == EBADF || errno == EPIPE || errno == ENOSPC || errno == EIO)
                         {
-                            if (close(mOutputFileFd) < 0)
+                            if (mOutputFileFd != mDevNullFd && mDevNullFd >= 0)
                             {
-                                AI_LOG_SYS_ERROR(errno, "Failed to close output file");
+                                // Fall back to /dev/null if it's a different, valid fd
+                                AI_LOG_WARN("Switching to /dev/null for container %s", mContainerId.c_str());
+                                mOutputFileFd = mDevNullFd;
                             }
-                            mOutputFileFd = mDevNullFd;
-                        }
-                        else
-                        {
-                            // Either we were already writing to /dev/null, or /dev/null is invalid;
-                            // disable further writes from this sink.
-                            mOutputFileFd = -1;
+                            else if (mOutputFileFd == mDevNullFd)
+                            {
+                                // Already writing to /dev/null and that failed
+                                AI_LOG_ERROR("Write to /dev/null failed - disabling logging for container %s",
+                                           mContainerId.c_str());
+                                mOutputFileFd = -1;
+                            }
+                            else
+                            {
+                                AI_LOG_ERROR("Cannot switch logging for container %s to /dev/null: invalid fd %d",
+                                           mContainerId.c_str(), mDevNullFd);
+                                mOutputFileFd = -1;
+                            }
                         }
                     }
                 }
