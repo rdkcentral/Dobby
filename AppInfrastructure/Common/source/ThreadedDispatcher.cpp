@@ -178,7 +178,6 @@ ThreadedDispatcher::~ThreadedDispatcher()
 }
 bool ThreadedDispatcher::hasMoreWorkOrWasStopRequested()
 {
-    std::unique_lock<std::mutex> lock(m);
     return !q.empty() || !running;
 }
 void ThreadedDispatcher::doWork(const std::string& name, int priority)
