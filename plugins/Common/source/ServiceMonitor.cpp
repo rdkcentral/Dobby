@@ -194,19 +194,21 @@ void ServiceMonitor::onServiceNotification(bool added)
 void ServiceMonitor::onReadyNotification(const AI_IPC::VariantList& args)
 {
     AI_LOG_INFO("%s service is ready", mServiceName.c_str());
+    bool notify = false;
 
-    std::unique_lock<std::mutex> locker(mLock);
+    {std::unique_lock<std::mutex> locker(mLock);
 
-    if (mState != State::Ready)
-    {
-        // set the state back to ready
-        mState = State::Ready;
-
-
-        // call the registered handler
-        if (mStateChangeHandler)
-            mStateChangeHandler(State::Ready);
+        if (mState != State::Ready)
+        {
+            // set the state back to ready
+            mState = State::Ready;
+            notify = true;
+        }
     }
+
+    // call the registered handler
+    if (notify && mStateChangeHandler)
+        mStateChangeHandler(State::Ready);
 }
 
 // -----------------------------------------------------------------------------
