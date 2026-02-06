@@ -282,8 +282,8 @@ int main(int argc, char *argv[])
         // And we're done
         AICommon::termLogging();
         return EXIT_SUCCESS;
-        } catch (const std::exception& e) {
-            AI_LOG_ERROR_EXIT("Unhandled exception in main: %s\n", e.what());
-            exit(EXIT_FAILURE);
+    } catch (const std::exception& e) {
+        AI_LOG_ERROR_EXIT("Unhandled exception in main: %s\n", e.what());
+        exit(EXIT_FAILURE);
     }
 }
