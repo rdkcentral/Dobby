@@ -558,7 +558,7 @@ bool DobbyConfig::writeConfigJsonImpl(const std::string& filePath) const
     // set file permissions
     if (chmod(filePath.c_str(), S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH) != 0)
     {
-	    AI_LOG_SYS_WARN(errno, "Failed to set permissions on config file '%s'", filePath.c_str());
+        AI_LOG_SYS_WARN(errno, "Failed to set permissions on config file '%s'", filePath.c_str());
     }
 
 

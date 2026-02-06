@@ -232,7 +232,7 @@ Settings::Settings(const Json::Value& settings)
                     else if(pluginName.isObject())
                     {
                         for (const auto& value : pluginName.getMemberNames())
-			            {
+                        {
                             mDefaultPlugins.push_back(value);
                             mRdkPluginsData[value] = pluginName[value];
                         }

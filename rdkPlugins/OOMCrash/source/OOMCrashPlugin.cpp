@@ -54,7 +54,7 @@ unsigned OOMCrash::hookHints() const
 {
     return (
         IDobbyRdkPlugin::HintFlags::PostInstallationFlag |
-	IDobbyRdkPlugin::HintFlags::PostHaltFlag);
+    IDobbyRdkPlugin::HintFlags::PostHaltFlag);
 }
 
 /**

@@ -40,7 +40,7 @@ ThreadedDispatcher::ThreadedDispatcher(int priority, const std::string& name /*=
 }
 void ThreadedDispatcher::post(std::function<void ()> work)
 {
-	{std::unique_lock<std::mutex> lock(m);
+    {std::unique_lock<std::mutex> lock(m);
         if(!running)
         {
             AI_LOG_WARN("Ignoring work because the dispatcher is not running anymore");
@@ -48,7 +48,7 @@ void ThreadedDispatcher::post(std::function<void ()> work)
             //can't throw an exception here because if this is executed from destructor,
             //which occurs when work adds more work things go horribly wrong.
             //Instead, ignore work.
-	    }
+        }
         q.push_back(work);
     }
     cv.notify_one();
@@ -69,7 +69,7 @@ namespace
  */
 void syncCallback(std::mutex* lock, std::condition_variable* cond, bool* fired)
 {
-	{std::unique_lock<std::mutex> locker(*lock);
+    {std::unique_lock<std::mutex> locker(*lock);
         *fired = true;
     }
     cond->notify_all();
@@ -83,7 +83,7 @@ bool ThreadedDispatcher::invokedFromDispatcherThread()
     bool res = (std::this_thread::get_id() == t.get_id());
     if (res)
     {
-		std::stringstream ss;
+        std::stringstream ss;
         ss << "Caller thread Id [" << std::this_thread::get_id() << "] == [dispatcher thread Id " << t.get_id() << "]";
         AI_LOG_ERROR("%s", ss.str().c_str());
     }
@@ -107,7 +107,7 @@ void ThreadedDispatcher::sync()
     std::condition_variable cond;
     bool fired = false;
     // Take the queue lock and ensure we're still running
-	{std::unique_lock<std::mutex> qlocker(m);
+    {std::unique_lock<std::mutex> qlocker(m);
         if (!running)
         {
             AI_LOG_DEBUG("Ignoring sync because dispatcher is not running");
@@ -148,7 +148,7 @@ void ThreadedDispatcher::flush()
         m2.lock();
         post(bind(unlockAndSetFlagToFalse, std::ref(m2), std::ref(this->running)));
         // coverity[double_lock : FALSE]
-	    m2.lock();
+        m2.lock();
         m2.unlock();
         stop();
     }
@@ -163,7 +163,7 @@ void ThreadedDispatcher::flush()
  */
 void ThreadedDispatcher::stop()
 {
-	{std::unique_lock<std::mutex> lock(m);
+    {std::unique_lock<std::mutex> lock(m);
         running = false;
     }
     cv.notify_one();

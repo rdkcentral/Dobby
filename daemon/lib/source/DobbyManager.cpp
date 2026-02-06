@@ -517,7 +517,7 @@ void DobbyManager::cleanupContainersShutdown()
                 // to avoid repeating indefinitely. It will be cleaned on boot-up
                 mContainers.erase(eraseIt);
                 AI_LOG_ERROR("Failed to stop container %s. Will attempt to clean up at daemon restart", id.c_str());
-	    }
+        }
             else
             {
                 // This would normally be done async by the runc monitor thread, but we're

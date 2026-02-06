@@ -285,5 +285,5 @@ int main(int argc, char *argv[])
         } catch (const std::exception& e) {
             AI_LOG_ERROR_EXIT("Unhandled exception in main: %s\n", e.what());
             exit(EXIT_FAILURE);
-	}
+    }
 }

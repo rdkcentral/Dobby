@@ -1211,13 +1211,11 @@ void Dobby::stop(std::shared_ptr<AI_IPC::IAsyncReplySender> replySender)
 
                 // Fire off the reply
                 if (!replySender->sendReply({ result }))
-		{
-			AI_LOG_ERROR("Failed to send reply from stop lambda");
-		}
+                {
+                    AI_LOG_ERROR("Failed to send reply from stop lambda");
+                }
 
-            };
-
-        // Queue the work, if successful then we're done
+            };        // Queue the work, if successful then we're done
         if (mWorkQueue->postWork(std::move(doStopLambda)))
         {
             AI_LOG_FN_EXIT();
@@ -1269,13 +1267,11 @@ void Dobby::pause(std::shared_ptr<AI_IPC::IAsyncReplySender> replySender)
 
                 // Fire off the reply
                 if (!replySender->sendReply({ result }))
-		{
-			AI_LOG_ERROR("Failed to send reply from pause lambda");
-		}
+                {
+                    AI_LOG_ERROR("Failed to send reply from pause lambda");
+                }
 
-            };
-
-        // Queue the work, if successful then we're done
+            };        // Queue the work, if successful then we're done
         if (mWorkQueue->postWork(std::move(doPauseLambda)))
         {
             AI_LOG_FN_EXIT();
@@ -1717,8 +1713,8 @@ void Dobby::exec(std::shared_ptr<AI_IPC::IAsyncReplySender> replySender)
         auto doExecLambda =
             [manager = mManager,
              descriptor,
-	     options = std::move(options),
-	     command = std::move(command),
+             options = std::move(options),
+             command = std::move(command),
 
              replySender]()
             {
@@ -1783,9 +1779,9 @@ void Dobby::getState(std::shared_ptr<AI_IPC::IAsyncReplySender> replySender)
 
                 // Fire off the reply
                 if (!replySender->sendReply({ result }))
-		{
-			AI_LOG_ERROR("Failed to send reply from getState lambda");
-		}
+                {
+                    AI_LOG_ERROR("Failed to send reply from getState lambda");
+                }
 
             };
 
@@ -1872,13 +1868,11 @@ void Dobby::getInfo(std::shared_ptr<AI_IPC::IAsyncReplySender> replySender)
 
                 // Fire off the reply
                 if (!replySender->sendReply({ result }))
-		{
-			AI_LOG_ERROR("Failed to send reply from getState lambda");
-		}
+                {
+                    AI_LOG_ERROR("Failed to send reply from getState lambda");
+                }
 
-            };
-
-        // Queue the work, if successful then we're done
+            };        // Queue the work, if successful then we're done
         if (mWorkQueue->postWork(std::move(doGetInfoLambda)))
         {
             AI_LOG_FN_EXIT();
@@ -1889,7 +1883,7 @@ void Dobby::getInfo(std::shared_ptr<AI_IPC::IAsyncReplySender> replySender)
     // Fire off an error reply
     if (!replySender->sendReply({ "" }))
     {
-	    AI_LOG_ERROR("Failed to send fallback reply from getInfo");
+        AI_LOG_ERROR("Failed to send fallback reply from getInfo");
     }
 
 
@@ -1933,13 +1927,11 @@ void Dobby::list(std::shared_ptr<AI_IPC::IAsyncReplySender> replySender)
             }
             // Fire off the reply
             if (!replySender->sendReply({ cds, ids }))
-	    {
-		    AI_LOG_ERROR("Failed to send reply from list lambda");
-	    }
+            {
+                AI_LOG_ERROR("Failed to send reply from list lambda");
+            }
 
-        };
-
-    // Queue the work, if successful then we're done
+        };    // Queue the work, if successful then we're done
     if (mWorkQueue->postWork(std::move(doListLambda)))
     {
         AI_LOG_FN_EXIT();
@@ -2108,13 +2100,11 @@ void Dobby::getOCIConfig(std::shared_ptr<AI_IPC::IAsyncReplySender> replySender)
 
                 // Fire off the reply
                 if (!replySender->sendReply({ configJson }))
-		{
-			AI_LOG_ERROR("Failed to send reply from getOCIConfig lambda");
-		}
+                {
+                    AI_LOG_ERROR("Failed to send reply from getOCIConfig lambda");
+                }
 
-            };
-
-        // Queue the work, if successful then we're done
+            };        // Queue the work, if successful then we're done
         if (mWorkQueue->postWork(std::move(doCreateBundleLambda)))
         {
             AI_LOG_FN_EXIT();
