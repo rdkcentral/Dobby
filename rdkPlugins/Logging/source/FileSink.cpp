@@ -77,7 +77,7 @@ FileSink::FileSink(const std::string &containerId, std::shared_ptr<rt_dobby_sche
     {
         // Couldn't open our output file, send to /dev/null to avoid blocking
         AI_LOG_SYS_ERROR(errno, "Failed to open container logfile - sending to /dev/null");
-        if (mDevNullFd > 0)
+        if (mDevNullFd >= 0)
         {
             mOutputFileFd = mDevNullFd;
         }
@@ -88,17 +88,20 @@ FileSink::FileSink(const std::string &containerId, std::shared_ptr<rt_dobby_sche
 
 FileSink::~FileSink()
 {
-    // Close everything we opened
-    if (close(mDevNullFd) < 0)
-    {
-        AI_LOG_SYS_ERROR(errno, "Failed to close /dev/null");
-    }
-
-    if (mOutputFileFd > 0)
+    // Close everything we opened; avoid closing the same fd twice
+    if (mOutputFileFd >= 0 && mOutputFileFd != mDevNullFd)
     {
         if (close(mOutputFileFd) < 0)
         {
             AI_LOG_SYS_ERROR(errno, "Failed to close output file");
+        }
+    }
+
+    if (mDevNullFd >= 0)
+    {
+        if (close(mDevNullFd) < 0)
+        {
+            AI_LOG_SYS_ERROR(errno, "Failed to close /dev/null");
         }
     }
 }
@@ -116,6 +119,11 @@ void FileSink::DumpLog(const int bufferFd)
     memset(mBuf, 0, sizeof(mBuf));
 
     std::lock_guard<std::mutex> locker(mLock);
+
+    if (mOutputFileFd < 0) {
+        AI_LOG_ERROR("Invalid output file descriptor");
+        return;
+     }
 
     ssize_t ret;
     ssize_t offset = 0;
