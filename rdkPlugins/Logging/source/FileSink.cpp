@@ -120,6 +120,11 @@ void FileSink::DumpLog(const int bufferFd)
 
     std::lock_guard<std::mutex> locker(mLock);
 
+    if (mOutputFileFd < 0) {
+        AI_LOG_ERROR("Invalid output file descriptor");
+        return;
+     }
+
     ssize_t ret;
     ssize_t offset = 0;
 
