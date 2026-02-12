@@ -66,6 +66,13 @@ DobbyLogRelay::DobbyLogRelay(const std::string &sourceSocketPath,
 
         mDestinationSocketAddress = {};
         mDestinationSocketAddress.sun_family = AF_UNIX;
+
+        if (mDestinationSocketPath.length >= sizeof(mDestinationSocketAddress.sun_path))
+        {
+            AI_LOG_ERROR("Socket path too long %s", mDestinationSocketPath.c_str());
+            return;
+        }
+
         strncpy(mDestinationSocketAddress.sun_path, mDestinationSocketPath.c_str(), sizeof(mDestinationSocketAddress.sun_path) - 1);
         mDestinationSocketAddress.sun_path[sizeof(mDestinationSocketAddress.sun_path) - 1] = '\0';
 
@@ -202,7 +209,7 @@ int DobbyLogRelay::createDgramSocket(const std::string &path)
 
     if (path.length() >= sizeof(address.sun_path))
     {
-        AI_LOG_SYS_ERROR_EXIT(errno, "Socket path too long: %s", path.c_str());
+        AI_LOG_ERROR("Socket path too long: %s", path.c_str());
         return -1;
     }
 
