@@ -147,6 +147,7 @@ int DobbyLogger::createUnixSocket(const std::string path)
     struct sockaddr_un address = {};
     address.sun_family = AF_UNIX;
     strncpy(address.sun_path, path.c_str(), sizeof(address.sun_path) - 1);
+    address.sun_path[sizeof(address.sun_path) - 1] = '\0';
 
     // Attempt to bind the socket
     if (TEMP_FAILURE_RETRY(bind(sockFd, (const struct sockaddr *)&address, sizeof(address))) < 0)
