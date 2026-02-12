@@ -199,6 +199,13 @@ int DobbyLogRelay::createDgramSocket(const std::string &path)
 
     struct sockaddr_un address = {};
     address.sun_family = AF_UNIX;
+
+    if (path.length() >= sizeof(address.sun_path))
+    {
+        AI_LOG_SYS_ERROR_EXIT(errno, "Socket path too long: %s", path.c_str());
+        return -1;
+    }
+
     strncpy(address.sun_path, path.c_str(), sizeof(address.sun_path) - 1);
     address.sun_path[sizeof(address.sun_path) - 1] = '\0';
 
