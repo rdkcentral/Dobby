@@ -67,7 +67,7 @@ DobbyLogRelay::DobbyLogRelay(const std::string &sourceSocketPath,
         mDestinationSocketAddress = {};
         mDestinationSocketAddress.sun_family = AF_UNIX;
 
-        if (mDestinationSocketPath.length >= sizeof(mDestinationSocketAddress.sun_path))
+        if (mDestinationSocketPath.length() >= sizeof(mDestinationSocketAddress.sun_path))
         {
             AI_LOG_ERROR("Socket path too long %s", mDestinationSocketPath.c_str());
             return;
