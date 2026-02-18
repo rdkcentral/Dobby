@@ -328,8 +328,8 @@ static const char* ociJsonTemplate = R"JSON(
             ],
             "memory": {
                 "limit": {{MEM_LIMIT}},
-                "swap": {{MEM_LIMIT}},
-                "swappiness": 60
+                "swap": {{MEM_LIMIT}}{{#SWAPPINESS_ENABLED}},
+                "swappiness": 60{{/SWAPPINESS_ENABLED}}
             },
             "cpu": {
                 {{#CPU_SHARES_ENABLED}}
