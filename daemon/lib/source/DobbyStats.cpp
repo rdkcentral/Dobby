@@ -41,6 +41,7 @@
 
 #include <set>
 #include <regex>
+#include <vector>
 
 #include <sstream>
 #include <ext/stdio_filebuf.h>
@@ -263,6 +264,8 @@ Json::Value DobbyStats::readIonCgroupHeaps(const ContainerId& id,
  *  @brief Reads a maximum of 4096 bytes from the given cgroup file.
  *
  *  The path to read is made up like: <cgroupMntPath>/<id>/<cgroupfileName>
+ *  For cgroupv2, tries multiple possible paths since containers may be in
+ *  different slices depending on systemd configuration.
  *
  *  @param[in]  id              The string id of the container.
  *  @param[in]  cgroupMntPath   The path to the cgroup mount point.
@@ -270,19 +273,39 @@ Json::Value DobbyStats::readIonCgroupHeaps(const ContainerId& id,
  *  @param[out] buf             Buffer to store the file contents in
  *  @param[in]  bufLen          The size of the buffer.
  *
- *  @return The number of characters copied, or
+ *  @return The number of characters copied, or -1 on failure
  */
 ssize_t DobbyStats::readCgroupFile(const ContainerId& id,
                                    const std::string& cgroupMntPath,
                                    const std::string& cgroupfileName,
                                    char* buf, size_t bufLen)
 {
-    std::ostringstream filePath;
-    filePath << cgroupMntPath << "/" << id.str() << "/" << cgroupfileName;
+    // Build list of possible cgroup paths to try
+    // cgroupv1: <mount>/<id>/<file>
+    // cgroupv2: may be in different slices or directly under mount point
+    std::vector<std::string> pathsToTry = {
+        cgroupMntPath + "/" + id.str() + "/" + cgroupfileName,
+        // cgroupv2 with systemd may put containers in system.slice
+        cgroupMntPath + "/system.slice/" + id.str() + "/" + cgroupfileName,
+        // Or user.slice
+        cgroupMntPath + "/user.slice/" + id.str() + "/" + cgroupfileName,
+        // Some systems use dobby- prefix
+        cgroupMntPath + "/system.slice/dobby-" + id.str() + ".scope/" + cgroupfileName,
+    };
 
-    std::string contents;
+    int fd = -1;
+    std::string successPath;
 
-    int fd = open(filePath.str().c_str(), O_CLOEXEC | O_RDONLY);
+    for (const auto& path : pathsToTry)
+    {
+        fd = open(path.c_str(), O_CLOEXEC | O_RDONLY);
+        if (fd >= 0)
+        {
+            successPath = path;
+            break;
+        }
+    }
+
     if (fd < 0)
     {
         return -1;
@@ -296,7 +319,7 @@ ssize_t DobbyStats::readCgroupFile(const ContainerId& id,
 
     if (close(fd) != 0)
     {
-        AI_LOG_SYS_ERROR(errno, "failed to close '%s'", filePath.str().c_str());
+        AI_LOG_SYS_ERROR(errno, "failed to close '%s'", successPath.c_str());
     }
 
     return rd;

@@ -223,6 +223,8 @@ jobs:
       - name: Run the l2 test
         working-directory: Dobby/tests/L2_testing/test_runner/
         run: |
+            # Regenerate bundles for cgroupv2 compatibility (GitHub Actions uses cgroupv2)
+            python3 bundle/regenerate_bundles_cgroupv2.py
             python3 runner.py -p 3 -v 5
             cp $GITHUB_WORKSPACE/Dobby/tests/L2_testing/test_runner/DobbyL2TestResults.json $GITHUB_WORKSPACE
 
