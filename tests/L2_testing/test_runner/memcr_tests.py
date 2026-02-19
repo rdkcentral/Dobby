@@ -278,7 +278,6 @@ def is_memcr_supported():
      memcr requires specific kernel features for checkpoint/restore.
     This checks for actual kernel support rather than environment.
     """
-     import subprocess
 
     # Check if memcr script exists
     memcr_script = Path.home() / "memcr" / "scripts" / "start_memcr.sh"
