@@ -70,6 +70,11 @@ def test_container(container_id, expected_output):
             return False, "Container did not launch successfully"
         
         return validate_pid_limit(container_id, expected_output)
+def is_cgroupv2():
+    """Check if the system is using cgroup v2 (unified hierarchy)"""
+    # cgroupv2 has a single unified hierarchy
+    cgroup_path = Path("/sys/fs/cgroup/cgroup.controllers")
+    return cgroup_path.is_file()
 
 
 def validate_pid_limit(container_id, expected_output):
@@ -87,12 +92,33 @@ def validate_pid_limit(container_id, expected_output):
     pid_limit = 0
 
     # check pids.max present in containers pid cgroup
-    path = Path("/sys/fs/cgroup/pids/" + container_id + "/pids.max")
+    # cgroupv1: /sys/fs/cgroup/pids/<container>/pids.max
+    # cgroupv2: /sys/fs/cgroup/<container>/pids.max
+    if is_cgroupv2():
+        path = Path("/sys/fs/cgroup/" + container_id + "/pids.max")
+    else:
+        path = Path("/sys/fs/cgroup/pids/" + container_id + "/pids.max")
+    
     if not path.is_file():
         return False, "%s not found" % path.absolute()
+        # Try alternative cgroupv2 paths (systemd-based)
+        alt_paths = [
+            Path("/sys/fs/cgroup/system.slice/" + container_id + "/pids.max"),
+            Path("/sys/fs/cgroup/user.slice/" + container_id + "/pids.max"),
+        ]
+        for alt_path in alt_paths:
+            if alt_path.is_file():
+                path = alt_path
+                break
+        else:
+            return False, "%s not found (tried cgroupv1 and cgroupv2 paths)" % path.absolute()
 
     with open(path, 'r') as fh:
         pid_limit = fh.readline().strip()
+    
+    # cgroupv2 may return 'max' for unlimited
+    if pid_limit == "max":
+        pid_limit = "max"  # Keep as-is for comparison
 
     if expected_output == pid_limit:
         return True, "Test passed"
