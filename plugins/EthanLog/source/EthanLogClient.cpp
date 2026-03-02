@@ -432,7 +432,7 @@ void EthanLogClient::processLogData()
         if (msgStart != mMsgBuf)
         {
             mMsgLen -= (msgStart - mMsgBuf);
-            memmove(mMsgBuf, mMsgBuf, mMsgLen);
+            memmove(mMsgBuf, msgStart, mMsgLen);
         }
 
 
@@ -493,7 +493,18 @@ void EthanLogClient::processLogData()
                 fieldLen -= 2;
 
                 // skip empty fields
-                if (fieldLen > 0)
+                if (fieldLen <= 0)
+                {
+                    // fieldLen <= 0 means the field boundary calculation went wrong,
+                    // most likely caused by invalid data in the pipe that
+                    // contains accidental FIELD_DELIM (0x1f) or RECORD_DELIM (0x1e)
+                    // bytes, making nextField/msgEnd land too close to thisField.
+                    AI_LOG_WARN("[EthanLog:'%s'] skipping field with invalid length "
+                                "%zd (field type byte=0x%02x), likely binary data in pipe",
+                                mName.c_str(), fieldLen,
+                                (unsigned char)*thisField);
+                }
+                else
                 {
                     switch (*thisField++)
                     {
@@ -711,10 +722,30 @@ int EthanLogClient::processTimestamp(const char *field, ssize_t, struct iovec *i
  */
 int EthanLogClient::processMessage(const char *field, ssize_t len, struct iovec *iov) const
 {
+    // Guard against negative or zero length which can occur when invalid
+    // data is received.
+    // Without this check the std::min<size_t> cast below would wrap a negative ssize_t
+    // to SIZE_MAX, causing a heap/stack overflow via memcpy.
+    if (len <= 0)
+    {
+        // Log the first few raw bytes of the field to help diagnose what
+        // invalid data the container sent that caused this bad length.
+        char hexDump[64] = {};
+        int hexLen = 0;
+        const int dumpBytes = std::min<int>(8, static_cast<int>(strnlen(field, 8)));
+        for (int i = 0; i < dumpBytes; i++)
+            hexLen += snprintf(hexDump + hexLen, sizeof(hexDump) - hexLen,
+                               "%02x ", (unsigned char)field[i]);
+        AI_LOG_ERROR("[EthanLog] processMessage called with invalid length %zd "
+                     "(first bytes: [%s]) - dropping message to prevent overflow",
+                     len, hexDump);
+        return -1;
+    }
+
     static char buf[8 + ETHANLOG_MAX_LOG_MSG_LENGTH];
     memcpy(buf, "MESSAGE=", 8);
 
-    len = std::min<size_t>(ETHANLOG_MAX_LOG_MSG_LENGTH, len);
+    len = std::min<ssize_t>(static_cast<ssize_t>(ETHANLOG_MAX_LOG_MSG_LENGTH), len);
     memcpy(buf + 8, field, len);
 
     iov->iov_base = buf;
