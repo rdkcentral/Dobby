@@ -492,12 +492,18 @@ void EthanLogClient::processLogData()
                                              : (msgEnd - thisField);
                 fieldLen -= 2;
 
+                // determine the field type before applying length checks
+                char fieldType = *thisField;
+
                 // skip empty or invalid length fields (e.g. caused by binary
                 // data in the pipe containing accidental FIELD_DELIM (0x1f) or
-                // RECORD_DELIM (0x1e) bytes)
-                if (fieldLen > 0)
+                // RECORD_DELIM (0x1e) bytes), but allow an empty 'M' (message)
+                // field so that it is still emitted as "MESSAGE=".
+                if ((fieldLen > 0) || ((fieldLen == 0) && (fieldType == 'M')))
                 {
-                    switch (*thisField++)
+                    // advance past the field type character
+                    thisField++;
+                    switch (fieldType)
                     {
                         case 'L':
                             if (!(msgFlags & FLAG_HAVE_LOG_LEVEL))
@@ -707,20 +713,23 @@ int EthanLogClient::processTimestamp(const char *field, ssize_t, struct iovec *i
 // -----------------------------------------------------------------------------
 /**
  * @brief Process the message field
- * @param[in]  tok     The field minus the leading 'F' character
+ * @param[in]  tok     The field minus the leading 'M' character
  * @param[out] message Upon return will point to the message string
  * @returns            the number of fields added to iov on success, -1 on failure
  */
 int EthanLogClient::processMessage(const char *field, ssize_t len, struct iovec *iov) const
 {
-    // Guard against negative or zero length which can occur when binary/invalid
-    // data is received (e.g. from a container logging garbage bytes). Without
-    // this check the std::min<size_t> cast below would wrap a negative ssize_t
-    // to SIZE_MAX, causing a heap/stack overflow via memcpy.
-    if (len <= 0)
+    // Guard against negative length which can occur when binary/invalid data
+    // is received (e.g. from a container logging garbage bytes that accidentally
+    // contain a RECORD_DELIM (0x1e) byte, causing msgEnd to land before
+    // thisField). Without this check the std::min<size_t> cast below would
+    // wrap a negative ssize_t to SIZE_MAX, causing buffer overflow and memory
+    // corruption via memcpy. Note: len == 0 is a valid empty message per the
+    // protocol and is handled correctly below.
+    if (len < 0)
     {
         AI_LOG_ERROR("[EthanLog] processMessage called with invalid length %zd "
-                     "- dropping message to prevent overflow", len);
+                     "- dropping message to prevent buffer overflow", len);
         return -1;
     }
 
