@@ -432,7 +432,7 @@ void EthanLogClient::processLogData()
         if (msgStart != mMsgBuf)
         {
             mMsgLen -= (msgStart - mMsgBuf);
-            memmove(mMsgBuf, mMsgBuf, mMsgLen);
+            memmove(mMsgBuf, msgStart, mMsgLen);
         }
 
 
@@ -492,7 +492,9 @@ void EthanLogClient::processLogData()
                                              : (msgEnd - thisField);
                 fieldLen -= 2;
 
-                // skip empty fields
+                // skip empty or invalid length fields (e.g. caused by binary
+                // data in the pipe containing accidental FIELD_DELIM (0x1f) or
+                // RECORD_DELIM (0x1e) bytes)
                 if (fieldLen > 0)
                 {
                     switch (*thisField++)
@@ -711,10 +713,21 @@ int EthanLogClient::processTimestamp(const char *field, ssize_t, struct iovec *i
  */
 int EthanLogClient::processMessage(const char *field, ssize_t len, struct iovec *iov) const
 {
+    // Guard against negative or zero length which can occur when binary/invalid
+    // data is received (e.g. from a container logging garbage bytes). Without
+    // this check the std::min<size_t> cast below would wrap a negative ssize_t
+    // to SIZE_MAX, causing a heap/stack overflow via memcpy.
+    if (len <= 0)
+    {
+        AI_LOG_ERROR("[EthanLog] processMessage called with invalid length %zd "
+                     "- dropping message to prevent overflow", len);
+        return -1;
+    }
+
     static char buf[8 + ETHANLOG_MAX_LOG_MSG_LENGTH];
     memcpy(buf, "MESSAGE=", 8);
 
-    len = std::min<size_t>(ETHANLOG_MAX_LOG_MSG_LENGTH, len);
+    len = std::min<ssize_t>(static_cast<ssize_t>(ETHANLOG_MAX_LOG_MSG_LENGTH), len);
     memcpy(buf + 8, field, len);
 
     iov->iov_base = buf;
