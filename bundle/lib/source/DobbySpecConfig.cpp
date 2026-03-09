@@ -65,6 +65,8 @@ static const ctemplate::StaticTemplateString MEM_LIMIT =
 static const ctemplate::StaticTemplateString MEM_SWAP_LIMIT =
     STS_INIT(MEM_SWAP_LIMIT, "MEM_SWAP_LIMIT");
 
+static constexpr unsigned MEM_SWAP_LIMIT_EXTRA_BYTES = 200u * 1024u * 1024u;
+
 static const ctemplate::StaticTemplateString CPU_SHARES_ENABLED =
     STS_INIT(CPU_SHARES_ENABLED, "CPU_SHARES_ENABLED");
 static const ctemplate::StaticTemplateString CPU_SHARES_VALUE =
@@ -1276,7 +1278,7 @@ bool DobbySpecConfig::processMemLimit(const Json::Value& value,
     }
 
     dictionary->SetIntValue(MEM_LIMIT, memLimit);
-    dictionary->SetIntValue(MEM_SWAP_LIMIT, memLimit + (200 * 1024 * 1024));
+    dictionary->SetIntValue(MEM_SWAP_LIMIT, memLimit + MEM_SWAP_LIMIT_EXTRA_BYTES);
 
     return true;
 }
