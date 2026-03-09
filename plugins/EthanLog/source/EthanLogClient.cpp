@@ -722,13 +722,14 @@ int EthanLogClient::processMessage(const char *field, ssize_t len, struct iovec 
     // Guard against negative length which can occur when binary/invalid data
     // is received (e.g. from a container logging garbage bytes that accidentally
     // contain a RECORD_DELIM (0x1e) byte, causing msgEnd to land before
-    // thisField). Without this check the std::min<size_t> cast below would
-    // wrap a negative ssize_t to SIZE_MAX, causing buffer overflow and memory
-    // corruption via memcpy. Note: len == 0 is a valid empty message per the
-    // protocol and is handled correctly below.
+    // thisField). Without this check a negative ssize_t `len` would be
+    // implicitly converted to a large size_t when used as the length argument
+    // to memcpy and in length calculations (e.g. iov_len), leading to buffer
+    // overflow and memory corruption. Note: len == 0 is a valid empty message
+    // per the protocol and is handled correctly below.
     if (len < 0)
     {
-        AI_LOG_ERROR("[EthanLog] processMessage called with invalid length %zd "
+        AI_LOG_ERROR("processMessage called with invalid length %zd "
                      "- dropping message to prevent buffer overflow", len);
         return -1;
     }
