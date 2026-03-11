@@ -31,10 +31,12 @@
 #include <grp.h>
 #include <fcntl.h>
 #include <limits.h>
+#include <mntent.h>
 #include <sys/types.h>
 #include <sys/sysinfo.h>
 #include <sys/capability.h>
 #include <sys/stat.h>
+#include <sys/vfs.h>
 #include <fstream>
 
 // Compile time generated strings that (in theory) speeds up the processing
@@ -63,6 +65,8 @@ static const ctemplate::StaticTemplateString USERNS_DISABLED =
 static const ctemplate::StaticTemplateString MEM_LIMIT =
     STS_INIT(MEM_LIMIT, "MEM_LIMIT");
 
+static const ctemplate::StaticTemplateString SWAPPINESS_ENABLED =
+    STS_INIT(SWAPPINESS_ENABLED, "SWAPPINESS_ENABLED");
 static const ctemplate::StaticTemplateString CPU_SHARES_ENABLED =
     STS_INIT(CPU_SHARES_ENABLED, "CPU_SHARES_ENABLED");
 static const ctemplate::StaticTemplateString CPU_SHARES_VALUE =
@@ -189,6 +193,53 @@ static const ctemplate::StaticTemplateString SECCOMP_SYSCALLS =
 #define JSON_FLAG_SECCOMP           (0x1U << 22)
 
 int DobbySpecConfig::mNumCores = -1;
+
+
+// -----------------------------------------------------------------------------
+/**
+ *  @brief Detects whether the system is using cgroup v2 (unified hierarchy).
+ *
+ *  This checks if /sys/fs/cgroup is mounted as cgroup2 filesystem.
+ *  On cgroupv2, memory.swappiness is not supported in OCI config.
+ *
+ *  @return true if running on cgroupv2, false otherwise (cgroupv1 or hybrid)
+ */
+static bool isCgroupV2()
+{
+    static bool checked = false;
+    static bool isV2 = false;
+
+    if (!checked)
+    {
+        checked = true;
+        
+        // Check if /sys/fs/cgroup is mounted as cgroup2
+        FILE* procMounts = setmntent("/proc/mounts", "r");
+        if (procMounts != nullptr)
+        {
+            struct mntent mntBuf;
+            struct mntent* mnt;
+            char buf[PATH_MAX + 256];
+
+            while ((mnt = getmntent_r(procMounts, &mntBuf, buf, sizeof(buf))) != nullptr)
+            {
+                if (mnt->mnt_dir && strcmp(mnt->mnt_dir, "/sys/fs/cgroup") == 0)
+                {
+                    if (mnt->mnt_type && strcmp(mnt->mnt_type, "cgroup2") == 0)
+                    {
+                        AI_LOG_INFO("detected cgroup v2 (unified hierarchy)");
+                        isV2 = true;
+                    }
+                    break;
+                }
+            }
+            endmntent(procMounts);
+        }
+    }
+
+    return isV2;
+}
+
 
 // TODO: should we only allowed these if a network namespace is enabled ?
 const std::map<std::string, int> DobbySpecConfig::mAllowedCaps =
@@ -1274,6 +1325,11 @@ bool DobbySpecConfig::processMemLimit(const Json::Value& value,
     }
 
     dictionary->SetIntValue(MEM_LIMIT, memLimit);
+     // Only enable swappiness on cgroupv1 - cgroupv2 doesn't support this in OCI config
+    if (!isCgroupV2())
+    {
+        dictionary->ShowSection(SWAPPINESS_ENABLED);
+    }
 
     return true;
 }
