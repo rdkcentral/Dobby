@@ -165,6 +165,7 @@ std::map<IDobbyEnv::Cgroup, std::string> DobbyEnv::getCgroupMountPoints()
     struct mntent mntBuf;
     struct mntent* mnt;
     char buf[PATH_MAX + 256];
+    std::string cgroupV2Path;
 
     while ((mnt = getmntent_r(procMounts, &mntBuf, buf, sizeof(buf))) != nullptr)
     {
@@ -172,11 +173,19 @@ std::map<IDobbyEnv::Cgroup, std::string> DobbyEnv::getCgroupMountPoints()
         if (!mnt->mnt_type || !mnt->mnt_dir || !mnt->mnt_opts)
             continue;
 
-        // skip non-cgroup mounts
+         // Check for cgroupv2 (unified hierarchy)
+        if (strcmp(mnt->mnt_type, "cgroup2") == 0)
+        {
+            cgroupV2Path = mnt->mnt_dir;
+            AI_LOG_INFO("found cgroup2 (unified) mounted @ '%s'", mnt->mnt_dir);
+            continue;
+        }
+
+        // skip non-cgroup mounts (cgroupv1)
         if (strcmp(mnt->mnt_type, "cgroup") != 0)
             continue;
 
-        // check for the cgroup type
+        // check for the cgroup type (cgroup v1)
         for (const std::pair<const std::string, IDobbyEnv::Cgroup> cgroup : cgroupNames)
         {
             char* mntopt = hasmntopt(mnt, cgroup.first.c_str());
@@ -195,6 +204,22 @@ std::map<IDobbyEnv::Cgroup, std::string> DobbyEnv::getCgroupMountPoints()
     }
 
     endmntent(procMounts);
+
+    
+    // If cgroupv2 is available and we didn't find cgroupv1 mounts,
+    // use the unified cgroupv2 path for all cgroup types
+    if (!cgroupV2Path.empty())
+    {
+        for (const auto& cgroup : cgroupNames)
+        {
+            if (mounts.find(cgroup.second) == mounts.end())
+            {
+                AI_LOG_INFO("using cgroup2 path '%s' for '%s'",
+                            cgroupV2Path.c_str(), cgroup.first.c_str());
+                mounts[cgroup.second] = cgroupV2Path;
+            }
+        }
+    }
 
     AI_LOG_FN_EXIT();
     return mounts;
