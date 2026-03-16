@@ -21,9 +21,7 @@
 
 #include <Logging.h>
 
-#include <errno.h>
 #include <unistd.h>
-#include <limits.h>
 
 REGISTER_RDK_PLUGIN(LocalTimePlugin);
 
@@ -58,46 +56,30 @@ bool LocalTimePlugin::postInstallation()
 {
     AI_LOG_FN_ENTRY();
 
-    std::string path;
+    std::string srcPath;
+    std::string dstPath = mRootfsPath + "/etc/localtime";
 
     if (mContainerConfig->rdk_plugins->localtime->data->path)
     {
-        path = mContainerConfig->rdk_plugins->localtime->data->path;
-        std::size_t found = path.find_last_of("/");
-        std::string dirPath = path.substr(0, found);
-
-        if (mUtils->mkdirRecursive(mRootfsPath + dirPath, 0755) || (errno == EEXIST))
-            AI_LOG_INFO("Set localtime path %s", path.c_str());
-        else
-            AI_LOG_SYS_ERROR(errno, "failed to create dir. %s", path.c_str());
+        srcPath = mContainerConfig->rdk_plugins->localtime->data->path;
+        if (srcPath.empty() || (access(srcPath.c_str(), F_OK) != 0))
+        {
+            AI_LOG_ERROR("invalid timezone file path '%s', reverting to '/etc/localtime'", srcPath.c_str());
+            srcPath = "/etc/localtime";
+        }
     }
     else
     {
-        path = "/etc/localtime";
-        AI_LOG_INFO("Set default path %s", path.c_str());
+        srcPath = "/etc/localtime";
+        AI_LOG_INFO("Set default path %s", srcPath.c_str());
     }
 
-    // get the real path to the correct local time zone
-    char pathBuf[PATH_MAX];
-    ssize_t len = readlink(path.c_str(), pathBuf, sizeof(pathBuf));
-    if (len <= 0)
+    if (!mUtils->addMount(srcPath, dstPath, "bind", {"bind", "ro", "nodev","nosuid", "noexec" }))
     {
-        AI_LOG_SYS_ERROR_EXIT(errno, "readlink failed on %s", path.c_str());
-        return false;
-    }
+        AI_LOG_ERROR("failed to add bind mount '%s' -> '%s'", srcPath.c_str(), dstPath.c_str());
 
-    const std::string localtimeInHost(pathBuf, len);
-    const std::string localtimeInContainer = mRootfsPath + path;
-
-    if (localtimeInHost.empty())
-    {
-        AI_LOG_ERROR_EXIT("missing real timezone file path");
-        return false;
-    }
-    else if (symlink(localtimeInHost.c_str(), localtimeInContainer.c_str()) < 0)
-    {
-        AI_LOG_SYS_ERROR_EXIT(errno, "failed to create %s symlink", path.c_str());
-        return false;
+        // this is not fatal for now, but does mean the container will not have
+        // the correct timezone, so log an error and continue
     }
 
     AI_LOG_FN_EXIT();

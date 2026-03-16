@@ -21,7 +21,7 @@ If you already have other RDK plugins in the bundle, then just add the localtime
 
 ## Options
 ### path
-Optional parameter, if set, localtime symlink path should be set, else the default path `etc/localtime` is set.
+Optional parameter, if set, then the given file is bind mounted to `/etc/localtime` in the container.  Defaults to `/etc/localtime` if not set.
 
 ### setTZ
 Optional parameter, if set it should contain a path to file holding time stamp. This time stamp will be placed in containers env variable called TZ
