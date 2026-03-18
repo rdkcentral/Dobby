@@ -1320,7 +1320,7 @@ bool DobbyManager::stopContainer(int32_t cd, bool withPrejudice)
 {
     AI_LOG_FN_ENTRY();
 
-    std::lock_guard<std::mutex> locker(mLock);
+    std::unique_lock<std::mutex> locker(mLock);
 
     // find the container
     auto it = mContainers.cbegin();
@@ -1337,7 +1337,11 @@ bool DobbyManager::stopContainer(int32_t cd, bool withPrejudice)
         return false;
     }
 
-    const ContainerId &id = it->first;
+    // Copy the id rather than holding a reference into the map, because we
+    // may temporarily release the lock below (for the hibernate wakeup path),
+    // which could invalidate iterators/references if the container is removed
+    // by another thread in the meantime.
+    const ContainerId id = it->first;
     const std::unique_ptr<DobbyContainer> &container = it->second;
 
     // this is an explicit stop request by the user so clear the 'restartOnCrash'
@@ -1368,6 +1372,48 @@ bool DobbyManager::stopContainer(int32_t cd, bool withPrejudice)
              container->state == DobbyContainer::State::Hibernated ||
              container->state == DobbyContainer::State::Awakening)
     {
+        // If the container is hibernating, abort the ongoing hibernation by
+        // waking up all processes before sending the kill signal. This prevents
+        // the hibernate thread from trying to checkpoint PIDs that have
+        // already been terminated by the stop.
+        if (container->state == DobbyContainer::State::Hibernating)
+        {
+            AI_LOG_INFO("Container '%s' is hibernating, waking up before stop", id.c_str());
+
+            // Set state to Stopping so the hibernate thread sees the state
+            // change and aborts before hibernating the next PID
+            container->state = DobbyContainer::State::Stopping;
+
+            // Get PIDs while holding the lock
+            Json::Value jsonPids = DobbyStats(id, mEnvironment, mUtilities).stats()["pids"];
+
+            // Release the lock so the hibernate thread can see the state
+            // change and abort
+            locker.unlock();
+
+            // Wake up all already-hibernated processes in reverse order
+            auto pidIt = jsonPids.end();
+            while (pidIt != jsonPids.begin())
+            {
+                --pidIt;
+                uint32_t pid = pidIt->asUInt();
+                DobbyHibernate::WakeupProcess(pid);
+            }
+
+            // Re-acquire the lock
+            locker.lock();
+
+            // Re-verify the container still exists after releasing the lock
+            auto newIt = mContainers.find(id);
+            if (newIt == mContainers.end() || !newIt->second ||
+                newIt->second->descriptor != cd)
+            {
+                AI_LOG_WARN("Container '%s' no longer exists after wakeup", id.c_str());
+                AI_LOG_FN_EXIT();
+                return false;
+            }
+        }
+
         if (!mRunc->killCont(id, withPrejudice ? SIGKILL : SIGTERM))
         {
             AI_LOG_WARN("failed to send signal to '%s'", id.c_str());
