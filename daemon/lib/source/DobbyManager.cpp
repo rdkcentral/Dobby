@@ -1372,6 +1372,10 @@ bool DobbyManager::stopContainer(int32_t cd, bool withPrejudice)
              container->state == DobbyContainer::State::Hibernated ||
              container->state == DobbyContainer::State::Awakening)
     {
+        // Save the state before any modifications so we can restore it
+        // if killCont() fails (prevents getting stuck in Stopping)
+        const DobbyContainer::State prevState = container->state;
+
         // If the container is hibernating, abort the ongoing hibernation by
         // waking up all processes before sending the kill signal. This prevents
         // the hibernate thread from trying to checkpoint PIDs that have
@@ -1416,6 +1420,9 @@ bool DobbyManager::stopContainer(int32_t cd, bool withPrejudice)
 
         if (!mRunc->killCont(id, withPrejudice ? SIGKILL : SIGTERM))
         {
+            // Restore the previous state so the container doesn't get stuck
+            // in Stopping, which would make subsequent stop attempts a no-op
+            container->state = prevState;
             AI_LOG_WARN("failed to send signal to '%s'", id.c_str());
             AI_LOG_FN_EXIT();
             return false;
