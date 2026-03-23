@@ -210,6 +210,7 @@ int DobbyLogRelay::createDgramSocket(const std::string &path)
     if (path.length() >= sizeof(address.sun_path))
     {
         AI_LOG_ERROR("Socket path too long: %s", path.c_str());
+        close(sockFd);
         return -1;
     }
 
