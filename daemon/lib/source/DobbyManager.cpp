@@ -1416,13 +1416,20 @@ bool DobbyManager::stopContainer(int32_t cd, bool withPrejudice)
                 AI_LOG_FN_EXIT();
                 return false;
             }
+
         }
 
         if (!mRunc->killCont(id, withPrejudice ? SIGKILL : SIGTERM))
         {
             // Restore the previous state so the container doesn't get stuck
-            // in Stopping, which would make subsequent stop attempts a no-op
-            container->state = prevState;
+            // in Stopping, which would make subsequent stop attempts a no-op.
+            // For the hibernating path prevState is Hibernating but the
+            // hibernate thread was already aborted and all processes are awake,
+            // so restoring to Hibernating would leave the container permanently
+            // stuck. Restore to Running instead so a retry is possible.
+            mContainers[id]->state = (prevState == DobbyContainer::State::Hibernating)
+                                         ? DobbyContainer::State::Running
+                                         : prevState;
             AI_LOG_WARN("failed to send signal to '%s'", id.c_str());
             AI_LOG_FN_EXIT();
             return false;
