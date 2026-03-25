@@ -62,6 +62,16 @@ jobs:
           path: Dobby
           submodules: recursive
 
+      - name: Initialize submodules
+        run: |
+          cd Dobby
+          git config --global --add safe.directory /__w/Dobby/Dobby/Dobby
+          git config --global --add safe.directory /__w/Dobby/Dobby/Dobby/libocispec
+          git config --global --add safe.directory /__w/Dobby/Dobby/Dobby/libocispec/runtime-spec
+          git config --global --add safe.directory /__w/Dobby/Dobby/Dobby/libocispec/image-spec
+          git config --global --add safe.directory /__w/Dobby/Dobby/Dobby/libocispec/yajl
+          git submodule update --init --recursive
+
       - name: Install gmock
         run: |
          cd $GITHUB_WORKSPACE
