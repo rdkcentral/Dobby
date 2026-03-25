@@ -213,7 +213,7 @@ def start_wpeframework_vm():
                                stdin=subprocess.PIPE,
                                stdout=subprocess.PIPE,
                                stderr=subprocess.PIPE)
-    sleep(2)
+    sleep(3)  # Allow WPEFramework time to fully initialize
     return subproc
 
 
@@ -252,6 +252,10 @@ def execute_test():
             output_table.append(output)
             test_utils.print_single_result(output)
 
+            # Add delay after container state changes to allow operations to complete
+            if test.command in ["startContainer", "startContainerFromDobbySpec", "pauseContainer", "resumeContainer"]:
+                sleep(1)
+
     stop_wpeframework(wpeframework)
 
     return test_utils.count_print_results(output_table)
@@ -260,3 +264,4 @@ def execute_test():
 if __name__ == "__main__":
     test_utils.parse_arguments(__file__, True)
     execute_test()
+

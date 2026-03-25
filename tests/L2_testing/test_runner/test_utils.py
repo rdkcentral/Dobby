@@ -82,7 +82,7 @@ class dobby_daemon:
 
         # as this process is running infinitely we cannot use run_command_line as it waits for execution to end
         self.subproc = subprocess.Popen(cmd, **kvargs)
-        sleep(1) # give DobbyDaemon time to initialise
+        sleep(2) # give DobbyDaemon time to initialise
 
     def __enter__(self):
         return self.subproc
@@ -507,3 +507,4 @@ def dobby_tool_command(command, container_id, params=None):
     process = run_command_line(full_command)
 
     return process
+
