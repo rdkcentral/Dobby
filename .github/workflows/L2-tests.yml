@@ -60,6 +60,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           path: Dobby
+          submodules: recursive
 
       - name: Install gmock
         run: |
