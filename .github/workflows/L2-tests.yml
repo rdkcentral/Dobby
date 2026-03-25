@@ -7,9 +7,6 @@ env:
 jobs:
   build:
     runs-on: ubuntu-latest
-    container:
-      image: ubuntu:20.04
-      options: --privileged -v /sys/fs/cgroup:/sys/fs/cgroup:rw
     strategy:
       fail-fast: false
       matrix:
@@ -31,13 +28,10 @@ jobs:
     name: Build in ${{ matrix.build_type }} Mode (${{ matrix.extra_flags }})
     steps:
       - name: Install packages
-        env:
-          DEBIAN_FRONTEND: noninteractive
-          TZ: Etc/UTC
         run: >
-          apt update
+          sudo apt update
           &&
-          apt install -y sudo build-essential cmake make git gcc pkgconf libtool libctemplate-dev libjsoncpp-dev libdbus-1-dev libsystemd-dev libyajl-dev libcap-dev go-md2man autoconf automake libseccomp-dev libboost-dev valgrind libcunit1-dev liblog4c-dev libfreetype6-dev libjpeg-dev xorg-dev python3 python3-pip libarchive-dev libcurl4 libcurl4-gnutls-dev libssl-dev libgpgme11-dev libtool-bin libarchive13 bison flex clang lcov figlet dbus libdbus-glib-1-dev dbus-user-session systemd libpam-systemd gnome-keyring iptables libprotobuf-c-dev libzstd-dev
+          sudo apt install -y build-essential cmake make git gcc pkgconf libtool libctemplate-dev libjsoncpp-dev libdbus-1-dev libsystemd-dev libyajl-dev libcap-dev go-md2man autoconf automake libseccomp-dev libboost-dev valgrind libcunit1-dev liblog4c-dev libfreetype6-dev libjpeg-dev xorg-dev python3 python3-pip libarchive-dev libcurl4 libcurl4-gnutls-dev libssl-dev libgpgme11-dev libtool-bin libarchive13 bison flex clang lcov figlet dbus libdbus-glib-1-dev dbus-user-session systemd libpam-systemd gnome-keyring iptables libprotobuf-c-dev libzstd-dev
 
       - name: Set gcc/with-coverage toolchain
         if: ${{ matrix.compiler == 'gcc' && matrix.coverage == 'with-coverage' }}
@@ -60,17 +54,6 @@ jobs:
         uses: actions/checkout@v4
         with:
           path: Dobby
-          submodules: recursive
-
-      - name: Initialize submodules
-        run: |
-          cd Dobby
-          git config --global --add safe.directory /__w/Dobby/Dobby/Dobby
-          git config --global --add safe.directory /__w/Dobby/Dobby/Dobby/libocispec
-          git config --global --add safe.directory /__w/Dobby/Dobby/Dobby/libocispec/runtime-spec
-          git config --global --add safe.directory /__w/Dobby/Dobby/Dobby/libocispec/image-spec
-          git config --global --add safe.directory /__w/Dobby/Dobby/Dobby/libocispec/yajl
-          git submodule update --init --recursive
 
       - name: Install gmock
         run: |
@@ -135,9 +118,7 @@ jobs:
 
       - name: build Dobby
         run: |
-          sudo ln -sf /run/systemd/resolve/resolv.conf /etc/resolv.conf || true
-          # Configure git safe directories for CMake's libocispec generator
-          git config --global --add safe.directory '*'
+          sudo ln -sf /run/systemd/resolve/resolv.conf /etc/resolv.conf
           cd Dobby
           sudo cp /usr/lib/x86_64-linux-gnu/dbus-1.0/include/dbus/dbus-arch-deps.h /usr/include/dbus-1.0/dbus
           sudo mkdir -p /usr/lib/plugins/dobby
