@@ -124,7 +124,7 @@ jobs:
 
       - name: build Dobby
         run: |
-          sudo ln -sf /run/systemd/resolve/resolv.conf /etc/resolv.conf
+          sudo ln -sf /run/systemd/resolve/resolv.conf /etc/resolv.conf || true
           cd Dobby
           sudo cp /usr/lib/x86_64-linux-gnu/dbus-1.0/include/dbus/dbus-arch-deps.h /usr/include/dbus-1.0/dbus
           sudo mkdir -p /usr/lib/plugins/dobby
