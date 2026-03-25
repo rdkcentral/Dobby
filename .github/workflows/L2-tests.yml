@@ -6,7 +6,10 @@ env:
 
 jobs:
   build:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
+    container:
+      image: ubuntu:20.04
+      options: --privileged -v /sys/fs/cgroup:/sys/fs/cgroup:rw
     strategy:
       fail-fast: false
       matrix:
