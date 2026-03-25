@@ -85,6 +85,27 @@ def execute_test():
     return test_utils.count_print_results(output_table)
 
 
+# Helper function for multiprocessing - must be at module level to be picklable
+def _wait_for_string(proc, string_to_find):
+    """Waits indefinitely until string is found in process. Must be run with timeout multiprocess.
+
+    Parameters:
+    proc (process): process in which we want to read
+    string_to_find (string): what we want to find in process
+
+    Returns:
+    None: Returns nothing if found, never ends if not found
+
+    """
+
+    while True:
+        # notice that all data are in stderr not in stdout, this is DobbyDaemon design
+        output = proc.stderr.readline()
+        if string_to_find in output:
+            test_utils.print_log("Found string \"%s\"" % string_to_find, test_utils.Severity.debug)
+            return
+
+
 # we need to do this asynchronous as if there is no such string we would end in endless loop
 def read_asynchronous(proc, string_to_find, timeout):
     """Reads asynchronous from process. Ends when found string or timeout occurred.
@@ -99,28 +120,8 @@ def read_asynchronous(proc, string_to_find, timeout):
 
     """
 
-    # as this function should not be used outside asynchronous read, it is moved inside it
-    def wait_for_string(proc, string_to_find):
-        """Waits indefinitely until string is found in process. Must be run with timeout multiprocess.
-
-        Parameters:
-        proc (process): process in which we want to read
-        string_to_find (string): what we want to find in process
-
-        Returns:
-        None: Returns nothing if found, never ends if not found
-
-        """
-
-        while True:
-            # notice that all data are in stderr not in stdout, this is DobbyDaemon design
-            output = proc.stderr.readline()
-            if string_to_find in output:
-                test_utils.print_log("Found string \"%s\"" % string_to_find, test_utils.Severity.debug)
-                return
-
     found = False
-    reader = multiprocessing.Process(target=wait_for_string, args=(proc, string_to_find), kwargs={})
+    reader = multiprocessing.Process(target=_wait_for_string, args=(proc, string_to_find), kwargs={})
     test_utils.print_log("Starting multithread read", test_utils.Severity.debug)
     reader.start()
     reader.join(timeout)
@@ -203,3 +204,4 @@ def stop_dobby_daemon():
 if __name__ == "__main__":
     test_utils.parse_arguments(__file__, True)
     execute_test()
+
