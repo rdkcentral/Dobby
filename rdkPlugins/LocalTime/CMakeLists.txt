@@ -24,12 +24,18 @@ project(LocalTimePlugin)
 add_library( ${PROJECT_NAME}
         SHARED
         source/LocalTimePlugin.cpp
+        source/TimeZoneMonitor.cpp
+        )
+
+target_compile_features( ${PROJECT_NAME}
+        PRIVATE
+        cxx_std_17
         )
 
 target_include_directories(${PROJECT_NAME}
         PRIVATE
         $<TARGET_PROPERTY:DobbyDaemonLib,INTERFACE_INCLUDE_DIRECTORIES>
-)
+        )
 
 install(
         TARGETS ${PROJECT_NAME}
@@ -39,6 +45,6 @@ install(
 
 target_link_libraries(${PROJECT_NAME}
         DobbyRdkPluginCommonLib
-)
+        )
 
 set_target_properties( ${PROJECT_NAME} PROPERTIES SOVERSION 1 )

@@ -18,6 +18,7 @@
 */
 
 #include "LocalTimePlugin.h"
+#include "TimeZoneMonitor.h"
 
 #include <Logging.h>
 
@@ -33,8 +34,23 @@ LocalTimePlugin::LocalTimePlugin(std::shared_ptr<rt_dobby_schema> &containerConf
       mContainerConfig(containerConfig),
       mUtils(utils)
 {
-    AI_LOG_FN_ENTRY();
-    AI_LOG_FN_EXIT();
+    std::error_code ec;
+    std::filesystem::path tzFilePath;
+    if (containerConfig->rdk_plugins->localtime->data->path)
+    {
+        tzFilePath = containerConfig->rdk_plugins->localtime->data->path;
+        if (tzFilePath.empty() || !std::filesystem::is_regular_file(tzFilePath, ec))
+        {
+            AI_LOG_ERROR("invalid timezone file path '%s', reverting to '/etc/localtime'", tzFilePath.c_str());
+            tzFilePath = "/etc/localtime";
+        }
+    }
+    else
+    {
+        tzFilePath = "/etc/localtime";
+    }
+
+    mTimeZoneMonitor = std::make_unique<TimeZoneMonitor>(std::move(tzFilePath));
 }
 
 unsigned LocalTimePlugin::hookHints() const
@@ -56,31 +72,20 @@ bool LocalTimePlugin::postInstallation()
 {
     AI_LOG_FN_ENTRY();
 
-    std::string srcPath;
-    std::string dstPath = mRootfsPath + "/etc/localtime";
+    // the absolute path to the /etc/localtime file in the container rootfs
+    const std::filesystem::path localTimePath = mRootfsPath + "/etc/localtime";
+    const std::filesystem::path etcDirPath = localTimePath.parent_path();
 
-    if (mContainerConfig->rdk_plugins->localtime->data->path)
-    {
-        srcPath = mContainerConfig->rdk_plugins->localtime->data->path;
-        if (srcPath.empty() || (access(srcPath.c_str(), F_OK) != 0))
-        {
-            AI_LOG_ERROR("invalid timezone file path '%s', reverting to '/etc/localtime'", srcPath.c_str());
-            srcPath = "/etc/localtime";
-        }
-    }
+    // create the /etc directory in the container rootfs if it doesn't already exist
+    if (mUtils->mkdirRecursive(etcDirPath.string(), 0755) || (errno == EEXIST))
+        AI_LOG_INFO("set localtime path %s", etcDirPath.c_str());
     else
-    {
-        srcPath = "/etc/localtime";
-        AI_LOG_INFO("Set default path %s", srcPath.c_str());
-    }
+        AI_LOG_SYS_ERROR(errno, "failed to create dir. %s", etcDirPath.c_str());
 
-    if (!mUtils->addMount(srcPath, dstPath, "bind", {"bind", "ro", "nodev","nosuid", "noexec" }))
-    {
-        AI_LOG_ERROR("failed to add bind mount '%s' -> '%s'", srcPath.c_str(), dstPath.c_str());
-
-        // this is not fatal for now, but does mean the container will not have
-        // the correct timezone, so log an error and continue
-    }
+    // add the /etc/localtime file to the time zone monitor, it will create the
+    // initial file in the container rootfs and update it whenever the real time
+    // zone file changes on the host
+    mTimeZoneMonitor->addPathToUpdate(localTimePath);
 
     AI_LOG_FN_EXIT();
     return true;

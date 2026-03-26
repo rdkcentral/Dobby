@@ -22,6 +22,10 @@
 
 #include <RdkPluginBase.h>
 
+#include <memory>
+
+class TimeZoneMonitor;
+
 /**
  * @brief Dobby LocalTime plugin.
  *
@@ -54,8 +58,9 @@ public:
 private:
     const std::string mName;
     const std::string mRootfsPath;
-    std::shared_ptr<rt_dobby_schema> mContainerConfig;
+    const std::shared_ptr<rt_dobby_schema> mContainerConfig;
     const std::shared_ptr<DobbyRdkPluginUtils> mUtils;
+    std::unique_ptr<TimeZoneMonitor> mTimeZoneMonitor;
 };
 
 #endif // !defined(LOCALTIMEPLUGIN_H)
