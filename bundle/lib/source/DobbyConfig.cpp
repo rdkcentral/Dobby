@@ -660,45 +660,48 @@ void DobbyConfig::addPluginLauncherHooks(std::shared_ptr<rt_dobby_schema> cfg, c
     }
 
     // createRuntime and poststop hook paths must resolve in the runtime namespace
-    // config is in bundle. For createContainer hook, we also use bundle path since
-    // according to OCI spec, hook path resolution should happen from runtime namespace
-    // even though execution happens in container namespace
-    std::string configPath = bundlePath + "/config.json";
+    // and execute in runtime namespace, so they can use the bundle path directly
+    std::string runtimeConfigPath = bundlePath + "/config.json";
+
+    // createContainer hook runs in container namespace, so it needs to use
+    // the fixed path where we mounted the config.json
+    std::string containerConfigPath = "/tmp/dobby_config.json";
 
     // populate createRuntime hook with DobbyPluginLauncher args
     rt_defs_hook *createRuntimeEntry = (rt_defs_hook*)calloc(1, sizeof(rt_defs_hook));
-    setPluginHookEntry(createRuntimeEntry, "createRuntime", configPath);
+    setPluginHookEntry(createRuntimeEntry, "createRuntime", runtimeConfigPath);
     cfg->hooks->create_runtime = (rt_defs_hook**)realloc(cfg->hooks->create_runtime, sizeof(rt_defs_hook*) * ++cfg->hooks->create_runtime_len);
     cfg->hooks->create_runtime[cfg->hooks->create_runtime_len-1] = createRuntimeEntry;
 
     // populate createContainer hook with DobbyPluginLauncher args
-    // Note: createContainer runs in container namespace but path resolution should
-    // be from runtime namespace per OCI spec
+    // Uses container namespace path since hook executes in container namespace
     rt_defs_hook *createContainerEntry = (rt_defs_hook*)calloc(1, sizeof(rt_defs_hook));
-    setPluginHookEntry(createContainerEntry, "createContainer", configPath);
+    setPluginHookEntry(createContainerEntry, "createContainer", containerConfigPath);
     cfg->hooks->create_container = (rt_defs_hook**)realloc(cfg->hooks->create_container, sizeof(rt_defs_hook*) * ++cfg->hooks->create_container_len);
     cfg->hooks->create_container[cfg->hooks->create_container_len-1] = createContainerEntry;
 
     // populate poststart hook with DobbyPluginLauncher args
+    // poststart runs in runtime namespace, so use runtime path
     rt_defs_hook *poststartEntry = (rt_defs_hook*)calloc(1, sizeof(rt_defs_hook));
-    setPluginHookEntry(poststartEntry, "poststart", configPath);
+    setPluginHookEntry(poststartEntry, "poststart", runtimeConfigPath);
     cfg->hooks->poststart = (rt_defs_hook**)realloc(cfg->hooks->poststart, sizeof(rt_defs_hook*) * ++cfg->hooks->poststart_len);
     cfg->hooks->poststart[cfg->hooks->poststart_len-1] = poststartEntry;
 
     // populate poststop hook with DobbyPluginLauncher args
+    // poststop runs in runtime namespace, so use runtime path
     rt_defs_hook *poststopEntry = (rt_defs_hook*)calloc(1, sizeof(rt_defs_hook));
-    setPluginHookEntry(poststopEntry, "poststop", configPath);
+    setPluginHookEntry(poststopEntry, "poststop", runtimeConfigPath);
     cfg->hooks->poststop = (rt_defs_hook**)realloc(cfg->hooks->poststop, sizeof(rt_defs_hook*) * ++cfg->hooks->poststop_len);
     cfg->hooks->poststop[cfg->hooks->poststop_len-1] = poststopEntry;
 
 #ifdef USE_STARTCONTAINER_HOOK
-    // startContainer hook paths must resolve in the container namespace,
-    // config is in container rootdir
-    configPath = "/tmp/config.json";
+    // startContainer hook runs in container namespace after pivot_root,
+    // use the path where config was mounted for startContainer
+    std::string startContainerConfigPath = "/tmp/config.json";
 
     // populate startContainer hook with DobbyPluginLauncher args
     rt_defs_hook *startContainerEntry = (rt_defs_hook*)calloc(1, sizeof(rt_defs_hook));
-    setPluginHookEntry(startContainerEntry, "startContainer", configPath);
+    setPluginHookEntry(startContainerEntry, "startContainer", startContainerConfigPath);
     cfg->hooks->start_container = (rt_defs_hook**)realloc(cfg->hooks->start_container, sizeof(rt_defs_hook*) * ++cfg->hooks->start_container_len);
     cfg->hooks->start_container[cfg->hooks->start_container_len-1] = startContainerEntry;
 #endif
@@ -752,26 +755,19 @@ bool DobbyConfig::updateBundleConfig(const ContainerId& id, std::shared_ptr<rt_d
     // if there are any rdk plugins, set up DobbyPluginLauncher in config
     if (cfg->rdk_plugins && cfg->rdk_plugins->plugins_count)
     {
-        // Always bind mount the bundle directory into the container at the same path.
+        // Bind mount the config.json file to a fixed path inside the container.
         // This is needed because createContainer hooks run in the container's mount
         // namespace but need to access the config.json file which exists on the host.
-        // By mounting the bundle directory, the host path becomes accessible.
-        if(!addMount(bundlePath, bundlePath, "bind", 0,
-                        { "rbind", "ro", "nosuid", "nodev" }))
+        // We use /tmp/dobby_config.json as a well-known location that exists in all containers.
+        if(!addMount(bundlePath + "/config.json", "/tmp/dobby_config.json", "bind", 0,
+                        { "bind", "ro", "nosuid", "nodev" }))
         {
-            AI_LOG_WARN("Failed to add bundle mount for hooks, createContainer may fail");
+            AI_LOG_WARN("Failed to add config mount for hooks, createContainer may fail");
         }
 
 #ifdef USE_STARTCONTAINER_HOOK
         // bindmount DobbyPluginLauncher to container
         if(!addMount(PLUGINLAUNCHER_PATH, PLUGINLAUNCHER_PATH, "bind", 0,
-                        { "bind", "ro", "nosuid", "nodev" }))
-        {
-            return false;
-        }
-
-        // bindmount the config file to container for startContainer hook
-        if(!addMount(bundlePath + "/config.json", "/tmp/config.json", "bind", 0,
                         { "bind", "ro", "nosuid", "nodev" }))
         {
             return false;

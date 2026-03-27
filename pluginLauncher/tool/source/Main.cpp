@@ -469,22 +469,40 @@ int main(int argc, char *argv[])
     }
 
     // Create a libocispec object for the container's config
+    // The config path is passed via -c argument and should be accessible
+    // from the current namespace (runtime or container namespace depending on hook)
     char *absPath = realpath(gConfigPath.c_str(), NULL);
     if (absPath == nullptr)
     {
-        // The config path may not be accessible from the current namespace.
-        // Try using the bundle path from the container state as a fallback.
+        // The config path may not be directly resolvable.
+        // For createContainer hooks running in container namespace, the config
+        // should be at the fixed mount point /tmp/dobby_config.json.
+        // For other hooks, try the bundle path from state as fallback.
+        std::vector<std::string> fallbackPaths;
+        
+        // Try container namespace fixed path first (for createContainer hook)
+        fallbackPaths.push_back("/tmp/dobby_config.json");
+        
+        // Then try bundle path from state (for runtime namespace hooks)
         if (state->bundle != nullptr)
         {
-            std::string fallbackPath = std::string(state->bundle) + "/config.json";
-            AI_LOG_INFO("Config not found at '%s', trying bundle path '%s'", 
+            fallbackPaths.push_back(std::string(state->bundle) + "/config.json");
+        }
+        
+        for (const auto& fallbackPath : fallbackPaths)
+        {
+            AI_LOG_INFO("Config not found at '%s', trying '%s'", 
                         gConfigPath.c_str(), fallbackPath.c_str());
             absPath = realpath(fallbackPath.c_str(), NULL);
+            if (absPath != nullptr)
+            {
+                break;
+            }
         }
         
         if (absPath == nullptr)
         {
-            AI_LOG_ERROR("Couldn't find config at %s", gConfigPath.c_str());
+            AI_LOG_ERROR("Couldn't find config at %s (also tried fallback paths)", gConfigPath.c_str());
             return EXIT_FAILURE;
         }
     }
