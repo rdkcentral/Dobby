@@ -116,6 +116,35 @@ jobs:
          </policy>
          </busconfig>' > "/etc/dbus-1/system.d/org.rdk.dobby.conf"
 
+      - name: Setup network interfaces for testing
+        run: |
+          # Create dummy network interfaces that tests expect
+          sudo ip link add enp0s8 type dummy || true
+          sudo ip link add enp0s3 type dummy || true
+          sudo ip link set enp0s8 up || true
+          sudo ip link set enp0s3 up || true
+          # Create bridge for Dobby networking
+          sudo ip link add dobby0 type bridge || true
+          sudo ip link set dobby0 up || true
+          # Assign IP to dobby0 bridge for container networking
+          sudo ip addr add 100.64.11.1/24 dev dobby0 || true
+          # Enable IP forwarding for container network access
+          sudo sysctl -w net.ipv4.ip_forward=1
+          # Setup NAT for container outbound traffic
+          sudo iptables -t nat -A POSTROUTING -s 100.64.11.0/24 -o eth0 -j MASQUERADE || true
+          sudo iptables -A FORWARD -i dobby0 -o eth0 -j ACCEPT || true
+          sudo iptables -A FORWARD -i eth0 -o dobby0 -m state --state RELATED,ESTABLISHED -j ACCEPT || true
+
+      - name: Setup permissions and directories
+        run: |
+          # Create and set permissions for profiling/coverage directories
+          sudo mkdir -p /home/runner/work
+          sudo chmod -R 777 /home/runner/work
+          sudo chmod -R 777 $GITHUB_WORKSPACE || true
+          # Create tmp directory for container logs
+          sudo mkdir -p /tmp
+          sudo chmod 1777 /tmp
+
       - name: build Dobby
         run: |
           sudo ln -sf /run/systemd/resolve/resolv.conf /etc/resolv.conf
