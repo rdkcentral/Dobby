@@ -20,7 +20,7 @@
 #include "TimeZoneMonitor.h"
 #include <Logging.h>
 
-#include <cstring>
+#include <string_view>
 
 #include <poll.h>
 #include <fcntl.h>
@@ -239,7 +239,11 @@ void TimeZoneMonitor::processInotifyEvents(int inotifyFd)
              ptr += (sizeof(struct inotify_event) + event->len))
         {
             event = reinterpret_cast<const struct inotify_event*>(ptr);
-            if ((event->len > 0) && (strcmp(event->name, mTimeZoneFileName.c_str()) == 0))
+            if (event->len == 0)
+                continue;
+
+            const std::string_view eventName(event->name, event->len);
+            if (mTimeZoneFileName == eventName)
             {
                 AI_LOG_DEBUG("received inotify event for time zone file '%s'", mTimeZoneFilePath.c_str());
 
@@ -290,6 +294,11 @@ void TimeZoneMonitor::recheckTimeZoneFile()
         AI_LOG_SYS_ERROR(errno, "failed to read time zone file '%s'", mTimeZoneFilePath.c_str());
         close(fd);
         return;
+    }
+
+    if (close(fd) != 0)
+    {
+        AI_LOG_SYS_ERROR(errno, "failed to close time zone file '%s'", mTimeZoneFilePath.c_str());
     }
 
     if (rd == MAX_TZ_FILE_SIZE)
