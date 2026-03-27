@@ -456,12 +456,37 @@ int main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
+    // Get container state from stdin first - we may need the bundle path from it
+    std::shared_ptr<const rt_state_schema> state = getContainerState();
+    if (state)
+    {
+        gContainerId = std::string(state->id);
+    }
+    else
+    {
+        AI_LOG_WARN("Failed to get container state from stdin");
+        return EXIT_FAILURE;
+    }
+
     // Create a libocispec object for the container's config
     char *absPath = realpath(gConfigPath.c_str(), NULL);
     if (absPath == nullptr)
     {
-        AI_LOG_ERROR("Couldn't find config at %s", gConfigPath.c_str());
-        return EXIT_FAILURE;
+        // The config path may not be accessible from the current namespace.
+        // Try using the bundle path from the container state as a fallback.
+        if (state->bundle != nullptr)
+        {
+            std::string fallbackPath = std::string(state->bundle) + "/config.json";
+            AI_LOG_INFO("Config not found at '%s', trying bundle path '%s'", 
+                        gConfigPath.c_str(), fallbackPath.c_str());
+            absPath = realpath(fallbackPath.c_str(), NULL);
+        }
+        
+        if (absPath == nullptr)
+        {
+            AI_LOG_ERROR("Couldn't find config at %s", gConfigPath.c_str());
+            return EXIT_FAILURE;
+        }
     }
     const std::string fullConfigPath = std::string(absPath);
     free(absPath);
@@ -476,19 +501,6 @@ int main(int argc, char *argv[])
     {
         AI_LOG_ERROR("Failed to parse OCI config with error: %s", err);
         return EXIT_FAILURE;
-    }
-
-    // Get container id from state (using hostname may be incorrect if we
-    // launch multiple containers from same bundle)
-    std::shared_ptr<const rt_state_schema> state = getContainerState();
-    if (state)
-    {
-        gContainerId = std::string(state->id);
-    }
-    else
-    {
-        AI_LOG_WARN("Failed to get container state from stdin");
-        return false;
     }
 
     AI_LOG_MILESTONE("Running hook %s for container '%s'", gHookName.c_str(), gContainerId.c_str());
@@ -526,3 +538,4 @@ int main(int argc, char *argv[])
     AI_LOG_WARN("Hook %s failed - plugin(s) ran with errors", gHookName.c_str());
     return EXIT_FAILURE;
 }
+

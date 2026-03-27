@@ -69,6 +69,7 @@ def test_container(container_id, expected_output):
         if "started '" + container_id + "' container" not in status.stdout:
             return False, "Container did not launch successfully"
         
+        # Keep bundle around while container is running - Dobby uses bundle in-place
         return validate_pid_limit(container_id, expected_output)
 
 
@@ -103,3 +104,4 @@ def validate_pid_limit(container_id, expected_output):
 if __name__ == "__main__":
     test_utils.parse_arguments(__file__, True)
     execute_test()
+
