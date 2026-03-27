@@ -23,6 +23,7 @@
 #include <Logging.h>
 
 #include <unistd.h>
+#include <errno.h>
 
 REGISTER_RDK_PLUGIN(LocalTimePlugin);
 
@@ -78,9 +79,14 @@ bool LocalTimePlugin::postInstallation()
 
     // create the /etc directory in the container rootfs if it doesn't already exist
     if (mUtils->mkdirRecursive(etcDirPath.string(), 0755) || (errno == EEXIST))
-        AI_LOG_INFO("set localtime path %s", etcDirPath.c_str());
+    {
+        AI_LOG_INFO("set localtime path %s/localtime", etcDirPath.c_str());
+    }
     else
-        AI_LOG_SYS_ERROR(errno, "failed to create dir. %s", etcDirPath.c_str());
+    {
+        AI_LOG_SYS_ERROR(errno, "failed to create dir @ %s", etcDirPath.c_str());
+        return false;
+    }
 
     // add the /etc/localtime file to the time zone monitor, it will create the
     // initial file in the container rootfs and update it whenever the real time

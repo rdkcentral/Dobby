@@ -24,6 +24,7 @@
 #include <thread>
 #include <vector>
 #include <filesystem>
+#include <cstdint>
 
 class TimeZoneMonitor
 {
@@ -43,7 +44,7 @@ private:
 
 private:
     const std::filesystem::path mTimeZoneFilePath;
-    const std::filesystem::path mTimeZoneFileName;
+    const std::string mTimeZoneFileName;
 
     std::thread mMonitorThread;
     int mStopEventFd = -1;

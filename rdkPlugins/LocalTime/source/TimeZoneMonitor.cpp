@@ -20,6 +20,7 @@
 #include "TimeZoneMonitor.h"
 #include <Logging.h>
 
+#include <random>
 #include <string_view>
 
 #include <poll.h>
@@ -70,13 +71,13 @@ TimeZoneMonitor::~TimeZoneMonitor()
         uint64_t value = 1;
         if (::write(mStopEventFd, &value, sizeof(value)) != sizeof(value))
             AI_LOG_SYS_ERROR(errno, "failed to write to stop event fd");
-
-        if (::close(mStopEventFd) != 0)
-            AI_LOG_SYS_ERROR(errno, "failed to close stop event fd");
     }
 
     if (mMonitorThread.joinable())
         mMonitorThread.join();
+
+    if ((mStopEventFd >= 0) && (close(mStopEventFd) != 0))
+        AI_LOG_SYS_ERROR(errno, "failed to close stop event fd");
 }
 
 // -----------------------------------------------------------------------------
@@ -234,21 +235,22 @@ void TimeZoneMonitor::processInotifyEvents(int inotifyFd)
         if (length <= 0)
             break;
 
-        for (const uint8_t *ptr = buffer;
-             ptr < (buffer + length);
-             ptr += (sizeof(struct inotify_event) + event->len))
+        const uint8_t *ptr = buffer;
+        const uint8_t * const end = buffer + length;
+        while (ptr < end)
         {
             event = reinterpret_cast<const struct inotify_event*>(ptr);
-            if (event->len == 0)
-                continue;
-
-            const std::string_view eventName(event->name, event->len);
-            if (mTimeZoneFileName == eventName)
+            if (event->len > 0)
             {
-                AI_LOG_DEBUG("received inotify event for time zone file '%s'", mTimeZoneFilePath.c_str());
-
-                recheckTimeZoneFile();
+                const std::string_view eventName(event->name, event->len);
+                if (mTimeZoneFileName == eventName)
+                {
+                    AI_LOG_DEBUG("received inotify event for time zone file '%s'", mTimeZoneFilePath.c_str());
+                    recheckTimeZoneFile();
+                }
             }
+
+            ptr += (sizeof(struct inotify_event) + event->len);
         }
     }
 }
@@ -343,9 +345,13 @@ void TimeZoneMonitor::updateTimeZoneFile(const std::filesystem::path &linkPath,
     static const char letters[] =
         "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
 
+    std::random_device rd;
+    std::mt19937 rng(rd());
+    std::uniform_int_distribution<std::size_t> dist(0, sizeof(letters) - 1);
+
     std::string randomSuffix = ".tmp.";
     for (int i = 0; i < 6; i++)
-        randomSuffix += letters[rand() % (sizeof(letters) - 1)];
+        randomSuffix += letters[dist(rng)];
 
     // the temporary file path to write the new TZ data to
     auto tempPath = linkPath.string() + randomSuffix;
