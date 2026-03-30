@@ -40,6 +40,7 @@ TestResult = namedtuple('TestResult', ['name',
 class untar_bundle:
     """Context manager for working with tarball bundles"""
     def __init__(self, container_id):
+        self.container_id = container_id
         self.path = get_bundle_path(container_id + "_bundle")
         self.valid = True
 
@@ -57,9 +58,26 @@ class untar_bundle:
             self.valid = False
             return
 
+        # Check if config.json exists at expected location
         config_path = path.join(self.path, "config.json")
         if not path.exists(config_path):
-            print_log("FATAL: Extracted bundle is missing config.json at '%s'" % config_path,
+            # It might be nested - tarball could contain "dirname/config.json"
+            # Try to find it in the first level subdirectory
+            try:
+                import os
+                entries = os.listdir(self.path)
+                for entry in entries:
+                    candidate = path.join(self.path, entry, "config.json")
+                    if path.exists(candidate):
+                        print_log("Found config.json nested in %s, updating path" % entry, Severity.debug)
+                        self.path = path.join(self.path, entry)
+                        config_path = candidate
+                        break
+            except Exception as err:
+                print_log("Error checking nested bundle structure: %s" % err, Severity.warning)
+        
+        if not path.exists(config_path):
+            print_log("FATAL: Extracted bundle is missing config.json. Expected at: %s" % config_path,
                       Severity.error)
             self.valid = False
 
@@ -107,11 +125,16 @@ class dobby_daemon:
         if selected_platform == Platforms.xi_6:
             self.subproc.kill()
         else:
-            subprocess.run(["sudo", "pkill", "DobbyDaemon"])
-        sleep(0.2)
+            subprocess.run(["sudo", "pkill", "-9", "DobbyDaemon"])
+        sleep(1)  # Give process time to fully terminate and be reaped
 
         # check for segfault
-        self.subproc.communicate()
+        try:
+            self.subproc.communicate(timeout=2)
+        except subprocess.TimeoutExpired:
+            self.subproc.kill()
+            self.subproc.wait()
+        
         if self.subproc.returncode == -11: # -11 == SIGSEGV
             print_log("Received SIGSEGV from DobbyDaemon", Severity.error)
 

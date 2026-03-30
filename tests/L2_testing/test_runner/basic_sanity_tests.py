@@ -195,12 +195,13 @@ def stop_dobby_daemon():
     """
 
     test_utils.print_log("Stopping Dobby Daemon", test_utils.Severity.debug)
-    subproc = test_utils.run_command_line(["sudo", "pkill", "DobbyDaemon"])
-    sleep(0.2)
+    subproc = test_utils.run_command_line(["sudo", "pkill", "-9", "DobbyDaemon"])
+    sleep(1)  # Give process time to fully terminate and be reaped
     return subproc
 
 
 if __name__ == "__main__":
     test_utils.parse_arguments(__file__, True)
     execute_test()
+
 
