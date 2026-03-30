@@ -71,7 +71,13 @@ def execute_test():
 
     output_table = []
 
-    with test_utils.untar_bundle(container_name) as bundle_path:
+    bundle_ctx = test_utils.untar_bundle(container_name)
+    with bundle_ctx as bundle_path:
+        if not bundle_ctx.valid:
+            test = tests[0]
+            output = test_utils.create_simple_test_output(test, False, "Bundle extraction or validation failed", "")
+            return test_utils.count_print_results([output])
+        
         # Test 0
         test = tests[0]
         status = test_utils.run_command_line(["DobbyBundleGenerator",

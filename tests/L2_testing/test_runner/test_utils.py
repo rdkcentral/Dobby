@@ -41,6 +41,7 @@ class untar_bundle:
     """Context manager for working with tarball bundles"""
     def __init__(self, container_id):
         self.path = get_bundle_path(container_id + "_bundle")
+        self.valid = True
 
         print_log("untar'ing file %s.tar.gz" % self.path, Severity.debug)
         status = run_command_line(["tar",
@@ -50,14 +51,17 @@ class untar_bundle:
                                    self.path + ".tar.gz"])
 
         if status.returncode != 0:
-            print_log("Failed to extract bundle tarball '%s.tar.gz' (rc=%d): %s"
+            print_log("FATAL: Failed to extract bundle tarball '%s.tar.gz' (rc=%d): %s"
                       % (self.path, status.returncode, status.stderr.strip()),
                       Severity.error)
+            self.valid = False
+            return
 
         config_path = path.join(self.path, "config.json")
         if not path.exists(config_path):
-            print_log("Extracted bundle is missing config.json at '%s'" % config_path,
+            print_log("FATAL: Extracted bundle is missing config.json at '%s'" % config_path,
                       Severity.error)
+            self.valid = False
 
     def __enter__(self):
         return self.path

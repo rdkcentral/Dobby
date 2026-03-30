@@ -63,7 +63,11 @@ def test_container(container_id, expected_output):
 
     test_utils.print_log("Running %s container test" % container_id, test_utils.Severity.debug)
 
-    with test_utils.untar_bundle(container_id) as bundle_path:
+    bundle_ctx = test_utils.untar_bundle(container_id)
+    with bundle_ctx as bundle_path:
+        if not bundle_ctx.valid:
+            return False, "Bundle extraction or validation failed"
+        
         launch_result = test_utils.launch_container(container_id, bundle_path)
 
         # give logging plugin a moment to flush file output

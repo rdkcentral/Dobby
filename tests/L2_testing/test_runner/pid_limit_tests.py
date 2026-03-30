@@ -59,7 +59,11 @@ def test_container(container_id, expected_output):
 
     test_utils.print_log("Running %s container test" % container_id, test_utils.Severity.debug)
 
-    with test_utils.untar_bundle(container_id) as bundle_path:
+    bundle_ctx = test_utils.untar_bundle(container_id)
+    with bundle_ctx as bundle_path:
+        if not bundle_ctx.valid:
+            return False, "Bundle extraction or validation failed"
+        
         command = ["DobbyTool",
                 "start",
                 container_id,
@@ -103,3 +107,4 @@ def validate_pid_limit(container_id, expected_output):
 if __name__ == "__main__":
     test_utils.parse_arguments(__file__, True)
     execute_test()
+
