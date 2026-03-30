@@ -40,14 +40,19 @@ TestResult = namedtuple('TestResult', ['name',
 class untar_bundle:
     """Context manager for working with tarball bundles"""
     def __init__(self, container_id):
+        import os
         self.container_id = container_id
         self.path = get_bundle_path(container_id + "_bundle")
         self.valid = True
+        self.parent_path = get_bundle_path("")  # Save parent for cleanup
+        self.actual_bundle_dir = None  # Track which directory we actually use
 
         print_log("untar'ing file %s.tar.gz" % self.path, Severity.debug)
+        
+        # Extract to parent directory
         status = run_command_line(["tar",
                                    "-C",
-                                   get_bundle_path(""),
+                                   self.parent_path,
                                    "-zxvf",
                                    self.path + ".tar.gz"])
 
@@ -58,37 +63,73 @@ class untar_bundle:
             self.valid = False
             return
 
-        # Check if config.json exists at expected location
-        config_path = path.join(self.path, "config.json")
-        if not path.exists(config_path):
-            # It might be nested - tarball could contain "dirname/config.json"
-            # Try to find it in the first level subdirectory
+        # Try to find config.json - it could be in multiple possible locations
+        candidates = [
+            # 1. At expected location: /path/filelogging_bundle/config.json
+            (self.path, "expected location"),
+            # 2. In a subdirectory: /path/filelogging_bundle/filelogging_bundle/config.json
+            (path.join(self.path, container_id + "_bundle"), "self-named subdirectory"),
+        ]
+        
+        # Also check for any immediate subdirectories
+        if path.exists(self.path):
             try:
-                import os
                 entries = os.listdir(self.path)
                 for entry in entries:
-                    candidate = path.join(self.path, entry, "config.json")
-                    if path.exists(candidate):
-                        print_log("Found config.json nested in %s, updating path" % entry, Severity.debug)
-                        self.path = path.join(self.path, entry)
-                        config_path = candidate
-                        break
+                    entry_path = path.join(self.path, entry)
+                    if path.isdir(entry_path):
+                        candidates.append((entry_path, "subdirectory '%s'" % entry))
             except Exception as err:
-                print_log("Error checking nested bundle structure: %s" % err, Severity.warning)
+                print_log("Error listing bundle directory: %s" % err, Severity.warning)
         
-        if not path.exists(config_path):
-            print_log("FATAL: Extracted bundle is missing config.json. Expected at: %s" % config_path,
-                      Severity.error)
+        # Find first candidate with config.json
+        config_found = False
+        for candidate_path, location_desc in candidates:
+            config_path = path.join(candidate_path, "config.json")
+            print_log("Checking %s: %s" % (location_desc, config_path), Severity.debug)
+            
+            if path.exists(config_path):
+                print_log("Found config.json in %s" % location_desc, Severity.info)
+                self.path = candidate_path
+                self.actual_bundle_dir = candidate_path
+                config_found = True
+                break
+        
+        if not config_found:
+            # Final diagnostic: list what we actually extracted
+            print_log("FATAL: Could not find config.json in bundle", Severity.error)
+            if path.exists(self.path):
+                try:
+                    entries = os.listdir(self.path)
+                    print_log("Directory contents of %s: %s" % (self.path, entries), Severity.error)
+                    # Recursively list structure up to 2 levels
+                    for entry in entries:
+                        entry_path = path.join(self.path, entry)
+                        if path.isdir(entry_path):
+                            try:
+                                sub_entries = os.listdir(entry_path)
+                                print_log("  /%s/: %s" % (entry, sub_entries), Severity.error)
+                            except:
+                                pass
+                except Exception as err:
+                    print_log("Could not list bundle directory: %s" % err, Severity.error)
             self.valid = False
+        else:
+            print_log("Bundle validation successful at: %s" % self.path, Severity.debug)
 
     def __enter__(self):
         return self.path
 
     def __exit__(self, etype, value, traceback):
-        print_log("deleting folder %s" % self.path, Severity.debug)
-        run_command_line(["rm",
-                          "-rf",
-                          self.path])
+        # Clean up the actual directory we found, not the expected one
+        # Only clean up if path exists (extraction might have failed)
+        if path.exists(self.path):
+            print_log("Cleaning up bundle at: %s" % self.path, Severity.debug)
+            run_command_line(["rm",
+                              "-rf",
+                              self.path])
+        else:
+            print_log("Bundle path doesn't exist, skipping cleanup: %s" % self.path, Severity.debug)
 
 class dobby_daemon:
     """Starts and stops DobbyDaemon service."""
