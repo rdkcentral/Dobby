@@ -53,22 +53,23 @@ def test_container(container_id, expected_output):
     """
     test_utils.print_log("Running %s container test" % container_id, test_utils.Severity.debug)
 
-    with test_utils.untar_bundle(container_id) as bundle_path:
-        command = ["DobbyTool",
-                "start",
-                container_id,
-                bundle_path]
+    spec_path = test_utils.get_container_spec_path(container_id)
+    
+    command = ["DobbyTool",
+            "start",
+            container_id,
+            spec_path]
 
-        status = test_utils.run_command_line(command)
-        if "started '" + container_id + "' container" not in status.stdout:
-            return False, "Container did not launch successfully"
+    status = test_utils.run_command_line(command)
+    if "started '" + container_id + "' container" not in status.stdout:
+        return False, "Container did not launch successfully"
 
-        result = validate_annotation(container_id, expected_output)
+    result = validate_annotation(container_id, expected_output)
 
-        # Stop the container after the test to avoid leaving orphaned containers
-        test_utils.dobby_tool_command("stop", container_id)
+    # Stop the container after the test
+    test_utils.dobby_tool_command("stop", container_id)
 
-        return result
+    return result
 
 
 def validate_annotation(container_id, expected_output):
