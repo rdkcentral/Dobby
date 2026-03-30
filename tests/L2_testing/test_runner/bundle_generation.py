@@ -68,7 +68,8 @@ def execute_test():
         # Test 1
         test = tests[1]
         status = test_utils.run_command_line(["diff",
-                                              "-r --ignore-space-change",
+                                              "-r",
+                                              "--ignore-space-change",
                                               test_utils.get_bundle_path(test.container_id),
                                               bundle_path])
 
@@ -92,3 +93,4 @@ def execute_test():
 if __name__ == "__main__":
     test_utils.parse_arguments(__file__)
     execute_test()
+

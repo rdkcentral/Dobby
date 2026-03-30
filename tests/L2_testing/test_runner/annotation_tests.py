@@ -63,7 +63,12 @@ def test_container(container_id, expected_output):
         if "started '" + container_id + "' container" not in status.stdout:
             return False, "Container did not launch successfully"
 
-        return validate_annotation(container_id, expected_output)
+        result = validate_annotation(container_id, expected_output)
+
+        # Stop the container after the test to avoid leaving orphaned containers
+        test_utils.dobby_tool_command("stop", container_id)
+
+        return result
 
 
 def validate_annotation(container_id, expected_output):
@@ -126,3 +131,4 @@ def validate_annotation(container_id, expected_output):
 if __name__ == "__main__":
     test_utils.parse_arguments(__file__, True)
     execute_test()
+

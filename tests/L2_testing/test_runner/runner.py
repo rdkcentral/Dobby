@@ -68,11 +68,11 @@ def run_all_tests():
             success_count += success
             total_count += total
             testsuites_info.append({"name":test.__name__,"tests":total,"Passed Tests":success,"Failed Tests":total - success})
-            with open('test_results.json', 'r') as json_file:
-                current_test_result = json.load(json_file)
-            testsuites_info[tested_groups_count]['testsuite'] = []
-            testsuites_info[tested_groups_count]["testsuite"].append(current_test_result)
             if total > 0:
+                with open('test_results.json', 'r') as json_file:
+                    current_test_result = json.load(json_file)
+                testsuites_info[tested_groups_count]['testsuite'] = []
+                testsuites_info[tested_groups_count]["testsuite"].append(current_test_result)
                 tested_groups_count += 1
             sleep(1)
 
@@ -97,3 +97,4 @@ def run_all_tests():
 if __name__ == "__main__":
     test_utils.parse_arguments(__file__)
     run_all_tests()
+
