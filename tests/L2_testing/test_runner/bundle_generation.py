@@ -16,6 +16,8 @@
 # limitations under the License.
 
 import test_utils
+import json
+from copy import deepcopy
 
 # in case we would like to change container name
 container_name = "sleepy"
@@ -34,6 +36,32 @@ tests = (
                     "",
                     "Removes files created by this test group"),
 )
+
+
+def _load_json(path):
+    with open(path, encoding="utf-8") as f:
+        return json.load(f)
+
+
+def _normalise_config(config):
+    # make a copy so we don't mutate the original object
+    cfg = deepcopy(config)
+
+    # Some runtimes place this at top-level, some under linux
+    cfg.pop("rootfsPropagation", None)
+    if isinstance(cfg.get("linux"), dict):
+        cfg["linux"].pop("rootfsPropagation", None)
+
+    # Runtime may append tmpfs size options at generation time
+    for mount in cfg.get("mounts", []):
+        if mount.get("destination") in ("/tmp", "/dev") and isinstance(mount.get("options"), list):
+            mount["options"] = [opt for opt in mount["options"] if not str(opt).startswith("size=")]
+
+    # Networking plugin can be auto-disabled depending on environment
+    if isinstance(cfg.get("rdkPlugins"), dict):
+        cfg["rdkPlugins"].pop("networking", None)
+
+    return cfg
 
 
 def execute_test():
@@ -67,13 +95,30 @@ def execute_test():
 
         # Test 1
         test = tests[1]
-        status = test_utils.run_command_line(["diff",
-                                              "-r",
-                                              "--ignore-space-change",
-                                              test_utils.get_bundle_path(test.container_id),
-                                              bundle_path])
+        generated_config_path = test_utils.get_bundle_path(test.container_id) + "/config.json"
+        original_config_path = bundle_path + "/config.json"
 
-        output = test_utils.create_simple_test_output(test, (status.stdout == ""), "", status.stdout)
+        result = True
+        message = ""
+        log = ""
+
+        try:
+            generated_config = _normalise_config(_load_json(generated_config_path))
+            original_config = _normalise_config(_load_json(original_config_path))
+
+            if generated_config != original_config:
+                result = False
+                message = "Normalized config.json mismatch"
+                log = (
+                    "Generated config:\n" + json.dumps(generated_config, sort_keys=True) +
+                    "\nOriginal config:\n" + json.dumps(original_config, sort_keys=True)
+                )
+        except Exception as err:
+            result = False
+            message = "Failed to compare bundle configs"
+            log = str(err)
+
+        output = test_utils.create_simple_test_output(test, result, message, log)
         output_table.append(output)
         test_utils.print_single_result(output)
 

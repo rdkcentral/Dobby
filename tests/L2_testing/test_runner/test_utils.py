@@ -43,11 +43,21 @@ class untar_bundle:
         self.path = get_bundle_path(container_id + "_bundle")
 
         print_log("untar'ing file %s.tar.gz" % self.path, Severity.debug)
-        run_command_line(["tar",
-                          "-C",
-                          get_bundle_path(""),
-                          "-zxvf",
-                          self.path + ".tar.gz"])
+        status = run_command_line(["tar",
+                                   "-C",
+                                   get_bundle_path(""),
+                                   "-zxvf",
+                                   self.path + ".tar.gz"])
+
+        if status.returncode != 0:
+            print_log("Failed to extract bundle tarball '%s.tar.gz' (rc=%d): %s"
+                      % (self.path, status.returncode, status.stderr.strip()),
+                      Severity.error)
+
+        config_path = path.join(self.path, "config.json")
+        if not path.exists(config_path):
+            print_log("Extracted bundle is missing config.json at '%s'" % config_path,
+                      Severity.error)
 
     def __enter__(self):
         return self.path
@@ -346,6 +356,16 @@ def launch_container(container_id, spec_path):
 
     print_log("Launching container %s with spec %s" % (container_id, spec_path), Severity.debug)
 
+    # Validate input path early for clearer errors.
+    if path.isdir(spec_path):
+        config_path = path.join(spec_path, "config.json")
+        if not path.exists(config_path):
+            print_log("Bundle path missing config.json: %s" % config_path, Severity.error)
+            return False
+    elif not path.exists(spec_path):
+        print_log("Spec path does not exist: %s" % spec_path, Severity.error)
+        return False
+
     # Use DobbyTool to launch container
     process = run_command_line(["DobbyTool", "start", container_id, spec_path])
     output = process.stdout
@@ -507,3 +527,4 @@ def dobby_tool_command(command, container_id, params=None):
     process = run_command_line(full_command)
 
     return process
+
