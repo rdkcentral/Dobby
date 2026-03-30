@@ -156,12 +156,18 @@ class dobby_daemon:
 
         print_log("Starting Dobby Daemon (logging to Journal)...", Severity.debug)
 
+        # Build environment with GCOV settings to ensure coverage data goes to writable location
+        # This is critical for CI where hooks like DobbyPluginLauncher need to write .gcda files
+        daemon_env = os.environ.copy()
+        daemon_env["GCOV_PREFIX"] = "/tmp/gcov"
+        daemon_env["GCOV_PREFIX_STRIP"] = "3"
+
         if log_to_stdout:
-            cmd = ["sudo", "DobbyDaemon", "--nofork"]
-            kvargs = {"universal_newlines": True}
+            cmd = ["sudo", "-E", "DobbyDaemon", "--nofork"]
+            kvargs = {"universal_newlines": True, "env": daemon_env}
         else:
-            cmd = ["sudo", "DobbyDaemon", "--nofork", "--journald", "--noconsole"]
-            kvargs = {"universal_newlines": True, "stdout": subprocess.PIPE, "stderr": subprocess.PIPE}
+            cmd = ["sudo", "-E", "DobbyDaemon", "--nofork", "--journald", "--noconsole"]
+            kvargs = {"universal_newlines": True, "stdout": subprocess.PIPE, "stderr": subprocess.PIPE, "env": daemon_env}
 
         # as this process is running infinitely we cannot use run_command_line as it waits for execution to end
         self.subproc = subprocess.Popen(cmd, **kvargs)

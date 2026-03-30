@@ -3,6 +3,9 @@ on: [push, pull_request]
 
 env:
   MEMCR_REF: "b58f2b8e26cab6b67eceaa36fd6ce5a6d04dcd28"
+  # GCOV settings for coverage - must be at workflow level so all processes inherit
+  GCOV_PREFIX: /tmp/gcov
+  GCOV_PREFIX_STRIP: "3"
 
 jobs:
   build:
@@ -163,6 +166,19 @@ jobs:
           # Create tmp directory for container logs
           sudo mkdir -p /tmp
           sudo chmod 1777 /tmp
+          
+          # Setup GCOV output directory - CRITICAL for coverage builds
+          # The hook processes (DobbyPluginLauncher) need this to be writable
+          sudo mkdir -p /tmp/gcov
+          sudo chmod -R 777 /tmp/gcov
+          
+          # Make GCOV env vars available to ALL processes including those started by sudo/systemd
+          echo "GCOV_PREFIX=/tmp/gcov" | sudo tee -a /etc/environment
+          echo "GCOV_PREFIX_STRIP=3" | sudo tee -a /etc/environment
+          
+          # Also export to current shell for subsequent steps
+          echo "GCOV_PREFIX=/tmp/gcov" >> $GITHUB_ENV
+          echo "GCOV_PREFIX_STRIP=3" >> $GITHUB_ENV
 
       - name: build Dobby
         run: |
@@ -272,15 +288,19 @@ jobs:
       - name: Run the l2 test
         working-directory: Dobby/tests/L2_testing/test_runner/
         run: |
-            # Redirect GCC coverage output to a writable path
-            export GCOV_PREFIX=/tmp/gcov
-            export GCOV_PREFIX_STRIP=3
-            mkdir -p /tmp/gcov
+            # Verify GCOV env is set (should be inherited from job-level env)
+            echo "GCOV_PREFIX=$GCOV_PREFIX"
+            echo "GCOV_PREFIX_STRIP=$GCOV_PREFIX_STRIP"
+            
+            # Ensure directory exists and is writable
+            sudo mkdir -p /tmp/gcov
+            sudo chmod -R 777 /tmp/gcov
             
             # Verify DNS is working before running tests
             echo "Testing DNS resolution..."
             nslookup example.com || echo "DNS lookup warning (may affect some tests)"
             
+            # Run tests - GCOV_PREFIX is inherited from job env
             python3 runner.py -p 3 -v 5
             cp $GITHUB_WORKSPACE/Dobby/tests/L2_testing/test_runner/DobbyL2TestResults.json $GITHUB_WORKSPACE
 
