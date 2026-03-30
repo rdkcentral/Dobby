@@ -46,10 +46,12 @@ def is_cgroupv2():
 def patch_bundle_for_ci(bundle_path):
     """Patch a bundle's config.json to work in CI environments (GitHub Actions).
     
-    Fixes:
-    - Removes user namespace if cgroupv2 (causes conflicts)
+    Fixes for cgroupv2:
     - Removes swappiness settings (not supported in cgroupv2)
-    - Updates cgroup mount type for cgroupv2
+    - Removes kernel memory limit (not supported in cgroupv2)
+    - Removes kmemTCPLimit (not supported in cgroupv2)
+    - Removes realtimeRuntime/realtimePeriod if not supported
+    - Updates cgroup mount to bind mount for cgroupv2
     """
     config_path = os.path.join(bundle_path, "config.json")
     if not os.path.exists(config_path):
@@ -62,23 +64,49 @@ def patch_bundle_for_ci(bundle_path):
         
         modified = False
         
-        # For cgroupv2 systems, we may need to adjust settings
+        # For cgroupv2 systems, we need to remove unsupported settings
         if is_cgroupv2():
-            # Remove swappiness if present (not supported in cgroupv2)
             if 'linux' in config and 'resources' in config['linux']:
                 resources = config['linux']['resources']
-                if 'memory' in resources and 'swappiness' in resources['memory']:
-                    del resources['memory']['swappiness']
-                    modified = True
-                    print_log("Removed swappiness (not supported in cgroupv2)", Severity.debug)
+                
+                # Remove memory settings not supported in cgroupv2
+                if 'memory' in resources:
+                    memory = resources['memory']
+                    unsupported_memory = ['swappiness', 'kernel', 'kernelTCP', 'disableOOMKiller']
+                    for setting in unsupported_memory:
+                        if setting in memory:
+                            del memory[setting]
+                            modified = True
+                            print_log(f"Removed memory.{setting} (not supported in cgroupv2)", Severity.debug)
+                    
+                    # Clean up empty memory section
+                    if not memory:
+                        del resources['memory']
+                        modified = True
+                
+                # Remove CPU realtime settings if not supported
+                if 'cpu' in resources:
+                    cpu = resources['cpu']
+                    # Check if RT scheduling is available
+                    if not os.path.exists('/sys/fs/cgroup/cpu.rt_runtime_us'):
+                        unsupported_cpu = ['realtimeRuntime', 'realtimePeriod']
+                        for setting in unsupported_cpu:
+                            if setting in cpu:
+                                del cpu[setting]
+                                modified = True
+                                print_log(f"Removed cpu.{setting} (RT not supported)", Severity.debug)
             
-            # Update cgroup mount type if needed
+            # Fix cgroup mount for cgroupv2 - use bind mount instead
             if 'mounts' in config:
                 for mount in config['mounts']:
-                    if mount.get('destination') == '/sys/fs/cgroup' and mount.get('type') == 'cgroup':
-                        # cgroupv2 should use cgroup2 type, but 'cgroup' often works via auto-detect
-                        # Add bind option to help with compatibility
-                        pass  # crun handles this automatically
+                    if mount.get('destination') == '/sys/fs/cgroup':
+                        if mount.get('type') == 'cgroup':
+                            # Change to bind mount for cgroupv2 compatibility
+                            mount['type'] = 'bind'
+                            mount['source'] = '/sys/fs/cgroup'
+                            mount['options'] = ['rbind', 'nosuid', 'noexec', 'nodev', 'ro']
+                            modified = True
+                            print_log("Changed cgroup mount to bind mount for cgroupv2", Severity.debug)
         
         if modified:
             with open(config_path, 'w') as f:
