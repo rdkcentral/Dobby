@@ -123,17 +123,36 @@ jobs:
           sudo ip link add enp0s3 type dummy || true
           sudo ip link set enp0s8 up || true
           sudo ip link set enp0s3 up || true
+          
           # Create bridge for Dobby networking
           sudo ip link add dobby0 type bridge || true
           sudo ip link set dobby0 up || true
           # Assign IP to dobby0 bridge for container networking
           sudo ip addr add 100.64.11.1/24 dev dobby0 || true
+          
           # Enable IP forwarding for container network access
           sudo sysctl -w net.ipv4.ip_forward=1
-          # Setup NAT for container outbound traffic
-          sudo iptables -t nat -A POSTROUTING -s 100.64.11.0/24 -o eth0 -j MASQUERADE || true
-          sudo iptables -A FORWARD -i dobby0 -o eth0 -j ACCEPT || true
-          sudo iptables -A FORWARD -i eth0 -o dobby0 -m state --state RELATED,ESTABLISHED -j ACCEPT || true
+          
+          # Detect the real default-route interface (not hardcoded eth0)
+          EXT_IF=$(ip -o -4 route show to default | awk '{print $5}' | head -n1)
+          echo "Detected external interface: $EXT_IF"
+          
+          # Setup NAT for container outbound traffic using detected interface
+          sudo iptables -t nat -A POSTROUTING -s 100.64.11.0/24 -o "$EXT_IF" -j MASQUERADE || true
+          sudo iptables -A FORWARD -i dobby0 -o "$EXT_IF" -j ACCEPT || true
+          sudo iptables -A FORWARD -i "$EXT_IF" -o dobby0 -m state --state RELATED,ESTABLISHED -j ACCEPT || true
+          
+          # Force a resolv.conf that works well in CI/container contexts
+          # (avoid systemd stub resolver issues)
+          sudo rm -f /etc/resolv.conf
+          printf "nameserver 1.1.1.1\nnameserver 8.8.8.8\n" | sudo tee /etc/resolv.conf
+          
+          # Verify network setup
+          echo "=== Network configuration ==="
+          ip addr show dobby0
+          cat /etc/resolv.conf
+          echo "=== iptables NAT ==="
+          sudo iptables -t nat -L POSTROUTING -n -v | head -5
 
       - name: Setup permissions and directories
         run: |
@@ -147,7 +166,8 @@ jobs:
 
       - name: build Dobby
         run: |
-          sudo ln -sf /run/systemd/resolve/resolv.conf /etc/resolv.conf
+          # Don't override resolv.conf - we already set it up in network setup step
+          # sudo ln -sf /run/systemd/resolve/resolv.conf /etc/resolv.conf
           cd Dobby
           sudo cp /usr/lib/x86_64-linux-gnu/dbus-1.0/include/dbus/dbus-arch-deps.h /usr/include/dbus-1.0/dbus
           sudo mkdir -p /usr/lib/plugins/dobby
@@ -252,6 +272,15 @@ jobs:
       - name: Run the l2 test
         working-directory: Dobby/tests/L2_testing/test_runner/
         run: |
+            # Redirect GCC coverage output to a writable path
+            export GCOV_PREFIX=/tmp/gcov
+            export GCOV_PREFIX_STRIP=3
+            mkdir -p /tmp/gcov
+            
+            # Verify DNS is working before running tests
+            echo "Testing DNS resolution..."
+            nslookup example.com || echo "DNS lookup warning (may affect some tests)"
+            
             python3 runner.py -p 3 -v 5
             cp $GITHUB_WORKSPACE/Dobby/tests/L2_testing/test_runner/DobbyL2TestResults.json $GITHUB_WORKSPACE
 
