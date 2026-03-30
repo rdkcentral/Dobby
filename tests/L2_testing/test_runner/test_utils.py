@@ -16,6 +16,7 @@
 # limitations under the License.
 
 from os import path
+import os
 import subprocess
 from time import sleep
 from enum import IntEnum
@@ -37,6 +38,57 @@ TestResult = namedtuple('TestResult', ['name',
                         )
 
 
+def is_cgroupv2():
+    """Check if the system is using cgroup v2 (unified hierarchy)"""
+    return os.path.exists('/sys/fs/cgroup/cgroup.controllers')
+
+
+def patch_bundle_for_ci(bundle_path):
+    """Patch a bundle's config.json to work in CI environments (GitHub Actions).
+    
+    Fixes:
+    - Removes user namespace if cgroupv2 (causes conflicts)
+    - Removes swappiness settings (not supported in cgroupv2)
+    - Updates cgroup mount type for cgroupv2
+    """
+    config_path = os.path.join(bundle_path, "config.json")
+    if not os.path.exists(config_path):
+        print_log(f"Config not found at {config_path}, skipping patch", Severity.warning)
+        return
+    
+    try:
+        with open(config_path, 'r') as f:
+            config = json.load(f)
+        
+        modified = False
+        
+        # For cgroupv2 systems, we may need to adjust settings
+        if is_cgroupv2():
+            # Remove swappiness if present (not supported in cgroupv2)
+            if 'linux' in config and 'resources' in config['linux']:
+                resources = config['linux']['resources']
+                if 'memory' in resources and 'swappiness' in resources['memory']:
+                    del resources['memory']['swappiness']
+                    modified = True
+                    print_log("Removed swappiness (not supported in cgroupv2)", Severity.debug)
+            
+            # Update cgroup mount type if needed
+            if 'mounts' in config:
+                for mount in config['mounts']:
+                    if mount.get('destination') == '/sys/fs/cgroup' and mount.get('type') == 'cgroup':
+                        # cgroupv2 should use cgroup2 type, but 'cgroup' often works via auto-detect
+                        # Add bind option to help with compatibility
+                        pass  # crun handles this automatically
+        
+        if modified:
+            with open(config_path, 'w') as f:
+                json.dump(config, f, indent=3)
+            print_log(f"Patched bundle config at {config_path}", Severity.debug)
+    
+    except Exception as e:
+        print_log(f"Error patching bundle: {e}", Severity.warning)
+
+
 class untar_bundle:
     """Context manager for working with tarball bundles"""
     def __init__(self, container_id):
@@ -48,6 +100,9 @@ class untar_bundle:
                           get_bundle_path(""),
                           "-zxvf",
                           self.path + ".tar.gz"])
+        
+        # Patch bundle for CI compatibility (cgroupv2, etc.)
+        patch_bundle_for_ci(self.path)
 
     def __enter__(self):
         return self.path

@@ -208,9 +208,16 @@ std::string IonMemoryPlugin::findIonCGroupMountPoint() const
         if (!mnt->mnt_type || !mnt->mnt_dir || !mnt->mnt_opts)
             continue;
 
-        // skip non-cgroup mounts
-        if (strcmp(mnt->mnt_type, "cgroup") != 0)
+        // skip non-cgroup mounts (check for both cgroup v1 and v2)
+        if (strcmp(mnt->mnt_type, "cgroup") != 0 && strcmp(mnt->mnt_type, "cgroup2") != 0)
             continue;
+
+        // cgroupv2 doesn't have ion cgroup controller
+        if (strcmp(mnt->mnt_type, "cgroup2") == 0)
+        {
+            AI_LOG_WARN("cgroup v2 detected, ION cgroup controller not supported");
+            continue;
+        }
 
         // check if the ion cgroup
         char *mntopt = hasmntopt(mnt, "ion");
@@ -350,3 +357,4 @@ bool IonMemoryPlugin::setupContainerIonLimits(const std::string &cGroupDirPath,
     AI_LOG_FN_EXIT();
     return true;
 }
+

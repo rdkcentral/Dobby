@@ -696,8 +696,8 @@ void DobbyConfig::addPluginLauncherHooks(std::shared_ptr<rt_dobby_schema> cfg, c
 
 #ifdef USE_STARTCONTAINER_HOOK
     // startContainer hook runs in container namespace after pivot_root,
-    // use the path where config was mounted for startContainer
-    std::string startContainerConfigPath = "/tmp/config.json";
+    // use the same path where config was mounted for createContainer
+    std::string startContainerConfigPath = "/tmp/dobby_config.json";
 
     // populate startContainer hook with DobbyPluginLauncher args
     rt_defs_hook *startContainerEntry = (rt_defs_hook*)calloc(1, sizeof(rt_defs_hook));

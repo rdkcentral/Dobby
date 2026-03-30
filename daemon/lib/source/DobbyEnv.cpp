@@ -166,31 +166,54 @@ std::map<IDobbyEnv::Cgroup, std::string> DobbyEnv::getCgroupMountPoints()
     struct mntent* mnt;
     char buf[PATH_MAX + 256];
 
+    // Check for cgroupv2 unified hierarchy first
+    bool isCgroupV2 = false;
     while ((mnt = getmntent_r(procMounts, &mntBuf, buf, sizeof(buf))) != nullptr)
     {
-        // skip entries that don't have a mountpount, type or options
-        if (!mnt->mnt_type || !mnt->mnt_dir || !mnt->mnt_opts)
-            continue;
-
-        // skip non-cgroup mounts
-        if (strcmp(mnt->mnt_type, "cgroup") != 0)
-            continue;
-
-        // check for the cgroup type
-        for (const std::pair<const std::string, IDobbyEnv::Cgroup> cgroup : cgroupNames)
+        if (mnt->mnt_type && strcmp(mnt->mnt_type, "cgroup2") == 0)
         {
-            char* mntopt = hasmntopt(mnt, cgroup.first.c_str());
-            if (!mntopt)
-                continue;
-
-            if (strcmp(mntopt, cgroup.first.c_str()) != 0)
-                continue;
-
-            AI_LOG_INFO("found cgroup '%s' mounted @ '%s'",
-                        cgroup.first.c_str(), mnt->mnt_dir);
-
-            mounts[cgroup.second] = mnt->mnt_dir;
+            isCgroupV2 = true;
+            AI_LOG_INFO("detected cgroup v2 unified hierarchy @ '%s'", mnt->mnt_dir);
+            // For cgroupv2, all controllers are at the same mount point
+            std::string cgroupPath = mnt->mnt_dir;
+            for (const auto& cgroup : cgroupNames)
+            {
+                mounts[cgroup.second] = cgroupPath;
+            }
             break;
+        }
+    }
+    
+    // Reset to scan for cgroupv1 if not v2
+    if (!isCgroupV2)
+    {
+        rewind(procMounts);
+        while ((mnt = getmntent_r(procMounts, &mntBuf, buf, sizeof(buf))) != nullptr)
+        {
+            // skip entries that don't have a mountpount, type or options
+            if (!mnt->mnt_type || !mnt->mnt_dir || !mnt->mnt_opts)
+                continue;
+
+            // skip non-cgroup mounts
+            if (strcmp(mnt->mnt_type, "cgroup") != 0)
+                continue;
+
+            // check for the cgroup type
+            for (const std::pair<const std::string, IDobbyEnv::Cgroup> cgroup : cgroupNames)
+            {
+                char* mntopt = hasmntopt(mnt, cgroup.first.c_str());
+                if (!mntopt)
+                    continue;
+
+                if (strcmp(mntopt, cgroup.first.c_str()) != 0)
+                    continue;
+
+                AI_LOG_INFO("found cgroup '%s' mounted @ '%s'",
+                            cgroup.first.c_str(), mnt->mnt_dir);
+
+                mounts[cgroup.second] = mnt->mnt_dir;
+                break;
+            }
         }
     }
 
@@ -199,4 +222,5 @@ std::map<IDobbyEnv::Cgroup, std::string> DobbyEnv::getCgroupMountPoints()
     AI_LOG_FN_EXIT();
     return mounts;
 }
+
 

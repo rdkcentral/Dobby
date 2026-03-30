@@ -17,6 +17,11 @@
 
 import test_utils
 from pathlib import Path
+import os
+
+def is_cgroupv2():
+    """Check if the system is using cgroup v2 (unified hierarchy)"""
+    return os.path.exists('/sys/fs/cgroup/cgroup.controllers')
 
 tests = [
     test_utils.Test("Pid limit default",
@@ -87,18 +92,44 @@ def validate_pid_limit(container_id, expected_output):
 
     pid_limit = 0
 
-    # check pids.max present in containers pid cgroup
-    path = Path("/sys/fs/cgroup/pids/" + container_id + "/pids.max")
-    if not path.is_file():
-        return False, "%s not found" % path.absolute()
+    # Try multiple possible cgroup paths (cgroupv1 and cgroupv2)
+    possible_paths = []
+    
+    if is_cgroupv2():
+        # cgroupv2 unified hierarchy paths
+        possible_paths.extend([
+            Path(f"/sys/fs/cgroup/dobby/{container_id}/pids.max"),
+            Path(f"/sys/fs/cgroup/user.slice/dobby/{container_id}/pids.max"),
+            Path(f"/sys/fs/cgroup/{container_id}/pids.max"),
+        ])
+    
+    # cgroupv1 paths
+    possible_paths.extend([
+        Path(f"/sys/fs/cgroup/pids/{container_id}/pids.max"),
+        Path(f"/sys/fs/cgroup/pids/dobby/{container_id}/pids.max"),
+    ])
+    
+    path = None
+    for p in possible_paths:
+        if p.is_file():
+            path = p
+            break
+    
+    if path is None:
+        tried_paths = ', '.join(str(p) for p in possible_paths)
+        return False, f"pids.max not found. Tried: {tried_paths}"
 
     with open(path, 'r') as fh:
         pid_limit = fh.readline().strip()
 
+    # cgroupv2 uses 'max' for unlimited
+    if pid_limit == 'max':
+        pid_limit = 'max'
+
     if expected_output == pid_limit:
         return True, "Test passed"
     else:
-        return False, "Pid limit different then expected (expected: '%s', actual: '%s')" % (expected_output, pid_limit)
+        return False, "Pid limit different than expected (expected: '%s', actual: '%s')" % (expected_output, pid_limit)
 
 
 if __name__ == "__main__":
