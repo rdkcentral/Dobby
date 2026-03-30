@@ -17,6 +17,7 @@
 
 import test_utils
 from pathlib import Path
+import json
 
 tests = [
     test_utils.Test("Pid limit default",
@@ -90,10 +91,51 @@ def validate_pid_limit(container_id, expected_output):
 
     pid_limit = 0
 
-    # check pids.max present in containers pid cgroup
-    path = Path("/sys/fs/cgroup/pids/" + container_id + "/pids.max")
-    if not path.is_file():
-        return False, "%s not found" % path.absolute()
+    def get_container_pids():
+        process = test_utils.dobby_tool_command("info", container_id)
+        if not process.stdout.startswith("{"):
+            return []
+
+        try:
+            info_json = json.loads(process.stdout)
+        except Exception:
+            return []
+
+        pids = info_json.get("pids")
+        if isinstance(pids, list):
+            return pids
+        return []
+
+    # Try known cgroup v1/v2 locations
+    path_candidates = [
+        Path("/sys/fs/cgroup/pids/%s/pids.max" % container_id),
+        Path("/sys/fs/cgroup/%s/pids.max" % container_id),
+        Path("/sys/fs/cgroup/system.slice/%s/pids.max" % container_id),
+        Path("/sys/fs/cgroup/system.slice/dobby-%s.scope/pids.max" % container_id),
+    ]
+
+    # If we can get a container pid, resolve cgroup path directly from /proc/<pid>/cgroup
+    container_pids = get_container_pids()
+    if container_pids:
+        try:
+            with open("/proc/%s/cgroup" % container_pids[0], 'r') as fh:
+                for line in fh:
+                    parts = line.strip().split(':', 2)
+                    if len(parts) == 3:
+                        rel_path = parts[2].lstrip('/')
+                        if rel_path:
+                            path_candidates.insert(0, Path("/sys/fs/cgroup") / rel_path / "pids.max")
+        except Exception:
+            pass
+
+    path = None
+    for candidate in path_candidates:
+        if candidate.is_file():
+            path = candidate
+            break
+
+    if path is None:
+        return False, "pids.max not found for container '%s' in cgroup v1/v2 paths" % container_id
 
     with open(path, 'r') as fh:
         pid_limit = fh.readline().strip()

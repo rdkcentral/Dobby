@@ -157,6 +157,25 @@ class dobby_daemon:
         self.subproc = subprocess.Popen(cmd, **kvargs)
         sleep(1) # give DobbyDaemon time to initialise
 
+        # Wait for D-Bus service registration (can be delayed on CI)
+        for _ in range(20):
+            probe = subprocess.run(["DobbyTool", "info", "__dobby_probe__"],
+                                   stdout=subprocess.PIPE,
+                                   stderr=subprocess.PIPE,
+                                   universal_newlines=True)
+
+            combined = (probe.stdout + probe.stderr).lower()
+
+            # If daemon crashed/exited, stop waiting
+            if self.subproc.poll() is not None:
+                break
+
+            # Service is ready once ServiceUnknown is gone (unknown container is fine)
+            if "serviceunknown" not in combined and "org.rdk.dobby was not provided" not in combined:
+                break
+
+            sleep(0.25)
+
     def __enter__(self):
         return self.subproc
 
@@ -435,8 +454,24 @@ def launch_container(container_id, spec_path):
         return False
 
     # Use DobbyTool to launch container
-    process = run_command_line(["DobbyTool", "start", container_id, spec_path])
-    output = process.stdout
+    process = None
+    output = ""
+    combined_output = ""
+
+    # Retry start when D-Bus registration races on CI
+    for _ in range(3):
+        process = run_command_line(["DobbyTool", "start", container_id, spec_path])
+        output = process.stdout
+        combined_output = (process.stdout + process.stderr).lower()
+
+        if "started" in output:
+            break
+
+        if "serviceunknown" in combined_output or "org.rdk.dobby was not provided" in combined_output:
+            sleep(0.5)
+            continue
+
+        break
 
     # Check DobbyTool has started the container
     if "started" in output:
@@ -455,6 +490,9 @@ def launch_container(container_id, spec_path):
         # Timeout
         print_log("Waited 5 seconds for exit.. timeout", Severity.error)
         return True
+    if process and process.stderr:
+        print_log("DobbyTool start failed for %s: %s" % (container_id, process.stderr.strip()), Severity.error)
+
     return False
 
 

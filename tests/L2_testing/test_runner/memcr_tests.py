@@ -102,7 +102,10 @@ def get_container_pids(container_id):
         return []
 
     info_json = json.loads(process.stdout)
-    return info_json.get("pids")
+    pids = info_json.get("pids")
+    if isinstance(pids, list):
+        return pids
+    return []
 
 
 def get_checkpointed_pids(memcr_dump_dir = "/media/apps/memcr/"):
@@ -177,6 +180,8 @@ def basic_memcr_test(container_id):
 
         # store container pids
         pids = get_container_pids(container_id)
+        if not pids:
+            return False, "Container started but no pids reported by DobbyTool info"
         test_utils.print_log("container pids: [" + " ".join(map(str, pids)) + "]", test_utils.Severity.debug)
 
         # hibernate container
@@ -225,6 +230,8 @@ def params_memcr_test(container_id):
 
         # store container pids
         pids = get_container_pids(container_id)
+        if not pids:
+            return False, "Container started but no pids reported by DobbyTool info"
         test_utils.print_log("container pids: [" + " ".join(map(str, pids)) + "]", test_utils.Severity.debug)
 
         hibernate_with_params = [ [ "hibernate", ["--dest=/tmp/memcr", "--compress=zstd" ], "/tmp/memcr" ],
@@ -280,3 +287,4 @@ def execute_test():
 if __name__ == "__main__":
     test_utils.parse_arguments(__file__)
     execute_test()
+
