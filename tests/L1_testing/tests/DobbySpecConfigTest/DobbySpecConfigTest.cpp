@@ -17,30 +17,30 @@
 * limitations under the License.
 */
 
-// Open private members so processSwapLimit / mSpec / mDictionary are accessible
-#define private public
-#include "DobbySpecConfig.h"
-
+// All system and third-party headers must come BEFORE #define private public
+// to prevent the macro from mangling standard library internals.
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
 #include <ctemplate/template.h>
 #include <json/json.h>
+#include <cstring>
+#include <string>
+#include <memory>
 
+// DobbySettingsMock.h pulls in gmock which eventually includes <sstream>;
+// it must be included before #define private public.
 #include "DobbySettingsMock.h"
-#include "DobbyBundleMock.h"
-#include "DobbyUtilsMock.h"
-#include "ContainerIdMock.h"
+
+// Open up private members of DobbySpecConfig so tests can access
+// mDictionary directly and call processSwapLimit.
+#define private public
+#include "DobbySpecConfig.h"
+#include "DobbyTemplate.h"
 
 using ::testing::NiceMock;
 using ::testing::Return;
 
-// ── Static impl pointers required by the mock delegate pattern ────────────────
-DobbyBundleImpl* DobbyBundle::impl  = nullptr;
-DobbyUtilsImpl*  DobbyUtils::impl   = nullptr;
-ContainerIdImpl* ContainerId::impl  = nullptr;
-
 // ── Minimal valid Dobby spec strings ─────────────────────────────────────────
-//   (mandatory fields: version, args, user, memLimit)
 
 static const char* kSpecMemOnly = R"({
     "version": "1.0",
@@ -73,33 +73,32 @@ static const char* kSpecSwapBelowLimit = R"({
     "swapLimit": 2998272
 })";
 
-// ── Inline ctemplate used to read MEM_LIMIT / MEM_SWAP out of the dictionary ──
+// ── Inline ctemplate for reading MEM_LIMIT / MEM_SWAP back from the dict ─────
 static const char* kMemTemplateName = "test_swap_memory";
 static const char* kMemTemplateStr  = "LIMIT={{MEM_LIMIT}} SWAP={{MEM_SWAP}}";
 
-// ── Test fixture ──────────────────────────────────────────────────────────────
+// ── Fixture ───────────────────────────────────────────────────────────────────
 
 class DobbySpecConfigTest : public ::testing::Test
 {
 protected:
-    NiceMock<DobbySettingsMock>* p_settingsMock = nullptr;
-    NiceMock<DobbyBundleMock>*   p_bundleMock   = nullptr;
-    NiceMock<DobbyUtilsMock>*    p_utilsMock    = nullptr;
+    char mTmpDir[64];
 
+    NiceMock<DobbySettingsMock>* p_settingsMock = nullptr;
     std::shared_ptr<IDobbySettings> mSettings;
     std::shared_ptr<DobbyBundle>    mBundle;
-    std::shared_ptr<DobbyUtils>     mUtils;
 
     void SetUp() override
     {
+        // Reserve a unique path for the bundle directory.
+        // mkdtemp creates the directory; we immediately remove it so that
+        // DobbyBundle(path, persist) can create it itself via mkdir().
+        std::strcpy(mTmpDir, "/tmp/dobby_spectest_XXXXXX");
+        ASSERT_NE(mkdtemp(mTmpDir), nullptr) << "mkdtemp failed";
+        ::rmdir(mTmpDir);  // let DobbyBundle create the dir
+
+        // Settings mock – return empty/null for GPU, VPU, plugins.
         p_settingsMock = new NiceMock<DobbySettingsMock>();
-        p_bundleMock   = new NiceMock<DobbyBundleMock>();
-        p_utilsMock    = new NiceMock<DobbyUtilsMock>();
-
-        DobbyBundle::setImpl(p_bundleMock);
-        DobbyUtils::setImpl(p_utilsMock);
-
-        // GPU/VPU settings not needed for these tests
         ON_CALL(*p_settingsMock, gpuAccessSettings())
             .WillByDefault(Return(nullptr));
         ON_CALL(*p_settingsMock, vpuAccessSettings())
@@ -111,20 +110,23 @@ protected:
         ON_CALL(*p_settingsMock, extraEnvVariables())
             .WillByDefault(Return(std::map<std::string, std::string>{}));
 
-        // dirFd() returns -1 so the template-write at step 8 of parseSpec
-        // fails, but all dictionary values are populated by the preceding
-        // steps. isValid() will be false for all configs constructed here.
-        ON_CALL(*p_bundleMock, dirFd())
-            .WillByDefault(Return(-1));
-
-        // Use a no-op deleter so mock lifetime is managed by this fixture
+        // Use a no-op deleter; fixture owns the raw pointer.
         mSettings = std::shared_ptr<IDobbySettings>(p_settingsMock,
                         [](IDobbySettings*){});
-        mBundle   = std::make_shared<DobbyBundle>();
-        mUtils    = std::make_shared<DobbyUtils>();
+
+        // Real DobbyBundle pointing at the temp directory.
+        // utils is not used in the constructor body so nullptr is safe.
+        mBundle = std::make_shared<DobbyBundle>(
+                        std::shared_ptr<const IDobbyUtils>(nullptr),
+                        std::string(mTmpDir),
+                        /*persist=*/true);
+
+        // Initialise the DobbyTemplate singleton with our settings before any
+        // DobbySpecConfig is constructed (parseSpec calls applyAt internally).
+        DobbyTemplate::setSettings(mSettings);
 
         // Register a tiny inline template so we can read MEM_LIMIT / MEM_SWAP
-        // back out of the dictionary without expanding the full OCI template.
+        // from the populated dictionary without parsing the full OCI JSON.
         ctemplate::StringToTemplateCache(
             kMemTemplateName,
             kMemTemplateStr,
@@ -133,22 +135,24 @@ protected:
 
     void TearDown() override
     {
-        DobbyBundle::setImpl(nullptr);
-        DobbyUtils::setImpl(nullptr);
-
-        delete p_bundleMock;
-        delete p_utilsMock;
+        // Remove any config.json written during the test.
+        std::string cfg = std::string(mTmpDir) + "/config.json";
+        ::remove(cfg.c_str());
+        ::rmdir(mTmpDir);
         delete p_settingsMock;
     }
 
-    // Construct a DobbySpecConfig from the given JSON string.
     std::unique_ptr<DobbySpecConfig> makeConfig(const std::string& specJson)
     {
-        return std::make_unique<DobbySpecConfig>(mUtils, mSettings, mBundle, specJson);
+        return std::make_unique<DobbySpecConfig>(
+                    std::shared_ptr<IDobbyUtils>(nullptr),
+                    mSettings,
+                    mBundle,
+                    specJson);
     }
 
-    // Expand the test template against the config's ctemplate dictionary.
-    // Returns a string of the form "LIMIT=<N> SWAP=<M>".
+    // Expand the mini template against the config's ctemplate dictionary.
+    // Returns e.g. "LIMIT=2998272 SWAP=2998272".
     std::string expandMemTemplate(DobbySpecConfig& cfg)
     {
         std::string out;
@@ -161,15 +165,16 @@ protected:
     }
 };
 
-// ── Test cases ────────────────────────────────────────────────────────────────
+// ── Tests ─────────────────────────────────────────────────────────────────────
 
 /**
- * When 'swapLimit' is absent, MEM_SWAP must default to MEM_LIMIT
- * (no extra swap beyond the memory limit).
+ * When 'swapLimit' is absent, MEM_SWAP must default to the same value as
+ * MEM_LIMIT (no extra swap beyond the memory limit).
  */
 TEST_F(DobbySpecConfigTest, SwapLimit_DefaultsToMemLimit)
 {
     auto cfg = makeConfig(kSpecMemOnly);
+    EXPECT_TRUE(cfg->isValid());
     EXPECT_EQ(expandMemTemplate(*cfg), "LIMIT=2998272 SWAP=2998272");
 }
 
@@ -180,6 +185,7 @@ TEST_F(DobbySpecConfigTest, SwapLimit_DefaultsToMemLimit)
 TEST_F(DobbySpecConfigTest, SwapLimit_SetIndependently)
 {
     auto cfg = makeConfig(kSpecWithSwap);
+    EXPECT_TRUE(cfg->isValid());
     EXPECT_EQ(expandMemTemplate(*cfg), "LIMIT=2998272 SWAP=5996544");
 }
 
@@ -190,32 +196,29 @@ TEST_F(DobbySpecConfigTest, SwapLimit_SetIndependently)
 TEST_F(DobbySpecConfigTest, SwapLimit_EqualToMemLimit_Succeeds)
 {
     auto cfg = makeConfig(kSpecSwapEqualsLimit);
+    EXPECT_TRUE(cfg->isValid());
     EXPECT_EQ(expandMemTemplate(*cfg), "LIMIT=2998272 SWAP=2998272");
 }
 
 /**
- * When 'swapLimit' < 'memLimit', processSwapLimit must return false because
- * the kernel rejects memory.memsw.limit_in_bytes < memory.limit_in_bytes.
+ * When 'swapLimit' < 'memLimit', processSwapLimit must reject the value
+ * and parsing must fail (kernel requires memsw >= mem).
  */
 TEST_F(DobbySpecConfigTest, SwapLimit_LessThanMemLimit_Fails)
 {
-    // Construct a config so mSpec is populated with memLimit=5996544
-    DobbySpecConfig cfg(mUtils, mSettings, mBundle, kSpecSwapBelowLimit);
-
-    // Directly invoke processSwapLimit with a value that is below memLimit
-    ctemplate::TemplateDictionary dict("test_below");
-    Json::Value badSwap(2998272);   // 2998272 < 5996544
-    EXPECT_FALSE(cfg.processSwapLimit(badSwap, &dict));
+    auto cfg = makeConfig(kSpecSwapBelowLimit);
+    EXPECT_FALSE(cfg->isValid());
 }
 
 /**
  * When 'swapLimit' is not an integer, processSwapLimit must return false.
+ * Verify by calling the private method directly.
  */
 TEST_F(DobbySpecConfigTest, SwapLimit_NonIntegral_Fails)
 {
-    DobbySpecConfig cfg(mUtils, mSettings, mBundle, kSpecMemOnly);
+    auto cfg = makeConfig(kSpecMemOnly);
 
     ctemplate::TemplateDictionary dict("test_nonint");
     Json::Value badSwap("not-a-number");
-    EXPECT_FALSE(cfg.processSwapLimit(badSwap, &dict));
+    EXPECT_FALSE(cfg->processSwapLimit(badSwap, &dict));
 }

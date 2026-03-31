@@ -26,24 +26,30 @@ find_package(jsoncpp REQUIRED)
 
 include_directories(${GTEST_INCLUDE_DIRS})
 
+# Real sources only – no PIMPL mock wrappers for DobbyBundle or DobbyTemplate.
+# DobbySettingsMock is the only mock used; it implements IDobbySettings via gmock.
 add_library(DobbySpecConfigTestLib SHARED STATIC
             ../../../../bundle/lib/source/DobbySpecConfig.cpp
             ../../../../bundle/lib/source/DobbyTemplate.cpp
+            ../../../../bundle/lib/source/DobbyBundle.cpp
             ../../../../AppInfrastructure/Logging/source/Logging.cpp
-            ../../mocks/ContainerIdMock.cpp
-            ../../mocks/DobbyBundleMock.cpp
-            ../../mocks/DobbyUtilsMock.cpp
+            ../../mocks/DobbyConfigMock.cpp
+            ../../mocks/IpcFileDescriptorMock.cpp
+            ../../mocks/rt_dobby_schema.c
+            DobbySpecConfigLinkStubs.cpp
             )
 
+# Real bundle/lib headers MUST come before the mocks directory so that the
+# real DobbyTemplate.h (with ctemplate members) is found instead of the
+# stripped-down mock version.
 target_include_directories(DobbySpecConfigTestLib
                 PUBLIC
-                ../../mocks
+                ../../../../bundle/lib/include
+                ../../../../bundle/lib/source
                 ../../../../utils/include
                 ../../../../utils/source
                 ../../../../AppInfrastructure/Logging/include
                 ../../../../AppInfrastructure/Common/include
-                ../../../../bundle/lib/include
-                ../../../../bundle/lib/source
                 ../../../../ipcUtils/include
                 ../../../../settings/include
                 ../../../../daemon/lib/include
@@ -51,6 +57,7 @@ target_include_directories(DobbySpecConfigTestLib
                 ../../../../pluginLauncher/lib/include
                 ../../../../protocol/include
                 ../../../../build/AppInfrastructure/Tracing
+                ../../mocks
                 /usr/include/jsoncpp
                 )
 

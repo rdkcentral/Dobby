@@ -31,6 +31,8 @@ public:
     virtual ~DobbyBundleImpl() = default;
 
     virtual void setPersistence(bool persist) = 0;
+    virtual bool getPersistence() const = 0;
+    virtual int dirFd() const = 0;
     virtual bool isValid() const = 0;
     virtual const std::string& path() const = 0;
 
@@ -58,6 +60,8 @@ public:
 
     static void setImpl(DobbyBundleImpl* newImpl);
     void setPersistence(bool persist);
+    bool getPersistence() const;
+    int dirFd() const;
     bool isValid() const;
 };
 
