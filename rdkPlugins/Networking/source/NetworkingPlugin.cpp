@@ -31,7 +31,6 @@
 #include <dirent.h>
 #include <sys/stat.h>
 #include <algorithm>
-#include <future>
 
 REGISTER_RDK_PLUGIN(NetworkingPlugin);
 
@@ -166,11 +165,9 @@ bool NetworkingPlugin::createRuntime()
         return false;
     }
 
-    // Check whether another container already set up the bridge device.
-    // A direct sysfs access() is far cheaper than opening a Netlink socket
-    // (which allocates a socket fd + opens /sys/class/net) just to query
-    // a single interface name.
-    bool bridgeExists = (access("/sys/class/net/" BRIDGE_NAME, F_OK) == 0);
+    // check if another container has already initialised the bridge device for us
+    std::shared_ptr<Netlink> netlink = std::make_shared<Netlink>();
+    bool bridgeExists = netlink->ifaceExists(std::string(BRIDGE_NAME));
 
     if (!bridgeExists)
     {
@@ -308,15 +305,8 @@ bool NetworkingPlugin::createRuntime()
         }
     }
 
-    // Apply IPv4 and IPv6 iptables rules concurrently.  The two rule sets
-    // are completely independent - running them in parallel overlaps the
-    // fork/exec cost of iptables-save and iptables-restore for both
-    // address families, halving the iptables portion of startup latency.
-    auto ipv4Future = std::async(std::launch::async,
-                                 [this]() { return mNetfilter->applyRules(AF_INET); });
-    const bool ipv6Success = mNetfilter->applyRules(AF_INET6);
-    const bool ipv4Success = ipv4Future.get();
-    if (!ipv4Success || !ipv6Success)
+    // apply iptables changes
+    if (!mNetfilter->applyRules(AF_INET) || !mNetfilter->applyRules(AF_INET6))
     {
         AI_LOG_ERROR_EXIT("failed to apply iptables rules");
         return false;
@@ -521,13 +511,8 @@ bool NetworkingPlugin::postHalt()
         }
     }
 
-    // Apply IPv4 and IPv6 iptables rules concurrently (same rationale as
-    // createRuntime - the two address families are fully independent).
-    auto ipv4HaltFuture = std::async(std::launch::async,
-                                     [this]() { return mNetfilter->applyRules(AF_INET); });
-    const bool ipv6HaltSuccess = mNetfilter->applyRules(AF_INET6);
-    const bool ipv4HaltSuccess = ipv4HaltFuture.get();
-    if (!ipv4HaltSuccess || !ipv6HaltSuccess)
+    // apply iptables changes
+    if (!mNetfilter->applyRules(AF_INET) || !mNetfilter->applyRules(AF_INET6))
     {
         AI_LOG_ERROR_EXIT("failed to apply iptables rules");
         return false;
@@ -573,15 +558,6 @@ std::vector<std::string> NetworkingPlugin::getDependencies() const
  */
 std::vector<std::string> NetworkingPlugin::GetAvailableExternalInterfaces() const
 {
-    // Return the cached result if already computed.  Reading and YAJL-
-    // parsing /etc/dobby.json plus scanning /sys/class/net on every call
-    // adds measurable latency; the result is stable for the lifetime of
-    // the container.
-    if (!mExtIfaces.empty())
-    {
-        return mExtIfaces;
-    }
-
     std::vector<std::string> externalIfaces = GetExternalInterfacesFromSettings();
 
     if (externalIfaces.size() == 0)
@@ -629,11 +605,6 @@ std::vector<std::string> NetworkingPlugin::GetAvailableExternalInterfaces() cons
     if (externalIfaces.size() == 0)
     {
         AI_LOG_ERROR("None of the external interfaces defined in the settings file are available");
-    }
-    else
-    {
-        // Cache the result so subsequent hook calls pay no I/O cost.
-        mExtIfaces = externalIfaces;
     }
 
     return externalIfaces;

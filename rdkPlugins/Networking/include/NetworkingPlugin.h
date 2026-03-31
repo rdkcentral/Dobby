@@ -74,11 +74,6 @@ private:
 
     std::shared_ptr<NetworkingHelper> mHelper;
     std::shared_ptr<Netfilter> mNetfilter;
-
-    // Cached result of GetAvailableExternalInterfaces() - the settings file and
-    // available interface set do not change during a container lifetime, so we
-    // compute this once and reuse it across all hook calls.
-    mutable std::vector<std::string> mExtIfaces;
 };
 
 #endif // !defined(NETWORKINGPLUGIN_H)
