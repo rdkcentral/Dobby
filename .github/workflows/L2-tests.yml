@@ -233,28 +233,22 @@ jobs:
 
       - name: Generate coverage
         if: ${{ matrix.coverage == 'with-coverage' }}
-        timeout-minutes: 10
-        run: |
-          echo "Collecting coverage from Dobby daemon lib only (fastest path)"
-          lcov -c \
-            -o coverage.info \
-            -d "$GITHUB_WORKSPACE/Dobby/build/daemon/lib" \
-            --ignore-errors mismatch,gcov,source \
-            --exclude '*/tests/*' \
-            --exclude '*/build/_deps/*'
-
-          echo "Filtering unwanted paths"
-          lcov \
-            -r coverage.info \
-            '/usr/include/*' \
-            '*/tests/*' \
-            -o filtered_coverage.info
-
-          echo "Generating HTML report"
-          genhtml \
-            -o l2coverage/${{ matrix.build_type }}/${{ matrix.extra_flags }}/coverage \
-            -t "dobby coverage" \
-            filtered_coverage.info || echo "Warning: genhtml had issues but continuing"
+        run: >
+          lcov -c
+          -o coverage.info
+          -d $GITHUB_WORKSPACE
+          &&
+          lcov
+          -r coverage.info
+          '/usr/include/*'
+          '*/tests/L1_testing/*'
+          '*/tests/L2_testing/*'
+          -o filtered_coverage.info
+          &&
+          genhtml
+          -o l2coverage/${{ matrix.build_type }}/${{ matrix.extra_flags }}/coverage
+          -t "dobby coverage"
+          filtered_coverage.info
 
       - name: Upload artifacts
         if: ${{ !env.ACT && matrix.coverage == 'with-coverage' }}
