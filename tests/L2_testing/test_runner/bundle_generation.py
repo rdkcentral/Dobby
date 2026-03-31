@@ -52,6 +52,27 @@ def _normalise_config(config):
     if isinstance(cfg.get("linux"), dict):
         cfg["linux"].pop("rootfsPropagation", None)
 
+        # User namespace mappings can be injected by generator/runtime on some platforms
+        cfg["linux"].pop("uidMappings", None)
+        cfg["linux"].pop("gidMappings", None)
+
+        if isinstance(cfg["linux"].get("namespaces"), list):
+            cfg["linux"]["namespaces"] = [
+                ns for ns in cfg["linux"]["namespaces"]
+                if ns.get("type") != "user"
+            ]
+
+        # realtime fields often appear as explicit nulls in generated configs
+        resources = cfg["linux"].get("resources")
+        if isinstance(resources, dict) and isinstance(resources.get("cpu"), dict):
+            cpu = resources["cpu"]
+            if cpu.get("realtimeRuntime") is None:
+                cpu.pop("realtimeRuntime", None)
+            if cpu.get("realtimePeriod") is None:
+                cpu.pop("realtimePeriod", None)
+            if not cpu:
+                resources.pop("cpu", None)
+
     # Runtime may append tmpfs size options at generation time
     for mount in cfg.get("mounts", []):
         if mount.get("destination") in ("/tmp", "/dev") and isinstance(mount.get("options"), list):

@@ -69,7 +69,9 @@ def execute_test():
     # Test 2
     test = tests[2]
     stop_dobby_daemon()
-    result = read_asynchronous(subproc, test.expected_output, 5)
+    # Some platforms do not emit a deterministic "stopped" log line.
+    # Verify stop by process absence instead.
+    result = not check_if_process_present(tests[3].expected_output)
     output = test_utils.create_simple_test_output(test, result)
     output_table.append(output)
     test_utils.print_single_result(output)
