@@ -121,7 +121,7 @@ def read_asynchronous(proc, string_to_find, timeout):
     """
 
     found = False
-    reader = threading.Thread(target=_wait_for_string, args=(proc, string_to_find))
+    reader = threading.Thread(target=_wait_for_string, args=(proc, string_to_find), daemon=True)
     test_utils.print_log("Starting multithread read", test_utils.Severity.debug)
     reader.start()
     reader.join(timeout)
