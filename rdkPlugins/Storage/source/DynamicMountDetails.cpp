@@ -168,7 +168,7 @@ bool DynamicMountDetails::onCreateContainer() const
             // filesystem is read-only.
             // Creating the file first ensures an inode exists for the
             // bind mount to target.
-            int fd = open(targetPath.c_str(), O_CLOEXEC | O_CREAT | O_WRONLY, 0644);
+            int fd = open(targetPath.c_str(), O_RDONLY | O_CREAT | O_CLOEXEC, 0644);
             if (fd >= 0)
             {
                 close(fd);
