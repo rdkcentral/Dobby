@@ -93,7 +93,8 @@ def execute_test():
     bundle_ctx = test_utils.untar_bundle(container_name)
     with test_utils.dobby_daemon(), netcat_listener() as nc, bundle_ctx as bundle_path:
         if not bundle_ctx.valid:
-            output = test_utils.create_simple_test_output(tests[0], False, "Bundle extraction or validation failed")
+            output = test_utils.create_simple_test_output(tests[0], False, "Bundle extraction or validation failed",
+                                                          log_content="Bundle extraction or validation failed; container was never launched.")
             output_table.append(output)
             test_utils.print_single_result(output)
             return test_utils.count_print_results(output_table)

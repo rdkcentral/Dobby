@@ -70,17 +70,12 @@ def test_container(container_id, expected_output):
         
         launch_result = test_utils.launch_container(container_id, bundle_path)
 
+        if not launch_result:
+            return False, "Container did not launch successfully"
+
         # give logging plugin a moment to flush file output
         sleep(0.5)
         validation_result = validate_output_file(container_id, expected_output)
-
-        # Some environments report launch failure during cleanup hooks even when
-        # the container has actually run and produced expected output.
-        if validation_result[0]:
-            return validation_result
-
-    if not launch_result:
-        return False, "Container did not launch successfully"
 
     return validation_result
 

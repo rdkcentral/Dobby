@@ -18,8 +18,8 @@
 import test_utils
 from subprocess import check_output
 import subprocess
-from time import sleep
-import threading
+from time import sleep, monotonic
+import select
 from os.path import basename
 
 tests = (
@@ -87,53 +87,49 @@ def execute_test():
     return test_utils.count_print_results(output_table)
 
 
-# Helper function for multiprocessing - must be at module level to be picklable
-def _wait_for_string(proc, string_to_find):
-    """Waits indefinitely until string is found in process. Must be run with timeout multiprocess.
-
-    Parameters:
-    proc (process): process in which we want to read
-    string_to_find (string): what we want to find in process
-
-    Returns:
-    None: Returns nothing if found, never ends if not found
-
-    """
-
-    while True:
-        # notice that all data are in stderr not in stdout, this is DobbyDaemon design
-        output = proc.stderr.readline()
-        if string_to_find in output:
-            test_utils.print_log("Found string \"%s\"" % string_to_find, test_utils.Severity.debug)
-            return
-
-
-# we need to do this asynchronous as if there is no such string we would end in endless loop
+# Uses select() for a true timeout instead of threads — no lingering readers.
 def read_asynchronous(proc, string_to_find, timeout):
-    """Reads asynchronous from process. Ends when found string or timeout occurred.
+    """Reads from process stderr with a real timeout using select().
+
+    Unlike a threaded approach, this cannot leak a blocked reader: select()
+    returns when data is available *or* when the timeout expires, so the
+    caller always regains control promptly.
 
     Parameters:
-    proc (process): process in which we want to read
-    string_to_find (string): what we want to find in process
+    proc (process): process whose stderr we read
+    string_to_find (string): what we want to find in process output
     timeout (float): how long we should wait if string not found (seconds)
 
     Returns:
-    found (bool): True if found string_to_find inside proc.
+    found (bool): True if string_to_find was found in proc stderr.
 
     """
 
-    found = False
-    reader = threading.Thread(target=_wait_for_string, args=(proc, string_to_find), daemon=True)
-    test_utils.print_log("Starting multithread read", test_utils.Severity.debug)
-    reader.start()
-    reader.join(timeout)
-    # if thread still running
-    if reader.is_alive():
-        test_utils.print_log("Reader still exists, closing", test_utils.Severity.debug)
-        test_utils.print_log("Not found string \"%s\"" % string_to_find, test_utils.Severity.error)
-    else:
-        found = True
-    return found
+    test_utils.print_log("Starting select-based read", test_utils.Severity.debug)
+    deadline = monotonic() + timeout
+
+    while True:
+        remaining = deadline - monotonic()
+        if remaining <= 0:
+            test_utils.print_log("Not found string \"%s\"" % string_to_find, test_utils.Severity.error)
+            return False
+
+        # Wait until stderr has data or timeout expires
+        ready, _, _ = select.select([proc.stderr], [], [], remaining)
+        if not ready:
+            # Timeout with no data
+            test_utils.print_log("Not found string \"%s\"" % string_to_find, test_utils.Severity.error)
+            return False
+
+        output = proc.stderr.readline()
+        # readline() returns "" at EOF (process exited / pipe closed)
+        if output == "":
+            test_utils.print_log("EOF on process stderr, stopping reader", test_utils.Severity.debug)
+            return False
+
+        if string_to_find in output:
+            test_utils.print_log("Found string \"%s\"" % string_to_find, test_utils.Severity.debug)
+            return True
 
 
 def check_if_process_present(string_to_find):

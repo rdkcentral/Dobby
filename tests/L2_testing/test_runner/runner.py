@@ -71,8 +71,8 @@ def run_all_tests():
             if total > 0:
                 with open('test_results.json', 'r') as json_file:
                     current_test_result = json.load(json_file)
-                testsuites_info[tested_groups_count]['testsuite'] = []
-                testsuites_info[tested_groups_count]["testsuite"].append(current_test_result)
+                testsuites_info[-1]['testsuite'] = []
+                testsuites_info[-1]["testsuite"].append(current_test_result)
                 tested_groups_count += 1
             sleep(1)
 

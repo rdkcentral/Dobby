@@ -30,7 +30,7 @@ tests = (
     test_utils.Test("Diff bundles",
                     container_name,
                     "",
-                    "Compares between original bundle and newly generated one"),
+                    "Compares config.json between original bundle and generated one, and verifies rootfs exists"),
     test_utils.Test("Remove bundle",
                     container_name,
                     "",
@@ -96,7 +96,12 @@ def execute_test():
     with bundle_ctx as bundle_path:
         if not bundle_ctx.valid:
             test = tests[0]
-            output = test_utils.create_simple_test_output(test, False, "Bundle extraction or validation failed", "")
+            output = test_utils.create_simple_test_output(
+                test, False,
+                "Bundle extraction or validation failed",
+                "Bundle tarball could not be extracted or config.json was missing"
+            )
+            test_utils.print_single_result(output)
             return test_utils.count_print_results([output])
         
         # Test 0
@@ -140,6 +145,14 @@ def execute_test():
                     "Generated config:\n" + json.dumps(generated_config, sort_keys=True) +
                     "\nOriginal config:\n" + json.dumps(original_config, sort_keys=True)
                 )
+
+            # Verify rootfs directory exists in generated bundle
+            import os
+            generated_rootfs = os.path.join(test_utils.get_bundle_path(test.container_id), "rootfs")
+            if not os.path.isdir(generated_rootfs):
+                result = False
+                message = (message + "; " if message else "") + "Generated bundle missing rootfs directory"
+                log = (log + "\n" if log else "") + "Expected rootfs at: %s" % generated_rootfs
         except Exception as err:
             result = False
             message = "Failed to compare bundle configs"

@@ -14,9 +14,7 @@ Changes made for cgroupv2 compatibility:
 """
 
 import json
-import os
 import shutil
-import subprocess
 import sys
 import tarfile
 from pathlib import Path
@@ -104,9 +102,24 @@ def process_bundle(bundle_tarball: Path, backup: bool = True):
             shutil.copy2(bundle_tarball, backup_path)
             print(f"  Backed up to: {backup_path.name}")
     
-    # Extract
+    # Clean up any stale extraction directory left behind by a prior run
+    # to avoid mixing old files into the repacked bundle.
+    if extract_path.exists():
+        print(f"  Removing stale extraction directory: {extract_path.name}")
+        shutil.rmtree(extract_path)
+
+    # Extract (with path-traversal protection)
     print(f"  Extracting...")
     with tarfile.open(bundle_tarball, 'r:gz') as tar:
+        # Reject members that escape the target directory via absolute paths
+        # or '..' components to prevent path-traversal attacks.
+        for member in tar.getmembers():
+            member_path = (bundle_dir / member.name).resolve()
+            if not str(member_path).startswith(str(bundle_dir.resolve())):
+                raise RuntimeError(
+                    f"Tarball member '{member.name}' would escape extraction "
+                    f"directory '{bundle_dir}' — aborting for safety"
+                )
         tar.extractall(path=bundle_dir)
     
     # Find and patch config.json

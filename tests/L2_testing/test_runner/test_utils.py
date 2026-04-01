@@ -83,6 +83,10 @@ class untar_bundle:
             self.valid = False
 
     def __enter__(self):
+        """Returns the bundle path when valid, or None when extraction/validation
+        failed.  Callers must check .valid (or the returned path) before use."""
+        if not self.valid:
+            return None
         return self.path
 
     def __exit__(self, etype, value, traceback):

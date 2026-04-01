@@ -21,6 +21,7 @@ import subprocess
 import json
 from time import sleep
 from re import search
+from os import path
 from os.path import basename
 
 # base fields - same as in test_utils.Test (except expected_output which is regular expression here)
@@ -38,7 +39,7 @@ container_name = "sleepy-thunder"
 
 def sanitise_bundle_config(bundle_path):
     """Remove test-only required plugins from bundle config for wider platform compatibility."""
-    config_path = bundle_path + "/config.json"
+    config_path = path.join(bundle_path, "config.json")
 
     try:
         with open(config_path, 'r', encoding='utf-8') as f:
@@ -271,7 +272,17 @@ def execute_test():
 
     output_table = []
 
-    with test_utils.dobby_daemon(), test_utils.untar_bundle(container_name) as bundle_path:
+    bundle_ctx = test_utils.untar_bundle(container_name)
+    with test_utils.dobby_daemon(), bundle_ctx as bundle_path:
+        if not bundle_ctx.valid:
+            for test in tests:
+                output = test_utils.create_simple_test_output(test, False, "Bundle extraction or validation failed",
+                                                              log_content="Bundle extraction or validation failed; container was never launched.")
+                output_table.append(output)
+                test_utils.print_single_result(output)
+            stop_wpeframework(wpeframework)
+            return test_utils.count_print_results(output_table)
+
         sanitise_bundle_config(bundle_path)
 
         for test in tests:
