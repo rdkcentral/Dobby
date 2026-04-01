@@ -90,18 +90,25 @@ def execute_test():
 
     output_table = []
 
-    with test_utils.dobby_daemon(), netcat_listener() as nc, test_utils.untar_bundle(container_name) as bundle_path:
+    bundle_ctx = test_utils.untar_bundle(container_name)
+    with test_utils.dobby_daemon(), netcat_listener() as nc, bundle_ctx as bundle_path:
+        if not bundle_ctx.valid:
+            output = test_utils.create_simple_test_output(tests[0], False, "Bundle extraction or validation failed",
+                                                          log_content="Bundle extraction or validation failed; container was never launched.")
+            output_table.append(output)
+            test_utils.print_single_result(output)
+            return test_utils.count_print_results(output_table)
+
         # Test 0
         test = tests[0]
-        command = ["DobbyTool",
-                   "start",
-                   container_name,
-                   bundle_path]
-
-        status = test_utils.run_command_line(command)
+        launch_result = test_utils.launch_container(container_name, bundle_path)
 
         message = ""
         result = True
+
+        if not launch_result:
+            message = "Container did not launch successfully"
+            result = False
 
         # give container time to start and send message before checking netcat listener
         sleep(2)
@@ -115,7 +122,7 @@ def execute_test():
         else:
             message = "Successfully received message '%s' from container" % nc_message
 
-        output = test_utils.create_simple_test_output(test, result, message, status.stderr)
+        output = test_utils.create_simple_test_output(test, result, message)
         output_table.append(output)
         test_utils.print_single_result(output)
 
@@ -126,3 +133,4 @@ if __name__ == "__main__":
     test_utils.parse_arguments(__file__)
 
     execute_test()
+
