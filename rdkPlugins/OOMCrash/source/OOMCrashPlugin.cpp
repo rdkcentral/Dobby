@@ -122,7 +122,6 @@ bool OOMCrash::postHalt()
     // Remove the crashFile if container exits normally or if no OOM detected
     if (mUtils->exitStatus == 0 || !oomDetected)
     {
-        struct stat buffer;
         std::string path = mContainerConfig->rdk_plugins->oomcrash->data->path;
         if (path.empty())
         {
