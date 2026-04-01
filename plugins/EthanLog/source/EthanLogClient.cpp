@@ -575,8 +575,7 @@ void EthanLogClient::processLogData()
                     if (ret < 0)
                         break;
 
-                    if (ret > 0 && numFields + ret <= maxFields && numFields + ret > 0)
-                        numFields += ret;
+                    numFields += ret;   
                 }
 
                 thisField = nextField;
