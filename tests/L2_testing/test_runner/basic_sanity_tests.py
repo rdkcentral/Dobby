@@ -20,6 +20,7 @@ from subprocess import check_output
 import subprocess
 from time import sleep, monotonic
 import select
+import os
 from os.path import basename
 
 tests = (
@@ -88,6 +89,8 @@ def execute_test():
 
 
 # Uses select() for a true timeout instead of threads — no lingering readers.
+# Reads raw bytes via os.read() to avoid Python TextIOWrapper buffering that
+# can desynchronise from select()'s kernel-level readiness checks.
 def read_asynchronous(proc, string_to_find, timeout):
     """Reads from process stderr with a real timeout using select().
 
@@ -107,27 +110,35 @@ def read_asynchronous(proc, string_to_find, timeout):
 
     test_utils.print_log("Starting select-based read", test_utils.Severity.debug)
     deadline = monotonic() + timeout
+    fd = proc.stderr.fileno()
+    accumulated = ""
 
     while True:
         remaining = deadline - monotonic()
         if remaining <= 0:
-            test_utils.print_log("Not found string \"%s\"" % string_to_find, test_utils.Severity.error)
+            test_utils.print_log("Not found string \"%s\" (timeout). Accumulated output: %s"
+                                 % (string_to_find, repr(accumulated)), test_utils.Severity.error)
             return False
 
         # Wait until stderr has data or timeout expires
-        ready, _, _ = select.select([proc.stderr], [], [], remaining)
+        ready, _, _ = select.select([fd], [], [], remaining)
         if not ready:
             # Timeout with no data
-            test_utils.print_log("Not found string \"%s\"" % string_to_find, test_utils.Severity.error)
+            test_utils.print_log("Not found string \"%s\" (select timeout). Accumulated output: %s"
+                                 % (string_to_find, repr(accumulated)), test_utils.Severity.error)
             return False
 
-        output = proc.stderr.readline()
-        # readline() returns "" at EOF (process exited / pipe closed)
-        if output == "":
-            test_utils.print_log("EOF on process stderr, stopping reader", test_utils.Severity.debug)
+        # Read raw bytes to avoid TextIOWrapper buffering mismatch with select()
+        chunk = os.read(fd, 4096)
+        if not chunk:
+            # EOF — process exited / pipe closed
+            test_utils.print_log("EOF on process stderr, stopping reader. Accumulated output: %s"
+                                 % repr(accumulated), test_utils.Severity.debug)
             return False
 
-        if string_to_find in output:
+        accumulated += chunk.decode("utf-8", errors="replace")
+
+        if string_to_find in accumulated:
             test_utils.print_log("Found string \"%s\"" % string_to_find, test_utils.Severity.debug)
             return True
 

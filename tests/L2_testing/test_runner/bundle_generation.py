@@ -73,6 +73,12 @@ def _normalise_config(config):
             if not cpu:
                 resources.pop("cpu", None)
 
+        # swap limit is injected by the OCI config template (set equal to
+        # memory limit to disable swap).  Original test bundles pre-date
+        # this addition, so strip it to keep the comparison stable.
+        if isinstance(resources, dict) and isinstance(resources.get("memory"), dict):
+            resources["memory"].pop("swap", None)
+
     # Runtime may append tmpfs size options at generation time
     for mount in cfg.get("mounts", []):
         if mount.get("destination") in ("/tmp", "/dev") and isinstance(mount.get("options"), list):
