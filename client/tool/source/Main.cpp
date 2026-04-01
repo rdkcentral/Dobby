@@ -312,7 +312,6 @@ static void startCommand(const std::shared_ptr<IDobbyProxy> &dobbyProxy,
 
     int32_t cd;
 
-    struct stat statbuf;
     // Replace stat + opendir TOCTOU by trying opendir() first. If opendir succeeds,
     // treat as directory. If opendir fails with ENOTDIR, treat as file. If ENOENT,
     // report missing path. Other errors are reported as opendir errors.
