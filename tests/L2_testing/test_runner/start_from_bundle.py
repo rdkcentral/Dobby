@@ -17,6 +17,7 @@
 
 import test_utils
 from os.path import basename
+from time import sleep
 
 tests = [
     test_utils.Test("Logging to file",
@@ -62,13 +63,21 @@ def test_container(container_id, expected_output):
 
     test_utils.print_log("Running %s container test" % container_id, test_utils.Severity.debug)
 
-    with test_utils.untar_bundle(container_id) as bundle_path:
+    bundle_ctx = test_utils.untar_bundle(container_id)
+    with bundle_ctx as bundle_path:
+        if not bundle_ctx.valid:
+            return False, "Bundle extraction or validation failed"
+        
         launch_result = test_utils.launch_container(container_id, bundle_path)
 
-    if launch_result:
-        return validate_output_file(container_id, expected_output)
+        if not launch_result:
+            return False, "Container did not launch successfully"
 
-    return False, "Container did not launch successfully"
+        # give logging plugin a moment to flush file output
+        sleep(0.5)
+        validation_result = validate_output_file(container_id, expected_output)
+
+    return validation_result
 
 
 def validate_output_file(container_id, expected_output):
@@ -102,3 +111,4 @@ def validate_output_file(container_id, expected_output):
 if __name__ == "__main__":
     test_utils.parse_arguments(__file__, True)
     execute_test()
+
