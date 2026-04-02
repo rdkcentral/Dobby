@@ -268,11 +268,11 @@ static std::string ethanlogCreateDroppedMessage(int count)
  */
 static int ethanlogWriteMessageWithQueuing(const char* buf, size_t len)
 {
-    static std::atomic<int> droppedMessages = 0;
+    static std::atomic<int> droppedMessages{0};
 
     static std::mutex queueMessageLock;
     static std::deque<std::string> queuedMessages;
-    static std::atomic<int> queuedMessageCount = 0;
+    static std::atomic<int> queuedMessageCount{0};
 
     // First check if we have queued messages, if we do then we need to write
     // those out before writing the new message, to ensure messages are written
