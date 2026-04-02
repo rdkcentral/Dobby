@@ -57,7 +57,7 @@ static_assert(ETHANLOG_MAX_LOG_MSG_LENGTH >
              (64 + ETHANLOG_MAX_FUNC_NAME_LENGTH + ETHANLOG_MAX_FILE_NAME_LENGTH + ETHANLOG_MAX_WRAP_INDICATOR_LEN),
               "Max log message length must be large enough to hold the max size of all fields");
 
-static std::atomic<int> gEthanlogPipefd = ETHANLOG_PIPE_UNINITIALIZED;
+static std::atomic<int> gEthanlogPipefd{ETHANLOG_PIPE_UNINITIALIZED};
 
 // The number of log messages to allow in a burst before we start dropping messages, this is
 // used to prevent a flood of log messages from overwhelming the logging system and causing
@@ -65,7 +65,7 @@ static size_t gEthanLogMaxQueuedMessages = 0;
 
 // Log wrapping is disabled by default, it can be enabled by setting the
 // ETHAN_LOGGING_ENABLE_WRAP environment variable to "1".
-static std::atomic<bool> gEthanLogWrapEnabled = false;
+static bool gEthanLogWrapEnabled = false;
 
 // The wrap indicator is the set of characters to append to the end of a
 // log message when it is too long and has been truncated.
@@ -90,66 +90,70 @@ static size_t ethanlogPopulateMsgPrefix(int level, const char *filename,
  */
 static void ethanLogInit()
 {
-    const char *env = getenv("ETHAN_LOGGING_TO_CONSOLE");
-    if ((env != nullptr) && (env[0] == '1') && (env[1] == '\0'))
+    static std::once_flag initFlag;
+    std::call_once(initFlag, []()
     {
-        gEthanlogPipefd = ETHANLOG_PIPE_REDIRECT_CONSOLE;
-        return;
-    }
-
-    // check if log line wrapping should be enabled
-    env = getenv("ETHAN_LOGGING_ENABLE_WRAP");
-    if ((env != nullptr) && (env[0] == '1') && (env[1] == '\0'))
-    {
-        gEthanLogWrapEnabled = true;
-    }
-
-    if (gEthanLogWrapEnabled)
-    {
-        // check if a custom log wrapping indicator is set, if not use the default
-        env = getenv("ETHAN_LOGGING_WRAP_INDICATOR");
-        if ((env != nullptr) && (env[0] != '\0'))
+        const char *env = getenv("ETHAN_LOGGING_TO_CONSOLE");
+        if ((env != nullptr) && (env[0] == '1') && (env[1] == '\0'))
         {
-            strncpy(gEthanLogWrapIndicator, env, ETHANLOG_MAX_WRAP_INDICATOR_LEN);
-            gEthanLogWrapIndicator[ETHANLOG_MAX_WRAP_INDICATOR_LEN] = '\0';
+            gEthanlogPipefd = ETHANLOG_PIPE_REDIRECT_CONSOLE;
+            return;
+        }
+
+        // check if log line wrapping should be enabled
+        env = getenv("ETHAN_LOGGING_ENABLE_WRAP");
+        if ((env != nullptr) && (env[0] == '1') && (env[1] == '\0'))
+        {
+            gEthanLogWrapEnabled = true;
+        }
+
+        if (gEthanLogWrapEnabled)
+        {
+            // check if a custom log wrapping indicator is set, if not use the default
+            env = getenv("ETHAN_LOGGING_WRAP_INDICATOR");
+            if ((env != nullptr) && (env[0] != '\0'))
+            {
+                strncpy(gEthanLogWrapIndicator, env, ETHANLOG_MAX_WRAP_INDICATOR_LEN);
+                gEthanLogWrapIndicator[ETHANLOG_MAX_WRAP_INDICATOR_LEN] = '\0';
+            }
+            else
+            {
+                strcpy(gEthanLogWrapIndicator, ETHANLOG_WRAP_INDICATOR);
+            }
+            gEthanLogWrapIndicatorLen = strlen(gEthanLogWrapIndicator);
+        }
+
+        // check if want to enable the log message queue
+        env = getenv("ETHAN_LOGGING_QUEUE_SIZE");
+        if (env != nullptr)
+        {
+            int queueSize = atoi(env);
+            if (queueSize > 0)
+            {
+                gEthanLogMaxQueuedMessages = std::min<size_t>(queueSize, 1024UL);
+            }
+        }
+
+        // the following environment variable is set by the hypervisor, it
+        // tells us the number of open file descriptor to use for logging.
+        env = getenv("ETHAN_LOGGING_PIPE");
+        if (env == nullptr)
+        {
+            gEthanlogPipefd = ETHANLOG_PIPE_ERROR;
+            return;
+        }
+
+        // the actual pipe fd
+        int pipeFd = atoi(env);
+        if ((pipeFd < 3) || (pipeFd > 2048))
+        {
+            gEthanlogPipefd = ETHANLOG_PIPE_ERROR;
         }
         else
         {
-            strcpy(gEthanLogWrapIndicator, ETHANLOG_WRAP_INDICATOR);
+            gEthanlogPipefd = pipeFd;
         }
-        gEthanLogWrapIndicatorLen = strlen(gEthanLogWrapIndicator);
-    }
-
-    // check if want to enable the log message queue
-    env = getenv("ETHAN_LOGGING_QUEUE_SIZE");
-    if (env != nullptr)
-    {
-        int queueSize = atoi(env);
-        if (queueSize > 0)
-        {
-            gEthanLogMaxQueuedMessages = std::min<size_t>(queueSize, 1024UL);
-        }
-    }
-
-    // the following environment variable is set by the hypervisor, it
-    // tells us the number of open file descriptor to use for logging.
-    env = getenv("ETHAN_LOGGING_PIPE");
-    if (env == nullptr)
-    {
-        gEthanlogPipefd = ETHANLOG_PIPE_ERROR;
-        return;
-    }
-
-    // the actual pipe fd
-    int pipeFd = atoi(env);
-    if ((pipeFd < 3) || (pipeFd > 2048))
-    {
-        gEthanlogPipefd = ETHANLOG_PIPE_ERROR;
-    }
-    else
-    {
-        gEthanlogPipefd = pipeFd;
-    }
+    });
 }
 
 // -----------------------------------------------------------------------------
@@ -277,7 +281,7 @@ static int ethanlogWriteMessageWithQueuing(const char* buf, size_t len)
     // out of order).
     if (queuedMessageCount > 0)
     {
-        std::lock_guard locker(queueMessageLock);
+        std::lock_guard<std::mutex> locker(queueMessageLock);
 
         while (!queuedMessages.empty())
         {
@@ -350,7 +354,7 @@ static int ethanlogWriteMessageWithQueuing(const char* buf, size_t len)
     // thread has filled the queue in the meantime).
     if (!ethanlogWriteToPipe(buf, len))
     {
-        std::lock_guard locker(queueMessageLock);
+        std::lock_guard<std::mutex> locker(queueMessageLock);
 
         if (queuedMessages.size() < gEthanLogMaxQueuedMessages)
         {
