@@ -127,7 +127,7 @@ static void ethanLogInit()
         int queueSize = atoi(env);
         if (queueSize > 0)
         {
-            gEthanLogMaxQueuedMessages = std::max<size_t>(queueSize, 512UL);
+            gEthanLogMaxQueuedMessages = std::min<size_t>(queueSize, 1024UL);
         }
     }
 
@@ -245,10 +245,11 @@ static std::string ethanlogCreateDroppedMessage(int count)
     char buf[ETHANLOG_MAX_LOG_MSG_LENGTH];
     const size_t prefixLen =
         ethanlogPopulateMsgPrefix(ETHAN_LOG_WARNING, nullptr, nullptr, -1, buf);
+    const size_t maxMsgLen = ETHANLOG_MAX_LOG_MSG_LENGTH - prefixLen - 1;
 
-    int msgLen = snprintf(buf + prefixLen, sizeof(buf) - prefixLen - 1,
+    int msgLen = snprintf(buf + prefixLen, maxMsgLen,
                           "Dropped %d log messages due to backpressure", count);
-    msgLen = std::min<int>(msgLen, (ETHANLOG_MAX_LOG_MSG_LENGTH - prefixLen - 2));
+    msgLen = std::min<int>(msgLen, (maxMsgLen - 1));
 
     buf[prefixLen + msgLen] = ETHANLOG_RECORD_DELIM;
 
@@ -332,7 +333,7 @@ static int ethanlogWriteMessageWithQueuing(const char* buf, size_t len)
         if (droppedMessages > 0)
         {
             const auto msg = ethanlogCreateDroppedMessage(droppedMessages);
-            if (ethanlogWriteToPipe(msg.data(), msg.size()) == false)
+            if (!ethanlogWriteToPipe(msg.data(), msg.size()))
             {
                 queuedMessages.emplace_back(msg);
                 queuedMessageCount++;
@@ -347,7 +348,7 @@ static int ethanlogWriteMessageWithQueuing(const char* buf, size_t len)
     // in and filled the pipe and the queued messages again.  So we try and write,
     // if fails then we try and queue the message again (which may fail if another
     // thread has filled the queue in the meantime).
-    if (ethanlogWriteToPipe(buf, len) == false)
+    if (!ethanlogWriteToPipe(buf, len))
     {
         std::lock_guard locker(queueMessageLock);
 
@@ -535,7 +536,7 @@ extern "C" int ethanlog_vprint(int level, const char *filename,
         if (messageLen < 0)
             return -1;
 
-        messageLen = std::min<int>(messageLen, maxLineLen);
+        messageLen = std::min<int>(messageLen, (maxLineLen - 1));
         buf[prefixLen + messageLen] = ETHANLOG_RECORD_DELIM;
         return ethanlogWriteMessage(buf, prefixLen + messageLen + 1);
     }
@@ -549,7 +550,7 @@ extern "C" int ethanlog_vprint(int level, const char *filename,
         if (messageLen < 0)
             return -1;
 
-        messageLen = std::min<int>(messageLen, sizeof(messageBuf));
+        messageLen = std::min<int>(messageLen, sizeof(messageBuf) - 1);
 
         // Write the log message in chunks of maxLineLen, appending the wrap
         // indicator and record delimiter as needed.
