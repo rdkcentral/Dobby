@@ -27,6 +27,7 @@
 #include <cstdio>
 #include <cstring>
 #include <cerrno>
+#include <algorithm>
 
 #include <unistd.h>
 #include <time.h>
@@ -59,8 +60,10 @@ static_assert(ETHANLOG_MAX_LOG_MSG_LENGTH >
 
 static std::atomic<int> gEthanlogPipefd{ETHANLOG_PIPE_UNINITIALIZED};
 
-// The number of log messages to allow in a burst before we start dropping messages, this is
-// used to prevent a flood of log messages from overwhelming the logging system and causing
+// The number of log messages to internally queue before we start dropping messages,
+// this is disabled by default (max is 0) but can be enabled by setting the
+// ETHAN_LOGGING_QUEUE_SIZE environment variable to a positive integer value
+// (up to 1024).
 static size_t gEthanLogMaxQueuedMessages = 0;
 
 // Log wrapping is disabled by default, it can be enabled by setting the
@@ -160,7 +163,7 @@ static void ethanLogInit()
 /**
  * @brief Simple logging function that writes the log message to the console.
  *
- * This function is used if ETHAN_LOGGING_TO_CONSOLE=1 i set in the console.
+ * This function is used if ETHAN_LOGGING_TO_CONSOLE=1 is set in the console.
  *
  */
 static int ethanlogToConsole(int level, const char *filename, const char *function,
@@ -202,7 +205,10 @@ static int ethanlogToConsole(int level, const char *filename, const char *functi
 
     const int stream = (level <= ETHAN_LOG_WARNING) ? STDERR_FILENO : STDOUT_FILENO;
     return dprintf(stream, "%s %s: < S:%s F:%s L:%d > %s\n",
-                   tbuf, prefix, filename ?: "?", function ?: "?", line, mbuf);
+                   tbuf, prefix,
+                   filename ? filename : "?",
+                   function ? function : "?",
+                   line, mbuf);
 }
 
 // -----------------------------------------------------------------------------
@@ -368,7 +374,7 @@ static int ethanlogWriteMessageWithQueuing(const char* buf, size_t len)
         return -1;
     }
 
-    return 0;
+    return len;
 }
 
 // -----------------------------------------------------------------------------
@@ -394,7 +400,7 @@ static int ethanlogWriteMessage(const char* buf, size_t len)
     if (!ethanlogWriteToPipe(buf, len))
         return -1;
     else
-        return 0;
+        return len;
 }
 
 // -----------------------------------------------------------------------------
@@ -412,7 +418,7 @@ static size_t ethanlogPopulateMsgPrefix(int level, const char *filename,
                                         const char *function, int line,
                                         char* const buf)
 {
-    char* p = buf;
+    char *p = buf;
 
     *p++ = ETHANLOG_RECORD_DELIM;
 
@@ -449,14 +455,20 @@ static size_t ethanlogPopulateMsgPrefix(int level, const char *filename,
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 
     // Timestamp for the log
-    timespec ts = {.tv_sec = 0, .tv_nsec = 0};
+    timespec ts = {};
     if (clock_gettime(CLOCK_MONOTONIC, &ts) != 0)
         ts.tv_sec = ts.tv_nsec = 0;
     p += sprintf(p, "%cT%08lx.%08lx", ETHANLOG_FIELD_DELIM, ts.tv_sec, ts.tv_nsec);
 
     // Filename (limited to 64 characters)
     if (filename)
+    {
+        const char *basename = strrchr(filename, '/');
+        if (basename != nullptr)
+            filename = (basename + 1);
+
         p += sprintf(p, "%cS%.*s", ETHANLOG_FIELD_DELIM, ETHANLOG_MAX_FILE_NAME_LENGTH, filename);
+    }
 
     // Function name (limited to 128 characters)
     if (function)
@@ -556,6 +568,8 @@ extern "C" int ethanlog_vprint(int level, const char *filename,
 
         messageLen = std::min<int>(messageLen, sizeof(messageBuf) - 1);
 
+        int totalWritten = 0;
+
         // Write the log message in chunks of maxLineLen, appending the wrap
         // indicator and record delimiter as needed.
         int pos = 0;
@@ -576,12 +590,15 @@ extern "C" int ethanlog_vprint(int level, const char *filename,
 
             // Append the log record delimiter at the end of the message
             buf[prefixLen + lineLen] = ETHANLOG_RECORD_DELIM;
-            if (ethanlogWriteMessage(buf, prefixLen + lineLen + 1) < 0)
+            int written = ethanlogWriteMessage(buf, prefixLen + lineLen + 1);
+            if (written < 0)
                 return -1;
-        }
-    }
 
-    return 0;
+            totalWritten += written;
+        }
+
+        return totalWritten;
+    }
 }
 
 extern "C" void vethanlog(int level, const char *filename, const char *function,

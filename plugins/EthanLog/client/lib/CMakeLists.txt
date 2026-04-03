@@ -28,6 +28,11 @@ target_include_directories( ethanlog
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
         )
 
+target_link_libraries( ethanlog
+        PUBLIC
+        Threads::Threads
+
+        )
 
 set_target_properties( ethanlog
         PROPERTIES
