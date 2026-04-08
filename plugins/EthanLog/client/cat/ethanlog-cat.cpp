@@ -114,7 +114,7 @@ public:
     {
         // read as much to fill in the buffer
         ssize_t rc = TEMP_FAILURE_RETRY(read(mFd, mBuffer + mBufferOffset, sizeof(mBuffer) - mBufferOffset));
-        if (rc <= 0)
+        if ((rc <= 0) || ((size_t)rc > sizeof(mBuffer) - mBufferOffset))
         {
             mValid = false;
             return;
@@ -214,7 +214,7 @@ private:
     bool mValid;
 
     char mBuffer[1024];
-    int mBufferOffset;
+    size_t mBufferOffset;
 };
 
 
@@ -361,7 +361,7 @@ static void parseArgs(int argc, char **argv)
                     fprintf(stderr, "Warning: Unknown option `-%c'.\n", optopt);
                 else
                     fprintf(stderr, "Warning: Unknown option character `\\x%x'.\n", optopt);
-
+                break;
             default:
                 exit(EXIT_FAILURE);
         }

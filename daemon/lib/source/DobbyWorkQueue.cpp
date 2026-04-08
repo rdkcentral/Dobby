@@ -250,6 +250,7 @@ bool DobbyWorkQueue::postWork(WorkFunc &&work)
     if (std::this_thread::get_id() == mRunningThreadId)
     {
         // add to the queue
+        std::unique_lock<AICommon::Mutex> locker(mWorkQueueLock);
         const uint64_t tag = ++mWorkCounter;
         mWorkQueue.emplace(tag, std::move(work));
     }

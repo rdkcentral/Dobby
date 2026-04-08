@@ -333,7 +333,10 @@ void EthanLogLoop::eventLoop()
     sd_event_loop(loop);
 
     // clear all the clients
-    mClients.clear();
+    {
+        std::lock_guard<std::mutex> locker(mLock);
+        mClients.clear();
+    }
 
     // free the event loop
     sd_event_unref(loop);

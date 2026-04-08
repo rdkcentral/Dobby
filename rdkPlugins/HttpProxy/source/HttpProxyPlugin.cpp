@@ -34,6 +34,7 @@ HttpProxyPlugin::HttpProxyPlugin(std::shared_ptr<rt_dobby_schema> &cfg,
                                  const std::string &rootfsPath)
     : mName("HttpProxy"),
       mContainerConfig(cfg),
+      mPluginData(nullptr),
       mUtils(utils),
       mMountedCACertsPath(rootfsPath + "../ca-certificates.crt")
 {
