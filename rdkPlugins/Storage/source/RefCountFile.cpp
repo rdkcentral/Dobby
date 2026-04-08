@@ -24,6 +24,7 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <climits>
 
 RefCountFile::RefCountFile(std::string file): mFilePath(std::move(file)), mFd(-1), mOpen(false)
 {
@@ -108,14 +109,32 @@ int RefCountFile::Increment()
 
     int ref = Read();
 
-    if (ref >= 0)
+    if (ref < 0)
     {
-        ref = Write(++ref);
-        AI_LOG_DEBUG("ref count: %d", ref);
+        AI_LOG_FN_EXIT();
+        return ref;
     }
 
+    if (ref >= INT_MAX)
+    {
+        AI_LOG_ERROR("Reference count overflow at INT_MAX");
+        AI_LOG_FN_EXIT();
+        return -1;
+    }
+
+    int newRef = ref + 1;
+
+    int writtenRef = Write(newRef);
+    if (writtenRef < 0)
+    {
+        AI_LOG_ERROR("Invalid ref count returned from Write(): %d", writtenRef);
+        AI_LOG_FN_EXIT();
+        return -1;
+    }
+
+    AI_LOG_DEBUG("ref count: %d", writtenRef);
     AI_LOG_FN_EXIT();
-    return ref;
+    return writtenRef;
 }
 
 // -----------------------------------------------------------------------------
