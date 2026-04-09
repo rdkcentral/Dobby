@@ -445,7 +445,7 @@ Json::Value DobbyStats::getProcessTree(const ContainerId& id,
     {
         if (pid > std::numeric_limits<pid_t>::max() || pid < 0)
         {
-            AI_LOG_WARN("Invalid PID found: %ld", pid);
+            AI_LOG_WARN("Invalid PID found: %lld", static_cast<long long>(pid));
             continue;
         }
 

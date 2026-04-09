@@ -917,9 +917,10 @@ bool DobbySpecConfig::processUserNs(const Json::Value& value,
 bool DobbySpecConfig::processRtPriority(const Json::Value& value,
                                         ctemplate::TemplateDictionary* dictionary)
 {
-    int rtPriorityDefault;
-    int rtPriorityLimit;
+    int rtPriorityDefault = 0;
+    int rtPriorityLimit = 0;
 
+    std::lock_guard<std::mutex> locker(mLock);
     if (mSpecVersion == SpecVersion::Version1_0)
     {
         if (!value.isIntegral())

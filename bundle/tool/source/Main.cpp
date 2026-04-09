@@ -113,7 +113,7 @@ static void parseArgs(const int argc, char **argv)
                 fprintf(stderr, "Warning: Unknown option `-%c'.\n", optopt);
             else
                 fprintf(stderr, "Warning: Unknown option character `\\x%x'.\n", optopt);
-
+            break;
         default:
             exit(EXIT_FAILURE);
             break;
@@ -228,57 +228,62 @@ static bool generateOciBundle(std::shared_ptr<IDobbySettings> settings,
  */
 int main(int argc, char *argv[])
 {
-    printf("Dobby Bundle Generator Tool\n");
-    parseArgs(argc, argv);
+    try {
+        printf("Dobby Bundle Generator Tool\n");
+        parseArgs(argc, argv);
 
-    // Set up so we can read commands
-    auto readLine = IReadLine::create();
-    if (!readLine || !readLine->isValid())
-    {
-        AI_LOG_ERROR_EXIT("failed to create ReadLine object");
+        // Set up so we can read commands
+        auto readLine = IReadLine::create();
+        if (!readLine || !readLine->isValid())
+        {
+            AI_LOG_ERROR_EXIT("failed to create ReadLine object");
+            exit(EXIT_FAILURE);
+        }
+
+        // Can't do any work without a file to process or somewhere to put the
+        // output
+        if (inputPath.empty())
+        {
+            AI_LOG_ERROR("Must provide a Dobby spec as an input");
+            exit(EXIT_FAILURE);
+        }
+        else if (access(inputPath.c_str(), R_OK) != 0)
+        {
+            AI_LOG_ERROR("Cannot access Dobby spec file %s", inputPath.c_str());
+            exit(EXIT_FAILURE);
+        }
+
+        // We'll create the directory if it's missing later, so no need to check
+        // if we can read it
+        if (outputDirectory.empty())
+        {
+            AI_LOG_ERROR("Must provide an output directory");
+            exit(EXIT_FAILURE);
+        }
+
+        // Dobby uses a JSON settings file to provide STB-specific settings (e.g GPU)
+        // Can be left blank (defaylt settings will be used)
+        else if (!settingsPath.empty() && access(settingsPath.c_str(), R_OK) != 0)
+        {
+            AI_LOG_ERROR("Cannot access settings file %s", inputPath.c_str());
+            exit(EXIT_FAILURE);
+        }
+
+        AI_LOG_INFO("Parsing Dobby spec file %s\n", inputPath.c_str());
+        AI_LOG_INFO("Generating Bundle in directory: %s\n", outputDirectory.c_str());
+
+        // Get settings from the provided json file
+        auto settings = readSettings();
+        auto utils = std::make_shared<DobbyUtils>();
+
+        // Now we can do some actual work
+        generateOciBundle(settings, utils, inputPath, outputDirectory);
+
+        // And we're done
+        AICommon::termLogging();
+        return EXIT_SUCCESS;
+    } catch (const std::exception& e) {
+        AI_LOG_ERROR_EXIT("Unhandled exception in main: %s\n", e.what());
         exit(EXIT_FAILURE);
     }
-
-    // Can't do any work without a file to process or somewhere to put the
-    // output
-    if (inputPath.empty())
-    {
-        AI_LOG_ERROR("Must provide a Dobby spec as an input");
-        exit(EXIT_FAILURE);
-    }
-    else if (access(inputPath.c_str(), R_OK) != 0)
-    {
-        AI_LOG_ERROR("Cannot access Dobby spec file %s", inputPath.c_str());
-        exit(EXIT_FAILURE);
-    }
-
-    // We'll create the directory if it's missing later, so no need to check
-    // if we can read it
-    if (outputDirectory.empty())
-    {
-        AI_LOG_ERROR("Must provide an output directory");
-        exit(EXIT_FAILURE);
-    }
-
-    // Dobby uses a JSON settings file to provide STB-specific settings (e.g GPU)
-    // Can be left blank (defaylt settings will be used)
-    else if (!settingsPath.empty() && access(settingsPath.c_str(), R_OK) != 0)
-    {
-        AI_LOG_ERROR("Cannot access settings file %s", inputPath.c_str());
-        exit(EXIT_FAILURE);
-    }
-
-    AI_LOG_INFO("Parsing Dobby spec file %s\n", inputPath.c_str());
-    AI_LOG_INFO("Generating Bundle in directory: %s\n", outputDirectory.c_str());
-
-    // Get settings from the provided json file
-    auto settings = readSettings();
-    auto utils = std::make_shared<DobbyUtils>();
-
-    // Now we can do some actual work
-    generateOciBundle(settings, utils, inputPath, outputDirectory);
-
-    // And we're done
-    AICommon::termLogging();
-    return EXIT_SUCCESS;
 }

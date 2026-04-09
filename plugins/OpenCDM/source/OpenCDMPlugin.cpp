@@ -145,21 +145,34 @@ bool OpenCDMPlugin::postConstruction(const ContainerId& id,
     const std::string ocdmSocketPath("/tmp/ocdm");
 
     // sanity check the socket exists - if it doesn't then we don't mount
-    if (access(ocdmSocketPath.c_str(), F_OK) != 0)
+    // (Attempt operations directly and treat ENOENT as "missing socket")
+    if (chmod(ocdmSocketPath.c_str(), S_IRWXU | S_IRGRP | S_IWGRP) != 0)
     {
-        AI_LOG_ERROR("missing '%s' socket, not mounting in container",
-                     ocdmSocketPath.c_str());
+        if (errno == ENOENT)
+        {
+            AI_LOG_ERROR("missing '%s' socket, not mounting in container", ocdmSocketPath.c_str());
+        }
+        else
+        {
+            AI_LOG_SYS_ERROR(errno, "failed to change access on socket");
+            // Stricter behavior: do not attempt chown or addMount if chmod failed.
+            // This prevents proceeding when we couldn't set expected permissions.
+        }
     }
     else
     {
-        if (chmod(ocdmSocketPath.c_str(), S_IRWXU | S_IRGRP | S_IWGRP) != 0)
-            AI_LOG_SYS_ERROR(errno, "failed to change access on socket");
+        // chmod succeeded, proceed with chown and mount only if chown also succeeds
         if (chown(ocdmSocketPath.c_str(), 0, mAppsGroupId) != 0)
+        {
             AI_LOG_SYS_ERROR(errno, "failed to change owner off socket");
-
-        // mount the socket within the container
-        if (!startupState->addMount(ocdmSocketPath, ocdmSocketPath, "bind", mountFlags))
-            AI_LOG_ERROR("failed to add bind mount for '%s'", ocdmSocketPath.c_str());
+            // Stricter behavior: do not attempt to mount if chown failed.
+        }
+        else
+        {
+            // mount the socket within the container
+            if (!startupState->addMount(ocdmSocketPath, ocdmSocketPath, "bind", mountFlags))
+                AI_LOG_ERROR("failed to add bind mount for '%s'", ocdmSocketPath.c_str());
+        }
     }
 
     // on newer builds we may also need the /tmp/OCDM directory
@@ -200,10 +213,13 @@ bool OpenCDMPlugin::enableTmpOCDMDir(const std::shared_ptr<IDobbyStartState>& st
         return false;
     }
 
-    // can now add to the bind mount list
-    startupState->addMount(dirPath, dirPath, "bind",
-                           (MS_BIND | MS_NOSUID | MS_NODEV | MS_NOEXEC));
-     return true;
+    if (!startupState->addMount(dirPath, dirPath, "bind",
+                                (MS_BIND | MS_NOSUID | MS_NODEV | MS_NOEXEC)))
+    {
+        AI_LOG_ERROR("failed to add bind mount for OCDM directory '%s'", dirPath.c_str());
+        return false;
+    }
+    return true;
  }
 
 // -----------------------------------------------------------------------------
@@ -242,34 +258,29 @@ bool OpenCDMPlugin::writeFileIfNotExists(const std::string &filePath) const
 {
     AI_LOG_FN_ENTRY();
 
-    // if the file already exists, don't bother recreating it
-    int fileExists = access(filePath.c_str(), R_OK);
-
-    // file doesn't exist, so lets create it
-    if (fileExists < 0)
+    // Atomically attempt to create the file; if it exists, do nothing
+    int fd = open(filePath.c_str(), O_CLOEXEC | O_CREAT | O_EXCL | O_WRONLY, 0660);
+    if (fd >= 0)
     {
-        // create the file if doesn't exist
-        int fd = open(filePath.c_str(), O_CLOEXEC | O_CREAT | O_WRONLY, 0660);
-        if (fd < 0)
-        {
-            AI_LOG_SYS_ERROR(errno, "failed to create file @ '%s'", filePath.c_str());
-        }
-        else
-        {
-            // set permissions to chmod 0660 and owner root:30000
-            if (fchmod(fd, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP) != 0)
-                AI_LOG_SYS_ERROR(errno, "failed to change access on '%s''", filePath.c_str());
-            if (fchown(fd, 0, mAppsGroupId) != 0)
-                AI_LOG_SYS_ERROR(errno, "failed to change owner off '%s''", filePath.c_str());
-            if (close(fd) != 0)
-                AI_LOG_SYS_ERROR(errno, "failed to close file @ '%s'", filePath.c_str());
-        }
+        // Set file permissions and ownership
+        if (fchmod(fd, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP) != 0)
+            AI_LOG_SYS_ERROR(errno, "Could not set permissions for '%s'", filePath.c_str());
+        if (fchown(fd, 0, mAppsGroupId) != 0)
+            AI_LOG_SYS_ERROR(errno, "Could not set owner for '%s'", filePath.c_str());
+        if (close(fd) != 0)
+            AI_LOG_SYS_ERROR(errno, "Could not close file '%s'", filePath.c_str());
 
         AI_LOG_FN_EXIT();
         return true;
     }
-
-    AI_LOG_INFO("%s already exists, skipping creation", filePath.c_str());
+    else if (errno == EEXIST)
+    {
+        AI_LOG_INFO("File '%s' already present, skipping creation", filePath.c_str());
+    }
+    else
+    {
+        AI_LOG_SYS_ERROR(errno, "Unable to create file '%s'", filePath.c_str());
+    }
 
     AI_LOG_FN_EXIT();
     return false;

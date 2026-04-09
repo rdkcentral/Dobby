@@ -232,7 +232,7 @@ Settings::Settings(const Json::Value& settings)
                     else if(pluginName.isObject())
                     {
                         for (const auto& value : pluginName.getMemberNames())
-			            {
+                        {
                             mDefaultPlugins.push_back(value);
                             mRdkPluginsData[value] = pluginName[value];
                         }
@@ -820,6 +820,7 @@ std::list<std::string> Settings::getPathsFromJson(const Json::Value& value) cons
     {
         AI_LOG_ERROR("failed to expand settings path string '%s'",
                      value.asCString());
+        wordfree(&exp);
         return std::list<std::string>();
     }
 

@@ -54,7 +54,7 @@ unsigned OOMCrash::hookHints() const
 {
     return (
         IDobbyRdkPlugin::HintFlags::PostInstallationFlag |
-	IDobbyRdkPlugin::HintFlags::PostHaltFlag);
+    IDobbyRdkPlugin::HintFlags::PostHaltFlag);
 }
 
 /**
@@ -122,7 +122,6 @@ bool OOMCrash::postHalt()
     // Remove the crashFile if container exits normally or if no OOM detected
     if (mUtils->exitStatus == 0 || !oomDetected)
     {
-        struct stat buffer;
         std::string path = mContainerConfig->rdk_plugins->oomcrash->data->path;
         if (path.empty())
         {
@@ -131,17 +130,17 @@ bool OOMCrash::postHalt()
         }
 
         std::string crashFile = path + "/oom_crashed_" + mUtils->getContainerId() + ".txt";
-        if (stat(crashFile.c_str(), &buffer) == 0)
+        if (remove(crashFile.c_str()) != 0)
         {
-            if (remove(crashFile.c_str()) != 0)
+            if (errno != ENOENT)
             {
                 perror("Failed to remove crash file");
                 AI_LOG_WARN("Could not remove crash file: %s (%d - %s)", crashFile.c_str(), errno, strerror(errno));
             }
-            else
-            {
-                AI_LOG_INFO("%s file removed", crashFile.c_str());
-            }
+        }
+        else
+        {
+            AI_LOG_INFO("%s file removed", crashFile.c_str());
         }
     }
 
@@ -258,8 +257,11 @@ void OOMCrash::createFileForOOM()
             if (errno != ENOENT)
                 AI_LOG_ERROR("failed to open '%s' (%d - %s)", path.c_str(), errno, strerror(errno));
         }
-        AI_LOG_INFO("%s file created",memoryExceedFile.c_str());
-        fclose(fp);
+        else
+        {
+            AI_LOG_INFO("%s file created",memoryExceedFile.c_str());
+            fclose(fp);
+        }
     }
     else
     {

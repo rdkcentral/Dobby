@@ -155,7 +155,7 @@ public:
     gid_t getGID(pid_t pid) const override;
 
 private:
-    std::mutex mMetaDataLock;
+    mutable std::mutex mMetaDataLock;
     std::map<std::pair<ContainerId, std::string>, int> mIntegerMetaData;
     std::map<std::pair<ContainerId, std::string>, std::string> mStringMetaData;
 
