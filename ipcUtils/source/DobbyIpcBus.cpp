@@ -61,9 +61,9 @@ DobbyIpcBus::~DobbyIpcBus()
     // set the terminate flag and wake the thread
     if (mServiceChangeThread.joinable())
     {
-        std::unique_lock<std::mutex> locker(mLock);
-        mServiceChangeQueue.emplace_back(ServiceChangeEvent::Terminate);
-        locker.unlock();
+        {std::unique_lock<std::mutex> locker(mLock);
+            mServiceChangeQueue.emplace_back(ServiceChangeEvent::Terminate);
+        }
 
         mServiceChangeCond.notify_all();
         mServiceChangeThread.join();

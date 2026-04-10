@@ -124,9 +124,10 @@ DobbyTemplate* DobbyTemplate::instance()
         }
     }
 
+    DobbyTemplate* result = mInstance;
     pthread_rwlock_unlock(&mInstanceLock);
 
-    return mInstance;
+    return result;
 }
 
 // -----------------------------------------------------------------------------
