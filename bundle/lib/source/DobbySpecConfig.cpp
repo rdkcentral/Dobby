@@ -62,6 +62,8 @@ static const ctemplate::StaticTemplateString USERNS_DISABLED =
 
 static const ctemplate::StaticTemplateString MEM_LIMIT =
     STS_INIT(MEM_LIMIT, "MEM_LIMIT");
+static const ctemplate::StaticTemplateString MEM_SWAP =
+    STS_INIT(MEM_SWAP, "MEM_SWAP");
 
 static const ctemplate::StaticTemplateString CPU_SHARES_ENABLED =
     STS_INIT(CPU_SHARES_ENABLED, "CPU_SHARES_ENABLED");
@@ -187,6 +189,7 @@ static const ctemplate::StaticTemplateString SECCOMP_SYSCALLS =
 #define JSON_FLAG_FILECAPABILITIES  (0x1U << 20)
 #define JSON_FLAG_VPU               (0x1U << 21)
 #define JSON_FLAG_SECCOMP           (0x1U << 22)
+#define JSON_FLAG_SWAPLIMIT          (0x1U << 23)
 
 int DobbySpecConfig::mNumCores = -1;
 
@@ -504,7 +507,8 @@ bool DobbySpecConfig::parseSpec(ctemplate::TemplateDictionary* dictionary,
         { "cpu",            {   JSON_FLAG_CPU,              &DobbySpecConfig::processCpu            }   },
         { "devices",        {   JSON_FLAG_DEVICES,          &DobbySpecConfig::processDevices        }   },
         { "capabilities",   {   JSON_FLAG_CAPABILITIES,     &DobbySpecConfig::processCapabilities   }   },
-        { "seccomp",        {   JSON_FLAG_SECCOMP,          &DobbySpecConfig::processSeccomp        }   }
+        { "seccomp",        {   JSON_FLAG_SECCOMP,          &DobbySpecConfig::processSeccomp        }   },
+        { "swapLimit",      {   JSON_FLAG_SWAPLIMIT,         &DobbySpecConfig::processSwapLimit      }   }
     };
 
     // step 1 - parse the 'dobby' spec document
@@ -625,6 +629,16 @@ bool DobbySpecConfig::parseSpec(ctemplate::TemplateDictionary* dictionary,
     {
         dictionary->ShowSection(RTLIMIT_ENABLED);
         dictionary->SetIntValue(RLIMIT_RTPRIO, 0);
+    }
+
+    if (!(flags & JSON_FLAG_SWAPLIMIT))
+    {
+        // swapLimit not supplied: default swap to memLimit (no extra swap)
+        const Json::Value& memLimitVal = mSpec["memLimit"];
+        if (memLimitVal.isIntegral())
+        {
+            dictionary->SetIntValue(MEM_SWAP, memLimitVal.asUInt());
+        }
     }
 
     if (!(flags & JSON_FLAG_CAPABILITIES))
@@ -1275,6 +1289,54 @@ bool DobbySpecConfig::processMemLimit(const Json::Value& value,
     }
 
     dictionary->SetIntValue(MEM_LIMIT, memLimit);
+
+    return true;
+}
+
+// -----------------------------------------------------------------------------
+/**
+ *  @brief Processes the optional swap limit field.
+ *
+ *  When present, this value is used as the cgroup memory.memsw.limit_in_bytes,
+ *  allowing swap to be configured independently of the memory limit.  When
+ *  absent the swap limit defaults to the same value as memLimit (i.e. no
+ *  extra swap beyond the memory limit).
+ *
+ *  The kernel requires swap >= memLimit, so an error is returned if the
+ *  supplied value is smaller than the memLimit already set.
+ *
+ *  Example json:
+ *
+ *      "swapLimit": 2097152
+ *
+ *
+ *
+ *  @param[in]  value       The json spec document from the client
+ *  @param[in]  dictionary  Pointer to the OCI dictionary to populate
+ *
+ *  @return true if correctly processed the value, otherwise false.
+ */
+bool DobbySpecConfig::processSwapLimit(const Json::Value& value,
+                                   ctemplate::TemplateDictionary* dictionary)
+{
+    if (!value.isIntegral())
+    {
+        AI_LOG_ERROR("invalid swapLimit field");
+        return false;
+    }
+
+    unsigned memSwap = value.asUInt();
+
+    // the kernel requires memory.memsw.limit_in_bytes >= memory.limit_in_bytes
+    const Json::Value& memLimitVal = mSpec["memLimit"];
+    if (memLimitVal.isIntegral() && (memSwap < memLimitVal.asUInt()))
+    {
+        AI_LOG_ERROR("swapLimit (%u) must be >= memLimit (%u)",
+                     memSwap, memLimitVal.asUInt());
+        return false;
+    }
+
+    dictionary->SetIntValue(MEM_SWAP, memSwap);
 
     return true;
 }

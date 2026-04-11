@@ -125,6 +125,51 @@ Usage: DobbyBundleGenerator <option(s)>
   -o, --outputDirectory=PATH    Where to save the generated OCI bundle
 ```
 
+## Dobby Spec Format
+When using `DobbyDaemon` or `DobbyBundleGenerator`, containers are described using a Dobby-specific JSON spec file. Example specs can be found in `tests/L2_testing/dobby_specs/`.
+
+The table below lists the supported top-level fields. Fields marked **mandatory** must always be present.
+
+| Field | Type | Mandatory | Description |
+|-------|------|-----------|-------------|
+| `version` | string | Yes | Spec version. Currently `"1.0"` or `"1.1"`. |
+| `args` | array | Yes | Command and arguments to run inside the container. |
+| `user` | object | Yes | `uid` and `gid` the container process runs as. |
+| `memLimit` | integer | Yes | Memory limit in bytes (`memory.limit_in_bytes`). Must be ≥ 256 KiB. |
+| `swapLimit` | integer | No | Swap+memory limit in bytes (`memory.memsw.limit_in_bytes`). Must be ≥ `memLimit`. Defaults to `memLimit` (no extra swap). |
+| `env` | array | No | Environment variables in `"KEY=VALUE"` format. |
+| `cwd` | string | No | Working directory inside the container. |
+| `console` | object | No | Console log settings: `path` and `limit` (bytes). |
+| `etc` | object | No | Inline `/etc` file content (`passwd`, `group`, `hosts`, `services`, `ld.so.preload`). |
+| `network` | string | No | Network mode: `"nat"`, `"open"`, or `"private"`. Defaults to `"private"`. |
+| `mounts` | array | No | Additional bind-mounts into the container. |
+| `cpu` | object | No | CPU cgroup settings: `shares` (percentage 1–100) and `cores` (bitmask string). |
+| `rtPriority` | object | No | Real-time scheduling priority settings. |
+| `userNs` | boolean | No | Enable user namespacing. Defaults to `true`. |
+| `gpu` | object | No | GPU device node access settings. |
+| `vpu` | object | No | VPU device node access settings. |
+| `devices` | array | No | Additional device nodes to whitelist. |
+| `capabilities` | array | No | Linux capabilities to grant the container. |
+| `seccomp` | object | No | Seccomp syscall filter profile. |
+| `syslog` | object | No | Syslog plugin configuration. |
+| `dbus` | object | No | D-Bus access configuration. |
+| `restartOnCrash` | boolean | No | Restart the container automatically if it crashes. |
+| `plugins` | object | No | Legacy plugin configuration (prefer `rdkPlugins`). |
+
+### Memory configuration example
+
+```json
+{
+    "version": "1.0",
+    "args": [ "/usr/bin/myapp" ],
+    "user": { "uid": 1000, "gid": 1000 },
+    "memLimit": 67108864,
+    "swapLimit": 134217728
+}
+```
+
+`swapLimit` sets the combined memory+swap ceiling enforced by the kernel cgroup (`memory.memsw.limit_in_bytes`). When omitted, swap is capped at the same value as `memLimit`, effectively disabling extra swap for the container.
+
 ## DobbyTool
 This is a simple command line tool that is used for debugging purporses. It connects to the Dobby daemon over dbus and allows for debugging and testing containers.
 
