@@ -16,6 +16,7 @@
 # limitations under the License.
 
 from os import path
+import os
 import subprocess
 from time import sleep
 from enum import IntEnum
@@ -37,6 +38,85 @@ TestResult = namedtuple('TestResult', ['name',
                         )
 
 
+def is_cgroupv2():
+    """Check if the system is using cgroup v2 (unified hierarchy)"""
+    return os.path.exists('/sys/fs/cgroup/cgroup.controllers')
+
+
+def patch_bundle_for_ci(bundle_path):
+    """Patch a bundle's config.json to work in CI environments (GitHub Actions).
+    
+    Fixes for cgroupv2:
+    - Removes swappiness settings (not supported in cgroupv2)
+    - Removes kernel memory limit (not supported in cgroupv2)
+    - Removes kmemTCPLimit (not supported in cgroupv2)
+    - Removes realtimeRuntime/realtimePeriod if not supported
+    - Updates cgroup mount to bind mount for cgroupv2
+    """
+    config_path = os.path.join(bundle_path, "config.json")
+    if not os.path.exists(config_path):
+        print_log(f"Config not found at {config_path}, skipping patch", Severity.warning)
+        return
+    
+    try:
+        with open(config_path, 'r') as f:
+            config = json.load(f)
+        
+        modified = False
+        
+        # For cgroupv2 systems, we need to remove unsupported settings
+        if is_cgroupv2():
+            if 'linux' in config and 'resources' in config['linux']:
+                resources = config['linux']['resources']
+                
+                # Remove memory settings not supported in cgroupv2
+                if 'memory' in resources:
+                    memory = resources['memory']
+                    unsupported_memory = ['swappiness', 'kernel', 'kernelTCP', 'disableOOMKiller']
+                    for setting in unsupported_memory:
+                        if setting in memory:
+                            del memory[setting]
+                            modified = True
+                            print_log(f"Removed memory.{setting} (not supported in cgroupv2)", Severity.debug)
+                    
+                    # Clean up empty memory section
+                    if not memory:
+                        del resources['memory']
+                        modified = True
+                
+                # Remove CPU realtime settings if not supported
+                if 'cpu' in resources:
+                    cpu = resources['cpu']
+                    # Check if RT scheduling is available
+                    if not os.path.exists('/sys/fs/cgroup/cpu.rt_runtime_us'):
+                        unsupported_cpu = ['realtimeRuntime', 'realtimePeriod']
+                        for setting in unsupported_cpu:
+                            if setting in cpu:
+                                del cpu[setting]
+                                modified = True
+                                print_log(f"Removed cpu.{setting} (RT not supported)", Severity.debug)
+            
+            # Fix cgroup mount for cgroupv2 - use bind mount instead
+            if 'mounts' in config:
+                for mount in config['mounts']:
+                    if mount.get('destination') == '/sys/fs/cgroup':
+                        if mount.get('type') == 'cgroup':
+                            # Change to bind mount for cgroupv2 compatibility
+                            mount['type'] = 'bind'
+                            mount['source'] = '/sys/fs/cgroup'
+                            mount['options'] = ['rbind', 'nosuid', 'noexec', 'nodev', 'ro']
+                            modified = True
+                            print_log("Changed cgroup mount to bind mount for cgroupv2", Severity.debug)
+        
+        if modified:
+            with open(config_path, 'w') as f:
+                json.dump(config, f, indent=3)
+            print_log(f"Patched bundle config at {config_path}", Severity.debug)
+    
+    except Exception as e:
+        print_log(f"Error patching bundle: {e}", Severity.warning)
+
+
 class untar_bundle:
     """Context manager for working with tarball bundles"""
     def __init__(self, container_id):
@@ -48,6 +128,9 @@ class untar_bundle:
                           get_bundle_path(""),
                           "-zxvf",
                           self.path + ".tar.gz"])
+        
+        # Patch bundle for CI compatibility (cgroupv2, etc.)
+        patch_bundle_for_ci(self.path)
 
     def __enter__(self):
         return self.path
@@ -73,16 +156,22 @@ class dobby_daemon:
 
         print_log("Starting Dobby Daemon (logging to Journal)...", Severity.debug)
 
+        # Build environment with GCOV settings to ensure coverage data goes to writable location
+        # This is critical for CI where hooks like DobbyPluginLauncher need to write .gcda files
+        daemon_env = os.environ.copy()
+        daemon_env["GCOV_PREFIX"] = "/tmp/gcov"
+        daemon_env["GCOV_PREFIX_STRIP"] = "3"
+
         if log_to_stdout:
-            cmd = ["sudo", "DobbyDaemon", "--nofork"]
-            kvargs = {"universal_newlines": True}
+            cmd = ["sudo", "-E", "DobbyDaemon", "--nofork"]
+            kvargs = {"universal_newlines": True, "env": daemon_env}
         else:
-            cmd = ["sudo", "DobbyDaemon", "--nofork", "--journald", "--noconsole"]
-            kvargs = {"universal_newlines": True, "stdout": subprocess.PIPE, "stderr": subprocess.PIPE}
+            cmd = ["sudo", "-E", "DobbyDaemon", "--nofork", "--journald", "--noconsole"]
+            kvargs = {"universal_newlines": True, "stdout": subprocess.PIPE, "stderr": subprocess.PIPE, "env": daemon_env}
 
         # as this process is running infinitely we cannot use run_command_line as it waits for execution to end
         self.subproc = subprocess.Popen(cmd, **kvargs)
-        sleep(1) # give DobbyDaemon time to initialise
+        sleep(2) # give DobbyDaemon time to initialise
 
     def __enter__(self):
         return self.subproc
@@ -507,3 +596,4 @@ def dobby_tool_command(command, container_id, params=None):
     process = run_command_line(full_command)
 
     return process
+

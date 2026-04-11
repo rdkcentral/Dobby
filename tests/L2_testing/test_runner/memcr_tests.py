@@ -102,7 +102,9 @@ def get_container_pids(container_id):
         return []
 
     info_json = json.loads(process.stdout)
-    return info_json.get("pids")
+    pids = info_json.get("pids")
+    # Handle case where pids is None
+    return pids if pids is not None else []
 
 
 def get_checkpointed_pids(memcr_dump_dir = "/media/apps/memcr/"):
@@ -280,3 +282,4 @@ def execute_test():
 if __name__ == "__main__":
     test_utils.parse_arguments(__file__)
     execute_test()
+

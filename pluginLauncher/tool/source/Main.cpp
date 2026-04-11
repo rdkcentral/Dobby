@@ -457,12 +457,55 @@ int main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
+    // Get container state from stdin first - we may need the bundle path from it
+    std::shared_ptr<const rt_state_schema> state = getContainerState();
+    if (state)
+    {
+        gContainerId = std::string(state->id);
+    }
+    else
+    {
+        AI_LOG_WARN("Failed to get container state from stdin");
+        return EXIT_FAILURE;
+    }
+
     // Create a libocispec object for the container's config
+    // The config path is passed via -c argument and should be accessible
+    // from the current namespace (runtime or container namespace depending on hook)
     char *absPath = realpath(gConfigPath.c_str(), NULL);
     if (absPath == nullptr)
     {
-        AI_LOG_ERROR("Couldn't find config at %s", gConfigPath.c_str());
-        return EXIT_FAILURE;
+        // The config path may not be directly resolvable.
+        // For createContainer hooks running in container namespace, the config
+        // should be at the fixed mount point /tmp/dobby_config.json.
+        // For other hooks, try the bundle path from state as fallback.
+        std::vector<std::string> fallbackPaths;
+        
+        // Try container namespace fixed path first (for createContainer hook)
+        fallbackPaths.push_back("/tmp/dobby_config.json");
+        
+        // Then try bundle path from state (for runtime namespace hooks)
+        if (state->bundle != nullptr)
+        {
+            fallbackPaths.push_back(std::string(state->bundle) + "/config.json");
+        }
+        
+        for (const auto& fallbackPath : fallbackPaths)
+        {
+            AI_LOG_INFO("Config not found at '%s', trying '%s'", 
+                        gConfigPath.c_str(), fallbackPath.c_str());
+            absPath = realpath(fallbackPath.c_str(), NULL);
+            if (absPath != nullptr)
+            {
+                break;
+            }
+        }
+        
+        if (absPath == nullptr)
+        {
+            AI_LOG_ERROR("Couldn't find config at %s (also tried fallback paths)", gConfigPath.c_str());
+            return EXIT_FAILURE;
+        }
     }
     const std::string fullConfigPath = std::string(absPath);
     free(absPath);
@@ -477,19 +520,6 @@ int main(int argc, char *argv[])
     {
         AI_LOG_ERROR("Failed to parse OCI config with error: %s", err);
         return EXIT_FAILURE;
-    }
-
-    // Get container id from state (using hostname may be incorrect if we
-    // launch multiple containers from same bundle)
-    std::shared_ptr<const rt_state_schema> state = getContainerState();
-    if (state)
-    {
-        gContainerId = std::string(state->id);
-    }
-    else
-    {
-        AI_LOG_WARN("Failed to get container state from stdin");
-        return false;
     }
 
     AI_LOG_MILESTONE("Running hook %s for container '%s'", gHookName.c_str(), gContainerId.c_str());
@@ -527,3 +557,4 @@ int main(int argc, char *argv[])
     AI_LOG_WARN("Hook %s failed - plugin(s) ran with errors", gHookName.c_str());
     return EXIT_FAILURE;
 }
+

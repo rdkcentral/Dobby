@@ -14,7 +14,7 @@
     ],
 
     "network": {
-      "externalInterfaces": [ "enp0s8", "enp0s3", "docker0", "eth0" ],
+      "externalInterfaces": [ "eth0", "enp0s8", "enp0s3", "docker0" ],
       "addressRange": "100.64.11.0"
     },
 
@@ -29,6 +29,7 @@
       }
     }
   }
+
 
 
 

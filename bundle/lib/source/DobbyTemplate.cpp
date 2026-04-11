@@ -468,15 +468,24 @@ void DobbyTemplate::setTemplateCpuRtSched()
 
     long cpuRtRuntime = 0;
     long cpuRtPeriod = 0;
+    bool isCgroupV2 = false;
     while ((mnt = getmntent_r(procMounts, &mntBuf, buf, sizeof(buf))) != nullptr)
     {
         // skip entries that don't have a mount point, type or options
         if (!mnt->mnt_type || !mnt->mnt_dir || !mnt->mnt_opts)
             continue;
 
-        // skip non-cgroup mounts
-        if (strcmp(mnt->mnt_type, "cgroup") != 0)
+        // skip non-cgroup mounts (check for both cgroup v1 and v2)
+        if (strcmp(mnt->mnt_type, "cgroup") != 0 && strcmp(mnt->mnt_type, "cgroup2") != 0)
             continue;
+
+        // cgroupv2 doesn't support cpu.rt_runtime_us in the same way
+        if (strcmp(mnt->mnt_type, "cgroup2") == 0)
+        {
+            AI_LOG_INFO("cgroup v2 detected, CPU RT runtime defaults to disabled");
+            isCgroupV2 = true;
+            break;
+        }
 
         // check if a cpu cgroup mount
         char* mntopt = hasmntopt(mnt, "cpu");
@@ -701,3 +710,4 @@ bool DobbyTemplate::applyAt(int dirFd, const std::string& fileName,
 {
     return instance()->_applyAt(dirFd, fileName, dictionary, prettyPrint);
 }
+

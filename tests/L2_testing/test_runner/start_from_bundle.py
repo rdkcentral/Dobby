@@ -65,10 +65,12 @@ def test_container(container_id, expected_output):
     with test_utils.untar_bundle(container_id) as bundle_path:
         launch_result = test_utils.launch_container(container_id, bundle_path)
 
-    if launch_result:
-        return validate_output_file(container_id, expected_output)
+        # Keep bundle around until container has fully exited
+        # This is needed because Dobby uses the bundle in-place and hooks need access to config.json
+        if launch_result:
+            return validate_output_file(container_id, expected_output)
 
-    return False, "Container did not launch successfully"
+        return False, "Container did not launch successfully"
 
 
 def validate_output_file(container_id, expected_output):
@@ -102,3 +104,4 @@ def validate_output_file(container_id, expected_output):
 if __name__ == "__main__":
     test_utils.parse_arguments(__file__, True)
     execute_test()
+

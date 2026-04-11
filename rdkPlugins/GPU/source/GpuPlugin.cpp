@@ -194,9 +194,16 @@ std::string GpuPlugin::getGpuCgroupMountPoint()
         if (!mnt->mnt_dir || !mnt->mnt_type || !mnt->mnt_opts)
             continue;
 
-        // skip non-cgroup mounts
-        if (strcmp(mnt->mnt_type, "cgroup") != 0)
+        // skip non-cgroup mounts (check for both cgroup v1 and v2)
+        if (strcmp(mnt->mnt_type, "cgroup") != 0 && strcmp(mnt->mnt_type, "cgroup2") != 0)
             continue;
+
+        // cgroupv2 doesn't have gpu cgroup controller
+        if (strcmp(mnt->mnt_type, "cgroup2") == 0)
+        {
+            AI_LOG_WARN("cgroup v2 detected, GPU cgroup controller not supported");
+            continue;
+        }
 
         // check for the cgroup type
         char *mntopt = hasmntopt(mnt, "gpu");
@@ -279,3 +286,4 @@ bool GpuPlugin::setupContainerGpuLimit(const std::string cgroupDirPath,
 }
 
 // End private methods
+

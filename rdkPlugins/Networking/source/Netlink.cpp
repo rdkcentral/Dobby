@@ -598,6 +598,20 @@ bool Netlink::setLinkAddress(const NlLink& link, const in_addr_t address,
 {
     AI_LOG_FN_ENTRY();
 
+    // Validate the link has a valid interface index
+    if (!link)
+    {
+        AI_LOG_ERROR_EXIT("invalid link object (null)");
+        return false;
+    }
+    
+    int ifindex = rtnl_link_get_ifindex(link);
+    if (ifindex <= 0)
+    {
+        AI_LOG_ERROR_EXIT("invalid interface index %d for link", ifindex);
+        return false;
+    }
+
     // create the link route address
     NlRouteAddress addr(address, netmask);
     if (!addr)
@@ -606,7 +620,7 @@ bool Netlink::setLinkAddress(const NlLink& link, const in_addr_t address,
         return false;
     }
 
-    AI_LOG_INFO("setting link address to '%s'", addr.toString().c_str());
+    AI_LOG_INFO("setting link address to '%s' on ifindex %d", addr.toString().c_str(), ifindex);
 
     // set the link index
     rtnl_addr_set_link(addr, link);
@@ -643,6 +657,20 @@ bool Netlink::setLinkAddress(const NlLink& link, const struct in6_addr address,
 {
     AI_LOG_FN_ENTRY();
 
+    // Validate the link has a valid interface index
+    if (!link)
+    {
+        AI_LOG_ERROR_EXIT("invalid link object (null)");
+        return false;
+    }
+    
+    int ifindex = rtnl_link_get_ifindex(link);
+    if (ifindex <= 0)
+    {
+        AI_LOG_ERROR_EXIT("invalid interface index %d for link", ifindex);
+        return false;
+    }
+
     // create the link route address
     NlRouteAddress addr(address, netmask);
     if (!addr)
@@ -651,7 +679,7 @@ bool Netlink::setLinkAddress(const NlLink& link, const struct in6_addr address,
         return false;
     }
 
-    AI_LOG_INFO("setting link address to '%s'", addr.toString().c_str());
+    AI_LOG_INFO("setting link address to '%s' on ifindex %d", addr.toString().c_str(), ifindex);
 
     // set the link index
     rtnl_addr_set_link(addr, link);
@@ -2109,3 +2137,4 @@ bool Netlink::delArpEntry(const std::string &iface, const in_addr_t address)
     AI_LOG_FN_EXIT();
     return true;
 }
+
