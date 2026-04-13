@@ -328,8 +328,7 @@ static const char* ociJsonTemplate = R"JSON(
             ],
             "memory": {
                 "limit": {{MEM_LIMIT}},
-                "swap": {{MEM_LIMIT}},
-                "swappiness": 60
+                "swap": {{MEM_LIMIT}}
             },
             "cpu": {
                 {{#CPU_SHARES_ENABLED}}
@@ -401,3 +400,4 @@ static const char* ociJsonTemplate = R"JSON(
     {{/ENABLE_RDK_PLUGINS}}
 }
 )JSON";
+
