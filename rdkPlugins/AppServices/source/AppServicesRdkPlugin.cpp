@@ -32,6 +32,7 @@ AppServicesRdkPlugin::AppServicesRdkPlugin(std::shared_ptr<rt_dobby_schema> &con
       mContainerConfig(containerConfig),
       mUtils(utils),
       mRootfsPath(rootfsPath),
+      mPluginConfig(nullptr),
       mNetfilter(std::make_shared<Netfilter>()),
       mEnableConnLimit(false)
 {

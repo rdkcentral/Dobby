@@ -40,20 +40,18 @@ ThreadedDispatcher::ThreadedDispatcher(int priority, const std::string& name /*=
 }
 void ThreadedDispatcher::post(std::function<void ()> work)
 {
-    std::unique_lock<std::mutex> lock(m);
-    if(running)
-    {
+    {std::unique_lock<std::mutex> lock(m);
+        if(!running)
+        {
+            AI_LOG_WARN("Ignoring work because the dispatcher is not running anymore");
+            return;
+            //can't throw an exception here because if this is executed from destructor,
+            //which occurs when work adds more work things go horribly wrong.
+            //Instead, ignore work.
+        }
         q.push_back(work);
-        lock.unlock();
-        cv.notify_one();
     }
-    else
-    {
-        AI_LOG_WARN("Ignoring work because the dispatcher is not running anymore");
-        //can't throw an exception here because if this is executed from destructor,
-        //which occurs when work adds more work things go horribly wrong.
-        //Instead, ignore work.
-    }
+    cv.notify_one();
 }
 namespace
 {
@@ -71,10 +69,10 @@ namespace
  */
 void syncCallback(std::mutex* lock, std::condition_variable* cond, bool* fired)
 {
-    std::unique_lock<std::mutex> locker(*lock);
-    *fired = true;
+    {std::unique_lock<std::mutex> locker(*lock);
+        *fired = true;
+    }
     cond->notify_all();
-    locker.unlock();
 }
 } // namespace
 /**
@@ -85,7 +83,7 @@ bool ThreadedDispatcher::invokedFromDispatcherThread()
     bool res = (std::this_thread::get_id() == t.get_id());
     if (res)
     {
-		std::stringstream ss;
+        std::stringstream ss;
         ss << "Caller thread Id [" << std::this_thread::get_id() << "] == [dispatcher thread Id " << t.get_id() << "]";
         AI_LOG_ERROR("%s", ss.str().c_str());
     }
@@ -109,15 +107,15 @@ void ThreadedDispatcher::sync()
     std::condition_variable cond;
     bool fired = false;
     // Take the queue lock and ensure we're still running
-    std::unique_lock<std::mutex> qlocker(m);
-    if (!running)
-    {
-        AI_LOG_DEBUG("Ignoring sync because dispatcher is not running");
-        return;
+    {std::unique_lock<std::mutex> qlocker(m);
+        if (!running)
+        {
+            AI_LOG_DEBUG("Ignoring sync because dispatcher is not running");
+            return;
+        }
+        // Add the work object to the queue which takes the lock and sets 'fired' to true
+        q.push_back(std::bind(syncCallback, &lock, &cond, &fired));
     }
-    // Add the work object to the queue which takes the lock and sets 'fired' to true
-    q.push_back(std::bind(syncCallback, &lock, &cond, &fired));
-    qlocker.unlock();
     cv.notify_one();
     // Wait for 'fired' to become true
     std::unique_lock<std::mutex> locker(lock);
@@ -126,6 +124,7 @@ void ThreadedDispatcher::sync()
         cond.wait(locker);
     }
 }
+
 namespace
 {
 void unlockAndSetFlagToFalse(std::mutex& m, bool& flag)
@@ -148,6 +147,7 @@ void ThreadedDispatcher::flush()
         std::mutex m2;
         m2.lock();
         post(bind(unlockAndSetFlagToFalse, std::ref(m2), std::ref(this->running)));
+        // coverity[double_lock : FALSE]
         m2.lock();
         m2.unlock();
         stop();
@@ -157,14 +157,15 @@ void ThreadedDispatcher::flush()
         AI_LOG_WARN("This dispatcher is no longer running. Ignoring flush request.");
     }
 }
+
 /**
  * @brief Cancels any work that is not already in progress, stop accepting new work
  */
 void ThreadedDispatcher::stop()
 {
-    std::unique_lock<std::mutex> lock(m);
-    running = false;
-    lock.unlock();
+    {std::unique_lock<std::mutex> lock(m);
+        running = false;
+    }
     cv.notify_one();
     t.join();
 }

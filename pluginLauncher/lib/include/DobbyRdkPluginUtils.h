@@ -160,7 +160,11 @@ public:
 
     bool addAnnotation(const std::string &key, const std::string &value);
     bool removeAnnotation(const std::string &key);
-    std::map<std::string, std::string> getAnnotations() const { return mAnnotations; };
+    std::map<std::string, std::string> getAnnotations() const
+    {
+        std::lock_guard<std::mutex> locker(mLock);
+        return mAnnotations;
+    }
 
     int exitStatus;
 

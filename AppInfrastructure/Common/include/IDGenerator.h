@@ -25,6 +25,7 @@
 
 #include <bitset>
 #include <mutex>
+#include <random>
 
 #include <math.h>
 #include <stdlib.h>
@@ -85,10 +86,17 @@ private:
                                         (N == 19) ? 0x4032F :
                                         (N == 20) ? 0x80534 : 0;
 
+private:
+    static unsigned getRandomSeed()
+    {
+        std::random_device rd;
+        return rd();
+    }
+
 public:
     IDGenerator(unsigned offset = 0)
         : mOffset(offset)
-        , mLfsr(1 + (rand() % (mSize- 2)))
+        , mLfsr(1 + (getRandomSeed() % (mSize - 2)))
     { }
 
 public:

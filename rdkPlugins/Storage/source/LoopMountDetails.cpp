@@ -123,6 +123,7 @@ bool LoopMountDetails::onPreCreate()
                 AI_LOG_SYS_ERROR(errno, "failed to close loop device dir");
                 return false;
             }
+            loopDevFd = -1;  // Prevent double close
         }
 
         // Reset the reference count if it isn't 0 (shouldn't happen)

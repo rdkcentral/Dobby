@@ -181,14 +181,18 @@ public:
         {
             return std::cv_status::no_timeout;
         }
-	else if (err == ETIMEDOUT)
+        else if (err == ETIMEDOUT)
         {
             return std::cv_status::timeout;
         }
         else
         {
-            __ConditionVariableThrowOnError(err);
+            AI_LOG_FATAL("Condition variable error in wait_for '%d'", err);
+#if (AI_BUILD_TYPE == AI_DEBUG)
+            throw std::system_error(std::error_code(err, std::system_category()));
+#else
             return std::cv_status::timeout;
+#endif
         }
     }
 
