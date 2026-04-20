@@ -91,6 +91,13 @@ if ( LEGACY_COMPONENTS )
     add_definitions( -DLEGACY_COMPONENTS )
 endif()
 
+# Option to enable legacy cgroup v1 features (e.g., swappiness)
+# Set to OFF for systems using cgroup v2 (e.g., modern Ubuntu, GitHub Actions runners)
+option( USE_LEGACY_CGROUP "Enable cgroup v1 features like memory swappiness" ON )
+if ( USE_LEGACY_CGROUP )
+    add_definitions( -DUSE_LEGACY_CGROUP )
+endif()
+
 # Disable for now. LTO can cause issues with debugging symbols on GCC versions before 8.0.0.
 # See http://hubicka.blogspot.com/2018/06/gcc-8-link-time-and-interprocedural.html
 option( ENABLE_LTO "Enable link time optimisation compiler flags" OFF )
@@ -420,4 +427,5 @@ install( EXPORT DobbyTargets
         DESTINATION "${INSTALL_CMAKE_DIR}"
 )
 endif() # End ENABLE_DOBBYL1TEST
+
 
