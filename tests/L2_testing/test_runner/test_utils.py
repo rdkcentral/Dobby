@@ -81,6 +81,13 @@ class untar_bundle:
             print_log("FATAL: Extracted bundle is missing config.json. Expected at: %s" % config_path,
                       Severity.error)
             self.valid = False
+            return
+
+        # Patch config.json for cgroup v2 compatibility
+        # cgroup v2: swappiness is NOT supported, strip it from config
+        # cgroup v1: swappiness is supported, keep it (e.g., swappiness: 60)
+        if is_cgroup_v2():
+            patch_config_for_cgroupv2(config_path)
 
     def __enter__(self):
         """Returns the bundle path when valid, or None when extraction/validation
@@ -607,6 +614,67 @@ def parse_arguments(file_name, platform_required=False):
         print_log("Current platform set to %d" % selected_platform, Severity.debug)
 
 
+def generate_bundle_from_spec(container_id, output_dir=None):
+    """Generate an OCI bundle from a Dobby spec file using DobbyBundleGenerator.
+    
+    Parameters:
+    container_id (string): name of container (used to find spec file)
+    output_dir (string): optional output directory for the bundle
+    
+    Returns:
+    bundle_path (string): path to generated bundle, or None on failure
+    """
+    spec_path = get_container_spec_path(container_id)
+    
+    if output_dir is None:
+        output_dir = get_bundle_path(container_id + "_generated")
+    
+    # Generate bundle using DobbyBundleGenerator
+    result = run_command_line(["DobbyBundleGenerator", "-i", spec_path, "-o", output_dir])
+    
+    if result.returncode != 0 or "failed" in result.stderr.lower():
+        print_log("Failed to generate bundle for %s: %s" % (container_id, result.stderr), Severity.error)
+        return None
+    
+    config_path = path.join(output_dir, "config.json")
+    if not path.exists(config_path):
+        print_log("Generated bundle missing config.json: %s" % config_path, Severity.error)
+        return None
+    
+    # Patch for cgroup v2 if needed
+    if is_cgroup_v2():
+        patch_config_for_cgroupv2(config_path)
+    
+    return output_dir
+
+
+def patch_config_for_cgroupv2(config_path):
+    """Patch OCI config.json for cgroup v2 compatibility.
+    
+    cgroup v1: Uses memory.swappiness to control swap behavior
+    cgroup v2: Uses memory.swap.max (no direct swappiness equivalent)
+    """
+    try:
+        with open(config_path, 'r') as f:
+            config = json.load(f)
+        
+        modified = False
+        
+        # Remove swappiness from linux.resources.memory
+        if 'linux' in config and 'resources' in config['linux']:
+            resources = config['linux']['resources']
+            if 'memory' in resources and 'swappiness' in resources['memory']:
+                del resources['memory']['swappiness']
+                modified = True
+                print_log("Stripped 'swappiness' from config.json for cgroup v2 compatibility", Severity.debug)
+        
+        if modified:
+            with open(config_path, 'w') as f:
+                json.dump(config, f, indent=4)
+    except Exception as err:
+        print_log("Warning: Failed to patch config.json for cgroup v2: %s" % err, Severity.warning)
+
+
 def dobby_tool_command(command, container_id, params=None):
     """Runs DobbyTool command
 
@@ -628,8 +696,18 @@ def dobby_tool_command(command, container_id, params=None):
     full_command.append(container_id)
 
     if command == "start":
-        container_path = get_container_spec_path(container_id)
-        full_command.append(container_path)
+        # On cgroup v2, generate bundle first and patch it to remove swappiness
+        if is_cgroup_v2():
+            bundle_path = generate_bundle_from_spec(container_id)
+            if bundle_path:
+                full_command.append(bundle_path)
+            else:
+                # Fallback to spec if bundle generation fails
+                container_path = get_container_spec_path(container_id)
+                full_command.append(container_path)
+        else:
+            container_path = get_container_spec_path(container_id)
+            full_command.append(container_path)
 
     process = run_command_line(full_command)
 

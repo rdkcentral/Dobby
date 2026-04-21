@@ -2789,5 +2789,3 @@ bool DobbySpecConfig::processRdkPlugins(const Json::Value& value,
 
     return true;
 }
-
-
