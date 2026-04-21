@@ -63,9 +63,6 @@ static const ctemplate::StaticTemplateString USERNS_DISABLED =
 static const ctemplate::StaticTemplateString MEM_LIMIT =
     STS_INIT(MEM_LIMIT, "MEM_LIMIT");
 
-static const ctemplate::StaticTemplateString USE_LEGACY_CGROUP_SECTION =
-    STS_INIT(USE_LEGACY_CGROUP_SECTION, "USE_LEGACY_CGROUP");
-
 static const ctemplate::StaticTemplateString CPU_SHARES_ENABLED =
     STS_INIT(CPU_SHARES_ENABLED, "CPU_SHARES_ENABLED");
 static const ctemplate::StaticTemplateString CPU_SHARES_VALUE =
@@ -637,11 +634,6 @@ bool DobbySpecConfig::parseSpec(ctemplate::TemplateDictionary* dictionary,
 
     // step 6 - enable the RDK plugins section
     dictionary->ShowSection(ENABLE_RDK_PLUGINS);
-
-    // step 6.1 - enable legacy cgroup features (e.g., swappiness) if compiled with USE_LEGACY_CGROUP
-#if defined(USE_LEGACY_CGROUP)
-    dictionary->ShowSection(USE_LEGACY_CGROUP_SECTION);
-#endif
 
     // step 6.5 - add any default plugins in the settings file
     Json::Value rdkPluginData = mRdkPluginsData;
@@ -2797,4 +2789,5 @@ bool DobbySpecConfig::processRdkPlugins(const Json::Value& value,
 
     return true;
 }
+
 

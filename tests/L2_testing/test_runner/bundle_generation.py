@@ -76,11 +76,18 @@ def _normalise_config(config):
         # swap limit is injected by the OCI config template (set equal to
         # memory limit to disable swap).  Original test bundles pre-date
         # this addition, so strip it to keep the comparison stable.
-        # swappiness is also stripped as it's not supported on cgroupv2 and
-        # may be conditionally excluded from generated configs.
         if isinstance(resources, dict) and isinstance(resources.get("memory"), dict):
             resources["memory"].pop("swap", None)
-            resources["memory"].pop("swappiness", None)
+            # Handle swappiness based on cgroup version:
+            # cgroup v1: swappiness is supported (e.g., "swappiness": 60)
+            # cgroup v2: swappiness is NOT supported, use memory.swap.max instead
+            if test_utils.is_cgroup_v2():
+                # cgroup v2: strip swappiness as it's not supported
+                resources["memory"].pop("swappiness", None)
+            else:
+                # cgroup v1: keep swappiness if present, or set default of 60
+                if "swappiness" not in resources["memory"]:
+                    resources["memory"]["swappiness"] = 60
 
     # Runtime may append tmpfs size options at generation time
     for mount in cfg.get("mounts", []):
@@ -187,5 +194,6 @@ def execute_test():
 if __name__ == "__main__":
     test_utils.parse_arguments(__file__)
     execute_test()
+
 
 

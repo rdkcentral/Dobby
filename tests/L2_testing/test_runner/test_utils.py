@@ -192,6 +192,39 @@ current_log_level = Severity.info
 selected_platform = Platforms.no_selection
 
 
+def is_cgroup_v2():
+    """Detect if the system is using cgroup v2 (unified hierarchy).
+    
+    Check if we are in cgroup v2 by looking for cgroup.controllers file.
+    
+    Returns:
+        bool: True if cgroup v2 is in use, False for cgroup v1
+    """
+    # Check if cgroup v2 is mounted at /sys/fs/cgroup
+    return path.exists('/sys/fs/cgroup/cgroup.controllers')
+
+
+def is_legacy_cgroup_available():
+    """Check if legacy cgroup features (like swappiness) are available.
+    
+    cgroup v1: Uses memory.swappiness to control swap behavior
+               e.g., echo 60 > /sys/fs/cgroup/memory/path/to/your/group/memory.swappiness
+    cgroup v2: Uses memory.swap.max (0 = disable swap)
+               There is no direct equivalent to 'swappiness' per-cgroup.
+               e.g., echo 0 > /sys/fs/cgroup/path/to/your/group/memory.swap.max
+    
+    Returns:
+        bool: True if legacy cgroup features are available (cgroup v1),
+              False if using cgroup v2 without legacy features
+    """
+    if is_cgroup_v2():
+        # cgroup v2: no swappiness support
+        return False
+    else:
+        # cgroup v1: swappiness supported
+        return True
+
+
 def print_log(log_message, log_severity):
     """Function that prints log only if severity is equal or higher than globally selected one
 
@@ -601,4 +634,5 @@ def dobby_tool_command(command, container_id, params=None):
     process = run_command_line(full_command)
 
     return process
+
 
