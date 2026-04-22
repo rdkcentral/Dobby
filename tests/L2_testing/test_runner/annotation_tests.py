@@ -53,7 +53,15 @@ def test_container(container_id, expected_output):
     """
     test_utils.print_log("Running %s container test" % container_id, test_utils.Severity.debug)
 
-    spec_path = test_utils.get_container_spec_path(container_id)
+    # On cgroup v2, generate a patched bundle to avoid swappiness issues
+    if test_utils.is_cgroup_v2():
+        bundle_path = test_utils.generate_bundle_from_spec(container_id)
+        if bundle_path:
+            spec_path = bundle_path
+        else:
+            spec_path = test_utils.get_container_spec_path(container_id)
+    else:
+        spec_path = test_utils.get_container_spec_path(container_id)
     
     command = ["DobbyTool",
             "start",
@@ -132,4 +140,5 @@ def validate_annotation(container_id, expected_output):
 if __name__ == "__main__":
     test_utils.parse_arguments(__file__, True)
     execute_test()
+
 
