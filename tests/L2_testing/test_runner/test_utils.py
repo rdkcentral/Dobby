@@ -457,9 +457,22 @@ def launch_container(container_id, spec_path):
         if not path.exists(config_path):
             print_log("Bundle path missing config.json: %s" % config_path, Severity.error)
             return False
+        # If it's a bundle directory on cgroup v2, patch it
+        if is_cgroup_v2():
+            patch_config_for_cgroupv2(config_path)
     elif not path.exists(spec_path):
         print_log("Spec path does not exist: %s" % spec_path, Severity.error)
         return False
+    else:
+        # It's a spec file (not a bundle directory)
+        # On cgroup v2, generate a bundle and patch it to remove swappiness
+        if is_cgroup_v2():
+            print_log("Detected cgroup v2 - generating patched bundle for %s" % container_id, Severity.debug)
+            bundle_path = generate_bundle_from_spec(container_id)
+            if bundle_path:
+                spec_path = bundle_path
+            else:
+                print_log("Warning: Failed to generate bundle, using original spec (may fail on cgroup v2)", Severity.warning)
 
     # Use DobbyTool to launch container
     process = None
@@ -653,6 +666,9 @@ def patch_config_for_cgroupv2(config_path):
     
     cgroup v1: Uses memory.swappiness to control swap behavior
     cgroup v2: Uses memory.swap.max (no direct swappiness equivalent)
+    
+    Also handles other cgroup v2 incompatibilities like rootfsPropagation
+    and null CPU realtime settings.
     """
     try:
         with open(config_path, 'r') as f:
@@ -660,13 +676,66 @@ def patch_config_for_cgroupv2(config_path):
         
         modified = False
         
-        # Remove swappiness from linux.resources.memory
         if 'linux' in config and 'resources' in config['linux']:
             resources = config['linux']['resources']
+            
+            # Remove swappiness from linux.resources.memory
             if 'memory' in resources and 'swappiness' in resources['memory']:
                 del resources['memory']['swappiness']
                 modified = True
                 print_log("Stripped 'swappiness' from config.json for cgroup v2 compatibility", Severity.debug)
+            
+            # Fix cpu realtime settings - remove null values
+            if 'cpu' in resources:
+                cpu = resources['cpu']
+                if cpu.get('realtimeRuntime') is None:
+                    del cpu['realtimeRuntime']
+                    modified = True
+                    print_log("Removed null 'realtimeRuntime' for cgroup v2 compatibility", Severity.debug)
+                if cpu.get('realtimePeriod') is None:
+                    del cpu['realtimePeriod']
+                    modified = True
+                    print_log("Removed null 'realtimePeriod' for cgroup v2 compatibility", Severity.debug)
+                # Remove cpu section entirely if empty
+                if not cpu:
+                    del resources['cpu']
+                    modified = True
+                    print_log("Removed empty 'cpu' section for cgroup v2 compatibility", Severity.debug)
+        
+        # Remove rootfsPropagation - causes "make rootfs private" errors
+        # in user namespace environments like GitHub Actions
+        if 'linux' in config and 'rootfsPropagation' in config['linux']:
+            del config['linux']['rootfsPropagation']
+            modified = True
+            print_log("Removed linux.rootfsPropagation for cgroup v2 compatibility", Severity.debug)
+        
+        # Remove top-level rootfsPropagation as well
+        if 'rootfsPropagation' in config:
+            del config['rootfsPropagation']
+            modified = True
+            print_log("Removed top-level rootfsPropagation for cgroup v2 compatibility", Severity.debug)
+        
+        # Remove user namespace settings - causes issues in GitHub Actions 
+        # which already uses user namespaces
+        if 'linux' in config:
+            # Remove uidMappings and gidMappings
+            if 'uidMappings' in config['linux']:
+                del config['linux']['uidMappings']
+                modified = True
+                print_log("Removed uidMappings for cgroup v2 compatibility", Severity.debug)
+            if 'gidMappings' in config['linux']:
+                del config['linux']['gidMappings']
+                modified = True
+                print_log("Removed gidMappings for cgroup v2 compatibility", Severity.debug)
+            
+            # Remove 'user' from namespaces list
+            if 'namespaces' in config['linux']:
+                namespaces = config['linux']['namespaces']
+                original_len = len(namespaces)
+                config['linux']['namespaces'] = [ns for ns in namespaces if ns.get('type') != 'user']
+                if len(config['linux']['namespaces']) < original_len:
+                    modified = True
+                    print_log("Removed 'user' namespace for cgroup v2 compatibility", Severity.debug)
         
         if modified:
             with open(config_path, 'w') as f:
