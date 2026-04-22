@@ -642,6 +642,11 @@ def generate_bundle_from_spec(container_id, output_dir=None):
     if output_dir is None:
         output_dir = get_bundle_path(container_id + "_generated")
     
+    # Clean up existing bundle directory if it exists
+    if path.exists(output_dir):
+        print_log("Removing existing bundle directory: %s" % output_dir, Severity.debug)
+        run_command_line(["rm", "-rf", output_dir])
+    
     # Generate bundle using DobbyBundleGenerator
     result = run_command_line(["DobbyBundleGenerator", "-i", spec_path, "-o", output_dir])
     
