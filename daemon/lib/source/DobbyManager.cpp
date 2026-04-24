@@ -3187,7 +3187,7 @@ void DobbyManager::onChildExit()
             if (WIFEXITED(status))
             {
                 int exitCode = WEXITSTATUS(status);
-                if (exitCode > 128 && exitCode <= 128 + 64)
+                if (exitCode > 128 && exitCode < 128 + NSIG)
                 {
                     int sig = exitCode - 128;
                     AI_LOG_INFO("container '%s' exited with code %d, "
