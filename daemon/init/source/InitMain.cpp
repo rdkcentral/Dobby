@@ -346,6 +346,13 @@ static int doForkExec(int argc, char * argv[])
                 if (pid == exePid)
                 {
                     ret = WEXITSTATUS(status);
+
+                    // If the main child exited normally, clear any signal
+                    // recorded by the signal handler (e.g. SIGUSR1 used
+                    // for app control) so we don't falsely report a
+                    // signal death.
+                    if (ret == EXIT_SUCCESS)
+                        gReceivedSignal = 0;
                 }
             }
             else if (WIFSIGNALED(status) && pid == exePid)
@@ -353,9 +360,17 @@ static int doForkExec(int argc, char * argv[])
                 // Direct child was killed by a signal — record it so
                 // the deferred _exit(128+sig) path propagates it to
                 // DobbyDaemon after all remaining children are reaped.
+                // Only set if signal handler hasn't already recorded a
+                // signal, to preserve the first (root cause) signal.
                 int sig = WTERMSIG(status);
-                gReceivedSignal = sig;
+                if (gReceivedSignal == 0)
+                    gReceivedSignal = sig;
                 ret = EXIT_FAILURE;
+
+                // The main child's orphaned descendants have been
+                // reparented to us (PID 1).  Send them the same signal
+                // so they terminate and we don't block in wait() forever.
+                kill(-1, sig);
             }
 
             // if the process died because of a signal, or it didn't exit with
