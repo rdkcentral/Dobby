@@ -348,6 +348,15 @@ static int doForkExec(int argc, char * argv[])
                     ret = WEXITSTATUS(status);
                 }
             }
+            else if (WIFSIGNALED(status) && pid == exePid)
+            {
+                // Direct child was killed by a signal — record it so
+                // the deferred _exit(128+sig) path propagates it to
+                // DobbyDaemon after all remaining children are reaped.
+                int sig = WTERMSIG(status);
+                gReceivedSignal = sig;
+                ret = EXIT_FAILURE;
+            }
 
             // if the process died because of a signal, or it didn't exit with
             // success then log as an error, otherwise it's just info
