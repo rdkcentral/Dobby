@@ -3013,6 +3013,55 @@ bool DobbyManager::onPreDestructionHook(const ContainerId &id,
 }
 #endif //defined(LEGACY_COMPONENTS)
 
+// -----------------------------------------------------------------------------
+/**
+ *  @brief Translates a raw wait status from DobbyInit into a synthesised
+ *  WIFSIGNALED-style status when the exit code matches the 128+signum
+ *  convention used by DobbyInit to propagate signal death info.
+ *
+ *  DobbyInit is PID 1 inside the container's PID namespace and cannot be
+ *  killed by a self-raised signal (the kernel drops signals with SIG_DFL
+ *  disposition for namespace init).  Instead DobbyInit exits with code
+ *  128+signum when it receives a signal.  This helper detects that pattern
+ *  and synthesises the equivalent WIFSIGNALED wait status so the rest of
+ *  the code sees the true cause of death.
+ *
+ *  @param[in]  rawStatus   The raw wait status from waitpid().
+ *
+ *  @return Possibly-modified wait status.
+ */
+int DobbyManager::synthesizeContainerSignalStatus(int rawStatus)
+{
+    if (WIFEXITED(rawStatus))
+    {
+        int exitCode = WEXITSTATUS(rawStatus);
+        if (exitCode > 128 && exitCode < 128 + NSIG)
+        {
+            int sig = exitCode - 128;
+
+            // Returns true for signals whose default action produces a
+            // core dump on Linux.
+            auto signalDumpsCore = [](int s) -> bool {
+                switch (s) {
+                    case SIGABRT: case SIGSEGV: case SIGFPE:
+                    case SIGILL:  case SIGBUS:  case SIGQUIT:
+                        return true;
+                    default:
+                        return false;
+                }
+            };
+
+            // Synthesise WIFSIGNALED status: signal number in bits 0-6,
+            // bit 7 (WCOREDUMP) set for core-dumping signals.
+            int status = sig & 0x7f;
+            if (signalDumpsCore(sig))
+                status |= 0x80;
+            return status;
+        }
+    }
+    return rawStatus;
+}
+
 /**
  * @brief Perform all the necessary cleanup and run plugins required when
  * a container has terminated.
@@ -3177,6 +3226,26 @@ void DobbyManager::onChildExit()
         if (rc == container->containerPid)
         {
             const ContainerId &id = it->first;
+
+            // DobbyInit is PID 1 inside the container's PID namespace and
+            // cannot be killed by a self-raised signal (the kernel drops
+            // signals with SIG_DFL disposition for namespace init).  Instead
+            // DobbyInit exits with code 128+signum when it receives a signal.
+            // Detect that convention here and synthesise a WIFSIGNALED-style
+            // wait status so the rest of the code sees the true cause of death.
+            {
+                int origStatus = status;
+                status = synthesizeContainerSignalStatus(status);
+                if (status != origStatus)
+                {
+                    int exitCode = WEXITSTATUS(origStatus);
+                    int sig = exitCode - 128;
+                    AI_LOG_INFO("container '%s' exited with code %d, "
+                                "interpreting as killed by signal %d (%s) "
+                                "(PID 1 namespace init convention)",
+                                id.c_str(), exitCode, sig, strsignal(sig));
+                }
+            }
 
             AI_LOG_INFO("runc for container '%s' has quit (pid:%d status:0x%04x)",
                         id.c_str(), containerPid, status);

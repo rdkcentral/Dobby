@@ -152,6 +152,12 @@ public:
     bool createBundle(const ContainerId& id, const std::string& jsonSpec);
 #endif //defined(LEGACY_COMPONENTS)
 
+public:
+    // Translates a raw wait status whose exit code matches the 128+signum
+    // convention (used by DobbyInit) into a synthesised WIFSIGNALED status.
+    // Returns the status unchanged for normal exits or already-signalled statuses.
+    static int synthesizeContainerSignalStatus(int rawStatus);
+
 private:
     void handleContainerTerminate(const ContainerId &id, const std::unique_ptr<DobbyContainer>& container, const int status);
     void onChildExit();
