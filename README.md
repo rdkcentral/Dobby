@@ -135,7 +135,7 @@ The table below lists the supported top-level fields. Fields marked **mandatory*
 | `version` | string | Yes | Spec version. Currently `"1.0"` or `"1.1"`. |
 | `args` | array | Yes | Command and arguments to run inside the container. |
 | `user` | object | Yes | `uid` and `gid` the container process runs as. |
-| `memLimit` | integer | Yes | Memory limit in bytes (`memory.limit_in_bytes`). Must be ≥ 256 KiB. |
+| `memLimit` | integer | Yes | Memory limit in bytes (`memory.limit_in_bytes`). Values below 256 KiB are accepted but will only generate a warning and may not be effective. |
 | `swapLimit` | integer | No | Swap+memory limit in bytes (`memory.memsw.limit_in_bytes`). Must be ≥ `memLimit`. Defaults to `memLimit` (no extra swap). |
 | `env` | array | No | Environment variables in `"KEY=VALUE"` format. |
 | `cwd` | string | No | Working directory inside the container. |

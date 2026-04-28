@@ -23,9 +23,13 @@
 #include <gmock/gmock.h>
 #include <ctemplate/template.h>
 #include <json/json.h>
+#include <climits>
+#include <cstdio>
+#include <cstdlib>
 #include <cstring>
 #include <string>
 #include <memory>
+#include <unistd.h>
 
 // DobbySettingsMock.h pulls in gmock which eventually includes <sstream>;
 // it must be included before #define private public.
@@ -36,6 +40,9 @@
 #define private public
 #include "DobbySpecConfig.h"
 #include "DobbyTemplate.h"
+// Undefine immediately so the macro does not leak into gtest/gmock headers
+// below, which can cause hard-to-diagnose build failures on some compilers.
+#undef private
 
 using ::testing::NiceMock;
 using ::testing::Return;

@@ -28,7 +28,7 @@ include_directories(${GTEST_INCLUDE_DIRS})
 
 # Real sources only – no PIMPL mock wrappers for DobbyBundle or DobbyTemplate.
 # DobbySettingsMock is the only mock used; it implements IDobbySettings via gmock.
-add_library(DobbySpecConfigTestLib SHARED STATIC
+add_library(DobbySpecConfigTestLib STATIC
             ../../../../bundle/lib/source/DobbySpecConfig.cpp
             ../../../../bundle/lib/source/DobbyTemplate.cpp
             ../../../../bundle/lib/source/DobbyBundle.cpp
@@ -62,6 +62,9 @@ target_include_directories(DobbySpecConfigTestLib
                 )
 
 file(GLOB TESTS *.cpp)
+# DobbySpecConfigLinkStubs.cpp is already compiled into DobbySpecConfigTestLib;
+# including it again in the test executable would cause duplicate symbol errors.
+list(REMOVE_ITEM TESTS "${CMAKE_CURRENT_SOURCE_DIR}/DobbySpecConfigLinkStubs.cpp")
 
 add_executable(${PROJECT_NAME} ${TESTS})
 

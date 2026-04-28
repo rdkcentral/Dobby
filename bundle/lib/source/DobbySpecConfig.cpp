@@ -28,6 +28,7 @@
 #include <array>
 #include <atomic>
 #include <algorithm>
+#include <cinttypes>
 #include <grp.h>
 #include <fcntl.h>
 #include <limits.h>
@@ -1317,26 +1318,51 @@ bool DobbySpecConfig::processMemLimit(const Json::Value& value,
  *  @return true if correctly processed the value, otherwise false.
  */
 bool DobbySpecConfig::processSwapLimit(const Json::Value& value,
-                                   ctemplate::TemplateDictionary* dictionary)
+                                       ctemplate::TemplateDictionary* dictionary)
 {
+    // Reject non-numeric values up front.
     if (!value.isIntegral())
     {
         AI_LOG_ERROR("invalid swapLimit field");
         return false;
     }
 
-    unsigned memSwap = value.asUInt();
-
-    // the kernel requires memory.memsw.limit_in_bytes >= memory.limit_in_bytes
-    const Json::Value& memLimitVal = mSpec["memLimit"];
-    if (memLimitVal.isIntegral() && (memSwap < memLimitVal.asUInt()))
+    // JsonCpp's isIntegral() returns true for negative integers too.  A
+    // negative value would silently wrap to a huge unsigned number and bypass
+    // the swap >= memLimit guard, so we must check sign before casting.
+    const int64_t memSwapSigned = value.asInt64();
+    if (memSwapSigned < 0)
     {
-        AI_LOG_ERROR("swapLimit (%u) must be >= memLimit (%u)",
-                     memSwap, memLimitVal.asUInt());
+        AI_LOG_ERROR("swapLimit must be non-negative, got %" PRId64, memSwapSigned);
         return false;
     }
 
-    dictionary->SetIntValue(MEM_SWAP, memSwap);
+    // The kernel requires memory.memsw.limit_in_bytes >= memory.limit_in_bytes.
+    const Json::Value& memLimitVal = mSpec["memLimit"];
+    if (memLimitVal.isIntegral())
+    {
+        const int64_t memLimitSigned = memLimitVal.asInt64();
+        if (memLimitSigned < 0)
+        {
+            AI_LOG_ERROR("memLimit is negative; cannot validate swapLimit");
+            return false;
+        }
+        if (memSwapSigned < memLimitSigned)
+        {
+            AI_LOG_ERROR("swapLimit (%" PRId64 ") must be >= memLimit (%" PRId64 ")",
+                         memSwapSigned, memLimitSigned);
+            return false;
+        }
+    }
+
+    if (memSwapSigned > static_cast<int64_t>(UINT_MAX))
+    {
+        AI_LOG_ERROR("swapLimit (%" PRId64 ") exceeds maximum supported value for template field (%u)",
+                     memSwapSigned, UINT_MAX);
+        return false;
+    }
+
+    dictionary->SetIntValue(MEM_SWAP, static_cast<unsigned>(memSwapSigned));
 
     return true;
 }

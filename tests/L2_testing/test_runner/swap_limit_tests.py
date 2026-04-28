@@ -20,7 +20,7 @@ import test_utils
 tests = [
     test_utils.Test(
         "Swap limit default",
-        "ram",
+        "swap_limit_default",
         str(2998272),
         "Starts a container with only memLimit set and verifies that "
         "memory.memsw.limit_in_bytes equals memLimit (no extra swap)"),

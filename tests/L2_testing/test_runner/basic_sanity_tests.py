@@ -107,6 +107,9 @@ def read_asynchronous(proc, string_to_find, timeout):
         while True:
             # notice that all data are in stderr not in stdout, this is DobbyDaemon design
             output = proc.stderr.readline()
+            if not output:
+                # EOF – subprocess closed its stderr pipe
+                return
             if string_to_find in output:
                 test_utils.print_log("Found string \"%s\"" % string_to_find, test_utils.Severity.debug)
                 return
