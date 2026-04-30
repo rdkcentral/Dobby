@@ -674,9 +674,14 @@ def fix_trailing_commas(json_str):
     - ,] -> ]
     """
     import re
-    # Remove trailing commas before closing braces/brackets
-    # Handle multiple whitespace variations
-    json_str = re.sub(r',(\s*[}\]])', r'\1', json_str)
+    # Keep applying until no more changes (handles nested cases)
+    prev = None
+    while prev != json_str:
+        prev = json_str
+        # Remove trailing commas before closing braces/brackets
+        # Handle whitespace and newlines between comma and closing bracket
+        json_str = re.sub(r',\s*}', '}', json_str)
+        json_str = re.sub(r',\s*\]', ']', json_str)
     return json_str
 
 
@@ -694,13 +699,26 @@ def patch_config_for_cgroupv2(config_path):
             content = f.read()
         
         # Fix trailing commas that DobbyBundleGenerator may produce
+        original_content = content
         content = fix_trailing_commas(content)
+        
+        if content != original_content:
+            print_log("Fixed trailing commas in config.json", Severity.debug)
         
         try:
             config = json.loads(content)
         except json.JSONDecodeError as e:
             print_log("Warning: JSON parse error after fixing trailing commas: %s" % e, Severity.warning)
-            return
+            print_log("Attempting to save fixed JSON and retry...", Severity.debug)
+            # Write the fixed content back and try loading from file
+            with open(config_path, 'w') as f:
+                f.write(content)
+            try:
+                with open(config_path, 'r') as f:
+                    config = json.load(f)
+            except json.JSONDecodeError as e2:
+                print_log("Warning: Still failed to parse JSON: %s" % e2, Severity.warning)
+                return
         
         modified = False
         
