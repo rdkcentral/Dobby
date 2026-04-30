@@ -666,6 +666,20 @@ def generate_bundle_from_spec(container_id, output_dir=None):
     return output_dir
 
 
+def fix_trailing_commas(json_str):
+    """Fix trailing commas in JSON string that DobbyBundleGenerator may produce.
+    
+    Removes patterns like:
+    - ,} -> }
+    - ,] -> ]
+    """
+    import re
+    # Remove trailing commas before closing braces/brackets
+    # Handle multiple whitespace variations
+    json_str = re.sub(r',(\s*[}\]])', r'\1', json_str)
+    return json_str
+
+
 def patch_config_for_cgroupv2(config_path):
     """Patch OCI config.json for cgroup v2 compatibility.
     
@@ -677,7 +691,16 @@ def patch_config_for_cgroupv2(config_path):
     """
     try:
         with open(config_path, 'r') as f:
-            config = json.load(f)
+            content = f.read()
+        
+        # Fix trailing commas that DobbyBundleGenerator may produce
+        content = fix_trailing_commas(content)
+        
+        try:
+            config = json.loads(content)
+        except json.JSONDecodeError as e:
+            print_log("Warning: JSON parse error after fixing trailing commas: %s" % e, Severity.warning)
+            return
         
         modified = False
         
