@@ -125,23 +125,21 @@ def create_tests():
            "stopContainer"),
     ])
 
-    # Skip startContainerFromDobbySpec test on cgroup v2 - 
-    # DobbyDaemon processes specs with templates that add swappiness: 60,
-    # which is not supported on cgroup v2. We can't patch this from the test side
-    # since Thunder calls DobbyDaemon internally.
-    if not test_utils.is_cgroup_v2():
-        tests.extend([
-           Test("Start Dobby spec container",
-               container_name,
-               create_successful_regex_answer('"descriptor":\\d+,'),
-               "Starts container using a Dobby spec",
-               "startContainerFromDobbySpec"),
-           Test("Stop container",
-               container_name,
-               create_successful_regex_answer(),
-               "Stops container",
-               "stopContainer"),
-        ])
+    # startContainerFromDobbySpec test - works on both cgroup v1 and v2
+    # because the CI workflow patches the template to remove swappiness
+    # before building DobbyDaemon
+    tests.extend([
+       Test("Start Dobby spec container",
+           container_name,
+           create_successful_regex_answer('"descriptor":\\d+,'),
+           "Starts container using a Dobby spec",
+           "startContainerFromDobbySpec"),
+       Test("Stop container",
+           container_name,
+           create_successful_regex_answer(),
+           "Stops container",
+           "stopContainer"),
+    ])
 
     return tests
 
