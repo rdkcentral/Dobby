@@ -659,6 +659,11 @@ def generate_bundle_from_spec(container_id, output_dir=None):
         print_log("Generated bundle missing config.json: %s" % config_path, Severity.error)
         return None
     
+    # Fix trailing commas in generated JSON (DobbyBundleGenerator produces invalid JSON)
+    # Use sed with extended regex to fix ,} and ,] patterns
+    run_command_line(["sed", "-i", "-E", "s/,([[:space:]]*})/\\1/g", config_path])
+    run_command_line(["sed", "-i", "-E", "s/,([[:space:]]*])/\\1/g", config_path])
+    
     # Patch for cgroup v2 if needed
     if is_cgroup_v2():
         patch_config_for_cgroupv2(config_path)
@@ -676,13 +681,27 @@ def fix_trailing_commas(json_str):
     import re
     # Keep applying until no more changes (handles nested cases)
     prev = None
-    while prev != json_str:
+    iterations = 0
+    while prev != json_str and iterations < 100:
         prev = json_str
+        iterations += 1
         # Remove trailing commas before closing braces/brackets
         # Handle whitespace and newlines between comma and closing bracket
-        json_str = re.sub(r',\s*}', '}', json_str)
-        json_str = re.sub(r',\s*\]', ']', json_str)
+        # Also handle the case where there's no whitespace: ,} or ,]
+        json_str = re.sub(r',(\s*)}', r'\1}', json_str)
+        json_str = re.sub(r',(\s*)\]', r'\1]', json_str)
     return json_str
+
+
+def fix_json_with_sed(config_path):
+    """Use sed to fix trailing commas in JSON file - more reliable than Python regex."""
+    import subprocess
+    # First pass: remove ,} patterns
+    subprocess.run(["sed", "-i", "-E", "s/,([[:space:]]*})/\\1/g", config_path], 
+                   capture_output=True)
+    # Second pass: remove ,] patterns  
+    subprocess.run(["sed", "-i", "-E", "s/,([[:space:]]*\\])/\\1/g", config_path],
+                   capture_output=True)
 
 
 def patch_config_for_cgroupv2(config_path):
@@ -695,10 +714,13 @@ def patch_config_for_cgroupv2(config_path):
     and null CPU realtime settings.
     """
     try:
+        # First try to fix trailing commas using sed (more reliable)
+        fix_json_with_sed(config_path)
+        
         with open(config_path, 'r') as f:
             content = f.read()
         
-        # Fix trailing commas that DobbyBundleGenerator may produce
+        # Also apply Python fix as backup
         original_content = content
         content = fix_trailing_commas(content)
         
