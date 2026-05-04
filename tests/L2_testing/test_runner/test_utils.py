@@ -37,26 +37,81 @@ TestResult = namedtuple('TestResult', ['name',
                         )
 
 
+class BundleExtractionError(Exception):
+    """Raised when bundle extraction or validation fails."""
+    pass
+
+
 class untar_bundle:
     """Context manager for working with tarball bundles"""
     def __init__(self, container_id):
-        self.path = get_bundle_path(container_id + "_bundle")
+        self.container_id = container_id
+        self.extract_root = get_bundle_path(container_id + "_bundle")
+        self.path = self.extract_root
+        self._error_message = None
 
         print_log("untar'ing file %s.tar.gz" % self.path, Severity.debug)
-        run_command_line(["tar",
-                          "-C",
-                          get_bundle_path(""),
-                          "-zxvf",
-                          self.path + ".tar.gz"])
+
+        status = run_command_line(["tar",
+                                   "-C",
+                                   get_bundle_path(""),
+                                   "-zxvf",
+                                   self.path + ".tar.gz"])
+
+        if status.returncode != 0:
+            self._error_message = ("Failed to extract bundle tarball '%s.tar.gz' (rc=%d): %s"
+                                   % (self.path, status.returncode, status.stderr.strip()))
+            print_log("FATAL: " + self._error_message, Severity.error)
+            return
+
+        config_path = path.join(self.path, "config.json")
+        if not path.exists(config_path):
+            # It might be nested - tarball could contain "dirname/config.json"
+            # Try to find it in the first level subdirectory
+            try:
+                import os
+                entries = os.listdir(self.path)
+                for entry in entries:
+                    candidate = path.join(self.path, entry, "config.json")
+                    if path.exists(candidate):
+                        print_log("Found config.json nested in %s, updating path" % entry, Severity.debug)
+                        self.path = path.join(self.path, entry)
+                        config_path = candidate
+                        break
+            except Exception as err:
+                print_log("Error checking nested bundle structure: %s" % err, Severity.warning)
+
+        if not path.exists(config_path):
+            self._error_message = ("Extracted bundle is missing config.json. Expected at: %s" % config_path)
+            print_log("FATAL: " + self._error_message, Severity.error)
+            return
+
+        # Patch config.json for cgroup v2 compatibility
+        # cgroup v2: swappiness is NOT supported, strip it from config
+        # cgroup v1: swappiness is supported, keep it (e.g., swappiness: 60)
+        if is_cgroup_v2():
+            patch_config_for_cgroupv2(config_path)
+
+    @property
+    def valid(self):
+        """Returns True if extraction succeeded, False otherwise."""
+        return self._error_message is None
 
     def __enter__(self):
+        """Returns the bundle path, or raises BundleExtractionError if extraction failed."""
+        if self._error_message:
+            raise BundleExtractionError(self._error_message)
         return self.path
 
     def __exit__(self, etype, value, traceback):
-        print_log("deleting folder %s" % self.path, Severity.debug)
-        run_command_line(["rm",
-                          "-rf",
-                          self.path])
+        # Always clean up extraction root, even when runtime path was nested
+        if path.exists(self.extract_root):
+            print_log("Cleaning up bundle at: %s" % self.extract_root, Severity.debug)
+            run_command_line(["rm",
+                              "-rf",
+                              self.extract_root])
+        else:
+            print_log("Bundle path doesn't exist, skipping cleanup: %s" % self.extract_root, Severity.debug)
 
 class dobby_daemon:
     """Starts and stops DobbyDaemon service."""
@@ -84,6 +139,25 @@ class dobby_daemon:
         self.subproc = subprocess.Popen(cmd, **kvargs)
         sleep(1) # give DobbyDaemon time to initialise
 
+        # Wait for D-Bus service registration (can be delayed on CI)
+        for _ in range(20):
+            probe = subprocess.run(["DobbyTool", "info", "__dobby_probe__"],
+                                   stdout=subprocess.PIPE,
+                                   stderr=subprocess.PIPE,
+                                   universal_newlines=True)
+
+            combined = (probe.stdout + probe.stderr).lower()
+
+            # If daemon crashed/exited, stop waiting
+            if self.subproc.poll() is not None:
+                break
+
+            # Service is ready once ServiceUnknown is gone (unknown container is fine)
+            if "serviceunknown" not in combined and "org.rdk.dobby was not provided" not in combined:
+                break
+
+            sleep(0.25)
+
     def __enter__(self):
         return self.subproc
 
@@ -93,11 +167,16 @@ class dobby_daemon:
         if selected_platform == Platforms.xi_6:
             self.subproc.kill()
         else:
-            subprocess.run(["sudo", "pkill", "DobbyDaemon"])
-        sleep(0.2)
+            subprocess.run(["sudo", "pkill", "-9", "DobbyDaemon"])
+        sleep(1)  # Give process time to fully terminate and be reaped
 
         # check for segfault
-        self.subproc.communicate()
+        try:
+            self.subproc.communicate(timeout=2)
+        except subprocess.TimeoutExpired:
+            self.subproc.kill()
+            self.subproc.wait()
+        
         if self.subproc.returncode == -11: # -11 == SIGSEGV
             print_log("Received SIGSEGV from DobbyDaemon", Severity.error)
 
@@ -125,6 +204,39 @@ class Severity(IntEnum):
 # global fields that contains status of test runner
 current_log_level = Severity.info
 selected_platform = Platforms.no_selection
+
+
+def is_cgroup_v2():
+    """Detect if the system is using cgroup v2 (unified hierarchy).
+    
+    Check if we are in cgroup v2 by looking for cgroup.controllers file.
+    
+    Returns:
+        bool: True if cgroup v2 is in use, False for cgroup v1
+    """
+    # Check if cgroup v2 is mounted at /sys/fs/cgroup
+    return path.exists('/sys/fs/cgroup/cgroup.controllers')
+
+
+def is_legacy_cgroup_available():
+    """Check if legacy cgroup features (like swappiness) are available.
+    
+    cgroup v1: Uses memory.swappiness to control swap behavior
+               e.g., echo 60 > /sys/fs/cgroup/memory/path/to/your/group/memory.swappiness
+    cgroup v2: Uses memory.swap.max (0 = disable swap)
+               There is no direct equivalent to 'swappiness' per-cgroup.
+               e.g., echo 0 > /sys/fs/cgroup/path/to/your/group/memory.swap.max
+    
+    Returns:
+        bool: True if legacy cgroup features are available (cgroup v1),
+              False if using cgroup v2 without legacy features
+    """
+    if is_cgroup_v2():
+        # cgroup v2: no swappiness support
+        return False
+    else:
+        # cgroup v1: swappiness supported
+        return True
 
 
 def print_log(log_message, log_severity):
@@ -346,9 +458,48 @@ def launch_container(container_id, spec_path):
 
     print_log("Launching container %s with spec %s" % (container_id, spec_path), Severity.debug)
 
+    # Validate input path early for clearer errors.
+    if path.isdir(spec_path):
+        config_path = path.join(spec_path, "config.json")
+        if not path.exists(config_path):
+            print_log("Bundle path missing config.json: %s" % config_path, Severity.error)
+            return False
+        # If it's a bundle directory on cgroup v2, patch it
+        if is_cgroup_v2():
+            patch_config_for_cgroupv2(config_path)
+    elif not path.exists(spec_path):
+        print_log("Spec path does not exist: %s" % spec_path, Severity.error)
+        return False
+    else:
+        # It's a spec file (not a bundle directory)
+        # On cgroup v2, generate a bundle and patch it to remove swappiness
+        if is_cgroup_v2():
+            print_log("Detected cgroup v2 - generating patched bundle for %s" % container_id, Severity.debug)
+            bundle_path = generate_bundle_from_spec(container_id)
+            if bundle_path:
+                spec_path = bundle_path
+            else:
+                print_log("Warning: Failed to generate bundle, using original spec (may fail on cgroup v2)", Severity.warning)
+
     # Use DobbyTool to launch container
-    process = run_command_line(["DobbyTool", "start", container_id, spec_path])
-    output = process.stdout
+    process = None
+    output = ""
+    combined_output = ""
+
+    # Retry start when D-Bus registration races on CI
+    for _ in range(3):
+        process = run_command_line(["DobbyTool", "start", container_id, spec_path])
+        output = process.stdout
+        combined_output = (process.stdout + process.stderr).lower()
+
+        if "started" in output:
+            break
+
+        if "serviceunknown" in combined_output or "org.rdk.dobby was not provided" in combined_output:
+            sleep(0.5)
+            continue
+
+        break
 
     # Check DobbyTool has started the container
     if "started" in output:
@@ -367,6 +518,9 @@ def launch_container(container_id, spec_path):
         # Timeout
         print_log("Waited 5 seconds for exit.. timeout", Severity.error)
         return True
+    if process and process.stderr:
+        print_log("DobbyTool start failed for %s: %s" % (container_id, process.stderr.strip()), Severity.error)
+
     return False
 
 
@@ -480,6 +634,229 @@ def parse_arguments(file_name, platform_required=False):
         print_log("Current platform set to %d" % selected_platform, Severity.debug)
 
 
+def generate_bundle_from_spec(container_id, output_dir=None):
+    """Generate an OCI bundle from a Dobby spec file using DobbyBundleGenerator.
+    
+    Parameters:
+    container_id (string): name of container (used to find spec file)
+    output_dir (string): optional output directory for the bundle
+    
+    Returns:
+    bundle_path (string): path to generated bundle, or None on failure
+    """
+    spec_path = get_container_spec_path(container_id)
+    
+    if output_dir is None:
+        output_dir = get_bundle_path(container_id + "_generated")
+    
+    # Clean up existing bundle directory if it exists
+    if path.exists(output_dir):
+        print_log("Removing existing bundle directory: %s" % output_dir, Severity.debug)
+        run_command_line(["rm", "-rf", output_dir])
+    
+    # Generate bundle using DobbyBundleGenerator
+    result = run_command_line(["DobbyBundleGenerator", "-i", spec_path, "-o", output_dir])
+    
+    if result.returncode != 0 or "failed" in result.stderr.lower():
+        print_log("Failed to generate bundle for %s: %s" % (container_id, result.stderr), Severity.error)
+        return None
+    
+    config_path = path.join(output_dir, "config.json")
+    if not path.exists(config_path):
+        print_log("Generated bundle missing config.json: %s" % config_path, Severity.error)
+        return None
+    
+    # Fix trailing commas in generated JSON (DobbyBundleGenerator produces invalid JSON)
+    # Use sed with extended regex to fix ,} and ,] patterns
+    run_command_line(["sed", "-i", "-E", "s/,([[:space:]]*})/\\1/g", config_path])
+    run_command_line(["sed", "-i", "-E", "s/,([[:space:]]*])/\\1/g", config_path])
+    
+    # Patch for cgroup v2 if needed
+    if is_cgroup_v2():
+        patch_config_for_cgroupv2(config_path)
+    
+    return output_dir
+
+
+def fix_trailing_commas(json_str):
+    """Fix trailing commas in JSON string that DobbyBundleGenerator may produce.
+    
+    Removes patterns like:
+    - ,} -> }
+    - ,] -> ]
+    """
+    import re
+    # Keep applying until no more changes (handles nested cases)
+    prev = None
+    iterations = 0
+    while prev != json_str and iterations < 100:
+        prev = json_str
+        iterations += 1
+        # Remove trailing commas before closing braces/brackets
+        # Handle whitespace and newlines between comma and closing bracket
+        # Also handle the case where there's no whitespace: ,} or ,]
+        json_str = re.sub(r',(\s*)}', r'\1}', json_str)
+        json_str = re.sub(r',(\s*)\]', r'\1]', json_str)
+    return json_str
+
+
+def fix_json_with_sed(config_path):
+    """Use sed to fix trailing commas in JSON file - more reliable than Python regex."""
+    import subprocess
+    # First pass: remove ,} patterns
+    subprocess.run(["sed", "-i", "-E", "s/,([[:space:]]*})/\\1/g", config_path], 
+                   capture_output=True)
+    # Second pass: remove ,] patterns  
+    subprocess.run(["sed", "-i", "-E", "s/,([[:space:]]*\\])/\\1/g", config_path],
+                   capture_output=True)
+
+
+def patch_config_for_cgroupv2(config_path):
+    """Patch OCI config.json for cgroup v2 compatibility.
+    
+    cgroup v1: Uses memory.swappiness to control swap behavior
+    cgroup v2: Uses memory.swap.max (no direct swappiness equivalent)
+    
+    Also handles other cgroup v2 incompatibilities like rootfsPropagation
+    and null CPU realtime settings.
+    """
+    try:
+        # First try to fix trailing commas using sed (more reliable)
+        fix_json_with_sed(config_path)
+        
+        with open(config_path, 'r') as f:
+            content = f.read()
+        
+        # Also apply Python fix as backup
+        original_content = content
+        content = fix_trailing_commas(content)
+        
+        if content != original_content:
+            print_log("Fixed trailing commas in config.json", Severity.debug)
+        
+        try:
+            config = json.loads(content)
+        except json.JSONDecodeError as e:
+            print_log("Warning: JSON parse error after fixing trailing commas: %s" % e, Severity.warning)
+            print_log("Attempting to save fixed JSON and retry...", Severity.debug)
+            # Write the fixed content back and try loading from file
+            with open(config_path, 'w') as f:
+                f.write(content)
+            try:
+                with open(config_path, 'r') as f:
+                    config = json.load(f)
+            except json.JSONDecodeError as e2:
+                print_log("Warning: Still failed to parse JSON: %s" % e2, Severity.warning)
+                return
+        
+        modified = False
+        
+        if 'linux' in config and 'resources' in config['linux']:
+            resources = config['linux']['resources']
+            
+            # Remove swappiness from linux.resources.memory
+            # cgroup v2 does not support per-cgroup swappiness
+            if 'memory' in resources and 'swappiness' in resources['memory']:
+                del resources['memory']['swappiness']
+                modified = True
+                print_log("Stripped 'swappiness' from config.json for cgroup v2 compatibility", Severity.debug)
+            
+            # Remove kernel memory settings - not supported in cgroup v2
+            # cgroup v2 removed kernel memory accounting as a separate limit
+            if 'memory' in resources:
+                memory = resources['memory']
+                if 'kernel' in memory:
+                    del memory['kernel']
+                    modified = True
+                    print_log("Removed 'kernel' memory limit for cgroup v2 compatibility", Severity.debug)
+                if 'kernelTCP' in memory:
+                    del memory['kernelTCP']
+                    modified = True
+                    print_log("Removed 'kernelTCP' memory limit for cgroup v2 compatibility", Severity.debug)
+                # Remove disableOOMKiller if present (handled differently in cgroup v2)
+                if 'disableOOMKiller' in memory:
+                    del memory['disableOOMKiller']
+                    modified = True
+                    print_log("Removed 'disableOOMKiller' for cgroup v2 compatibility", Severity.debug)
+            
+            # Fix cpu realtime settings - cgroup v2 has different RT scheduling support
+            # RT scheduling requires CONFIG_RT_GROUP_SCHED which is often disabled
+            if 'cpu' in resources:
+                cpu = resources['cpu']
+                # Remove null values
+                if cpu.get('realtimeRuntime') is None:
+                    del cpu['realtimeRuntime']
+                    modified = True
+                    print_log("Removed null 'realtimeRuntime' for cgroup v2 compatibility", Severity.debug)
+                if cpu.get('realtimePeriod') is None:
+                    del cpu['realtimePeriod']
+                    modified = True
+                    print_log("Removed null 'realtimePeriod' for cgroup v2 compatibility", Severity.debug)
+                # Also remove RT fields entirely on cgroup v2 as they may not be supported
+                if 'realtimeRuntime' in cpu:
+                    del cpu['realtimeRuntime']
+                    modified = True
+                    print_log("Removed 'realtimeRuntime' for cgroup v2 compatibility", Severity.debug)
+                if 'realtimePeriod' in cpu:
+                    del cpu['realtimePeriod']
+                    modified = True
+                    print_log("Removed 'realtimePeriod' for cgroup v2 compatibility", Severity.debug)
+                # Remove cpu section entirely if empty
+                if not cpu:
+                    del resources['cpu']
+                    modified = True
+                    print_log("Removed empty 'cpu' section for cgroup v2 compatibility", Severity.debug)
+            
+            # Remove pids limit if set to 0 (unlimited) - can cause issues
+            if 'pids' in resources:
+                pids = resources['pids']
+                if pids.get('limit') == 0:
+                    del resources['pids']
+                    modified = True
+                    print_log("Removed pids limit of 0 for cgroup v2 compatibility", Severity.debug)
+        
+        # Remove rootfsPropagation - causes "make rootfs private" errors
+        # in user namespace environments like GitHub Actions
+        if 'linux' in config and 'rootfsPropagation' in config['linux']:
+            del config['linux']['rootfsPropagation']
+            modified = True
+            print_log("Removed linux.rootfsPropagation for cgroup v2 compatibility", Severity.debug)
+        
+        # Remove top-level rootfsPropagation as well
+        if 'rootfsPropagation' in config:
+            del config['rootfsPropagation']
+            modified = True
+            print_log("Removed top-level rootfsPropagation for cgroup v2 compatibility", Severity.debug)
+        
+        # Remove user namespace settings - causes issues in GitHub Actions 
+        # which already uses user namespaces
+        if 'linux' in config:
+            # Remove uidMappings and gidMappings
+            if 'uidMappings' in config['linux']:
+                del config['linux']['uidMappings']
+                modified = True
+                print_log("Removed uidMappings for cgroup v2 compatibility", Severity.debug)
+            if 'gidMappings' in config['linux']:
+                del config['linux']['gidMappings']
+                modified = True
+                print_log("Removed gidMappings for cgroup v2 compatibility", Severity.debug)
+            
+            # Remove 'user' from namespaces list
+            if 'namespaces' in config['linux']:
+                namespaces = config['linux']['namespaces']
+                original_len = len(namespaces)
+                config['linux']['namespaces'] = [ns for ns in namespaces if ns.get('type') != 'user']
+                if len(config['linux']['namespaces']) < original_len:
+                    modified = True
+                    print_log("Removed 'user' namespace for cgroup v2 compatibility", Severity.debug)
+        
+        if modified:
+            with open(config_path, 'w') as f:
+                json.dump(config, f, indent=4)
+    except Exception as err:
+        print_log("Warning: Failed to patch config.json for cgroup v2: %s" % err, Severity.warning)
+
+
 def dobby_tool_command(command, container_id, params=None):
     """Runs DobbyTool command
 
@@ -501,9 +878,21 @@ def dobby_tool_command(command, container_id, params=None):
     full_command.append(container_id)
 
     if command == "start":
-        container_path = get_container_spec_path(container_id)
-        full_command.append(container_path)
+        # On cgroup v2, generate bundle first and patch it to remove swappiness
+        if is_cgroup_v2():
+            bundle_path = generate_bundle_from_spec(container_id)
+            if bundle_path:
+                full_command.append(bundle_path)
+            else:
+                # Fallback to spec if bundle generation fails
+                container_path = get_container_spec_path(container_id)
+                full_command.append(container_path)
+        else:
+            container_path = get_container_spec_path(container_id)
+            full_command.append(container_path)
 
     process = run_command_line(full_command)
 
     return process
+
+

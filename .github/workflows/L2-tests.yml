@@ -116,6 +116,23 @@ jobs:
          </policy>
          </busconfig>' > "/etc/dbus-1/system.d/org.rdk.dobby.conf"
 
+      - name: Patch template for cgroup v2 compatibility
+        run: |
+          # Remove swappiness from template - not supported on cgroup v2
+          # cgroup v1: uses memory.swappiness (e.g., 60)
+          # cgroup v2: uses memory.swap.max (no swappiness equivalent)
+          # We need to remove the swappiness line AND fix the trailing comma on the previous line
+          for TEMPLATE_FILE in "${GITHUB_WORKSPACE}/Dobby/bundle/lib/source/templates/OciConfigJsonVM1.0.2-dobby.template" \
+                               "${GITHUB_WORKSPACE}/Dobby/bundle/lib/source/templates/OciConfigJson1.0.2-dobby.template"; do
+            if [ -f "$TEMPLATE_FILE" ]; then
+              # Remove the swappiness line
+              sed -i '/"swappiness":/d' "$TEMPLATE_FILE"
+              # Fix the trailing comma on "swap" line (now last in memory block)
+              sed -i 's/"swap": {{MEM_LIMIT}},/"swap": {{MEM_LIMIT}}/g' "$TEMPLATE_FILE"
+              echo "Patched $TEMPLATE_FILE to remove swappiness for cgroup v2 compatibility"
+            fi
+          done
+
       - name: build Dobby
         run: |
           sudo ln -sf /run/systemd/resolve/resolv.conf /etc/resolv.conf
@@ -127,7 +144,7 @@ jobs:
           sudo chmod 755 /var/volatile/rdk/dobby/bundles
           mkdir -p build
           cd build
-          cmake -DCMAKE_TOOLCHAIN_FILE="${{ env.TOOLCHAIN_FILE }}" -DRDK_PLATFORM=DEV_VM -DCMAKE_INSTALL_PREFIX:PATH=/usr ${{ matrix.extra_flags }}  -DRDK=ON -DUSE_SYSTEMD=ON -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DAI_BUILD_TYPE=AI_DEBUG -DDOBBY_HIBERNATE_MEMCR_IMPL=ON -DDOBBY_HIBERNATE_MEMCR_PARAMS_ENABLED=ON ..
+          cmake -DCMAKE_TOOLCHAIN_FILE="${{ env.TOOLCHAIN_FILE }}" -DRDK_PLATFORM=DEV_VM -DCMAKE_INSTALL_PREFIX:PATH=/usr ${{ matrix.extra_flags }} -DUSE_LEGACY_CGROUP=OFF -DRDK=ON -DUSE_SYSTEMD=ON -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} -DAI_BUILD_TYPE=AI_DEBUG -DDOBBY_HIBERNATE_MEMCR_IMPL=ON -DDOBBY_HIBERNATE_MEMCR_PARAMS_ENABLED=ON ..
           make -j $(nproc)
           sudo make install
           # Link for the DobbyInit tool
@@ -220,6 +237,11 @@ jobs:
           &&
           sudo cmake --install build/rdkservices
 
+      - name: Regenerate bundles for cgroupv2 compatibility
+        working-directory: Dobby/tests/L2_testing/test_runner/bundle/
+        run: |
+            python3 regenerate_bundles.py
+
       - name: Run the l2 test
         working-directory: Dobby/tests/L2_testing/test_runner/
         run: |
@@ -234,6 +256,7 @@ jobs:
           -d $GITHUB_WORKSPACE
           &&
           lcov
+          --ignore-errors unused
           -r coverage.info
           '/usr/include/*'
           '*/tests/L1_testing/*'
@@ -254,3 +277,6 @@ jobs:
             DobbyL2TestResults.json
             l2coverage
           if-no-files-found: warn
+
+
+
