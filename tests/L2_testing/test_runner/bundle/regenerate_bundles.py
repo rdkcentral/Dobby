@@ -36,10 +36,11 @@ def patch_config_for_cgroupv2(config: dict, bundle_name: str = "") -> dict:
         # Fix cpu realtime settings - remove null values
         if 'cpu' in resources:
             cpu = resources['cpu']
-            if cpu.get('realtimeRuntime') is None:
+            # Only delete if key exists AND value is None (not just missing)
+            if 'realtimeRuntime' in cpu and cpu['realtimeRuntime'] is None:
                 del cpu['realtimeRuntime']
                 print("  - Removed null 'realtimeRuntime'")
-            if cpu.get('realtimePeriod') is None:
+            if 'realtimePeriod' in cpu and cpu['realtimePeriod'] is None:
                 del cpu['realtimePeriod']
                 print("  - Removed null 'realtimePeriod'")
             # Remove cpu section entirely if empty
@@ -108,19 +109,60 @@ def process_bundle(bundle_tarball: Path, backup: bool = True):
         print(f"  Removing stale extraction directory: {extract_path.name}")
         shutil.rmtree(extract_path)
 
-    # Extract (with path-traversal protection)
+    # Extract (with path-traversal and symlink/hardlink protection)
     print(f"  Extracting...")
     with tarfile.open(bundle_tarball, 'r:gz') as tar:
-        # Reject members that escape the target directory via absolute paths
-        # or '..' components to prevent path-traversal attacks.
-        for member in tar.getmembers():
-            member_path = (bundle_dir / member.name).resolve()
-            if not str(member_path).startswith(str(bundle_dir.resolve())):
-                raise RuntimeError(
-                    f"Tarball member '{member.name}' would escape extraction "
-                    f"directory '{bundle_dir}' — aborting for safety"
-                )
-        tar.extractall(path=bundle_dir)
+        # Use Python 3.12+ data filter if available for maximum safety
+        # Otherwise, manually validate each member
+        if hasattr(tarfile, 'data_filter'):
+            # Python 3.12+: use built-in safe extraction filter
+            tar.extractall(path=bundle_dir, filter='data')
+        else:
+            # Pre-3.12: manually validate members for safety
+            safe_members = []
+            resolved_bundle_dir = bundle_dir.resolve()
+            
+            for member in tar.getmembers():
+                # Reject symlinks and hardlinks - they can be used to escape
+                # the extraction directory by pointing to files outside it
+                if member.issym():
+                    raise RuntimeError(
+                        f"Tarball contains symlink '{member.name}' -> '{member.linkname}' "
+                        f"— rejecting for safety"
+                    )
+                if member.islnk():
+                    raise RuntimeError(
+                        f"Tarball contains hardlink '{member.name}' -> '{member.linkname}' "
+                        f"— rejecting for safety"
+                    )
+                
+                # Reject members that escape the target directory via absolute paths
+                # or '..' components to prevent path-traversal attacks
+                member_path = (bundle_dir / member.name).resolve()
+                if not str(member_path).startswith(str(resolved_bundle_dir) + '/') and \
+                   member_path != resolved_bundle_dir:
+                    raise RuntimeError(
+                        f"Tarball member '{member.name}' would escape extraction "
+                        f"directory '{bundle_dir}' — aborting for safety"
+                    )
+                
+                safe_members.append(member)
+            
+            tar.extractall(path=bundle_dir, members=safe_members)
+            
+            # Post-extraction verification: ensure no extracted paths escaped
+            # (guards against TOCTOU races or edge cases)
+            for member in safe_members:
+                extracted_path = (bundle_dir / member.name).resolve()
+                if not str(extracted_path).startswith(str(resolved_bundle_dir) + '/') and \
+                   extracted_path != resolved_bundle_dir:
+                    # Clean up and abort
+                    if extract_path.exists():
+                        shutil.rmtree(extract_path)
+                    raise RuntimeError(
+                        f"Extracted path '{extracted_path}' escaped extraction "
+                        f"directory after resolving symlinks — aborting"
+                    )
     
     # Find and patch config.json
     config_path = extract_path / 'config.json'
@@ -180,4 +222,5 @@ def main():
 
 if __name__ == '__main__':
     sys.exit(main())
+
 

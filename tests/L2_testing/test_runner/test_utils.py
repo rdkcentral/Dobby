@@ -37,13 +37,18 @@ TestResult = namedtuple('TestResult', ['name',
                         )
 
 
+class BundleExtractionError(Exception):
+    """Raised when bundle extraction or validation fails."""
+    pass
+
+
 class untar_bundle:
     """Context manager for working with tarball bundles"""
     def __init__(self, container_id):
         self.container_id = container_id
         self.extract_root = get_bundle_path(container_id + "_bundle")
         self.path = self.extract_root
-        self.valid = True
+        self._error_message = None
 
         print_log("untar'ing file %s.tar.gz" % self.path, Severity.debug)
 
@@ -54,10 +59,9 @@ class untar_bundle:
                                    self.path + ".tar.gz"])
 
         if status.returncode != 0:
-            print_log("FATAL: Failed to extract bundle tarball '%s.tar.gz' (rc=%d): %s"
-                      % (self.path, status.returncode, status.stderr.strip()),
-                      Severity.error)
-            self.valid = False
+            self._error_message = ("Failed to extract bundle tarball '%s.tar.gz' (rc=%d): %s"
+                                   % (self.path, status.returncode, status.stderr.strip()))
+            print_log("FATAL: " + self._error_message, Severity.error)
             return
 
         config_path = path.join(self.path, "config.json")
@@ -78,9 +82,8 @@ class untar_bundle:
                 print_log("Error checking nested bundle structure: %s" % err, Severity.warning)
 
         if not path.exists(config_path):
-            print_log("FATAL: Extracted bundle is missing config.json. Expected at: %s" % config_path,
-                      Severity.error)
-            self.valid = False
+            self._error_message = ("Extracted bundle is missing config.json. Expected at: %s" % config_path)
+            print_log("FATAL: " + self._error_message, Severity.error)
             return
 
         # Patch config.json for cgroup v2 compatibility
@@ -89,11 +92,15 @@ class untar_bundle:
         if is_cgroup_v2():
             patch_config_for_cgroupv2(config_path)
 
+    @property
+    def valid(self):
+        """Returns True if extraction succeeded, False otherwise."""
+        return self._error_message is None
+
     def __enter__(self):
-        """Returns the bundle path when valid, or None when extraction/validation
-        failed.  Callers must check .valid (or the returned path) before use."""
-        if not self.valid:
-            return None
+        """Returns the bundle path, or raises BundleExtractionError if extraction failed."""
+        if self._error_message:
+            raise BundleExtractionError(self._error_message)
         return self.path
 
     def __exit__(self, etype, value, traceback):
@@ -748,14 +755,35 @@ def patch_config_for_cgroupv2(config_path):
             resources = config['linux']['resources']
             
             # Remove swappiness from linux.resources.memory
+            # cgroup v2 does not support per-cgroup swappiness
             if 'memory' in resources and 'swappiness' in resources['memory']:
                 del resources['memory']['swappiness']
                 modified = True
                 print_log("Stripped 'swappiness' from config.json for cgroup v2 compatibility", Severity.debug)
             
-            # Fix cpu realtime settings - remove null values
+            # Remove kernel memory settings - not supported in cgroup v2
+            # cgroup v2 removed kernel memory accounting as a separate limit
+            if 'memory' in resources:
+                memory = resources['memory']
+                if 'kernel' in memory:
+                    del memory['kernel']
+                    modified = True
+                    print_log("Removed 'kernel' memory limit for cgroup v2 compatibility", Severity.debug)
+                if 'kernelTCP' in memory:
+                    del memory['kernelTCP']
+                    modified = True
+                    print_log("Removed 'kernelTCP' memory limit for cgroup v2 compatibility", Severity.debug)
+                # Remove disableOOMKiller if present (handled differently in cgroup v2)
+                if 'disableOOMKiller' in memory:
+                    del memory['disableOOMKiller']
+                    modified = True
+                    print_log("Removed 'disableOOMKiller' for cgroup v2 compatibility", Severity.debug)
+            
+            # Fix cpu realtime settings - cgroup v2 has different RT scheduling support
+            # RT scheduling requires CONFIG_RT_GROUP_SCHED which is often disabled
             if 'cpu' in resources:
                 cpu = resources['cpu']
+                # Remove null values
                 if cpu.get('realtimeRuntime') is None:
                     del cpu['realtimeRuntime']
                     modified = True
@@ -764,11 +792,28 @@ def patch_config_for_cgroupv2(config_path):
                     del cpu['realtimePeriod']
                     modified = True
                     print_log("Removed null 'realtimePeriod' for cgroup v2 compatibility", Severity.debug)
+                # Also remove RT fields entirely on cgroup v2 as they may not be supported
+                if 'realtimeRuntime' in cpu:
+                    del cpu['realtimeRuntime']
+                    modified = True
+                    print_log("Removed 'realtimeRuntime' for cgroup v2 compatibility", Severity.debug)
+                if 'realtimePeriod' in cpu:
+                    del cpu['realtimePeriod']
+                    modified = True
+                    print_log("Removed 'realtimePeriod' for cgroup v2 compatibility", Severity.debug)
                 # Remove cpu section entirely if empty
                 if not cpu:
                     del resources['cpu']
                     modified = True
                     print_log("Removed empty 'cpu' section for cgroup v2 compatibility", Severity.debug)
+            
+            # Remove pids limit if set to 0 (unlimited) - can cause issues
+            if 'pids' in resources:
+                pids = resources['pids']
+                if pids.get('limit') == 0:
+                    del resources['pids']
+                    modified = True
+                    print_log("Removed pids limit of 0 for cgroup v2 compatibility", Severity.debug)
         
         # Remove rootfsPropagation - causes "make rootfs private" errors
         # in user namespace environments like GitHub Actions
