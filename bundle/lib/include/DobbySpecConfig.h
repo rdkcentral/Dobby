@@ -135,6 +135,7 @@ private:
     JSON_FIELD_PROCESSOR(processMounts);
     JSON_FIELD_PROCESSOR(processLegacyPlugins);
     JSON_FIELD_PROCESSOR(processMemLimit);
+    JSON_FIELD_PROCESSOR(processSwapLimit);
     JSON_FIELD_PROCESSOR(processGpu);
     JSON_FIELD_PROCESSOR(processVpu);
     JSON_FIELD_PROCESSOR(processDbus);

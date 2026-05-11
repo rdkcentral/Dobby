@@ -19,7 +19,7 @@ import test_utils
 from subprocess import check_output
 import subprocess
 from time import sleep
-import multiprocessing
+import threading
 from os.path import basename
 
 tests = (
@@ -99,35 +99,30 @@ def read_asynchronous(proc, string_to_find, timeout):
 
     """
 
-    # as this function should not be used outside asynchronous read, it is moved inside it
-    def wait_for_string(proc, string_to_find):
-        """Waits indefinitely until string is found in process. Must be run with timeout multiprocess.
-
-        Parameters:
-        proc (process): process in which we want to read
-        string_to_find (string): what we want to find in process
-
-        Returns:
-        None: Returns nothing if found, never ends if not found
-
-        """
-
+    # Use a daemon thread so the nested target function is never pickled.
+    # multiprocessing.Process requires pickling the target, which fails
+    # for nested functions on spawn-based environments (newer Python/OS).
+    # Threading shares the address space so no serialisation is needed.
+    def wait_for_string():
         while True:
             # notice that all data are in stderr not in stdout, this is DobbyDaemon design
             output = proc.stderr.readline()
+            if not output:
+                # EOF – subprocess closed its stderr pipe
+                return
             if string_to_find in output:
                 test_utils.print_log("Found string \"%s\"" % string_to_find, test_utils.Severity.debug)
                 return
 
     found = False
-    reader = multiprocessing.Process(target=wait_for_string, args=(proc, string_to_find), kwargs={})
-    test_utils.print_log("Starting multithread read", test_utils.Severity.debug)
+    reader = threading.Thread(target=wait_for_string, daemon=True)
+    test_utils.print_log("Starting async read thread", test_utils.Severity.debug)
     reader.start()
     reader.join(timeout)
     # if thread still running
     if reader.is_alive():
         test_utils.print_log("Reader still exists, closing", test_utils.Severity.debug)
-        reader.terminate()
+        # daemon=True: thread is abandoned and reaped when the process exits
         test_utils.print_log("Not found string \"%s\"" % string_to_find, test_utils.Severity.error)
     else:
         found = True

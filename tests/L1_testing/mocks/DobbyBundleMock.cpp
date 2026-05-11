@@ -47,3 +47,14 @@ const std::string& DobbyBundle::path() const
     return impl->path();
 }
 
+bool DobbyBundle::getPersistence() const
+{
+    EXPECT_NE(impl, nullptr);
+    return impl->getPersistence();
+}
+
+int DobbyBundle::dirFd() const
+{
+    EXPECT_NE(impl, nullptr);
+    return impl->dirFd();
+}
