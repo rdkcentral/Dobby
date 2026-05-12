@@ -1384,6 +1384,15 @@ bool DobbyManager::stopContainer(int32_t cd, bool withPrejudice)
              container->state == DobbyContainer::State::Hibernated ||
              container->state == DobbyContainer::State::Awakening)
     {
+        // If the container is mid-hibernate or mid-wakeup, set state to
+        // Stopping so the detached hibernate/wakeup thread will see the
+        // state change and abort before sending dead PIDs to memcr
+        if (container->state == DobbyContainer::State::Hibernating ||
+            container->state == DobbyContainer::State::Awakening)
+        {
+            container->state = DobbyContainer::State::Stopping;
+        }
+
         if (!mRunc->killCont(id, withPrejudice ? SIGKILL : SIGTERM))
         {
             AI_LOG_WARN("failed to send signal to '%s'", id.c_str());
