@@ -1,0 +1,30 @@
+schema: spec-driven
+
+context: |
+  Project: Dobby ("Docker based Thingy") - OCI container manager for RDK (Reference Design Kit) platforms
+  Tech stack: C++14, CMake, D-Bus (IPC), crun/runc (OCI runtime), jsoncpp, yajl, ctemplate, Boost, libnl, systemd
+  License: Apache 2.0 (Sky UK / Liberty Global)
+  Domain: Embedded Linux container orchestration for set-top boxes (STBs)
+  
+  Architecture:
+    - DobbyDaemon: Main daemon that manages container lifecycle via D-Bus API
+    - DobbyManager: Core container management (start, stop, pause, hibernate, exec)
+    - DobbyRunC: Wrapper around crun/runc OCI runtime CLI
+    - DobbyProxy/DobbyFactory: Client library for communicating with daemon over D-Bus
+    - DobbyPluginLauncher: Executes RDK plugins at OCI hook points
+    - DobbyRdkPluginManager: Loads and manages RDK plugin shared libraries with dependency resolution
+    - DobbyBundleGenerator: Converts Dobby JSON specs to OCI bundles
+    - DobbyInit: PID 1 init process for containers (zombie reaping + signal forwarding)
+  
+  Plugin System (RDK Plugins):
+    Networking, Storage, Logging, IPC, AppServices, DeviceMapper, Gamepad, GPU,
+    HttpProxy, IONMemory, LocalTime, Minidump, OOMCrash, RtScheduling, Thunder
+  
+  Key Patterns:
+    - Interface-driven design (IDobbyPlugin, IDobbyRdkPlugin, IDobbySettings, IDobbyEnv, IDobbyUtils)
+    - Plugin lifecycle hooks: postInstallation, preCreation, createRuntime, createContainer, postStart, postStop, postHalt
+    - Container states: Starting, Running, Stopping, Paused, Hibernating, Hibernated, Awakening
+    - D-Bus protocol defined in DobbyProtocol.h (admin, control, debug interfaces)
+    - Container descriptors are 1-1024, allocated via Fibonacci LFSR for pseudo-random distribution
+  
+  Build: CMake with many configurable options (plugins, platform, LTO, tracing, legacy components)
