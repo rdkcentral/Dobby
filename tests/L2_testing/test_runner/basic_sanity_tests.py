@@ -18,9 +18,8 @@
 import test_utils
 from subprocess import check_output
 import subprocess
-from time import sleep, monotonic
-import select
-import os
+from time import sleep
+import threading
 from os.path import basename
 
 tests = (
@@ -108,39 +107,34 @@ def read_asynchronous(proc, string_to_find, timeout):
 
     """
 
-    test_utils.print_log("Starting select-based read", test_utils.Severity.debug)
-    deadline = monotonic() + timeout
-    fd = proc.stderr.fileno()
-    accumulated = ""
+    # Use a daemon thread so the nested target function is never pickled.
+    # multiprocessing.Process requires pickling the target, which fails
+    # for nested functions on spawn-based environments (newer Python/OS).
+    # Threading shares the address space so no serialisation is needed.
+    def wait_for_string():
+        while True:
+            # notice that all data are in stderr not in stdout, this is DobbyDaemon design
+            output = proc.stderr.readline()
+            if not output:
+                # EOF – subprocess closed its stderr pipe
+                return
+            if string_to_find in output:
+                test_utils.print_log("Found string \"%s\"" % string_to_find, test_utils.Severity.debug)
+                return
 
-    while True:
-        remaining = deadline - monotonic()
-        if remaining <= 0:
-            test_utils.print_log("Not found string \"%s\" (timeout). Accumulated output: %s"
-                                 % (string_to_find, repr(accumulated)), test_utils.Severity.error)
-            return False
-
-        # Wait until stderr has data or timeout expires
-        ready, _, _ = select.select([fd], [], [], remaining)
-        if not ready:
-            # Timeout with no data
-            test_utils.print_log("Not found string \"%s\" (select timeout). Accumulated output: %s"
-                                 % (string_to_find, repr(accumulated)), test_utils.Severity.error)
-            return False
-
-        # Read raw bytes to avoid TextIOWrapper buffering mismatch with select()
-        chunk = os.read(fd, 4096)
-        if not chunk:
-            # EOF — process exited / pipe closed
-            test_utils.print_log("EOF on process stderr, stopping reader. Accumulated output: %s"
-                                 % repr(accumulated), test_utils.Severity.debug)
-            return False
-
-        accumulated += chunk.decode("utf-8", errors="replace")
-
-        if string_to_find in accumulated:
-            test_utils.print_log("Found string \"%s\"" % string_to_find, test_utils.Severity.debug)
-            return True
+    found = False
+    reader = threading.Thread(target=wait_for_string, daemon=True)
+    test_utils.print_log("Starting async read thread", test_utils.Severity.debug)
+    reader.start()
+    reader.join(timeout)
+    # if thread still running
+    if reader.is_alive():
+        test_utils.print_log("Reader still exists, closing", test_utils.Severity.debug)
+        # daemon=True: thread is abandoned and reaped when the process exits
+        test_utils.print_log("Not found string \"%s\"" % string_to_find, test_utils.Severity.error)
+    else:
+        found = True
+    return found
 
 
 def check_if_process_present(string_to_find):
