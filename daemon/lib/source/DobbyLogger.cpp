@@ -90,30 +90,34 @@ DobbyLogger::DobbyLogger(const std::shared_ptr<const IDobbySettings> &settings)
 
 DobbyLogger::~DobbyLogger()
 {
-    AI_LOG_FN_ENTRY();
+    try {
+        AI_LOG_FN_ENTRY();
 
-    // Container loggers should remove themselves from the poll loop, but it doesn't really
-    // matter since if this class is being destructed the whole daemon is almost certainly
-    // shutting down
-    if (mJournaldRelay)
-    {
-        mJournaldRelay->removeFromPollLoop(mPollLoop);
+        // Container loggers should remove themselves from the poll loop, but it doesn't really
+        // matter since if this class is being destructed the whole daemon is almost certainly
+        // shutting down
+        if (mJournaldRelay)
+        {
+            mJournaldRelay->removeFromPollLoop(mPollLoop);
+        }
+        if (mSyslogRelay)
+        {
+            mSyslogRelay->removeFromPollLoop(mPollLoop);
+        }
+        mPollLoop->stop();
+
+        //  Close all our open sockets
+        if (shutdown(mSocketFd, SHUT_RDWR) < 0)
+        {
+            AI_LOG_SYS_WARN(errno, "Failed to shutdown socket %s", mSocketPath.c_str());
+        }
+
+        closeAndDeleteSocket(mSocketFd, mSocketPath);
+
+        AI_LOG_FN_EXIT();
+    } catch (const std::exception& e) {
+        AI_LOG_SYS_ERROR(errno, "Caught Exception in ~DobbyLogger: %s", e.what());
     }
-    if (mSyslogRelay)
-    {
-        mSyslogRelay->removeFromPollLoop(mPollLoop);
-    }
-    mPollLoop->stop();
-
-    //  Close all our open sockets
-    if (shutdown(mSocketFd, SHUT_RDWR) < 0)
-    {
-        AI_LOG_SYS_WARN(errno, "Failed to shutdown socket %s", mSocketPath.c_str());
-    }
-
-    closeAndDeleteSocket(mSocketFd, mSocketPath);
-
-    AI_LOG_FN_EXIT();
 }
 
 /**
@@ -142,7 +146,16 @@ int DobbyLogger::createUnixSocket(const std::string path)
     // Set properties on the socket
     struct sockaddr_un address = {};
     address.sun_family = AF_UNIX;
-    strcpy(address.sun_path, path.c_str());
+
+    if (path.length() >= sizeof(address.sun_path))
+    {
+        AI_LOG_ERROR("Socket path too long: %s", path.c_str());
+        close(sockFd);
+        return -1;
+    }
+
+    strncpy(address.sun_path, path.c_str(), sizeof(address.sun_path) - 1);
+    address.sun_path[sizeof(address.sun_path) - 1] = '\0';
 
     // Attempt to bind the socket
     if (TEMP_FAILURE_RETRY(bind(sockFd, (const struct sockaddr *)&address, sizeof(address))) < 0)

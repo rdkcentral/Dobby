@@ -225,29 +225,29 @@ bool IPAllocator::getContainerIpsFromDisk()
     mAllocatedIps.clear();
 
     // Dir doesn't exist, no containers have run yet
-    struct stat buf;
-    if (stat(ADDRESS_FILE_DIR, &buf) != 0)
-    {
-        // Create directory we will store IPs in
-        if (!mUtils->mkdirRecursive(ADDRESS_FILE_DIR, 0644))
-        {
-            AI_LOG_ERROR_EXIT("Failed to create dir @ '%s'", ADDRESS_FILE_DIR);
-            return false;
-        }
-
-        AI_LOG_FN_EXIT();
-        return true;
-    }
-
-    // Work out what IPs are currently allocated to what containers
     DIR *dir = opendir(ADDRESS_FILE_DIR);
     if (!dir)
     {
-        AI_LOG_SYS_ERROR_EXIT(errno, "Failed to open directory @ '%s", ADDRESS_FILE_DIR);
-        closedir(dir);
-        return -1;
+        if (errno == ENOENT)
+        {
+            // Create directory we will store IPs in
+            if (!mUtils->mkdirRecursive(ADDRESS_FILE_DIR, 0644))
+            {
+                AI_LOG_ERROR_EXIT("Failed to create dir @ '%s'", ADDRESS_FILE_DIR);
+                return false;
+            }
+
+            AI_LOG_FN_EXIT();
+            return true;
+        }
+        else
+        {
+            AI_LOG_SYS_ERROR_EXIT(errno, "Failed to open directory @ '%s'", ADDRESS_FILE_DIR);
+            return false;
+        }
     }
 
+    // Work out what IPs are currently allocated to what containers
     // Each container gets a file in the store directory
     // Filename = container ID
     // Contents = ipaddress/veth

@@ -41,6 +41,8 @@ DobbyLogRelay::DobbyLogRelay(const std::string &sourceSocketPath,
                              const std::string &destinationSocketPath)
     : mSourceSocketPath(sourceSocketPath),
       mDestinationSocketPath(destinationSocketPath),
+      mDestinationSocketFd(-1),
+      mDestinationSocketAddress{},
       mBuf{}
 {
     AI_LOG_FN_ENTRY();
@@ -64,7 +66,15 @@ DobbyLogRelay::DobbyLogRelay(const std::string &sourceSocketPath,
 
         mDestinationSocketAddress = {};
         mDestinationSocketAddress.sun_family = AF_UNIX;
-        strcpy(mDestinationSocketAddress.sun_path, mDestinationSocketPath.c_str());
+
+        if (mDestinationSocketPath.length() >= sizeof(mDestinationSocketAddress.sun_path))
+        {
+            AI_LOG_ERROR("Socket path too long %s", mDestinationSocketPath.c_str());
+            return;
+        }
+
+        strncpy(mDestinationSocketAddress.sun_path, mDestinationSocketPath.c_str(), sizeof(mDestinationSocketAddress.sun_path) - 1);
+        mDestinationSocketAddress.sun_path[sizeof(mDestinationSocketAddress.sun_path) - 1] = '\0';
 
         AI_LOG_INFO("Created log relay from %s to %s", mSourceSocketPath.c_str(), mDestinationSocketPath.c_str());
     }
@@ -196,7 +206,16 @@ int DobbyLogRelay::createDgramSocket(const std::string &path)
 
     struct sockaddr_un address = {};
     address.sun_family = AF_UNIX;
-    strcpy(address.sun_path, path.c_str());
+
+    if (path.length() >= sizeof(address.sun_path))
+    {
+        AI_LOG_ERROR("Socket path too long: %s", path.c_str());
+        close(sockFd);
+        return -1;
+    }
+
+    strncpy(address.sun_path, path.c_str(), sizeof(address.sun_path) - 1);
+    address.sun_path[sizeof(address.sun_path) - 1] = '\0';
 
     if (bind(sockFd, (const struct sockaddr *)&address, sizeof(address)) < 0)
     {

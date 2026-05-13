@@ -1546,6 +1546,7 @@ int DobbyUtils::getIntegerMetaData(const ContainerId &id,
                                    const std::string &key,
                                    int defaultValue) const
 {
+    std::lock_guard<std::mutex> locker(mMetaDataLock);
     auto it = mIntegerMetaData.find(std::make_pair(id, key));
     if (it == mIntegerMetaData.end())
         return defaultValue;
@@ -1574,6 +1575,7 @@ std::string DobbyUtils::getStringMetaData(const ContainerId &id,
                                           const std::string &key,
                                           const std::string &defaultValue) const
 {
+    std::lock_guard<std::mutex> locker(mMetaDataLock);
     auto it = mStringMetaData.find(std::make_pair(id, key));
     if (it == mStringMetaData.end())
         return defaultValue;

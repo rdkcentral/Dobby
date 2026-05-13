@@ -62,9 +62,9 @@ private:
         { }
     };
 
-    uint64_t mWorkCounter;
+    std::atomic<uint64_t> mWorkCounter;
 
-    bool mExitRequested;
+    std::atomic<bool> mExitRequested;
     std::atomic<std::thread::id> mRunningThreadId;
 
     AICommon::Mutex mWorkQueueLock;
@@ -73,7 +73,7 @@ private:
 
     AICommon::Mutex mWorkCompleteLock;
     AICommon::ConditionVariable mWorkCompleteCond;
-    uint64_t mWorkCompleteCounter;
+    std::atomic<uint64_t> mWorkCompleteCounter;
 };
 
 

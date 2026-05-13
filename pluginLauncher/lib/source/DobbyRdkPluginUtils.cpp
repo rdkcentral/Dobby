@@ -39,7 +39,8 @@
 
 DobbyRdkPluginUtils::DobbyRdkPluginUtils(const std::shared_ptr<rt_dobby_schema> &cfg,
                                         const std::string& containerId)
-    : mConf(cfg)
+    : exitStatus(-1)
+    , mConf(cfg)
     , mContainerId(containerId)
 {
     AI_LOG_FN_ENTRY();
@@ -50,7 +51,8 @@ DobbyRdkPluginUtils::DobbyRdkPluginUtils(const std::shared_ptr<rt_dobby_schema> 
 DobbyRdkPluginUtils::DobbyRdkPluginUtils(const std::shared_ptr<rt_dobby_schema> &cfg,
                                          const std::shared_ptr<IDobbyStartState> &startState,
                                          const std::string& containerId)
-    : mConf(cfg)
+    : exitStatus(-1)
+    , mConf(cfg)
     , mStartState(startState)
     , mContainerId(containerId)
 {
@@ -62,7 +64,8 @@ DobbyRdkPluginUtils::DobbyRdkPluginUtils(const std::shared_ptr<rt_dobby_schema> 
 DobbyRdkPluginUtils::DobbyRdkPluginUtils(const std::shared_ptr<rt_dobby_schema> &cfg,
                                          const std::shared_ptr<const rt_state_schema> &state,
                                          const std::string& containerId)
-    : mConf(cfg)
+    : exitStatus(-1)
+    , mConf(cfg)
     , mState(state)
     , mContainerId(containerId)
 {
@@ -75,7 +78,8 @@ DobbyRdkPluginUtils::DobbyRdkPluginUtils(const std::shared_ptr<rt_dobby_schema> 
                                          const std::shared_ptr<const rt_state_schema> &state,
                                          const std::shared_ptr<IDobbyStartState> &startState,
                                          const std::string& containerId)
-    : mConf(cfg)
+    : exitStatus(-1)
+    , mConf(cfg)
     , mState(state)
     , mStartState(startState)
     , mContainerId(containerId)

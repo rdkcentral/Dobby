@@ -170,10 +170,17 @@ bool DobbyRdkPluginManager::loadPlugins()
     }
 
     int directoriesCount = 0;
-    struct dirent **namelist;
+    struct dirent **namelist = nullptr;
 
     // Need to sort directories with versionsort so lib.12 would be greater than lib.2
     directoriesCount = scandir(mPluginPath.c_str(), &namelist, 0, versionsort);
+    if (directoriesCount < 0)
+    {
+        AI_LOG_SYS_ERROR(errno, "failed to scan directory '%s'", mPluginPath.c_str());
+        closedir(dir);
+        return false;
+    }
+    
     for(int i=0; i<directoriesCount;i++)
     {
         // if a symlink verify that the thing we're pointing to is a file
@@ -337,7 +344,6 @@ bool DobbyRdkPluginManager::loadPlugins()
 
     free(namelist);
     closedir(dir);
-    close(dirFd);
 
     AI_LOG_FN_EXIT();
     return true;

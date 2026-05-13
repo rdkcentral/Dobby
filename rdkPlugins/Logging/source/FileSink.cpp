@@ -41,6 +41,7 @@
 FileSink::FileSink(const std::string &containerId, std::shared_ptr<rt_dobby_schema> &containerConfig)
     : mContainerConfig(containerConfig),
       mContainerId(containerId),
+      mFileSizeLimit(-1),
       mLimitHit(false),
       mBuf{}
 {

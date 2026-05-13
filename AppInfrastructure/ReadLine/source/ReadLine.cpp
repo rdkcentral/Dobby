@@ -438,7 +438,7 @@ void ReadLine::commandExecute(const std::string& cmdStr,
     }
     else if (!errStr.empty())
     {
-        fprintf(stderr, "Ambiguous command '\%s', possible commands: %s %s\n",
+        fprintf(stderr, "Ambiguous command '%s', possible commands: %s %s\n",
                 cmdStr.c_str(), cmdRef->name.c_str(), errStr.c_str());
     }
     else if (cmdRef->handler != nullptr)

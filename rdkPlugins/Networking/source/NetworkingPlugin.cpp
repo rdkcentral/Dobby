@@ -42,6 +42,7 @@ NetworkingPlugin::NetworkingPlugin(std::shared_ptr<rt_dobby_schema> &cfg,
       mContainerConfig(cfg),
       mUtils(utils),
       mRootfsPath(rootfsPath),
+      mPluginData(nullptr),
       mNetfilter(std::make_shared<Netfilter>())
 {
     AI_LOG_FN_ENTRY();

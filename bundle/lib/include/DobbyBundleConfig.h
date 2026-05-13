@@ -79,7 +79,7 @@ public:
     std::shared_ptr<rt_dobby_schema> config() const override;
 
 public:
-    const std::map<std::string, Json::Value>& rdkPlugins() const override;
+   const std::map<std::string, Json::Value>& rdkPlugins() const override;
 
 #if defined(LEGACY_COMPONENTS)
 public:

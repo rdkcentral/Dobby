@@ -190,10 +190,9 @@ std::vector<Netfilter::RuleSet> constructBridgeRules(const std::shared_ptr<Netfi
 
     if (ipVersion == AF_INET6)
     {
-        Netfilter::RuleSet::iterator appendFilterRules = appendRuleSet.find(Netfilter::TableType::Filter);
         // add DobbyInputChain rule to accept Network Discovery Protocol messages, otherwise
         // the Neigh table (which is equivalent of IPv4 ARP table) will not be able to update
-        appendFilterRules->second.emplace_front("DobbyInputChain -p ICMPv6 -j ACCEPT");
+        appendRuleSet[Netfilter::TableType::Filter].emplace_front("DobbyInputChain -p ICMPv6 -j ACCEPT");
     }
 
     // add addresses to rules depending on ipVersion
@@ -201,27 +200,24 @@ std::vector<Netfilter::RuleSet> constructBridgeRules(const std::shared_ptr<Netfi
     if (ipVersion == AF_INET)
     {
         // add POSTROUTING RETURN rules to the front of the NAT table
-        Netfilter::RuleSet::iterator appendNatRules = appendRuleSet.find(Netfilter::TableType::Nat);
-        appendNatRules->second.emplace_front("POSTROUTING -s %y -d 255.255.255.255/32 ! -o " BRIDGE_NAME " -j RETURN");
-        appendNatRules->second.emplace_front("POSTROUTING -s %y -d 224.0.0.0/24 ! -o " BRIDGE_NAME " -j RETURN");
+        appendRuleSet[Netfilter::TableType::Nat].emplace_front("POSTROUTING -s %y -d 255.255.255.255/32 ! -o " BRIDGE_NAME " -j RETURN");
+        appendRuleSet[Netfilter::TableType::Nat].emplace_front("POSTROUTING -s %y -d 224.0.0.0/24 ! -o " BRIDGE_NAME " -j RETURN");
 
         // reject with "icmp-port-unreachable" if not ACCEPTed by now
-        Netfilter::RuleSet::iterator appendFilterRules = appendRuleSet.find(Netfilter::TableType::Filter);
-        appendFilterRules->second.emplace_back("FORWARD -o " BRIDGE_NAME " -j REJECT --reject-with icmp-port-unreachable");
-        appendFilterRules->second.emplace_back("FORWARD -i " BRIDGE_NAME " -j REJECT --reject-with icmp-port-unreachable");
+        appendRuleSet[Netfilter::TableType::Filter].emplace_back("FORWARD -o " BRIDGE_NAME " -j REJECT --reject-with icmp-port-unreachable");
+        appendRuleSet[Netfilter::TableType::Filter].emplace_back("FORWARD -i " BRIDGE_NAME " -j REJECT --reject-with icmp-port-unreachable");
 
         bridgeAddressRange = BRIDGE_ADDRESS_RANGE "/24";
     }
     else if (ipVersion == AF_INET6)
     {
-        Netfilter::RuleSet::iterator appendFilterRules = appendRuleSet.find(Netfilter::TableType::Filter);
 
         // add DobbyInputChain rule to accept solicited-node multicast requests from containers
-        appendFilterRules->second.emplace_front("DobbyInputChain -s %y -d ff02::1:ff40:b01/128 -i " BRIDGE_NAME " -j ACCEPT");
+        appendRuleSet[Netfilter::TableType::Filter].emplace_front("DobbyInputChain -s %y -d ff02::1:ff40:b01/128 -i " BRIDGE_NAME " -j ACCEPT");
 
         // reject with "icmp6-port-unreachable" if not ACCEPTed by now
-        appendFilterRules->second.emplace_back("FORWARD -o " BRIDGE_NAME " -j REJECT --reject-with icmp6-port-unreachable");
-        appendFilterRules->second.emplace_back("FORWARD -i " BRIDGE_NAME " -j REJECT --reject-with icmp6-port-unreachable");
+        appendRuleSet[Netfilter::TableType::Filter].emplace_back("FORWARD -o " BRIDGE_NAME " -j REJECT --reject-with icmp6-port-unreachable");
+        appendRuleSet[Netfilter::TableType::Filter].emplace_back("FORWARD -i " BRIDGE_NAME " -j REJECT --reject-with icmp6-port-unreachable");
 
         bridgeAddressRange = BRIDGE_ADDRESS_RANGE_IPV6 "/120";
     }

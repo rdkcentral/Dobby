@@ -142,14 +142,23 @@ DobbyRootfs::DobbyRootfs(const std::shared_ptr<IDobbyUtils>& utils,
     }
 
     // check that rootfs exists in bundle
-    if (access(rootfsDirPath.c_str(), F_OK) == -1)
+    int dirFd = open(rootfsDirPath.c_str(), O_CLOEXEC | O_DIRECTORY);
+    if (dirFd == -1)
     {
-        AI_LOG_ERROR_EXIT("could not find rootfs at %s", rootfsDirPath.c_str());
-        return;
+        if (errno == ENOENT)
+        {
+            AI_LOG_ERROR_EXIT("could not find rootfs at %s", rootfsDirPath.c_str());
+            return;
+        }
+        else
+        {
+            AI_LOG_SYS_ERROR(errno, "failed to open rootfs directory '%s'", rootfsDirPath.c_str());
+            return;
+        }
     }
     else
     {
-        mDirFd = open(rootfsDirPath.c_str(), O_CLOEXEC | O_DIRECTORY);
+        mDirFd = dirFd;
     }
 
     // store the complete path

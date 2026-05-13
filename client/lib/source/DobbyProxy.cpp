@@ -134,9 +134,9 @@ DobbyProxy::~DobbyProxy()
     // can now safely stop the dispatcher thread
     if (mStateChangeThread.joinable())
     {
-        std::unique_lock<std::mutex> locker(mStateChangeLock);
-        mStateChangeQueue.emplace_back(StateChangeEvent::Terminate);
-        locker.unlock();
+        {std::unique_lock<std::mutex> locker(mStateChangeLock);
+            mStateChangeQueue.emplace_back(StateChangeEvent::Terminate);
+        }
 
         mStateChangeCond.notify_all();
         mStateChangeThread.join();

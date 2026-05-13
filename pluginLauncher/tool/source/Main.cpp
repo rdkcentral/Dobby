@@ -119,6 +119,7 @@ static void parseArgs(const int argc, char **argv)
                 fprintf(stderr, "Warning: Unknown option `-%c'.\n", optopt);
             else
                 fprintf(stderr, "Warning: Unknown option character `\\x%x'.\n", optopt);
+            break;
         default:
             exit(EXIT_FAILURE);
             break;

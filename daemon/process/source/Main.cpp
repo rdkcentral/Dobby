@@ -230,6 +230,7 @@ static void parseArgs(int argc, char **argv)
                     fprintf(stderr, "Warning: Unknown option `-%c'.\n", optopt);
                 else
                     fprintf(stderr, "Warning: Unknown option character `\\x%x'.\n", optopt);
+                break;
 
             default:
                 exit(EXIT_FAILURE);
@@ -496,129 +497,137 @@ static std::shared_ptr<AI_IPC::IIpcService> setupIpcService()
  */
 int main(int argc, char * argv[])
 {
-    int rc = EXIT_SUCCESS;
+    try {
+        int rc = EXIT_SUCCESS;
 
-    parseArgs(argc, argv);
+        parseArgs(argc, argv);
 
-    // Set our priority if requested
-    if (gPriority > 0)
-    {
-        struct sched_param param;
-        param.sched_priority = gPriority;
-        sched_setscheduler(0, SCHED_RR, &param);
-    }
+        // Set our priority if requested
+        if (gPriority > 0)
+        {
+            struct sched_param param;
+            param.sched_priority = gPriority;
+            sched_setscheduler(0, SCHED_RR, &param);
+        }
 
-    // Setup the AI logging stuff
-    unsigned logTargets = Dobby::Console;
-    if (gUseSyslog)
-    {
-        logTargets |= Dobby::SysLog;
-    }
+        // Setup the AI logging stuff
+        unsigned logTargets = Dobby::Console;
+        if (gUseSyslog)
+        {
+            logTargets |= Dobby::SysLog;
+        }
 
-    // Also log to journald on the RDK builds
-    if (gUseJournald)
-    {
-        logTargets |= Dobby::Journald;
-    }
-
-
-    Dobby::setupLogging(logTargets);
-    __ai_debug_log_level = gLogLevel;
+        // Also log to journald on the RDK builds
+        if (gUseJournald)
+        {
+            logTargets |= Dobby::Journald;
+        }
 
 
-    AI_LOG_MILESTONE("starting Dobby daemon");
-
-    // Daemonise ourselves to run in the background
-    if (gDaemonise)
-    {
-        daemonise();
-
-        logTargets &= ~Dobby::Console;
         Dobby::setupLogging(logTargets);
-    }
-    // Shutdown the console if asked to
-    else if (gNoConsole)
-    {
-        closeConsole();
-
-        logTargets &= ~Dobby::Console;
-        Dobby::setupLogging(logTargets);
-    }
-
-    // Create object storing Dobby settings
-    const std::shared_ptr<Settings> settings = createSettings();
+        __ai_debug_log_level = gLogLevel;
 
 
-    // Setup signals, this MUST be done in the main thread before any other
-    // threads are spawned
-    Dobby::configSignals();
+        AI_LOG_MILESTONE("starting Dobby daemon");
+
+        // Daemonise ourselves to run in the background
+        if (gDaemonise)
+        {
+            daemonise();
+
+            logTargets &= ~Dobby::Console;
+            Dobby::setupLogging(logTargets);
+        }
+        // Shutdown the console if asked to
+        else if (gNoConsole)
+        {
+            closeConsole();
+
+            logTargets &= ~Dobby::Console;
+            Dobby::setupLogging(logTargets);
+        }
+
+        // Create object storing Dobby settings
+        const std::shared_ptr<Settings> settings = createSettings();
 
 
-    // Initialise tracing on debug builds (warning: this must be done after the
-    // Dobby::configSignals() call above, because it spawns threads that mess
-    // with the signal masks)
+        // Setup signals, this MUST be done in the main thread before any other
+        // threads are spawned
+        Dobby::configSignals();
+
+
+        // Initialise tracing on debug builds (warning: this must be done after the
+        // Dobby::configSignals() call above, because it spawns threads that mess
+        // with the signal masks)
 #if defined(AI_ENABLE_TRACING)
-    PerfettoTracing::initialise();
+        PerfettoTracing::initialise();
 #endif
 
-    AI_LOG_INFO("starting dbus service");
+        AI_LOG_INFO("starting dbus service");
 #if defined(USE_SYSTEMD)
-    AI_LOG_INFO("Dobby built with systemd support - using sd-bus");
+        AI_LOG_INFO("Dobby built with systemd support - using sd-bus");
 #else
-    AI_LOG_INFO("Dobby built without systemd support - using libdbus");
+        AI_LOG_INFO("Dobby built without systemd support - using libdbus");
 #endif
-    AI_LOG_INFO("  dbus address '%s'", gDbusAddress.c_str());
-    AI_LOG_INFO("  service name '%s'", DOBBY_SERVICE);
-    AI_LOG_INFO("  object name '%s'", DOBBY_OBJECT);
+        AI_LOG_INFO("  dbus address '%s'", gDbusAddress.c_str());
+        AI_LOG_INFO("  service name '%s'", DOBBY_SERVICE);
+        AI_LOG_INFO("  object name '%s'", DOBBY_OBJECT);
 
-    // Create the IPC service and start it, this spawns a thread and runs the dbus
-    // event loop inside it.
-    std::shared_ptr<AI_IPC::IIpcService> ipcService = setupIpcService();
+        // Create the IPC service and start it, this spawns a thread and runs the dbus
+        // event loop inside it.
+        std::shared_ptr<AI_IPC::IIpcService> ipcService = setupIpcService();
 
-    if (!ipcService)
-    {
-        rc = EXIT_FAILURE;
-    }
-    else if (!ipcService->isServiceAvailable(DOBBY_SERVICE))
-    {
-        // Double check we did actually make ourselves available on the bus
-        AI_LOG_ERROR("IPC Service initialised but service %s is not available on the bus", DOBBY_SERVICE);
-        rc = EXIT_FAILURE;
-    }
-    else
-    {
-        // Create the dobby object and hook into the IPC service
-        Dobby dobby(ipcService->getBusAddress(), ipcService, settings);
+        if (!ipcService)
+        {
+            rc = EXIT_FAILURE;
+        }
+        else if (!ipcService->isServiceAvailable(DOBBY_SERVICE))
+        {
+            // Double check we did actually make ourselves available on the bus
+            AI_LOG_ERROR("IPC Service initialised but service %s is not available on the bus", DOBBY_SERVICE);
+            rc = EXIT_FAILURE;
+        }
+        else
+        {
+            // Create the dobby object and hook into the IPC service
+            Dobby dobby(ipcService->getBusAddress(), ipcService, settings);
 
-        // On debug builds try and detect the AI dbus addresses at startup
+            // On debug builds try and detect the AI dbus addresses at startup
 #if (AI_BUILD_TYPE == AI_DEBUG)
-        dobby.setDefaultAIDbusAddresses(getAIDbusAddress(true),
+            dobby.setDefaultAIDbusAddresses(getAIDbusAddress(true),
                                         getAIDbusAddress(false));
 #endif // (AI_BUILD_TYPE == AI_DEBUG)
 
-        // Start the service, this spawns a thread and runs the dbus event
-        // loop inside it
-        ipcService->start();
+            // Start the service, this spawns a thread and runs the dbus event
+            // loop inside it
+            ipcService->start();
+
+            // Milestone
+            AI_LOG_MILESTONE("started Dobby daemon");
+
+            // Wait till the Dobby service is terminated, this is obviously a
+            // blocking call
+            dobby.run();
+
+            // Stop the service and fall out
+            ipcService->stop();
+        }
 
         // Milestone
-        AI_LOG_MILESTONE("started Dobby daemon");
+        if (rc == EXIT_SUCCESS)
+        {
+            AI_LOG_MILESTONE("stopped Dobby daemon");
+        }
 
-        // Wait till the Dobby service is terminated, this is obviously a
-        // blocking call
-        dobby.run();
-
-        // Stop the service and fall out
-        ipcService->stop();
+        // And we're done
+        AICommon::termLogging();
+        return rc;
+    } catch (const std::exception& e) {
+        AI_LOG_FATAL("Unhandled exception in main: %s", e.what());
+        return EXIT_FAILURE;
+    } catch (...) {
+        AI_LOG_FATAL("Unhandled unknown exception in main");
+        return EXIT_FAILURE;
     }
-
-    // Milestone
-    if (rc == EXIT_SUCCESS)
-    {
-        AI_LOG_MILESTONE("stopped Dobby daemon");
-    }
-
-    // And we're done
-    AICommon::termLogging();
-    return rc;
 }
 

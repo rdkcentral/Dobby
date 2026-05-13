@@ -81,9 +81,9 @@ DobbyBundleConfig::DobbyBundleConfig(const std::shared_ptr<IDobbyUtils>& utils,
             std::string postInstallPath = bundlePath + "/postinstallhooksuccess";
             
             if (remove(postInstallPath.c_str()) != 0)  
-	    {
-		    AI_LOG_ERROR("Failed to remove postinstallhooksuccess");
-	    }
+            {
+                AI_LOG_ERROR("Failed to remove postinstallhooksuccess");
+            }
 
 
             // Retry creation of config
@@ -164,11 +164,13 @@ bool DobbyBundleConfig::isValid() const
 
 uid_t DobbyBundleConfig::userId() const
 {
+    std::lock_guard<std::mutex> locker(mLock);
     return mUserId;
 }
 
 gid_t DobbyBundleConfig::groupId() const
 {
+    std::lock_guard<std::mutex> locker(mLock);
     return mGroupId;
 }
 
@@ -244,6 +246,7 @@ const std::string& DobbyBundleConfig::rootfsPath() const
 
 bool DobbyBundleConfig::restartOnCrash() const
 {
+    std::lock_guard<std::mutex> locker(mLock);
     return mRestartOnCrash;
 }
 

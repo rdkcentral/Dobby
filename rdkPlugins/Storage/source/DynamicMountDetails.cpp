@@ -135,54 +135,60 @@ bool DynamicMountDetails::onCreateContainer() const
     if (stat(mMountProperties.source.c_str(), &buffer) == 0)
     {
         bool isDir = S_ISDIR(buffer.st_mode);
-        if (stat(targetPath.c_str(), &buffer) != 0)
-        {
-            std::string dirPath; 
-            // Determine path based on whether target is a directory or file
-            if (isDir)
-            {
-                dirPath = targetPath;
-            }
-            else
-            {
-                // Mounting a file so exclude filename from directory path
-                std::size_t found = targetPath.find_last_of("/");
-                dirPath = targetPath.substr(0, found);
-            }
 
-            // Recursively create destination directory structure
-            if (mUtils->mkdirRecursive(dirPath, 0755) || (errno == EEXIST))
+        std::string dirPath; 
+        // Determine path based on whether target is a directory or file
+        if (isDir)
+        {
+            dirPath = targetPath;
+        }
+        else
+        {
+            // Mounting a file so exclude filename from directory path
+            std::size_t found = targetPath.find_last_of("/");
+            if (found == std::string::npos)
+                dirPath = ".";
+            else
+                dirPath = targetPath.substr(0, found);
+        }
+
+        // Recursively create destination directory structure
+        bool prepareOk = true;
+        if (!mUtils->mkdirRecursive(dirPath, 0755) && (errno != EEXIST))
+        {
+            AI_LOG_SYS_ERROR(errno, "failed to create mount destination path '%s' in storage plugin", targetPath.c_str());
+            prepareOk = false;
+        }
+
+        if (prepareOk && !isDir)
+        {
+            // If mounting a file, make sure a file with the same name
+            // exists at the desination path prior to bind mounting.
+            // Otherwise the bind mount may fail if the destination path
+            // filesystem is read-only.
+            // Creating the file first ensures an inode exists for the
+            // bind mount to target.
+            int fd = open(targetPath.c_str(), O_RDONLY | O_CREAT | O_CLOEXEC, 0644);
+            if (fd >= 0)
             {
-                if (isDir)
-                {
-                    success = true;
-                }
-                else
-                {
-                    // If mounting a file, make sure a file with the same name
-                    // exists at the desination path prior to bind mounting.
-                    // Otherwise the bind mount may fail if the destination path
-                    // filesystem is read-only.
-                    // Creating the file first ensures an inode exists for the
-                    // bind mount to target.
-                    int fd = open(targetPath.c_str(), O_RDONLY | O_CREAT, 0644);
-                    if ((fd == 0) || (errno == EEXIST))
-                    {
-                        close(fd);
-                        success = true;
-                    }
-                    else
-                    {
-                        AI_LOG_SYS_ERROR(errno, "failed to open or create destination '%s'", targetPath.c_str());
-                    }
-                }
+                close(fd);
+                // file creation succeeded (or opened existing file), continue
             }
             else
             {
-                AI_LOG_SYS_ERROR(errno, "failed to create mount destination path '%s' in storage plugin", targetPath.c_str());
+                AI_LOG_SYS_ERROR(errno, "failed to open or create destination '%s'", targetPath.c_str());
+                prepareOk = false;
             }
         }
-        success = addMount();
+
+        if (prepareOk)
+        {
+            success = addMount();
+        }
+        else
+        {
+            success = false;
+        }
     }
     else
     {
@@ -207,23 +213,19 @@ bool DynamicMountDetails::onPostStop() const
 
     bool success = false;
     std::string targetPath = mRootfsPath + mMountProperties.destination;
-    struct stat buffer;
 
-    if (stat(targetPath.c_str(), &buffer) == 0)
+    if (remove(targetPath.c_str()) == 0)
     {
-        if (remove(targetPath.c_str()) == 0)
-        {
-            success = true;
-        }
-        else
-        {
-            AI_LOG_SYS_ERROR(errno, "failed to remove dynamic mount '%s' in storage plugin", targetPath.c_str());
-        }
+        success = true;
     }
-    else
+    else if (errno == ENOENT)
     {
         success = true;
         AI_LOG_INFO("Mount '%s' does not exist, dynamic mount skipped", targetPath.c_str());
+    }
+    else
+    {
+        AI_LOG_SYS_ERROR(errno, "failed to remove dynamic mount '%s' in storage plugin", targetPath.c_str());
     }
 
     AI_LOG_FN_EXIT();

@@ -39,7 +39,8 @@ IonMemoryPlugin::IonMemoryPlugin(std::shared_ptr<rt_dobby_schema> &containerConf
     : mName("IonMemory"),
       mContainerConfig(containerConfig),
       mUtils(utils),
-      mRootfsPath(rootfsPath)
+      mRootfsPath(rootfsPath),
+      mPluginData(nullptr)
 {
     AI_LOG_FN_ENTRY();
 
