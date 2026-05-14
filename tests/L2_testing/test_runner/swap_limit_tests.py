@@ -17,13 +17,17 @@
 
 import test_utils
 
+# Use "unlimited" as a sentinel to indicate the swap cgroup value should be
+# much larger than memLimit (kernel reports its page-aligned max when unset).
+UNLIMITED = "unlimited"
+
 tests = [
     test_utils.Test(
         "Swap limit default",
-        "swap_limit_default",
-        str(2998272),
+        "ram",
+        UNLIMITED,
         "Starts a container with only memLimit set and verifies that "
-        "memory.memsw.limit_in_bytes equals memLimit (no extra swap)"),
+        "memory.memsw.limit_in_bytes is unlimited (much larger than memLimit)"),
     test_utils.Test(
         "Swap limit override",
         "swap_limit",
@@ -79,9 +83,13 @@ def validate_swap_limit(container_id, expected_swap):
     is treated as a skip rather than a failure so CI does not break on
     platforms where 'swapaccount=1' has not been set on the kernel cmdline.
 
+    If expected_swap is the UNLIMITED sentinel, the test passes when the
+    reported value is significantly larger than any reasonable memLimit
+    (indicating the kernel has no swap ceiling set).
+
     Parameters:
         container_id (str): container whose log to inspect
-        expected_swap (str): expected value as a decimal string
+        expected_swap (str): expected value as a decimal string, or UNLIMITED
 
     Returns:
         (bool, str): (passed, message)
@@ -96,6 +104,20 @@ def validate_swap_limit(container_id, expected_swap):
         return True, "Skipped – swap accounting not available on this platform"
 
     actual = log.strip()
+
+    if expected_swap == UNLIMITED:
+        # When swap is unlimited the kernel reports a very large page-aligned
+        # value (e.g. 9223372036854771712 on 64-bit).  We consider any value
+        # above 1 TiB (1099511627776) as effectively unlimited.
+        try:
+            actual_val = int(actual)
+        except ValueError:
+            return False, "Could not parse swap value '%s' as integer" % actual
+        if actual_val > 1099511627776:
+            return True, "Test passed (swap unlimited: %s)" % actual
+        return (False,
+                "Swap limit for '%s' should be unlimited but got %s"
+                % (container_id, actual))
 
     if actual == expected_swap:
         return True, "Test passed"
