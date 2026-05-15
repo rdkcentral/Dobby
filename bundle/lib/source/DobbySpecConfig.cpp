@@ -634,12 +634,8 @@ bool DobbySpecConfig::parseSpec(ctemplate::TemplateDictionary* dictionary,
 
     if (!(flags & JSON_FLAG_SWAPLIMIT))
     {
-        // swapLimit not supplied: default swap to memLimit (no extra swap)
-        const Json::Value& memLimitVal = mSpec["memLimit"];
-        if (memLimitVal.isIntegral())
-        {
-            dictionary->SetIntValue(MEM_SWAP, memLimitVal.asUInt());
-        }
+        // swapLimit not supplied: leave memory+swap unlimited (-1)
+        dictionary->SetIntValue(MEM_SWAP, -1);
     }
 
     if (!(flags & JSON_FLAG_CAPABILITIES))
@@ -1300,8 +1296,7 @@ bool DobbySpecConfig::processMemLimit(const Json::Value& value,
  *
  *  When present, this value is used as the cgroup memory.memsw.limit_in_bytes,
  *  allowing swap to be configured independently of the memory limit.  When
- *  absent the swap limit defaults to the same value as memLimit (i.e. no
- *  extra swap beyond the memory limit).
+ *  absent the swap limit is set to -1 (unlimited).
  *
  *  The kernel requires swap >= memLimit, so an error is returned if the
  *  supplied value is smaller than the memLimit already set.
