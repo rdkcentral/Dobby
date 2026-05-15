@@ -3245,6 +3245,16 @@ void DobbyManager::onChildExit()
                                 "(PID 1 namespace init convention)",
                                 id.c_str(), exitCode, sig, strsignal(sig));
                 }
+                else if (WIFSIGNALED(status))
+                {
+                    // Direct signal death (e.g. SIGKILL which cannot be caught
+                    // by DobbyInit's signal handler). Log the signal info so
+                    // there is a clear indication of why the container died.
+                    int sig = WTERMSIG(status);
+                    AI_LOG_INFO("container '%s' killed by signal %d (%s)%s",
+                                id.c_str(), sig, strsignal(sig),
+                                WCOREDUMP(status) ? " (core dumped)" : "");
+                }
             }
 
             AI_LOG_INFO("runc for container '%s' has quit (pid:%d status:0x%04x)",
