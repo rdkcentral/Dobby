@@ -412,3 +412,4 @@ static const char* ociJsonTemplate = R"JSON(
     {{/ENABLE_RDK_PLUGINS}}
 }
 )JSON";
+
