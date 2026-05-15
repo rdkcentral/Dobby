@@ -136,7 +136,7 @@ The table below lists the supported top-level fields. Fields marked **mandatory*
 | `args` | array | Yes | Command and arguments to run inside the container. |
 | `user` | object | Yes | `uid` and `gid` the container process runs as. |
 | `memLimit` | integer | Yes | Memory limit in bytes (`memory.limit_in_bytes`). Values below 256 KiB are accepted but will only generate a warning and may not be effective. |
-| `swapLimit` | integer | No | Swap+memory limit in bytes (`memory.memsw.limit_in_bytes`). Must be ≥ `memLimit`. Defaults to `memLimit` (no extra swap). |
+| `swapLimit` | integer | No | Swap+memory limit in bytes (`memory.memsw.limit_in_bytes`). Must be ≥ `memLimit`. Defaults to unlimited (-1) when absent. |
 | `env` | array | No | Environment variables in `"KEY=VALUE"` format. |
 | `cwd` | string | No | Working directory inside the container. |
 | `console` | object | No | Console log settings: `path` and `limit` (bytes). |
@@ -168,7 +168,7 @@ The table below lists the supported top-level fields. Fields marked **mandatory*
 }
 ```
 
-`swapLimit` sets the combined memory+swap ceiling enforced by the kernel cgroup (`memory.memsw.limit_in_bytes`). When omitted, swap is capped at the same value as `memLimit`, effectively disabling extra swap for the container.
+`swapLimit` sets the combined memory+swap ceiling enforced by the kernel cgroup (`memory.memsw.limit_in_bytes`). When omitted, memory+swap is unlimited (-1), allowing the container to use as much swap as the system provides.
 
 ## DobbyTool
 This is a simple command line tool that is used for debugging purporses. It connects to the Dobby daemon over dbus and allows for debugging and testing containers.

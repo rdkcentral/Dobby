@@ -175,14 +175,13 @@ protected:
 // ── Tests ─────────────────────────────────────────────────────────────────────
 
 /**
- * When 'swapLimit' is absent, MEM_SWAP must default to the same value as
- * MEM_LIMIT (no extra swap beyond the memory limit).
+ * When 'swapLimit' is absent, MEM_SWAP must default to -1 (unlimited).
  */
-TEST_F(DobbySpecConfigTest, SwapLimit_DefaultsToMemLimit)
+TEST_F(DobbySpecConfigTest, SwapLimit_DefaultsToUnlimited)
 {
     auto cfg = makeConfig(kSpecMemOnly);
     EXPECT_TRUE(cfg->isValid());
-    EXPECT_EQ(expandMemTemplate(*cfg), "LIMIT=2998272 SWAP=2998272");
+    EXPECT_EQ(expandMemTemplate(*cfg), "LIMIT=2998272 SWAP=-1");
 }
 
 /**
