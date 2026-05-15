@@ -4417,5 +4417,200 @@ TEST_F(DaemonDobbyManagerTest, hibernateContainer_successWithParametersCombinati
     }
 }
 
+// =============================================================================
+// Unit tests for DobbyManager::synthesizeContainerSignalStatus()
+//
+// These validate the 128+signum exit code to WIFSIGNALED status synthesis
+// that bridges the DobbyInit (PID 1) convention to standard wait-status.
+// =============================================================================
 
+// Helper: encode a normal _exit(code) as a raw waitpid() status word.
+// On Linux the encoding is (exitCode << 8) with bits 0-6 = 0.
+static int makeExitStatus(int exitCode)
+{
+    return (exitCode & 0xff) << 8;
+}
+
+// ---------------------------------------------------------------------------
+// Normal exit codes - must pass through unchanged
+// ---------------------------------------------------------------------------
+
+TEST_F(DaemonDobbyManagerTest, synthesizeContainerSignalStatus_NormalExitZero_Unchanged)
+{
+    int raw = makeExitStatus(0);
+    int out = DobbyManager::synthesizeContainerSignalStatus(raw);
+    EXPECT_EQ(out, raw);
+    EXPECT_TRUE(WIFEXITED(out));
+    EXPECT_EQ(WEXITSTATUS(out), 0);
+}
+
+TEST_F(DaemonDobbyManagerTest, synthesizeContainerSignalStatus_NormalExitOne_Unchanged)
+{
+    int raw = makeExitStatus(1);
+    int out = DobbyManager::synthesizeContainerSignalStatus(raw);
+    EXPECT_EQ(out, raw);
+    EXPECT_TRUE(WIFEXITED(out));
+    EXPECT_EQ(WEXITSTATUS(out), 1);
+}
+
+TEST_F(DaemonDobbyManagerTest, synthesizeContainerSignalStatus_ExitCode128_Unchanged)
+{
+    // 128 is NOT > 128, so it should NOT be synthesised.
+    int raw = makeExitStatus(128);
+    int out = DobbyManager::synthesizeContainerSignalStatus(raw);
+    EXPECT_EQ(out, raw);
+    EXPECT_TRUE(WIFEXITED(out));
+    EXPECT_EQ(WEXITSTATUS(out), 128);
+}
+
+// ---------------------------------------------------------------------------
+// 128+signum exit codes - core-dumping signals
+// ---------------------------------------------------------------------------
+
+TEST_F(DaemonDobbyManagerTest, synthesizeContainerSignalStatus_ExitCode134_SIGABRT)
+{
+    // 128 + 6 = 134 -> SIGABRT (core-dumping signal)
+    int raw = makeExitStatus(134);
+    int out = DobbyManager::synthesizeContainerSignalStatus(raw);
+
+    EXPECT_TRUE(WIFSIGNALED(out));
+    EXPECT_EQ(WTERMSIG(out), SIGABRT);
+#ifdef WCOREDUMP
+    EXPECT_TRUE(WCOREDUMP(out));
+#endif
+}
+
+TEST_F(DaemonDobbyManagerTest, synthesizeContainerSignalStatus_ExitCode139_SIGSEGV)
+{
+    // 128 + 11 = 139 -> SIGSEGV (core-dumping signal)
+    int raw = makeExitStatus(139);
+    int out = DobbyManager::synthesizeContainerSignalStatus(raw);
+
+    EXPECT_TRUE(WIFSIGNALED(out));
+    EXPECT_EQ(WTERMSIG(out), SIGSEGV);
+#ifdef WCOREDUMP
+    EXPECT_TRUE(WCOREDUMP(out));
+#endif
+}
+
+TEST_F(DaemonDobbyManagerTest, synthesizeContainerSignalStatus_ExitCode136_SIGFPE)
+{
+    // 128 + 8 = 136 -> SIGFPE (core-dumping signal)
+    int raw = makeExitStatus(136);
+    int out = DobbyManager::synthesizeContainerSignalStatus(raw);
+
+    EXPECT_TRUE(WIFSIGNALED(out));
+    EXPECT_EQ(WTERMSIG(out), SIGFPE);
+#ifdef WCOREDUMP
+    EXPECT_TRUE(WCOREDUMP(out));
+#endif
+}
+
+TEST_F(DaemonDobbyManagerTest, synthesizeContainerSignalStatus_ExitCode132_SIGILL)
+{
+    // 128 + 4 = 132 -> SIGILL (core-dumping signal)
+    int raw = makeExitStatus(132);
+    int out = DobbyManager::synthesizeContainerSignalStatus(raw);
+
+    EXPECT_TRUE(WIFSIGNALED(out));
+    EXPECT_EQ(WTERMSIG(out), SIGILL);
+#ifdef WCOREDUMP
+    EXPECT_TRUE(WCOREDUMP(out));
+#endif
+}
+
+TEST_F(DaemonDobbyManagerTest, synthesizeContainerSignalStatus_ExitCode131_SIGQUIT)
+{
+    // 128 + 3 = 131 -> SIGQUIT (core-dumping signal)
+    int raw = makeExitStatus(131);
+    int out = DobbyManager::synthesizeContainerSignalStatus(raw);
+
+    EXPECT_TRUE(WIFSIGNALED(out));
+    EXPECT_EQ(WTERMSIG(out), SIGQUIT);
+#ifdef WCOREDUMP
+    EXPECT_TRUE(WCOREDUMP(out));
+#endif
+}
+
+// ---------------------------------------------------------------------------
+// 128+signum exit codes - non-core-dumping signals
+// ---------------------------------------------------------------------------
+
+TEST_F(DaemonDobbyManagerTest, synthesizeContainerSignalStatus_ExitCode137_SIGKILL)
+{
+    // 128 + 9 = 137 -> SIGKILL (no core dump)
+    int raw = makeExitStatus(137);
+    int out = DobbyManager::synthesizeContainerSignalStatus(raw);
+
+    EXPECT_TRUE(WIFSIGNALED(out));
+    EXPECT_EQ(WTERMSIG(out), SIGKILL);
+#ifdef WCOREDUMP
+    EXPECT_FALSE(WCOREDUMP(out));
+#endif
+}
+
+TEST_F(DaemonDobbyManagerTest, synthesizeContainerSignalStatus_ExitCode143_SIGTERM)
+{
+    // 128 + 15 = 143 -> SIGTERM (no core dump)
+    int raw = makeExitStatus(143);
+    int out = DobbyManager::synthesizeContainerSignalStatus(raw);
+
+    EXPECT_TRUE(WIFSIGNALED(out));
+    EXPECT_EQ(WTERMSIG(out), SIGTERM);
+#ifdef WCOREDUMP
+    EXPECT_FALSE(WCOREDUMP(out));
+#endif
+}
+
+TEST_F(DaemonDobbyManagerTest, synthesizeContainerSignalStatus_ExitCode130_SIGINT)
+{
+    // 128 + 2 = 130 -> SIGINT (no core dump)
+    int raw = makeExitStatus(130);
+    int out = DobbyManager::synthesizeContainerSignalStatus(raw);
+
+    EXPECT_TRUE(WIFSIGNALED(out));
+    EXPECT_EQ(WTERMSIG(out), SIGINT);
+#ifdef WCOREDUMP
+    EXPECT_FALSE(WCOREDUMP(out));
+#endif
+}
+
+TEST_F(DaemonDobbyManagerTest, synthesizeContainerSignalStatus_ExitCode129_SIGHUP)
+{
+    // 128 + 1 = 129 -> SIGHUP (no core dump)
+    int raw = makeExitStatus(129);
+    int out = DobbyManager::synthesizeContainerSignalStatus(raw);
+
+    EXPECT_TRUE(WIFSIGNALED(out));
+    EXPECT_EQ(WTERMSIG(out), SIGHUP);
+#ifdef WCOREDUMP
+    EXPECT_FALSE(WCOREDUMP(out));
+#endif
+}
+
+// ---------------------------------------------------------------------------
+// Boundary: exit code above signal range - must NOT be synthesised
+// ---------------------------------------------------------------------------
+
+TEST_F(DaemonDobbyManagerTest, synthesizeContainerSignalStatus_ExitCodeAboveSignalRange_Unchanged)
+{
+    // 128 + NSIG is out of range (signals go from 1 to NSIG-1)
+    int raw = makeExitStatus(128 + NSIG);
+    int out = DobbyManager::synthesizeContainerSignalStatus(raw);
+    EXPECT_EQ(out, raw);
+    EXPECT_TRUE(WIFEXITED(out));
+}
+
+// ---------------------------------------------------------------------------
+// Already-signalled status (not WIFEXITED) - must pass through unchanged
+// ---------------------------------------------------------------------------
+
+TEST_F(DaemonDobbyManagerTest, synthesizeContainerSignalStatus_AlreadySignalled_Unchanged)
+{
+    // A raw WIFSIGNALED status with signal 9 (SIGKILL): bits 0-6 = 9
+    int raw = SIGKILL;  // 9 - WIFSIGNALED true, WTERMSIG = 9
+    ASSERT_TRUE(WIFSIGNALED(raw));
+    int out = DobbyManager::synthesizeContainerSignalStatus(raw);
+    EXPECT_EQ(out, raw);
+}
 
