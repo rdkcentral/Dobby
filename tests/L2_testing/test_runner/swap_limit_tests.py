@@ -24,7 +24,7 @@ UNLIMITED = "unlimited"
 tests = [
     test_utils.Test(
         "Swap limit default",
-        "ram",
+        "swap_limit_default",
         UNLIMITED,
         "Starts a container with only memLimit set and verifies that "
         "memory.memsw.limit_in_bytes is unlimited (much larger than memLimit)"),
