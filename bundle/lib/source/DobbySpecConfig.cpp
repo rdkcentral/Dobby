@@ -646,7 +646,7 @@ bool DobbySpecConfig::parseSpec(ctemplate::TemplateDictionary* dictionary,
     // step 6 - enable the RDK plugins section
     dictionary->ShowSection(ENABLE_RDK_PLUGINS);
 
-    // step 6.5 - add any default plugins in the settings file
+    // step 6.1 - add any default plugins in the settings file
     Json::Value rdkPluginData = mRdkPluginsData;
     for (const auto& pluginName : mDefaultPlugins)
     {
@@ -654,6 +654,13 @@ bool DobbySpecConfig::parseSpec(ctemplate::TemplateDictionary* dictionary,
         mRdkPluginsJson[pluginName]["required"] = false;
     }
 
+
+    // step 6.2 - always enable the OOMCrash plugin (unless already configured)
+    if (!mRdkPluginsJson.isMember("oomcrash"))
+    {
+        mRdkPluginsJson["oomcrash"]["data"] = Json::Value(Json::objectValue);
+        mRdkPluginsJson["oomcrash"]["required"] = false;
+    }
     // step 7 - process RDK plugins json into dictionary
     if (!processRdkPlugins(mSpec["rdkPlugins"], mDictionary))
     {
