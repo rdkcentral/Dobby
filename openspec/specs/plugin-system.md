@@ -3,10 +3,12 @@
 ## Overview
 Dobby has two plugin architectures: the modern **RDK Plugin** system (recommended) and the **Legacy Plugin** system (deprecated, behind `LEGACY_COMPONENTS` flag). Plugins are shared libraries loaded at runtime from a configurable directory.
 
+## Description
+The RDK plugin system provides a lifecycle-hook-based architecture where plugins implement the `IDobbyRdkPlugin` interface and declare which OCI hook points they participate in. The `DobbyRdkPluginManager` discovers, loads, and executes plugins with dependency-aware ordering via `DobbyRdkPluginDependencySolver`. A shared utility class (`DobbyRdkPluginUtils`) provides common operations. A CLI tool (`DobbyPluginLauncher`) is invoked by the OCI runtime at hook points. The legacy system (`IDobbyPlugin`) is deprecated but maintained behind a build flag.
+
 ## RDK Plugin System
 
 ### IDobbyRdkPlugin (Interface)
-- **File**: `pluginLauncher/lib/include/IDobbyRdkPlugin.h`
 - Pure virtual interface for RDK plugins
 - Hook points (in lifecycle order):
   1. `postInstallation` - After bundle downloaded, before runtime create (runs once per container lifecycle)
@@ -27,7 +29,6 @@ Dobby has two plugin architectures: the modern **RDK Plugin** system (recommende
 - Logging plugins receive container console output via file descriptors
 
 ### DobbyRdkPluginManager
-- **File**: `pluginLauncher/lib/include/DobbyRdkPluginManager.h`, `pluginLauncher/lib/source/DobbyRdkPluginManager.cpp`
 - Scans plugin directory for `.so` files, loads via `dlopen`/`dlsym`
 - Looks for `createIDobbyRdkPlugin` and `destroyIDobbyRdkPlugin` symbols
 - Separately tracks logging plugins (`createIDobbyRdkLoggingPlugin`)
@@ -36,13 +37,11 @@ Dobby has two plugin architectures: the modern **RDK Plugin** system (recommende
 - Manages `rt_dobby_schema` container config shared across plugins
 
 ### DobbyRdkPluginDependencySolver
-- **File**: `pluginLauncher/lib/source/DobbyRdkPluginDependencySolver.h`, `pluginLauncher/lib/source/DobbyRdkPluginDependencySolver.cpp`
 - Uses Boost Graph Library (BGL) adjacency list with topological sort
 - Plugin names are case-insensitive (stored lowercase)
 - Provides forward and reverse dependency ordering
 
 ### DobbyRdkPluginUtils
-- **File**: `pluginLauncher/lib/include/DobbyRdkPluginUtils.h`, `pluginLauncher/lib/source/DobbyRdkPluginUtils.cpp`
 - Shared utility class passed to all plugins
 - Container network info tracking (veth name, IP address)
 - Mount/environment variable manipulation on `rt_dobby_schema`
@@ -60,7 +59,6 @@ Dobby has two plugin architectures: the modern **RDK Plugin** system (recommende
 - Base class for logging plugins with default no-op hook implementations
 
 ### DobbyPluginLauncher (CLI Tool)
-- **File**: `pluginLauncher/tool/source/Main.cpp`
 - Invoked by OCI runtime at hook points
 - Options: `--hook` (which hook to run), `--config` (path to OCI config.json)
 - Loads plugins from `/usr/lib/plugins/dobby` (configurable)
@@ -95,14 +93,68 @@ Dobby has two plugin architectures: the modern **RDK Plugin** system (recommende
 - Plugin registration via `createIDobbyPlugin`/`destroyIDobbyPlugin` symbols
 
 ### DobbyLegacyPluginManager
-- **File**: `daemon/lib/source/include/DobbyLegacyPluginManager.h`, `daemon/lib/source/DobbyLegacyPluginManager.cpp`
 - Scans plugin directory, loads `.so` files via `dlopen`
 - Executes hooks with per-plugin JSON config from container spec
-- Uses `pthread_rwlock` for thread-safe plugin map access
-- Only available when `LEGACY_COMPONENTS` is enabled
 
-### Legacy Plugins
-- **EthanLog**: `plugins/EthanLog/` - EthanLog logging integration
-- **MulticastSockets**: `plugins/MulticastSockets/` - Multicast socket forwarding
-- **OpenCDM**: `plugins/OpenCDM/` - Open Content Decryption Module access
-- **Perfetto**: `plugins/Perfetto/` - Perfetto tracing integration
+## Requirements
+- Plugin shared libraries must be installed at the configured `PLUGIN_PATH` (default: `/usr/lib/plugins/dobby`).
+- Plugins must export `createIDobbyRdkPlugin` and `destroyIDobbyRdkPlugin` symbols.
+- Logging plugins must additionally export `createIDobbyRdkLoggingPlugin`.
+- Boost Graph Library must be available for dependency resolution.
+- Legacy plugins require `LEGACY_COMPONENTS` to be enabled at build time.
+
+## Architecture / Design
+- Plugins are discovered at runtime via directory scan and loaded with `dlopen`.
+- `DobbyRdkPluginManager` orchestrates hook execution in dependency-sorted order.
+- `DobbyRdkPluginDependencySolver` performs topological sort on the plugin dependency graph.
+- Each plugin receives a shared `DobbyRdkPluginUtils` instance and access to the container's `rt_dobby_schema`.
+- The `DobbyPluginLauncher` CLI is the entry point invoked by `crun` at OCI hook points.
+
+## External Interfaces
+- **IDobbyRdkPlugin API**: C++ interface that all RDK plugins must implement.
+- **OCI Hooks**: The plugin launcher is invoked by the OCI runtime at defined hook points.
+- **Plugin .so ABI**: `createIDobbyRdkPlugin` / `destroyIDobbyRdkPlugin` exported symbols.
+
+## Performance
+- Hook execution has configurable timeouts; plugins that exceed timeout are killed.
+- Dependency solver uses efficient topological sort for ordering.
+
+## Security
+- Plugins run in the daemon process context with full privileges.
+- Network plugins manage iptables rules for container isolation.
+- Thunder plugin handles security token injection for WPEFramework access control.
+
+## Versioning & Compatibility
+- RDK plugin interface is the current standard; legacy interface is deprecated.
+- Legacy plugins are only loaded when `LEGACY_COMPONENTS` is enabled.
+
+## Conformance Testing & Validation
+- `TestPlugin` serves as a reference implementation exercising all hook points.
+- Plugin functionality tested as part of L1/L2 test suites.
+
+## Covered Code
+- pluginLauncher/lib/include/IDobbyRdkPlugin.h
+- pluginLauncher/lib/include/IDobbyRdkLoggingPlugin.h
+- pluginLauncher/lib/include/DobbyRdkPluginManager.h
+- pluginLauncher/lib/include/DobbyRdkPluginUtils.h
+- pluginLauncher/lib/source/DobbyRdkPluginManager.cpp
+- pluginLauncher/lib/source/DobbyRdkPluginUtils.cpp
+- pluginLauncher/lib/source/DobbyRdkPluginDependencySolver.h
+- pluginLauncher/lib/source/DobbyRdkPluginDependencySolver.cpp
+- pluginLauncher/tool/source/Main.cpp
+- rdkPlugins/Common/include/RdkPluginBase.h
+- rdkPlugins/Common/include/DobbyLoggerBase.h
+- daemon/lib/include/IDobbyPlugin.h
+- daemon/lib/source/DobbyLegacyPluginManager.cpp
+- daemon/lib/source/include/DobbyLegacyPluginManager.h
+
+---
+
+## Open Queries
+_No open queries._
+
+## References
+- [OCI Runtime Specification - Hooks](https://github.com/opencontainers/runtime-spec/blob/main/config.md#posix-platform-hooks)
+
+## Change History
+- 2025-05-18 - openspec-templater - Restructured to match spec template.

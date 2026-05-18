@@ -3,7 +3,8 @@
 ## Overview
 Dobby uses CMake as its build system with extensive configuration options for platform targeting, plugin selection, and feature flags. Settings are loaded from a JSON file at runtime.
 
-## CMake Structure
+## Description
+The build system is structured around a top-level CMakeLists.txt that configures the entire Dobby project, including submodules (libocispec), platform-specific options, plugin toggles, and installation targets. Runtime settings are managed via a JSON configuration file parsed by the `Settings` class, implementing the `IDobbySettings` interface. CMake find modules provide discovery for external dependencies.
 
 ### Top-Level CMakeLists.txt
 - **File**: `CMakeLists.txt`
@@ -52,9 +53,9 @@ Each RDK plugin has `PLUGIN_<NAME>` ON/OFF toggle:
 - `generateSettingsFile.cmake` - Settings file generation
 - `rdk-osx-toolchain.cmake` - macOS cross-compilation toolchain
 
-## Runtime Settings
+### Runtime Settings
 
-### IDobbySettings (Interface)
+#### IDobbySettings (Interface)
 - **File**: `settings/include/IDobbySettings.h`
 - Workspace directory, persistent directory
 - Console socket path
@@ -63,7 +64,7 @@ Each RDK plugin has `PLUGIN_<NAME>` ON/OFF toggle:
 - Log relay settings (syslog/journald socket paths, enable flags)
 - Extra environment variables and device nodes
 
-### Settings Class
+#### Settings Class
 - **File**: `settings/source/Settings.cpp`
 - Parses JSON settings file (default: `/etc/dobby.json`)
 - Structure:
@@ -75,7 +76,7 @@ Each RDK plugin has `PLUGIN_<NAME>` ON/OFF toggle:
   }
   ```
 
-## Dependencies
+### Dependencies
 - CMake >= 3.7
 - crun >= 0.13 (or runc for non-RDK)
 - jsoncpp
@@ -87,13 +88,70 @@ Each RDK plugin has `PLUGIN_<NAME>` ON/OFF toggle:
 - Boost >= 1.61
 - `build_dependencies.sh` - Script to install all build dependencies
 
-## Testing
+### Systemd Service
+- **File**: `daemon/process/dobby.service`
+- Service unit for starting DobbyDaemon at boot
+- Configured via `ExecStart` with appropriate CLI options
+
+## Requirements
+- CMake >= 3.7 must be available on the build host.
+- A valid settings JSON file must be provided for runtime configuration.
+- All mandatory dependencies (jsoncpp, yajl, libdbus, Boost >= 1.61) must be installed.
+- crun >= 0.13 (or runc) must be available at runtime.
+- Plugin shared libraries must be installed at `PLUGIN_PATH`.
+
+## Architecture / Design
+- The build system is a single top-level CMake project that aggregates sub-components (daemon, client, plugins, utils, bundle, settings).
+- Runtime settings are loaded from a JSON file and exposed via the `IDobbySettings` interface to all daemon components.
+- CMake find modules abstract external dependency discovery.
+- Plugin build toggles allow platform-specific builds without code changes.
+
+## External Interfaces
+- **DobbyConfig.cmake / DobbyConfigVersion.cmake**: Exported CMake package for downstream consumers.
+- **Settings JSON** (`/etc/dobby.json`): Runtime configuration file parsed at daemon startup.
+
+## Performance
+_Not applicable — build system configuration does not directly impact runtime performance._
+
+## Security
+_Not applicable — security concerns are addressed in individual component specs._
+
+## Versioning & Compatibility
+- Project version managed via `DOBBY_VERSION` in the top-level CMakeLists.txt.
+- `DobbyConfigVersion.cmake` provides version compatibility checks for downstream packages.
+
+## Conformance Testing & Validation
 - **L1 tests**: `tests/L1_testing/` - Unit tests
 - **L2 tests**: `tests/L2_testing/` - Integration tests with example Dobby specs
 - Toolchain files: `tests/clang.cmake`, `tests/gcc-with-coverage.cmake`
 - Code coverage: `cov_build.sh`
 
-## Systemd Service
-- **File**: `daemon/process/dobby.service`
-- Service unit for starting DobbyDaemon at boot
-- Configured via `ExecStart` with appropriate CLI options
+## Covered Code
+- CMakeLists.txt
+- settings/include/IDobbySettings.h
+- settings/include/Settings.h
+- settings/source/Settings.cpp
+- cmake/Findbreakpad.cmake
+- cmake/Findctemplate.cmake
+- cmake/Finddbus.cmake
+- cmake/Findjsoncpp.cmake
+- cmake/Findlibnl.cmake
+- cmake/Findlibocispec.cmake
+- cmake/FindPerfettoSdk.cmake
+- cmake/Findyajl.cmake
+- cmake/generateSettingsFile.cmake
+- cmake/rdk-osx-toolchain.cmake
+- build_dependencies.sh
+- cov_build.sh
+
+---
+
+## Open Queries
+_No open queries._
+
+## References
+- [CMake Documentation](https://cmake.org/documentation/)
+- README.md in repository root
+
+## Change History
+- 2025-05-18 - openspec-templater - Restructured to match spec template.
