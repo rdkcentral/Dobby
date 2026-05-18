@@ -296,7 +296,7 @@ ssize_t DobbyStats::readCgroupFile(const ContainerId& id,
 
     if (close(fd) != 0)
     {
-        AI_LOG_SYS_ERROR(errno, "failed to close '%s'", filePath.str().c_str());
+        AI_LOG_SYS_ERROR(errno, "failed to close '%s'");
     }
 
     return rd;
