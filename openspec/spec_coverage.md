@@ -244,6 +244,100 @@ sequenceDiagram
     DBus-->>Client: Stopped event
 ```
 
+### StartFromSpec Data Flow
+
+```mermaid
+sequenceDiagram
+    participant Client as Client (DobbyProxy)
+    participant DBus as D-Bus
+    participant Daemon as Dobby Daemon
+    participant Manager as DobbyManager
+    participant Bundle as DobbyBundle
+    participant SpecConfig as DobbySpecConfig
+    participant Rootfs as DobbyRootfs
+    participant StartState as DobbyStartState
+    participant Plugins as RdkPluginManager
+    participant Runtime as DobbyRunC (crun)
+    participant Launcher as PluginLauncher
+
+    Client->>DBus: StartFromSpec(id, jsonSpec, files)
+    DBus->>Daemon: D-Bus method call
+    Daemon->>Manager: startContainerFromSpec()
+
+    Note over Manager: Check container not already running
+
+    Manager->>Bundle: Create DobbyBundle (temp directory)
+    Bundle-->>Manager: bundle path ready
+
+    Manager->>SpecConfig: Parse JSON spec (DobbySpecConfig)
+    SpecConfig-->>Manager: Dobby spec → OCI config
+
+    Manager->>Rootfs: Create DobbyRootfs from config
+    Note over Rootfs: Populate rootfs from spec<br/>(loop mounts, symlinks)
+    Rootfs-->>Manager: rootfs ready
+
+    Manager->>StartState: Create DobbyStartState(config, files)
+    Note over StartState: Wrap passed file descriptors
+    StartState-->>Manager: start state valid
+
+    Manager->>Manager: Apply Apparmor profile (if enabled)
+    Manager->>Manager: Apply pids limit (if enabled)
+
+    alt RDK Plugins present
+        Manager->>Plugins: Create DobbyRdkPluginManager
+        Plugins-->>Manager: plugins loaded
+
+        Manager->>Manager: onPostConstructionHook() [legacy]
+        Manager->>Plugins: onPostInstallationHook()
+        Plugins-->>Manager: hooks complete
+        Manager->>Plugins: onPreCreationHook()
+        Plugins-->>Manager: hooks complete
+    else No RDK Plugins
+        Manager->>Manager: onPostConstructionHook() [legacy]
+    end
+
+    Manager->>Manager: customiseConfig(command, displaySocket, envVars)
+    Manager->>SpecConfig: writeConfigJson(bundle/config.json)
+    SpecConfig-->>Manager: OCI config.json written
+
+    alt restartOnCrash enabled
+        Manager->>Manager: Store file descriptors for respawn
+    end
+
+    Manager->>Runtime: create(id, bundlePath)
+    Runtime->>Launcher: OCI createRuntime hook
+    Launcher->>Plugins: executeCreateRuntimeHooks()
+    Plugins-->>Launcher: done
+    Launcher-->>Runtime: hook exit 0
+    Runtime->>Launcher: OCI createContainer hook
+    Launcher->>Plugins: executeCreateContainerHooks()
+    Plugins-->>Launcher: done
+    Launcher-->>Runtime: hook exit 0
+    Runtime-->>Manager: container created
+
+    Manager->>Runtime: start(id)
+    Runtime->>Launcher: OCI postStart hook
+    Launcher->>Plugins: executePostStartHooks()
+    Plugins-->>Launcher: done
+    Launcher-->>Runtime: hook exit 0
+    Runtime-->>Manager: container started
+
+    Manager-->>Daemon: return container descriptor
+    Daemon->>DBus: emit Started signal
+    DBus-->>Client: Started event + descriptor
+
+    Note over Manager: runcMonitorThread detects exit
+
+    Manager->>Plugins: executePostHaltHooks()
+    Plugins-->>Manager: cleanup done
+    Manager->>Runtime: destroy(id)
+    Runtime-->>Manager: destroyed
+    Manager->>Manager: onPreDestructionHook()
+    Manager-->>Daemon: container stopped
+    Daemon->>DBus: emit Stopped signal
+    DBus-->>Client: Stopped event
+```
+
 ### Container Lifecycle State Machine
 
 ```mermaid
