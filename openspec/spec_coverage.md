@@ -1,4 +1,4 @@
-# Openspec Coverage Report
+# OpenSpec Coverage Report
 
 **Total Score: 64.50 / 100**
 
@@ -11,12 +11,12 @@
 | Reference Coverage | 19.00 | 20 | ~95% of source files covered via spec `## Covered Code` sections after adding rdk-plugins-impl.md, app-infrastructure.md, and test-infrastructure.md. |
 | Spec Existence | 10.00 | 10 | All 9 referenced specs exist in `openspec/specs/`. |
 | Spec Completeness | 5.00 | 5 | All 9 specs contain Overview, Description, and Requirements sections. |
-| No Orphaned Code | 5.00 | 5 | Only generated schema headers (`bundle/runtime-schemas/`) remain — excluded as auto-generated code. Score: 5.00/5 |
+| No Orphaned Code | 5.00 | 5 | Only `bundle/runtime-schemas/` remains — excluded as auto-generated/tooling code. Score: 5.00/5 |
 
 **Adjusted Code to Spec Coverage: 36.00 / 40**
 
 ### Remaining Orphaned Code (not covered by any spec)
-- `bundle/runtime-schemas/` (generated C headers from libocispec — excluded as auto-generated)
+- `bundle/runtime-schemas/` (runtime JSON schema files and Python schema-extension scripts — excluded as tooling)
 
 ---
 
@@ -407,7 +407,7 @@ graph LR
 
 ### Strengths
 1. **Complete spec coverage of all modules** — 9 specs covering daemon, client, plugins (architecture + implementations), bundle, IPC/utils, build/settings, AppInfrastructure, and test infrastructure.
-2. **Excellent component-to-code traceability** — every spec has a `## Covered Code` section; ~98% of source files covered (only auto-generated schemas excluded).
+2. **Excellent component-to-code traceability** — every spec has a `## Covered Code` section; ~95% of source files covered (only auto-generated schemas excluded).
 3. **Well-structured specs** — all contain required Overview, Description, and Requirements sections.
 4. **Detailed D-Bus protocol documentation** — interfaces, methods, and events enumerated.
 5. **Architecture diagrams** — Mermaid diagrams for component relationships, data flow, lifecycle state machine, and plugin hooks.

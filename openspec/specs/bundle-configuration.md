@@ -50,6 +50,7 @@ Dobby supports two container specification formats: legacy Dobby JSON specs (con
 ### DobbyBundleGenerator (CLI Tool)
 - Standalone command-line tool for converting Dobby JSON specs to OCI bundles
 - Does not require a running daemon
+- Only built when `LEGACY_COMPONENTS` is enabled and the build type is `Debug`
 - Options: `--settings`, `--inputpath`, `--outputDirectory`
 
 ### Runtime Schema

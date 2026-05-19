@@ -18,7 +18,7 @@ context: |
   
   Plugin System (RDK Plugins):
     Networking, Storage, Logging, IPC, AppServices, DeviceMapper, Gamepad, GPU,
-    HttpProxy, IONMemory, LocalTime, Minidump, OOMCrash, RtScheduling, Thunder
+    HttpProxy, IONMemory, LocalTime, Minidump, OOMCrash, RtScheduling, Thunder, TestPlugin
   
   Key Patterns:
     - Interface-driven design (IDobbyPlugin, IDobbyRdkPlugin, IDobbySettings, IDobbyEnv, IDobbyUtils)

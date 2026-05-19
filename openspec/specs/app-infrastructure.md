@@ -90,7 +90,7 @@ graph TD
 
 ## Performance
 - `PollLoop` uses epoll for efficient I/O multiplexing.
-- `ThreadedDispatcher` provides configurable thread pool sizing.
+- `ThreadedDispatcher` uses a single dedicated dispatcher thread for serialized event processing.
 
 ## Security
 - Mutex/ConditionVariable wrappers prevent common threading bugs.

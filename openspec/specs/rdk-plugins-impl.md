@@ -124,7 +124,8 @@ Reference implementation that exercises all hook points for development and test
 - `TestRdkPlugin` — Main plugin entry point
 
 ## Requirements
-- Each plugin must implement `IDobbyRdkPlugin` and export `createIDobbyRdkPlugin`/`destroyIDobbyRdkPlugin`.
+- Standard RDK plugins must implement `IDobbyRdkPlugin` and export `createIDobbyRdkPlugin`/`destroyIDobbyRdkPlugin`.
+- The Logging plugin is a special case: it uses `REGISTER_RDK_LOGGER` and exports `createIDobbyRdkLogger`/`destroyIDobbyRdkLogger`.
 - Networking plugin requires libnl and libnl-route.
 - Storage plugin requires e2fsprogs (mkfs.ext4, e2fsck) for image management.
 - Logging plugin journald sink requires libsystemd.
@@ -160,6 +161,7 @@ graph TD
         MD[Minidump]
         OOM[OOMCrash]
         RT[RtScheduling]
+        TP[TestPlugin]
     end
 
     PL --> PM
@@ -180,6 +182,7 @@ graph TD
     PM --> MD
     PM --> OOM
     PM --> RT
+    PM --> TP
 ```
 
 ## External Interfaces

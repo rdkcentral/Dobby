@@ -31,7 +31,7 @@ The RDK plugin system provides a lifecycle-hook-based architecture where plugins
 ### DobbyRdkPluginManager
 - Scans plugin directory for `.so` files, loads via `dlopen`/`dlsym`
 - Looks for `createIDobbyRdkPlugin` and `destroyIDobbyRdkPlugin` symbols
-- Separately tracks logging plugins (`createIDobbyRdkLoggingPlugin`)
+- Separately tracks logging plugins via `createIDobbyRdkLogger` and `destroyIDobbyRdkLogger`
 - Uses `DobbyRdkPluginDependencySolver` for topological ordering
 - Executes hooks with optional timeout (kills plugin thread on timeout)
 - Manages `rt_dobby_schema` container config shared across plugins
