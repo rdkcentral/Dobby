@@ -11,7 +11,7 @@ Shared low-level utilities used by daemon, client, plugins, and IPC layers.
 **Key classes:**
 - `FileUtilities` — File read/write helpers, path manipulation
 - `PollLoop` / `IPollSource` — epoll-based event loop for async I/O
-- `ThreadedDispatcher` — Thread-pool based work dispatcher
+- `ThreadedDispatcher` — Single-thread work dispatcher for serialized event processing
 - `Timer` — Basic timer utility (distinct from DobbyTimer)
 - `Mutex` / `ConditionVariable` — RAII thread synchronization wrappers
 - `AI_MD5` — MD5 hash computation (C implementation)

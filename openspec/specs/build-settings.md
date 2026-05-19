@@ -37,8 +37,8 @@ The build system is structured around a top-level CMakeLists.txt that configures
 
 ### Plugin Build Flags
 Each RDK plugin has `PLUGIN_<NAME>` ON/OFF toggle:
-- **Default ON**: Logging, Networking, IPC, Storage, Minidump
-- **Default OFF**: AppServices, DeviceMapper, Gamepad, GPU, HttpProxy, IONMemory, LocalTime, OOMCrash, RtScheduling, TestPlugin, Thunder
+- **Default ON**: Logging, Networking, IPC, Storage, Minidump, Thunder, OOMCrash
+- **Default OFF**: AppServices, DeviceMapper, Gamepad, GPU, HttpProxy, IONMemory, LocalTime, RtScheduling, TestPlugin
 
 ### CMake Find Modules
 - **Directory**: `cmake/`

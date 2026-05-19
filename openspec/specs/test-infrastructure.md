@@ -164,10 +164,10 @@ genhtml -o coverage -t "dobby coverage" filtered_coverage.info
 python3 tests/L2_testing/test_runner/runner.py -v 3 -p 1
 
 # Run individual test module
-python3 tests/L2_testing/test_runner/basic_sanity_tests.py
+python3 tests/L2_testing/test_runner/basic_sanity_tests.py -p 1
 
 # Verbosity: 0=none, 1=error, 2=warning, 3=info, 4=debug, 5=all
-# Platform: 0=no_selection, 1=virtual_machine, 2=xi_6
+# Platform: 0=no_selection, 1=vagrant_vm, 2=xi_6, 3=github_workflow_vm
 ```
 
 ### Test-to-Requirement Mapping
@@ -224,7 +224,7 @@ python3 tests/L2_testing/test_runner/basic_sanity_tests.py
 ### REQ-TEST-005: Test Execution
 - L1 tests SHALL be executable as standalone binaries with `sudo`.
 - L2 tests SHALL be executable individually or via `runner.py` orchestrator.
-- Both L1 and L2 tests SHALL be integrated into CI/CD via GitHub Actions (`.github/workflows/build.yml`).
+- Both L1 and L2 tests SHALL be integrated into CI/CD via GitHub Actions (`.github/workflows/L1-tests.yml` and `.github/workflows/L2-tests.yml`).
 
 ### REQ-TEST-006: Coverage Reporting
 - L1 tests SHALL support lcov/gcov coverage instrumentation.

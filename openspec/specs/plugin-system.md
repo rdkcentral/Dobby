@@ -33,7 +33,7 @@ The RDK plugin system provides a lifecycle-hook-based architecture where plugins
 - Looks for `createIDobbyRdkPlugin` and `destroyIDobbyRdkPlugin` symbols
 - Separately tracks logging plugins via `createIDobbyRdkLogger` and `destroyIDobbyRdkLogger`
 - Uses `DobbyRdkPluginDependencySolver` for topological ordering
-- Executes hooks with optional timeout (kills plugin thread on timeout)
+- Executes hooks with optional timeout (forks a worker process for hook execution; kills the worker process group on timeout)
 - Manages `rt_dobby_schema` container config shared across plugins
 
 ### DobbyRdkPluginDependencySolver
@@ -99,7 +99,7 @@ The RDK plugin system provides a lifecycle-hook-based architecture where plugins
 ## Requirements
 - Plugin shared libraries must be installed at the configured `PLUGIN_PATH` (default: `/usr/lib/plugins/dobby`).
 - Plugins must export `createIDobbyRdkPlugin` and `destroyIDobbyRdkPlugin` symbols.
-- Logging plugins must additionally export `createIDobbyRdkLoggingPlugin`.
+- Logging plugins must additionally export `createIDobbyRdkLogger` and `destroyIDobbyRdkLogger`.
 - Boost Graph Library must be available for dependency resolution.
 - Legacy plugins require `LEGACY_COMPONENTS` to be enabled at build time.
 
