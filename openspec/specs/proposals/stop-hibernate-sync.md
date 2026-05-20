@@ -1,7 +1,7 @@
 # Proposal: Synchronize Dobby Stop with In-Progress Hibernation
 
 **Ticket**: RDKEMW-13969  
-**Status**: Proposed  
+**Status**: Implemented  
 **Component**: daemon-core (DobbyManager)
 
 ---
@@ -16,7 +16,7 @@ There is no synchronization between `DobbyManager::stopContainer()` and an in-pr
 
 ## Root Cause Analysis
 
-### Current Behavior
+### Current Behavior (before fix)
 
 1. `hibernateContainer()` acquires `mLock`, sets state to `Hibernating`, spawns a **detached** thread, and releases the lock.
 2. The hibernation worker thread releases `mLock` during long-running socket I/O with memcr (up to 20s timeout per PID).
@@ -33,46 +33,66 @@ t2: stopContainer() acquires mLock, sends SIGKILL
 t3: worker's memcr calls fail → memcr_worker assert crash
 ```
 
-### Existing Abort Mechanism (insufficient)
+### Existing Abort Mechanism (was not triggered)
 
-The hibernation worker checks for abort only at one point:
+The hibernation worker already checks for abort at each per-PID iteration:
 ```cpp
-if (container not found || state != Hibernating) → abort
+if (container not found || descriptor mismatch || state != Hibernating) → abort
 ```
-But `stopContainer()` never changes the state away from `Hibernating` before killing — it treats `Hibernating` the same as `Running`.
+But `stopContainer()` never changed the state away from `Hibernating` before killing — it treated `Hibernating` the same as `Running`.
 
 ---
 
-## Proposed Solution
+## Solution (Implemented)
 
-`stopContainer()` SHALL abort any ongoing hibernation **before** terminating container processes:
+Leverage the existing abort mechanism in the hibernation worker by setting `state = Stopping` **before** sending the kill signal. This is a minimal, non-invasive change:
 
-### Algorithm
+### Implementation
 
-1. **Detect in-progress hibernation**: If container state is `Hibernating`, trigger abort.
-2. **Signal abort**: Transition state to `Stopping` (which causes the hibernation worker's state check to detect the abort and return early).
-3. **Wait for hibernation worker to exit** (bounded timeout, e.g., 5s).
-4. **Proceed with stop**: Send SIGTERM/SIGKILL to container processes as normal.
+In `stopContainer()`, when the container is in `Hibernating` or `Awakening` state, transition to `Stopping` before calling `killCont()`:
 
-### Requirements
+```cpp
+// if in Running/Hibernated/Hibernating/Awakening state then use runc to send
+// the container's process a signal.
+else if (container->state == DobbyContainer::State::Running ||
+         container->state == DobbyContainer::State::Hibernating ||
+         container->state == DobbyContainer::State::Hibernated ||
+         container->state == DobbyContainer::State::Awakening)
+{
+    // If the container is mid-hibernate or mid-wakeup, set state to
+    // Stopping so the detached hibernate/wakeup thread will see the
+    // state change and abort before sending dead PIDs to memcr
+    if (container->state == DobbyContainer::State::Hibernating ||
+        container->state == DobbyContainer::State::Awakening)
+    {
+        container->state = DobbyContainer::State::Stopping;
+    }
 
-| ID | Requirement | Priority |
-|----|-------------|----------|
-| STOP-HIB-001 | `stopContainer()` SHALL detect when a container is in `Hibernating` state and abort the hibernation before killing processes. | Must |
-| STOP-HIB-002 | The hibernation worker thread SHALL check container state at each per-PID iteration and abort if state is no longer `Hibernating`. | Must |
-| STOP-HIB-003 | `stopContainer()` SHALL wait a bounded time (max 5s) for the hibernation worker to acknowledge the abort before proceeding with kill. | Must |
-| STOP-HIB-004 | The hibernation worker thread SHALL be tracked (joinable) rather than detached, to allow orderly cleanup. | Should |
-| STOP-HIB-005 | If the hibernation worker does not exit within the timeout, `stopContainer()` SHALL proceed with kill regardless. | Must |
-| STOP-HIB-006 | A condition variable or event mechanism SHALL be used to signal between the stop path and hibernation worker. | Should |
+    if (!mRunc->killCont(id, withPrejudice ? SIGKILL : SIGTERM))
+    {
+        AI_LOG_WARN("failed to send signal to '%s'", id.c_str());
+        AI_LOG_FN_EXIT();
+        return false;
+    }
+}
+```
 
-### State Transition Change
+### How It Works
+
+1. `stopContainer()` holds `mLock` and sets `state = Stopping`
+2. `stopContainer()` sends SIGKILL/SIGTERM and returns
+3. On the next per-PID iteration, the hibernation worker acquires `mLock`, sees `state != Hibernating`, logs a warning, and aborts — no further memcr calls on dead PIDs
+
+The worker may still have one in-flight memcr call when the kill happens (the call started before the state change), but that single failure is benign — the assert in memcr_worker is triggered by **repeated** operations on dead PIDs, not a single failed socket call.
+
+### State Transition
 
 ```
-Current:
-  stopContainer() on Hibernating → SIGKILL (no state change before kill)
+Before:
+  stopContainer() on Hibernating → SIGKILL (state unchanged → worker continues)
 
-Proposed:
-  stopContainer() on Hibernating → state = Stopping → wait for worker abort → SIGKILL
+After:
+  stopContainer() on Hibernating → state = Stopping → SIGKILL (worker aborts on next check)
 ```
 
 ### Sequence Diagram
@@ -86,18 +106,16 @@ sequenceDiagram
     participant Container
 
     Note over HibernateWorker,memcr: Hibernation in progress...
-    HibernateWorker->>memcr: MEMCR_CHECKPOINT(pid)
+    HibernateWorker->>memcr: MEMCR_CHECKPOINT(pid_N)
     
     Client->>DobbyManager: stopContainer(id)
     DobbyManager->>DobbyManager: state = Stopping
-    DobbyManager->>DobbyManager: notify condVar
-    DobbyManager->>DobbyManager: wait(condVar, 5s)
+    DobbyManager->>Container: SIGKILL
+    DobbyManager->>Client: return true
     
-    HibernateWorker->>HibernateWorker: check state != Hibernating
-    HibernateWorker->>DobbyManager: signal abort complete
-    
-    DobbyManager->>Container: SIGTERM / SIGKILL
-    DobbyManager->>Client: container stopped
+    Note over HibernateWorker: Next iteration...
+    HibernateWorker->>HibernateWorker: lock → check state != Hibernating
+    HibernateWorker->>HibernateWorker: abort (no more memcr calls)
 ```
 
 ---
@@ -106,18 +124,18 @@ sequenceDiagram
 
 | File | Change |
 |------|--------|
-| `daemon/lib/source/DobbyManager.cpp` | `stopContainer()`: Add hibernation abort logic before kill |
-| `daemon/lib/source/DobbyManager.cpp` | Hibernate worker lambda: Add per-PID state check, use condVar for abort signaling |
-| `daemon/lib/source/include/DobbyManager.h` | Add `std::condition_variable` member for hibernate/stop sync |
-| `daemon/lib/source/include/DobbyContainer.h` | (Optional) Track hibernate thread as joinable |
+| `daemon/lib/source/DobbyManager.cpp` | `stopContainer()`: Set `state = Stopping` before `killCont()` when container is `Hibernating` or `Awakening` |
+
+No header changes, no new members, no new dependencies.
 
 ---
 
 ## Risks & Considerations
 
-- **Stop latency increase**: Bounded to max 5s wait; mitigated by STOP-HIB-005 (proceed regardless on timeout).
+- **No stop latency increase**: The state transition is immediate; no waiting or blocking.
 - **Backward compatibility**: No D-Bus API change. Behavioral change is internal.
-- **Memcr partial checkpoint**: If abort happens mid-checkpoint, incomplete dump files may remain on disk. Cleanup should be handled by existing postHalt or wakeup logic.
+- **Memcr partial checkpoint**: At most one in-flight memcr call may fail. Incomplete dump files may remain on disk — cleanup handled by existing postHalt logic.
+- **Awakening state**: Same fix applies to wakeup operations (symmetric race with `WakeupProcess` calls).
 
 ---
 
@@ -127,12 +145,12 @@ sequenceDiagram
 |------|-------------|
 | Stop during active hibernation | Call hibernate, then immediately stop. Verify no memcr_worker crash and container stops cleanly. |
 | Stop after hibernation completes | Call hibernate, wait for completion, then stop. Verify no regression. |
-| Stop timeout exceeded | Simulate hung hibernation worker. Verify stop proceeds after 5s. |
-| Concurrent stop/hibernate races | Stress test with rapid stop/hibernate cycling. Verify no deadlocks or crashes. |
+| Stop during wakeup | Call wakeup, then immediately stop. Verify clean abort. |
+| Concurrent stop/hibernate races | Stress test with rapid stop/hibernate cycling. Verify no crashes. |
 
 ---
 
 ## References
 
-- [daemon-core.md](./daemon-core.md) — DobbyManager, DobbyHibernate, container state machine
+- [daemon-core.md](../daemon-core.md) — DobbyManager, DobbyHibernate, container state machine
 - [memcr](https://github.com/LibertyGlobal/memcr) — Checkpoint/restore service
