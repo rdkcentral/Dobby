@@ -49,7 +49,7 @@ Leverage the existing abort mechanism in the hibernation worker by setting `stat
 
 ### Implementation
 
-In `stopContainer()`, when the container is in `Hibernating` or `Awakening` state, transition to `Stopping` before calling `killCont()`:
+In `stopContainer()`, when the container is in `Hibernating` state, transition to `Stopping` before calling `killCont()`:
 
 ```cpp
 // if in Running/Hibernated/Hibernating/Awakening state then use runc to send
@@ -59,11 +59,10 @@ else if (container->state == DobbyContainer::State::Running ||
          container->state == DobbyContainer::State::Hibernated ||
          container->state == DobbyContainer::State::Awakening)
 {
-    // If the container is mid-hibernate or mid-wakeup, set state to
-    // Stopping so the detached hibernate/wakeup thread will see the
+    // If the container is mid-hibernate, set state to
+    // Stopping so the detached hibernate thread will see the
     // state change and abort before sending dead PIDs to memcr
-    if (container->state == DobbyContainer::State::Hibernating ||
-        container->state == DobbyContainer::State::Awakening)
+    if (container->state == DobbyContainer::State::Hibernating)
     {
         container->state = DobbyContainer::State::Stopping;
     }
@@ -84,6 +83,10 @@ else if (container->state == DobbyContainer::State::Running ||
 3. On the next per-PID iteration, the hibernation worker acquires `mLock`, sees `state != Hibernating`, logs a warning, and aborts — no further memcr calls on dead PIDs
 
 The worker may still have one in-flight memcr call when the kill happens (the call started before the state change), but that single failure is benign — the assert in memcr_worker is triggered by **repeated** operations on dead PIDs, not a single failed socket call.
+
+### Why only Hibernating (not Awakening)
+
+The `Awakening` state does not need this protection because `WakeupProcess()` on dead PIDs is benign — it simply returns an error without triggering asserts in `memcr_worker`. Only `HibernateProcess()` causes the problematic assert when operating on terminated processes.
 
 ### State Transition
 
@@ -124,7 +127,7 @@ sequenceDiagram
 
 | File | Change |
 |------|--------|
-| `daemon/lib/source/DobbyManager.cpp` | `stopContainer()`: Set `state = Stopping` before `killCont()` when container is `Hibernating` or `Awakening` |
+| `daemon/lib/source/DobbyManager.cpp` | `stopContainer()`: Set `state = Stopping` before `killCont()` when container is `Hibernating` |
 
 No header changes, no new members, no new dependencies.
 
@@ -135,7 +138,7 @@ No header changes, no new members, no new dependencies.
 - **No stop latency increase**: The state transition is immediate; no waiting or blocking.
 - **Backward compatibility**: No D-Bus API change. Behavioral change is internal.
 - **Memcr partial checkpoint**: At most one in-flight memcr call may fail. Incomplete dump files may remain on disk — cleanup handled by existing postHalt logic.
-- **Awakening state**: Same fix applies to wakeup operations (symmetric race with `WakeupProcess` calls).
+- **Awakening state not affected**: `WakeupProcess()` on dead PIDs is benign (no assert), so no special handling needed for `Awakening`.
 
 ---
 
@@ -145,7 +148,7 @@ No header changes, no new members, no new dependencies.
 |------|-------------|
 | Stop during active hibernation | Call hibernate, then immediately stop. Verify no memcr_worker crash and container stops cleanly. |
 | Stop after hibernation completes | Call hibernate, wait for completion, then stop. Verify no regression. |
-| Stop during wakeup | Call wakeup, then immediately stop. Verify clean abort. |
+| Stop during wakeup | Call wakeup, then immediately stop. Verify container stops cleanly (wakeup calls on dead PIDs are benign). |
 | Concurrent stop/hibernate races | Stress test with rapid stop/hibernate cycling. Verify no crashes. |
 
 ---
