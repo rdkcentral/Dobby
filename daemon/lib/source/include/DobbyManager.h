@@ -39,6 +39,7 @@
 #include <list>
 #include <cstdint>
 #include <mutex>
+#include <condition_variable>
 #include <thread>
 #include <string>
 #include <memory>
@@ -190,6 +191,8 @@ private:
 
 private:
     mutable std::mutex mLock;
+    std::condition_variable mHibernateAbortCondVar;
+    bool mHibernateAborted;
     std::map<ContainerId, std::unique_ptr<DobbyContainer>> mContainers;
     std::multimap<ContainerId, pid_t> mContainerExecPids;
 

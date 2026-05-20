@@ -98,6 +98,7 @@ DobbyManager::DobbyManager(const std::shared_ptr<IDobbyEnv> &env,
     , mContainerStoppedCb(containerStoppedCb)
     , mContainerHibernatedCb(containerHibernatedCb)
     , mContainerAwokenCb(containerAwokenCb)
+    , mHibernateAborted(false)
     , mEnvironment(env)
     , mUtilities(utils)
     , mIPCUtilities(ipcUtils)
@@ -1336,7 +1337,7 @@ bool DobbyManager::stopContainer(int32_t cd, bool withPrejudice)
 {
     AI_LOG_FN_ENTRY();
 
-    std::lock_guard<std::mutex> locker(mLock);
+    std::unique_lock<std::mutex> locker(mLock);
 
     // find the container
     auto it = mContainers.cbegin();
@@ -1376,11 +1377,39 @@ bool DobbyManager::stopContainer(int32_t cd, bool withPrejudice)
         container->hasCurseOfDeath = true;
     }
 
-    // if in Running/Hibernated/Hibernating/Awakening state then use runc to send
+    // if in Hibernating state, abort the ongoing hibernation before killing.
+    // Transition state to Stopping so the hibernation worker detects the abort,
+    // then wait (bounded) for it to finish before sending the kill signal.
+    else if (container->state == DobbyContainer::State::Hibernating)
+    {
+        AI_LOG_INFO("Container '%s' is hibernating - aborting hibernation before stop", id.c_str());
+        container->state = DobbyContainer::State::Stopping;
+        mHibernateAborted = true;
+        mHibernateAbortCondVar.notify_all();
+
+        // Wait up to 5 seconds for the hibernation worker to acknowledge abort
+        const auto timeout = std::chrono::seconds(5);
+        mHibernateAbortCondVar.wait_for(locker, timeout, [this, cd, &id]() {
+            auto cit = mContainers.find(id);
+            if (cit == mContainers.end() || cit->second->descriptor != cd)
+                return true;
+            // Worker signals completion by setting mHibernateAborted back to false
+            return !mHibernateAborted;
+        });
+
+        // Proceed with kill regardless of whether the worker finished
+        if (!mRunc->killCont(id, withPrejudice ? SIGKILL : SIGTERM))
+        {
+            AI_LOG_WARN("failed to send signal to '%s'", id.c_str());
+            AI_LOG_FN_EXIT();
+            return false;
+        }
+    }
+
+    // if in Running/Hibernated/Awakening state then use runc to send
     // the container's process a signal.  We could just send a kill
     // signal ourselves, but this way we are consistent with the tools
     else if (container->state == DobbyContainer::State::Running ||
-             container->state == DobbyContainer::State::Hibernating ||
              container->state == DobbyContainer::State::Hibernated ||
              container->state == DobbyContainer::State::Awakening)
     {
@@ -1665,6 +1694,9 @@ bool DobbyManager::hibernateContainer(int32_t cd, const std::string& options)
                     mContainers[id]->state != DobbyContainer::State::Hibernating)
                 {
                     AI_LOG_WARN("Hibernation of: %s with descriptor %d aborted", id.c_str(), cd);
+                    // Signal that the hibernation worker has acknowledged the abort
+                    mHibernateAborted = false;
+                    mHibernateAbortCondVar.notify_all();
                     AI_LOG_FN_EXIT();
                     return;
                 }
@@ -1722,6 +1754,7 @@ bool DobbyManager::hibernateContainer(int32_t cd, const std::string& options)
         });
 
     it->second->state = DobbyContainer::State::Hibernating;
+    mHibernateAborted = false;
     hibernateThread.detach();
     AI_LOG_INFO("Hibernation of: %s triggered", id.c_str());
     AI_LOG_FN_EXIT();
