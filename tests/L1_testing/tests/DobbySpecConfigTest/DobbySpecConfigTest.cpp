@@ -80,9 +80,23 @@ static const char* kSpecSwapBelowLimit = R"({
     "swapLimit": 2998272
 })";
 
+// ── Spec with capabilities ────────────────────────────────────────────────────
+
+static const char* kSpecWithCapabilities = R"({
+    "version": "1.0",
+    "args": ["/bin/true"],
+    "user": { "uid": 1000, "gid": 1000 },
+    "memLimit": 2998272,
+    "capabilities": ["CAP_NET_RAW"]
+})";
+
 // ── Inline ctemplate for reading MEM_LIMIT / MEM_SWAP back from the dict ─────
 static const char* kMemTemplateName = "test_swap_memory";
 static const char* kMemTemplateStr  = "LIMIT={{MEM_LIMIT}} SWAP={{MEM_SWAP}}";
+
+// ── Inline ctemplate for reading NO_NEW_PRIVS back from the dict ─────────────
+static const char* kPrivsTemplateName = "test_no_new_privs";
+static const char* kPrivsTemplateStr  = "NO_NEW_PRIVS={{NO_NEW_PRIVS}}";
 
 // ── Fixture ───────────────────────────────────────────────────────────────────
 
@@ -138,6 +152,12 @@ protected:
             kMemTemplateName,
             kMemTemplateStr,
             ctemplate::DO_NOT_STRIP);
+
+        // Register template for reading NO_NEW_PRIVS.
+        ctemplate::StringToTemplateCache(
+            kPrivsTemplateName,
+            kPrivsTemplateStr,
+            ctemplate::DO_NOT_STRIP);
     }
 
     void TearDown() override
@@ -165,6 +185,19 @@ protected:
         std::string out;
         ctemplate::ExpandTemplate(
             kMemTemplateName,
+            ctemplate::DO_NOT_STRIP,
+            cfg.mDictionary,
+            &out);
+        return out;
+    }
+
+    // Expand the NO_NEW_PRIVS template against the config's dictionary.
+    // Returns e.g. "NO_NEW_PRIVS=true" or "NO_NEW_PRIVS=false".
+    std::string expandPrivsTemplate(DobbySpecConfig& cfg)
+    {
+        std::string out;
+        ctemplate::ExpandTemplate(
+            kPrivsTemplateName,
             ctemplate::DO_NOT_STRIP,
             cfg.mDictionary,
             &out);
@@ -227,4 +260,29 @@ TEST_F(DobbySpecConfigTest, SwapLimit_NonIntegral_Fails)
     ctemplate::TemplateDictionary dict("test_nonint");
     Json::Value badSwap("not-a-number");
     EXPECT_FALSE(cfg->processSwapLimit(badSwap, &dict));
+}
+
+// ── noNewPrivileges tests ─────────────────────────────────────────────────────
+
+/**
+ * When 'capabilities' are specified in the spec, NO_NEW_PRIVS must be set to
+ * "false" so that file-based capability inheritance works through execve.
+ * This was previously broken on RDK builds (RDKEMW-17605).
+ */
+TEST_F(DobbySpecConfigTest, Capabilities_SetsNoNewPrivsFalse)
+{
+    auto cfg = makeConfig(kSpecWithCapabilities);
+    EXPECT_TRUE(cfg->isValid());
+    EXPECT_EQ(expandPrivsTemplate(*cfg), "NO_NEW_PRIVS=false");
+}
+
+/**
+ * When no 'capabilities' field is present, NO_NEW_PRIVS must default to "true"
+ * (the secure default — disallow privilege escalation).
+ */
+TEST_F(DobbySpecConfigTest, NoCapabilities_SetsNoNewPrivsTrue)
+{
+    auto cfg = makeConfig(kSpecMemOnly);
+    EXPECT_TRUE(cfg->isValid());
+    EXPECT_EQ(expandPrivsTemplate(*cfg), "NO_NEW_PRIVS=true");
 }
