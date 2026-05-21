@@ -146,6 +146,19 @@ Json::Value DobbyStats::getStats(const ContainerId& id,
     const std::string memCgroupPath(env->cgroupMountPath(IDobbyEnv::Cgroup::Memory));
     if (!memCgroupPath.empty())
     {
+        // If cpuacct cgroup was not available (CONFIG_CGROUP_CPUACCT not set)
+        // or the per-container cpuacct directory doesn't exist, fall back to
+        // the memory cgroup to get pids/processes.  cgroup.procs is present
+        // in every cgroup controller and returns the same PIDs.
+        if (!stats.isMember("pids") || stats["pids"].empty())
+        {
+            stats["pids"] =
+                readMultipleCgroupValuesJson(id, memCgroupPath, "cgroup.procs");
+
+            stats["processes"] =
+                getProcessTree(id, memCgroupPath, utils);
+        }
+
         // get the userspace memory consumed
         stats["memory"]["user"]["limit"] =
             readSingleCgroupValue(id, memCgroupPath, "memory.limit_in_bytes");
