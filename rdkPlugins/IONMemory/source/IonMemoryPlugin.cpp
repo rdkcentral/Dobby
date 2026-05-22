@@ -180,14 +180,24 @@ bool IonMemoryPlugin::postStop()
 /**
  *  @brief Attempts to get the mount points of the ION cgroup filesystem.
  *
- *  This scans the mount table looking for the cgroups mounts. This is typically
- *  the name of the cgroup prefixed with "/sys/fs/cgroup"
+ *  This scans the mount table looking for the cgroups mounts. On cgroups v1
+ *  this is typically the name of the cgroup prefixed with "/sys/fs/cgroup".
+ *  On cgroups v2 the ION custom controller is not available (returns empty).
  *
  *  @return path to the ION cgroup mount, or empty string if failed to find it.
  */
 std::string IonMemoryPlugin::findIonCGroupMountPoint() const
 {
     AI_LOG_FN_ENTRY();
+
+    // On cgroups v2 there is no separate ion cgroup controller
+    struct stat st;
+    if (stat("/sys/fs/cgroup/cgroup.controllers", &st) == 0)
+    {
+        AI_LOG_WARN("ion cgroup controller not available on cgroups v2");
+        AI_LOG_FN_EXIT();
+        return std::string();
+    }
 
     // try and open /proc/mounts for scanning the current mount table
     FILE *procMounts = setmntent("/proc/mounts", "r");

@@ -57,16 +57,20 @@ public:
 
     std::string cgroupMountPath(Cgroup cgroup) const override;
 
+    CgroupVersion cgroupVersion() const override;
+
     uint16_t platformIdent() const override;
 
 private:
-    static std::map<IDobbyEnv::Cgroup, std::string> getCgroupMountPoints();
+    static CgroupVersion detectCgroupVersion();
+    static std::map<IDobbyEnv::Cgroup, std::string> getCgroupMountPoints(CgroupVersion version);
     static uint16_t getPlatformIdent();
 
 private:
     const std::string mWorkspacePath;
     const std::string mFlashMountPath;
     const std::string mPluginsWorkspacePath;
+    const CgroupVersion mCgroupVersion;
     const std::map<IDobbyEnv::Cgroup, std::string> mCgroupMountPaths;
     const uint16_t mPlatformIdent;
 };

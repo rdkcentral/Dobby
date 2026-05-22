@@ -115,6 +115,8 @@ Json::Value DobbyStats::getStats(const ContainerId& id,
 
     Json::Value stats(Json::objectValue);
 
+    const IDobbyEnv::CgroupVersion cgroupVer = env->cgroupVersion();
+
     const std::string cpuCgroupPath(env->cgroupMountPath(IDobbyEnv::Cgroup::CpuAcct));
     if (!cpuCgroupPath.empty())
     {
@@ -126,11 +128,20 @@ Json::Value DobbyStats::getStats(const ContainerId& id,
         stats["processes"] =
             getProcessTree(id, cpuCgroupPath, utils);
 
-        // get the cpu usage values
-        stats["cpu"]["usage"]["total"] =
-            readSingleCgroupValue(id, cpuCgroupPath, "cpuacct.usage");
-        stats["cpu"]["usage"]["percpu"] =
-            readMultipleCgroupValuesJson(id, cpuCgroupPath, "cpuacct.usage_percpu");
+        // get the cpu usage values - file names differ between v1 and v2
+        if (cgroupVer == IDobbyEnv::CgroupVersion::V1)
+        {
+            stats["cpu"]["usage"]["total"] =
+                readSingleCgroupValue(id, cpuCgroupPath, "cpuacct.usage");
+            stats["cpu"]["usage"]["percpu"] =
+                readMultipleCgroupValuesJson(id, cpuCgroupPath, "cpuacct.usage_percpu");
+        }
+        else
+        {
+            // on v2, cpu accounting is under cpu.stat (usage_usec field)
+            stats["cpu"]["usage"]["total"] =
+                readSingleCgroupValue(id, cpuCgroupPath, "cpu.stat");
+        }
     }
 
     // the timestamp value is generally used to calculate the cpu usage, so set
@@ -146,36 +157,66 @@ Json::Value DobbyStats::getStats(const ContainerId& id,
     const std::string memCgroupPath(env->cgroupMountPath(IDobbyEnv::Cgroup::Memory));
     if (!memCgroupPath.empty())
     {
-        // get the userspace memory consumed
-        stats["memory"]["user"]["limit"] =
-            readSingleCgroupValue(id, memCgroupPath, "memory.limit_in_bytes");
-        stats["memory"]["user"]["usage"] =
-            readSingleCgroupValue(id, memCgroupPath, "memory.usage_in_bytes");
-        stats["memory"]["user"]["max"] =
-            readSingleCgroupValue(id, memCgroupPath, "memory.max_usage_in_bytes");
-        stats["memory"]["user"]["failcnt"] =
-            readSingleCgroupValue(id, memCgroupPath, "memory.failcnt");
+        if (cgroupVer == IDobbyEnv::CgroupVersion::V1)
+        {
+            // cgroups v1 memory file names
+            stats["memory"]["user"]["limit"] =
+                readSingleCgroupValue(id, memCgroupPath, "memory.limit_in_bytes");
+            stats["memory"]["user"]["usage"] =
+                readSingleCgroupValue(id, memCgroupPath, "memory.usage_in_bytes");
+            stats["memory"]["user"]["max"] =
+                readSingleCgroupValue(id, memCgroupPath, "memory.max_usage_in_bytes");
+            stats["memory"]["user"]["failcnt"] =
+                readSingleCgroupValue(id, memCgroupPath, "memory.failcnt");
+        }
+        else
+        {
+            // cgroups v2 memory file names
+            stats["memory"]["user"]["limit"] =
+                readSingleCgroupValue(id, memCgroupPath, "memory.max");
+            stats["memory"]["user"]["usage"] =
+                readSingleCgroupValue(id, memCgroupPath, "memory.current");
+            stats["memory"]["user"]["max"] =
+                readSingleCgroupValue(id, memCgroupPath, "memory.peak");
+            // v2 has no direct failcnt; oom_kill count is in memory.events
+            stats["memory"]["user"]["failcnt"] = Json::Value::null;
+        }
     }
 
     const std::string gpuCgroupPath(env->cgroupMountPath(IDobbyEnv::Cgroup::Gpu));
     if (!gpuCgroupPath.empty())
     {
-        // get the gpu memory consumed
-        stats["gpu"]["memory"]["limit"] =
-            readSingleCgroupValue(id, gpuCgroupPath, "gpu.limit_in_bytes");
-        stats["gpu"]["memory"]["usage"] =
-            readSingleCgroupValue(id, gpuCgroupPath, "gpu.usage_in_bytes");
-        stats["gpu"]["memory"]["max"] =
-            readSingleCgroupValue(id, gpuCgroupPath, "gpu.max_usage_in_bytes");
-        stats["gpu"]["memory"]["failcnt"] =
-            readSingleCgroupValue(id, gpuCgroupPath, "gpu.failcnt");
+        // gpu cgroup is a custom controller; only available on v1
+        if (cgroupVer == IDobbyEnv::CgroupVersion::V1)
+        {
+            stats["gpu"]["memory"]["limit"] =
+                readSingleCgroupValue(id, gpuCgroupPath, "gpu.limit_in_bytes");
+            stats["gpu"]["memory"]["usage"] =
+                readSingleCgroupValue(id, gpuCgroupPath, "gpu.usage_in_bytes");
+            stats["gpu"]["memory"]["max"] =
+                readSingleCgroupValue(id, gpuCgroupPath, "gpu.max_usage_in_bytes");
+            stats["gpu"]["memory"]["failcnt"] =
+                readSingleCgroupValue(id, gpuCgroupPath, "gpu.failcnt");
+        }
+        else
+        {
+            AI_LOG_DEBUG("gpu cgroup stats not available on cgroups v2");
+        }
     }
 
 #if defined(RDK)
     const std::string ionCgroupPath(env->cgroupMountPath(IDobbyEnv::Cgroup::Ion));
     if (!ionCgroupPath.empty())
     {
-        stats["ion"]["heaps"] = readIonCgroupHeaps(id, ionCgroupPath);
+        // ion cgroup is a custom controller; only available on v1
+        if (cgroupVer == IDobbyEnv::CgroupVersion::V1)
+        {
+            stats["ion"]["heaps"] = readIonCgroupHeaps(id, ionCgroupPath);
+        }
+        else
+        {
+            AI_LOG_DEBUG("ion cgroup stats not available on cgroups v2");
+        }
     }
 #endif
 

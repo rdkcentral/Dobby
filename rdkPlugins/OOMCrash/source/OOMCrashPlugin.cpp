@@ -173,7 +173,13 @@ std::vector<std::string> OOMCrash::getDependencies() const
 }
 
 /**
- * @brief Read cgroup file.
+ * @brief Read cgroup file to detect OOM.
+ *
+ *  On cgroups v1 reads memory.failcnt from
+ *  /sys/fs/cgroup/memory/<id>/memory.failcnt.
+ *
+ *  On cgroups v2 reads the oom_kill field from
+ *  /sys/fs/cgroup/<id>/memory.events.
  *
  *  @param[out]  val      gives the number of times that the cgroup limit was exceeded.
  *
@@ -182,36 +188,84 @@ std::vector<std::string> OOMCrash::getDependencies() const
 
 bool OOMCrash::readCgroup(unsigned long *val)
 {
-    std::string path = "/sys/fs/cgroup/memory/" + mUtils->getContainerId() + "/memory.failcnt";
+    const std::string containerId = mUtils->getContainerId();
+
+    // Detect cgroups version by checking for the v2 unified hierarchy
+    struct stat st;
+    const bool isCgroupV2 = (stat("/sys/fs/cgroup/cgroup.controllers", &st) == 0);
+
+    std::string path;
+    if (isCgroupV2)
+    {
+        // On cgroups v2, OOM events are in memory.events under the container's
+        // cgroup directory within the unified hierarchy
+        path = "/sys/fs/cgroup/" + containerId + "/memory.events";
+    }
+    else
+    {
+        // On cgroups v1, use the legacy per-controller path
+        path = "/sys/fs/cgroup/memory/" + containerId + "/memory.failcnt";
+    }
 
     FILE *fp = fopen(path.c_str(), "r");
     if (!fp)
     {
-        if (errno != ENOENT)
-            AI_LOG_ERROR("failed to open '%s' (%d - %s)", path.c_str(), errno, strerror(errno));
+        // On v2 the container may be scoped under system.slice
+        if (isCgroupV2 && errno == ENOENT)
+        {
+            path = "/sys/fs/cgroup/system.slice/dobby-" + containerId + ".scope/memory.events";
+            fp = fopen(path.c_str(), "r");
+        }
 
-        return false;
+        if (!fp)
+        {
+            if (errno != ENOENT)
+                AI_LOG_ERROR("failed to open '%s' (%d - %s)", path.c_str(), errno, strerror(errno));
+
+            return false;
+        }
     }
 
     char* line = nullptr;
     size_t len = 0;
     ssize_t rd;
 
-    if ((rd = getline(&line, &len, fp)) < 0)
+    if (isCgroupV2)
     {
-        if (line)
-            free(line);
+        // memory.events is a key-value file, look for "oom_kill <N>"
+        *val = 0;
+        while ((rd = getline(&line, &len, fp)) >= 0)
+        {
+            unsigned long v = 0;
+            if (sscanf(line, "oom_kill %lu", &v) == 1)
+            {
+                *val = v;
+                break;
+            }
+        }
+        free(line);
         fclose(fp);
-        AI_LOG_ERROR("failed to read cgroup file line (%d - %s)", errno, strerror(errno));
-        return false;
+        return true;
     }
+    else
+    {
+        // v1: single numeric value in memory.failcnt
+        if ((rd = getline(&line, &len, fp)) < 0)
+        {
+            if (line)
+                free(line);
+            fclose(fp);
+            AI_LOG_ERROR("failed to read cgroup file line (%d - %s)", errno, strerror(errno));
+            return false;
+        }
 
-    *val = strtoul(line, nullptr, 0);
+        *val = strtoul(line, nullptr, 0);
 
-    fclose(fp);
-    free(line);
+        fclose(fp);
+        free(line);
 
-    return true;
+        return true;
+    }
 }
 
 /**
