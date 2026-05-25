@@ -139,8 +139,14 @@ Json::Value DobbyStats::getStats(const ContainerId& id,
         else
         {
             // on v2, cpu accounting is under cpu.stat (usage_usec field)
-            stats["cpu"]["usage"]["total"] =
-                readSingleCgroupValue(id, cpuCgroupPath, "cpu.stat");
+            // usage_usec is in microseconds; convert to nanoseconds to match v1
+            Json::Value usec = readCgroupKeyValue(id, cpuCgroupPath, "cpu.stat", "usage_usec");
+            if (usec.isNull())
+                stats["cpu"]["usage"]["total"] = Json::Value::null;
+            else
+                stats["cpu"]["usage"]["total"] =
+                    Json::Value(static_cast<Json::LargestUInt>(usec.asUInt64() * 1000ULL));
+            stats["cpu"]["usage"]["percpu"] = Json::Value::null;
         }
     }
 
@@ -383,6 +389,55 @@ Json::Value DobbyStats::readSingleCgroupValue(const ContainerId& id,
         return Json::Value(-1);
     else
         return Json::Value(static_cast<Json::LargestUInt>(value));
+}
+
+// -----------------------------------------------------------------------------
+/**
+ *  @brief Reads a named value from a key-value format cgroup file.
+ *
+ *  Cgroups v2 files like cpu.stat use a key-value format with one pair per
+ *  line, e.g.:
+ *      usage_usec 123456
+ *      user_usec 100000
+ *      system_usec 23456
+ *
+ *  @param[in]  id              The string id of the container.
+ *  @param[in]  cgroupMntPath   The path to the cgroup mount point.
+ *  @param[in]  cgroupfileName  The name of the cgroup file.
+ *  @param[in]  key             The key whose value to extract.
+ *
+ *  @return The value as a json integer, or null if not found.
+ */
+Json::Value DobbyStats::readCgroupKeyValue(const ContainerId& id,
+                                           const std::string& cgroupMntPath,
+                                           const std::string& cgroupfileName,
+                                           const std::string& key)
+{
+    char buf[4096];
+
+    if (readCgroupFile(id, cgroupMntPath, cgroupfileName, buf, sizeof(buf)) <= 0)
+        return Json::Value::null;
+
+    // Parse line by line looking for "key value"
+    char* saveptr = nullptr;
+    char* line = strtok_r(buf, "\n", &saveptr);
+    while (line)
+    {
+        char keyBuf[64] = {};
+        unsigned long long value = 0;
+        if (sscanf(line, "%63s %llu", keyBuf, &value) == 2)
+        {
+            if (key == keyBuf)
+            {
+                if (value == ULONG_LONG_MAX)
+                    return Json::Value(-1);
+                return Json::Value(static_cast<Json::LargestUInt>(value));
+            }
+        }
+        line = strtok_r(nullptr, "\n", &saveptr);
+    }
+
+    return Json::Value::null;
 }
 
 // -----------------------------------------------------------------------------
