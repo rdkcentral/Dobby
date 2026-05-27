@@ -97,6 +97,14 @@ bool IonMemoryPlugin::createRuntime()
     // sanity check we have an ION cgroup dir
     if (cgroupDirPath.empty())
     {
+        // On cgroups v2 the ion controller is unavailable; degrade gracefully
+        struct stat st;
+        if (stat("/sys/fs/cgroup/cgroup.controllers", &st) == 0)
+        {
+            AI_LOG_WARN("ion cgroup not available on cgroups v2, skipping");
+            AI_LOG_FN_EXIT();
+            return true;
+        }
         AI_LOG_ERROR_EXIT("missing cgroup directory");
         return false;
     }
@@ -150,6 +158,13 @@ bool IonMemoryPlugin::postStop()
     // sanity check we have a cgroup dir
     if (cgroupDirPath.empty())
     {
+        // On cgroups v2 the ion controller is unavailable; nothing to clean up
+        struct stat st;
+        if (stat("/sys/fs/cgroup/cgroup.controllers", &st) == 0)
+        {
+            AI_LOG_FN_EXIT();
+            return true;
+        }
         AI_LOG_ERROR_EXIT("missing cgroup directory");
         return false;
     }

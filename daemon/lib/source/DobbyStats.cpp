@@ -377,6 +377,11 @@ Json::Value DobbyStats::readSingleCgroupValue(const ContainerId& id,
     if (!token)
         return Json::Value::null;
 
+    // cgroups v2 files like memory.max can contain the literal "max" meaning
+    // unlimited; represent as -1 to match v1's ULONG_LONG_MAX convention
+    if (strcmp(token, "max") == 0)
+        return Json::Value(-1);
+
     unsigned long long value = strtoull(token, nullptr, 0);
     if ((value == 0) && (errno == EINVAL))
     {

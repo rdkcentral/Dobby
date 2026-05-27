@@ -233,6 +233,7 @@ bool OOMCrash::readCgroup(unsigned long *val)
     if (isCgroupV2)
     {
         // memory.events is a key-value file, look for "oom_kill <N>"
+        bool found = false;
         *val = 0;
         while ((rd = getline(&line, &len, fp)) >= 0)
         {
@@ -240,11 +241,17 @@ bool OOMCrash::readCgroup(unsigned long *val)
             if (sscanf(line, "oom_kill %lu", &v) == 1)
             {
                 *val = v;
+                found = true;
                 break;
             }
         }
         free(line);
         fclose(fp);
+        if (!found)
+        {
+            AI_LOG_ERROR("'oom_kill' key not found in '%s'", path.c_str());
+            return false;
+        }
         return true;
     }
     else

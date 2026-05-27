@@ -67,6 +67,13 @@ bool GpuPlugin::createRuntime()
     // sanity check we have a gpu cgroup dir
     if (cgroupDirPath.empty())
     {
+        // On cgroups v2 the gpu controller is unavailable; degrade gracefully
+        struct stat st;
+        if (stat("/sys/fs/cgroup/cgroup.controllers", &st) == 0)
+        {
+            AI_LOG_WARN("gpu cgroup not available on cgroups v2, skipping");
+            return true;
+        }
         AI_LOG_ERROR_EXIT("missing gpu cgroup directory");
         return false;
     }
@@ -111,6 +118,13 @@ bool GpuPlugin::postStop()
     // sanity check we have a gpu cgroup dir
     if (cgroupDirPath.empty())
     {
+        // On cgroups v2 the gpu controller is unavailable; nothing to clean up
+        struct stat st;
+        if (stat("/sys/fs/cgroup/cgroup.controllers", &st) == 0)
+        {
+            AI_LOG_FN_EXIT();
+            return true;
+        }
         AI_LOG_ERROR_EXIT("missing gpu cgroup directory");
         return false;
     }

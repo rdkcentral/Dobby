@@ -643,7 +643,7 @@ bool DobbySpecConfig::parseSpec(ctemplate::TemplateDictionary* dictionary,
     // swappiness is not supported on cgroups v2, only show if on v1
     {
         struct stat st;
-        if (stat("/sys/fs/cgroup/cgroup.controllers", &st) != 0)
+        if (stat("/sys/fs/cgroup/cgroup.controllers", &st) != 0 && errno == ENOENT)
         {
             dictionary->ShowSection(SWAPPINESS_ENABLED);
         }
