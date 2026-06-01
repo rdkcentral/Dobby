@@ -62,7 +62,8 @@ else if (container->state == DobbyContainer::State::Running ||
     // If the container is mid-hibernate, set state to
     // Stopping so the detached hibernate thread will see the
     // state change and abort before sending dead PIDs to memcr
-    if (container->state == DobbyContainer::State::Hibernating)
+    const bool wasHibernating = (container->state == DobbyContainer::State::Hibernating);
+    if (wasHibernating)
     {
         container->state = DobbyContainer::State::Stopping;
     }
@@ -70,6 +71,10 @@ else if (container->state == DobbyContainer::State::Running ||
     if (!mRunc->killCont(id, withPrejudice ? SIGKILL : SIGTERM))
     {
         AI_LOG_WARN("failed to send signal to '%s'", id.c_str());
+        if (wasHibernating)
+        {
+            container->state = DobbyContainer::State::Hibernating;
+        }
         AI_LOG_FN_EXIT();
         return false;
     }
@@ -78,9 +83,11 @@ else if (container->state == DobbyContainer::State::Running ||
 
 ### How It Works
 
-1. `stopContainer()` holds `mLock` and sets `state = Stopping`
-2. `stopContainer()` sends SIGKILL/SIGTERM and returns
-3. On the next per-PID iteration, the hibernation worker acquires `mLock`, sees `state != Hibernating`, logs a warning, and aborts — no further memcr calls on dead PIDs
+1. `stopContainer()` holds `mLock`, records `wasHibernating`, and sets `state = Stopping`
+2. `stopContainer()` sends SIGKILL/SIGTERM
+   - **On success**: returns; the hibernation worker sees `state != Hibernating` on its next iteration and aborts — no further memcr calls on dead PIDs
+   - **On failure**: restores `state = Hibernating` before returning `false`, keeping container state consistent and leaving the hibernation worker running uninterrupted
+3. The state rollback on failure is necessary because `Stopping` is a transient state only expected to resolve when the container's death event arrives — a live, still-hibernating container must not be left stranded in `Stopping`
 
 The worker may still have one in-flight memcr call when the kill happens (the call started before the state change), but that single failure is benign — the assert in memcr_worker is triggered by **repeated** operations on dead PIDs, not a single failed socket call.
 
@@ -94,8 +101,11 @@ The `Awakening` state does not need this protection because `WakeupProcess()` on
 Before:
   stopContainer() on Hibernating → SIGKILL (state unchanged → worker continues)
 
-After:
-  stopContainer() on Hibernating → state = Stopping → SIGKILL (worker aborts on next check)
+After (kill succeeds):
+  stopContainer() on Hibernating → state = Stopping → SIGKILL → worker aborts on next check
+
+After (kill fails):
+  stopContainer() on Hibernating → state = Stopping → killCont fails → state = Hibernating (restored) → return false
 ```
 
 ### Sequence Diagram
@@ -127,7 +137,7 @@ sequenceDiagram
 
 | File | Change |
 |------|--------|
-| `daemon/lib/source/DobbyManager.cpp` | `stopContainer()`: Set `state = Stopping` before `killCont()` when container is `Hibernating` |
+| `daemon/lib/source/DobbyManager.cpp` | `stopContainer()`: Set `state = Stopping` before `killCont()` when container is `Hibernating`; restore `state = Hibernating` if `killCont()` fails |
 
 No header changes, no new members, no new dependencies.
 
@@ -139,6 +149,7 @@ No header changes, no new members, no new dependencies.
 - **Backward compatibility**: No D-Bus API change. Behavioral change is internal.
 - **Memcr partial checkpoint**: At most one in-flight memcr call may fail. Incomplete dump files may remain on disk — cleanup handled by existing postHalt logic.
 - **Awakening state not affected**: `WakeupProcess()` on dead PIDs is benign (no assert), so no special handling needed for `Awakening`.
+- **State consistency on kill failure**: If `killCont()` fails, `state` is restored to `Hibernating` so the container is not stranded in `Stopping` while still alive and mid-hibernate.
 
 ---
 
