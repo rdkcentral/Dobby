@@ -1708,7 +1708,7 @@ bool DobbyManager::hibernateContainer(int32_t cd, const std::string& options)
                 // abortContainerHibernationIfNeeded can read it atomically and
                 // issue a targeted WakeupProcess for exactly this one PID.
                 uint32_t pid = pidIt->asUInt();
-                mContainers[id]->hibernatingPid = pid;
+                containerIt->second->hibernatingPid = pid;
                 locker.unlock();
 
                 ret  = DobbyHibernate::HibernateProcess(pid, DobbyHibernate::DFL_TIMEOUTE_MS,
@@ -1821,7 +1821,7 @@ bool DobbyManager::abortContainerHibernationIfNeeded(int32_t cd,
         return false;
     }
 
-    const ContainerId &id = it->first;
+    const ContainerId id = it->first;
 
     if (it->second->state != DobbyContainer::State::Hibernating)
     {
@@ -1855,9 +1855,17 @@ bool DobbyManager::abortContainerHibernationIfNeeded(int32_t cd,
         // Future PIDs will not be reached because state is now Awakening.
         AI_LOG_INFO("Aborting hibernation of '%s': sending WakeupProcess for in-flight PID %u",
                     id.c_str(), inflightPid);
-        DobbyHibernate::WakeupProcess(static_cast<pid_t>(inflightPid));
+        const DobbyHibernate::Error wakeRet = DobbyHibernate::WakeupProcess(static_cast<pid_t>(inflightPid));
 
         locker.lock();
+
+        if (wakeRet != DobbyHibernate::Error::ErrorNone)
+        {
+            AI_LOG_WARN("WakeupProcess failed for in-flight PID %u (ret=%d) while aborting hibernation of '%s'",
+                        inflightPid, static_cast<int>(wakeRet), id.c_str());
+            AI_LOG_FN_EXIT();
+            return false;
+        }
 
         // Re-find the container: it may have been removed while the lock was released.
         it = mContainers.cbegin();
@@ -1872,15 +1880,22 @@ bool DobbyManager::abortContainerHibernationIfNeeded(int32_t cd,
             AI_LOG_FN_EXIT();
             return false;
         }
+
+        // mLock is held again (locker.lock() above). Clear correlated fields
+        // inside this branch so the lock state is locally unambiguous.
+        it->second->hibernatingPid = 0;
+        it->second->state = DobbyContainer::State::Running;
     }
     else
     {
         AI_LOG_INFO("Aborting hibernation of '%s': no in-flight PID, state set to Awakening",
                     id.c_str());
-    }
 
-    // Restore state to Running so the caller's killCont() path proceeds normally.
-    it->second->state = DobbyContainer::State::Running;
+        // mLock was never released in this branch. Clear correlated fields here
+        // so the lock state is locally unambiguous.
+        it->second->hibernatingPid = 0;
+        it->second->state = DobbyContainer::State::Running;
+    }
 
     AI_LOG_INFO("Hibernation abort of '%s' complete", id.c_str());
     AI_LOG_FN_EXIT();

@@ -94,7 +94,7 @@ public:
     // HibernateProcess() call, and cleared under mLock when the full
     // hibernation sequence is complete. Allows abortContainerHibernationIfNeeded
     // to issue a targeted WakeupProcess only for the one in-flight PID.
-    uint32_t hibernatingPid;
+    uint32_t hibernatingPid = 0;
 
 public:
     void setRestartOnCrash(const std::list<int>& files);
