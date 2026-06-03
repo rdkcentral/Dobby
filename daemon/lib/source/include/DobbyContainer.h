@@ -89,6 +89,13 @@ public:
     enum class State { Starting, Running, Stopping, Paused, Hibernating, Hibernated, Awakening, Unknown } state;
     std::string customConfigFilePath;
 
+    // PID currently being passed to DobbyHibernate::HibernateProcess.
+    // Written under mLock immediately before mLock is released for each
+    // HibernateProcess() call, and cleared under mLock when the full
+    // hibernation sequence is complete. Allows abortContainerHibernationIfNeeded
+    // to issue a targeted WakeupProcess only for the one in-flight PID.
+    uint32_t hibernatingPid;
+
 public:
     void setRestartOnCrash(const std::list<int>& files);
     void clearRestartOnCrash();

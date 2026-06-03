@@ -62,6 +62,7 @@ public:
     const std::shared_ptr<const DobbyConfig> config;
     std::list<int> mFiles;
     bool hasCurseOfDeath;
+    uint32_t hibernatingPid;
     const std::shared_ptr<const DobbyRootfs> rootfs;
 
     DobbyContainer();
