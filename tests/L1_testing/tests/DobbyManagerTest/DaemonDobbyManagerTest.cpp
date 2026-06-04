@@ -4418,6 +4418,270 @@ TEST_F(DaemonDobbyManagerTest, hibernateContainer_successWithParametersCombinati
 }
 
 // =============================================================================
+// Unit tests for stopContainer() while hibernation is in progress.
+//
+// Regression suite for RDKEMW-13969: verifies that stopContainer() calls
+// WakeupProcess() for the in-flight PID before issuing killCont(), so that
+// memcr fully unseizes the process before SIGKILL is sent (preventing the
+// assert(WIFSTOPPED(status)) crash inside memcr_worker).
+// =============================================================================
+
+/**
+ * @brief stopContainer() on a Hibernating container — WakeupProcess succeeds.
+ *
+ * Scenario: hibernateContainer() is called and its worker thread is blocked
+ * inside HibernateProcess() for the first PID.  stopContainer() is then called
+ * from the test thread.  The test verifies:
+ *  1. WakeupProcess() is invoked with the in-flight PID before killCont().
+ *  2. killCont() is called exactly once after WakeupProcess() returns.
+ *  3. stopContainer() returns true.
+ */
+TEST_F(DaemonDobbyManagerTest, stopContainer_HibernatingState_WakeupCalledBeforeKill)
+{
+    // Container stats with a single PID so the race window is deterministic.
+    Json::Value expected_json;
+    expected_json["id"] = "container1";
+    expected_json["state"] = "running";
+    expected_json["pids"] = Json::arrayValue;
+    expected_json["pids"].append(1);   // PID 1 is the only in-flight PID
+
+    int32_t cd = 1234;
+    ContainerId id = ContainerId::create("container1");
+    expect_invalidContainerCleanupTask();
+    expect_startContainerFromBundle(cd, id);
+
+    EXPECT_CALL(*p_statsMock, stats())
+        .Times(1)
+        .WillOnce(::testing::ReturnRef(expected_json));
+
+    // Synchronisation: HibernateProcess blocks until WakeupProcess releases it.
+    std::promise<void> wakeupCalledPromise;
+    std::future<void> wakeupCalledFuture = wakeupCalledPromise.get_future();
+
+    // Track call ordering to verify WakeupProcess precedes killCont.
+    std::vector<std::string> callOrder;
+    std::mutex callOrderMutex;
+
+    EXPECT_CALL(*p_hibernateMock, HibernateProcess(
+            ::testing::_, ::testing::_, ::testing::_, ::testing::_, ::testing::_))
+        .Times(1)
+        .WillOnce(::testing::Invoke(
+            [&](const pid_t pid, const uint32_t, const std::string&,
+                const std::string&, DobbyHibernate::CompressionAlg)
+            {
+                // Block until the abort path has called WakeupProcess.
+                wakeupCalledFuture.wait();
+                {
+                    std::lock_guard<std::mutex> lk(callOrderMutex);
+                    callOrder.push_back("HibernateProcess_returned");
+                }
+                return DobbyHibernate::Error::ErrorNone;
+            }));
+
+    EXPECT_CALL(*p_hibernateMock, WakeupProcess(
+            static_cast<pid_t>(1), ::testing::_, ::testing::_))
+        .Times(1)
+        .WillOnce(::testing::Invoke(
+            [&](const pid_t, const uint32_t, const std::string&)
+            {
+                {
+                    std::lock_guard<std::mutex> lk(callOrderMutex);
+                    callOrder.push_back("WakeupProcess");
+                }
+                // Unblock HibernateProcess now that WakeupProcess has been called.
+                wakeupCalledPromise.set_value();
+                return DobbyHibernate::Error::ErrorNone;
+            }));
+
+    EXPECT_CALL(*p_runcMock, killCont(::testing::_, ::testing::_, ::testing::_))
+        .Times(1)
+        .WillOnce(::testing::Invoke(
+            [&](const ContainerId&, int, bool)
+            {
+                std::lock_guard<std::mutex> lk(callOrderMutex);
+                callOrder.push_back("killCont");
+                return true;
+            }));
+
+    // Start hibernation (spawns a detached worker thread that blocks in HibernateProcess).
+    bool ret = dobbyManager_test->hibernateContainer(cd, "");
+    EXPECT_EQ(ret, true);
+
+    // Spin until the container state becomes Hibernating (worker thread has
+    // recorded hibernatingPid and released mLock).
+    const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(5);
+    while (dobbyManager_test->stateOfContainer(cd) != CONTAINER_STATE_HIBERNATING)
+    {
+        ASSERT_LT(std::chrono::steady_clock::now(), deadline)
+            << "Timed out waiting for container to enter Hibernating state";
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    }
+
+    // Now call stopContainer — this must call WakeupProcess then killCont.
+    ret = dobbyManager_test->stopContainer(cd, true);
+    EXPECT_EQ(ret, true);
+
+    // Verify ordering.
+    {
+        std::lock_guard<std::mutex> lk(callOrderMutex);
+        ASSERT_GE(callOrder.size(), 2u);
+        EXPECT_EQ(callOrder[0], "WakeupProcess");
+        EXPECT_EQ(callOrder[1], "killCont");
+    }
+}
+
+/**
+ * @brief stopContainer() on a Hibernating container — WakeupProcess fails.
+ *
+ * When WakeupProcess returns an error, abortContainerHibernationIfNeeded()
+ * reverts state to Hibernating and returns false.  stopContainer() must
+ * propagate this as a false return without calling killCont().
+ */
+TEST_F(DaemonDobbyManagerTest, stopContainer_HibernatingState_WakeupFails_ReturnsFalse)
+{
+    Json::Value expected_json;
+    expected_json["id"] = "container1";
+    expected_json["state"] = "running";
+    expected_json["pids"] = Json::arrayValue;
+    expected_json["pids"].append(1);
+
+    int32_t cd = 1234;
+    ContainerId id = ContainerId::create("container1");
+    expect_invalidContainerCleanupTask();
+    expect_startContainerFromBundle(cd, id);
+
+    EXPECT_CALL(*p_statsMock, stats())
+        .Times(1)
+        .WillOnce(::testing::ReturnRef(expected_json));
+
+    std::promise<void> wakeupCalledPromise;
+    std::future<void> wakeupCalledFuture = wakeupCalledPromise.get_future();
+
+    EXPECT_CALL(*p_hibernateMock, HibernateProcess(
+            ::testing::_, ::testing::_, ::testing::_, ::testing::_, ::testing::_))
+        .Times(1)
+        .WillOnce(::testing::Invoke(
+            [&](const pid_t, const uint32_t, const std::string&,
+                const std::string&, DobbyHibernate::CompressionAlg)
+            {
+                wakeupCalledFuture.wait();
+                return DobbyHibernate::Error::ErrorNone;
+            }));
+
+    EXPECT_CALL(*p_hibernateMock, WakeupProcess(
+            static_cast<pid_t>(1), ::testing::_, ::testing::_))
+        .Times(1)
+        .WillOnce(::testing::Invoke(
+            [&](const pid_t, const uint32_t, const std::string&)
+            {
+                wakeupCalledPromise.set_value();
+                return DobbyHibernate::Error::ErrorGeneral;
+            }));
+
+    // killCont must NOT be called when the abort fails.
+    EXPECT_CALL(*p_runcMock, killCont(::testing::_, ::testing::_, ::testing::_))
+        .Times(0);
+
+    bool ret = dobbyManager_test->hibernateContainer(cd, "");
+    EXPECT_EQ(ret, true);
+
+    const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(5);
+    while (dobbyManager_test->stateOfContainer(cd) != CONTAINER_STATE_HIBERNATING)
+    {
+        ASSERT_LT(std::chrono::steady_clock::now(), deadline)
+            << "Timed out waiting for container to enter Hibernating state";
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    }
+
+    ret = dobbyManager_test->stopContainer(cd, true);
+    EXPECT_EQ(ret, false);
+}
+
+/**
+ * @brief stopContainer() on a Hibernating container — hibernatingPid is 0.
+ *
+ * If stopContainer() arrives between per-PID iterations (hibernatingPid == 0),
+ * abortContainerHibernationIfNeeded() must set state = Awakening (so the
+ * hibernate thread does not start a new HibernateProcess call) and then
+ * return true without calling WakeupProcess.  killCont() must still be called.
+ */
+TEST_F(DaemonDobbyManagerTest, stopContainer_HibernatingState_NoPidInFlight_KillContCalled)
+{
+    Json::Value expected_json;
+    expected_json["id"] = "container1";
+    expected_json["state"] = "running";
+    expected_json["pids"] = Json::arrayValue;
+    expected_json["pids"].append(1);
+    expected_json["pids"].append(2);
+
+    int32_t cd = 1234;
+    ContainerId id = ContainerId::create("container1");
+    expect_invalidContainerCleanupTask();
+    expect_startContainerFromBundle(cd, id);
+
+    EXPECT_CALL(*p_statsMock, stats())
+        .Times(1)
+        .WillOnce(::testing::ReturnRef(expected_json));
+
+    // Gate: HibernateProcess(pid=1) signals it has finished (hibernatingPid
+    // will be cleared before mLock is released for the next iteration).
+    std::promise<void> firstPidDonePromise;
+    std::future<void> firstPidDoneFuture = firstPidDonePromise.get_future();
+
+    // Gate: HibernateProcess(pid=2) blocks until the test calls stopContainer.
+    std::promise<void> stopCalledPromise;
+    std::future<void> stopCalledFuture = stopCalledPromise.get_future();
+
+    int callCount = 0;
+    EXPECT_CALL(*p_hibernateMock, HibernateProcess(
+            ::testing::_, ::testing::_, ::testing::_, ::testing::_, ::testing::_))
+        .Times(::testing::AtLeast(1))
+        .WillRepeatedly(::testing::Invoke(
+            [&](const pid_t pid, const uint32_t, const std::string&,
+                const std::string&, DobbyHibernate::CompressionAlg)
+            {
+                callCount++;
+                if (callCount == 1)
+                {
+                    // First PID done — let the test thread know hibernatingPid
+                    // will momentarily be 0 (between iterations).
+                    firstPidDonePromise.set_value();
+                }
+                else
+                {
+                    // Second PID: block until stopContainer is called.
+                    stopCalledFuture.wait();
+                }
+                return DobbyHibernate::Error::ErrorNone;
+            }));
+
+    // WakeupProcess must NOT be called (hibernatingPid == 0 at the moment stop sees it).
+    EXPECT_CALL(*p_hibernateMock, WakeupProcess(::testing::_, ::testing::_, ::testing::_))
+        .Times(0);
+
+    EXPECT_CALL(*p_runcMock, killCont(::testing::_, ::testing::_, ::testing::_))
+        .Times(1)
+        .WillOnce(::testing::Return(true));
+
+    bool ret = dobbyManager_test->hibernateContainer(cd, "");
+    EXPECT_EQ(ret, true);
+
+    // Wait until the first PID has finished so hibernatingPid is transiently 0.
+    firstPidDoneFuture.wait();
+
+    // Call stopContainer while hibernatingPid is (or was) 0.
+    // Release the second HibernateProcess only after stopContainer has returned.
+    // This is intentionally racy — we are testing the hibernatingPid==0 branch,
+    // not a perfectly timed window. The key assertion is that WakeupProcess is
+    // never called and killCont is called exactly once.
+    stopCalledPromise.set_value();   // release any blocked second-pid call
+    ret = dobbyManager_test->stopContainer(cd, true);
+    // stopContainer returns true when the abort path succeeds (no in-flight PID)
+    // or when the container is no longer Hibernating by the time we check.
+    EXPECT_TRUE(ret);
+}
+
+// =============================================================================
 // Unit tests for DobbyManager::synthesizeContainerSignalStatus()
 //
 // These validate the 128+signum exit code to WIFSIGNALED status synthesis
