@@ -4458,6 +4458,12 @@ TEST_F(DaemonDobbyManagerTest, stopContainer_HibernatingState_WakeupCalledBefore
     std::promise<void> wakeupCalledPromise;
     std::future<void> wakeupCalledFuture = wakeupCalledPromise.get_future();
 
+    // Synchronisation: fires when HibernateProcess is actually entered, meaning
+    // the thread has set hibernatingPid under mLock and released it.  stopContainer()
+    // must not run until this point so it sees a non-zero hibernatingPid.
+    std::promise<void> hibernateStartedPromise;
+    std::future<void> hibernateStartedFuture = hibernateStartedPromise.get_future();
+
     // Track call ordering to verify WakeupProcess precedes killCont.
     std::vector<std::string> callOrder;
     std::mutex callOrderMutex;
@@ -4469,6 +4475,9 @@ TEST_F(DaemonDobbyManagerTest, stopContainer_HibernatingState_WakeupCalledBefore
             [&](const pid_t pid, const uint32_t, const std::string&,
                 const std::string&, DobbyHibernate::CompressionAlg)
             {
+                // Signal that HibernateProcess is now in-flight (hibernatingPid
+                // has been set under mLock and mLock has been released).
+                hibernateStartedPromise.set_value();
                 // Block until the abort path has called WakeupProcess.
                 wakeupCalledFuture.wait();
                 {
@@ -4507,15 +4516,10 @@ TEST_F(DaemonDobbyManagerTest, stopContainer_HibernatingState_WakeupCalledBefore
     bool ret = dobbyManager_test->hibernateContainer(cd, "");
     EXPECT_EQ(ret, true);
 
-    // Spin until the container state becomes Hibernating (worker thread has
-    // recorded hibernatingPid and released mLock).
-    const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(5);
-    while (dobbyManager_test->stateOfContainer(cd) != CONTAINER_STATE_HIBERNATING)
-    {
-        ASSERT_LT(std::chrono::steady_clock::now(), deadline)
-            << "Timed out waiting for container to enter Hibernating state";
-        std::this_thread::sleep_for(std::chrono::milliseconds(1));
-    }
+    // Wait until HibernateProcess is actually invoked — the thread has set
+    // hibernatingPid under mLock and released it, so stopContainer() will
+    // see a non-zero hibernatingPid and correctly call WakeupProcess.
+    hibernateStartedFuture.wait();
 
     // Now call stopContainer — this must call WakeupProcess then killCont.
     ret = dobbyManager_test->stopContainer(cd, true);
@@ -4557,6 +4561,9 @@ TEST_F(DaemonDobbyManagerTest, stopContainer_HibernatingState_WakeupFails_Return
     std::promise<void> wakeupCalledPromise;
     std::future<void> wakeupCalledFuture = wakeupCalledPromise.get_future();
 
+    std::promise<void> hibernateStartedPromise;
+    std::future<void> hibernateStartedFuture = hibernateStartedPromise.get_future();
+
     EXPECT_CALL(*p_hibernateMock, HibernateProcess(
             ::testing::_, ::testing::_, ::testing::_, ::testing::_, ::testing::_))
         .Times(1)
@@ -4564,6 +4571,7 @@ TEST_F(DaemonDobbyManagerTest, stopContainer_HibernatingState_WakeupFails_Return
             [&](const pid_t, const uint32_t, const std::string&,
                 const std::string&, DobbyHibernate::CompressionAlg)
             {
+                hibernateStartedPromise.set_value();
                 wakeupCalledFuture.wait();
                 return DobbyHibernate::Error::ErrorNone;
             }));
@@ -4585,13 +4593,7 @@ TEST_F(DaemonDobbyManagerTest, stopContainer_HibernatingState_WakeupFails_Return
     bool ret = dobbyManager_test->hibernateContainer(cd, "");
     EXPECT_EQ(ret, true);
 
-    const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(5);
-    while (dobbyManager_test->stateOfContainer(cd) != CONTAINER_STATE_HIBERNATING)
-    {
-        ASSERT_LT(std::chrono::steady_clock::now(), deadline)
-            << "Timed out waiting for container to enter Hibernating state";
-        std::this_thread::sleep_for(std::chrono::milliseconds(1));
-    }
+    hibernateStartedFuture.wait();
 
     ret = dobbyManager_test->stopContainer(cd, true);
     EXPECT_EQ(ret, false);

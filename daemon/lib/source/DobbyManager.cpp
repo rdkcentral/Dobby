@@ -1672,8 +1672,17 @@ bool DobbyManager::hibernateContainer(int32_t cd, const std::string& options)
             DobbyHibernate::Error ret = DobbyHibernate::Error::ErrorNone;
             // create a stats object for the container to get list of PIDs
             std::unique_lock<std::mutex> locker(mLock);
-            DobbyStats stats(id, mEnvironment, mUtilities);
-            Json::Value jsonPids = DobbyStats(id, mEnvironment, mUtilities).stats()["pids"];
+            // Bind to a named DobbyStats object so that the reference returned by
+            // stats() remains valid while we access it.
+            DobbyStats statsObj(id, mEnvironment, mUtilities);
+            const Json::Value &statsJson = statsObj.stats();
+            if (!statsJson.isObject())
+            {
+                AI_LOG_WARN("Stats for container '%s' is not a JSON object, cannot hibernate", id.c_str());
+                return;
+            }
+            Json::Value jsonPids = statsJson["pids"];
+
             locker.unlock();
 
             for (auto pidIt = jsonPids.begin(); pidIt != jsonPids.end(); ++pidIt)
@@ -1704,6 +1713,24 @@ bool DobbyManager::hibernateContainer(int32_t cd, const std::string& options)
 
                 ret  = DobbyHibernate::HibernateProcess(pid, DobbyHibernate::DFL_TIMEOUTE_MS,
                         DobbyHibernate::DFL_LOCATOR, dest, compress);
+
+                // Clear hibernatingPid immediately after HibernateProcess returns so that
+                // the field always reflects "currently inside HibernateProcess".  The next
+                // iteration will overwrite it with the new in-flight PID while holding mLock.
+                // Without this clear, stopContainer() arriving between iterations would see a
+                // stale non-zero hibernatingPid and call WakeupProcess on an already-
+                // checkpointed (frozen) PID, potentially unfreezing it prematurely.
+                locker.lock();
+                {
+                    auto clearIt = mContainers.find(id);
+                    if (clearIt != mContainers.end() && clearIt->second &&
+                        clearIt->second->descriptor == cd)
+                    {
+                        clearIt->second->hibernatingPid = 0;
+                    }
+                }
+                locker.unlock();
+
                 if (ret != DobbyHibernate::Error::ErrorNone)
                 {
                     AI_LOG_WARN("Error hibernating pid: '%d'", pid);
@@ -1854,9 +1881,12 @@ bool DobbyManager::abortContainerHibernationIfNeeded(int32_t cd)
 
         if (wakeRet != DobbyHibernate::Error::ErrorNone)
         {
-            // WakeupProcess failed. Revert state to Hibernating so the hibernate
-            // thread can complete on its own.
-            it->second->state = DobbyContainer::State::Hibernating;
+            // WakeupProcess failed. We cannot safely issue killCont() while memcr
+            // holds an active ptrace seize on this PID. Mark the container as
+            // Stopping so that subsequent cleanup paths do not attempt killCont()
+            // (which would crash memcr_worker). The hibernate thread will see
+            // state != Hibernating and abort its loop.
+            it->second->state = DobbyContainer::State::Stopping;
             AI_LOG_WARN("WakeupProcess failed for in-flight PID %u (ret=%d) while aborting hibernation of '%s'",
                         inflightPid, static_cast<int>(wakeRet), id.c_str());
             AI_LOG_FN_EXIT();
@@ -1864,13 +1894,13 @@ bool DobbyManager::abortContainerHibernationIfNeeded(int32_t cd)
         }
 
         it->second->hibernatingPid = 0;
-        it->second->state = DobbyContainer::State::Running;
+        it->second->state = DobbyContainer::State::Stopping;
     }
     else
     {
         AI_LOG_INFO("Aborting hibernation of '%s': no in-flight PID", id.c_str());
         it->second->hibernatingPid = 0;
-        it->second->state = DobbyContainer::State::Running;
+        it->second->state = DobbyContainer::State::Stopping;
     }
 
     AI_LOG_INFO("Hibernation abort of '%s' complete", id.c_str());
