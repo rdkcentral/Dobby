@@ -1390,23 +1390,9 @@ bool DobbyManager::stopContainer(int32_t cd, bool withPrejudice)
         // memcr_worker when it tries to operate on a terminated PID.
         if (container->state == DobbyContainer::State::Hibernating)
         {
-            if (!abortContainerHibernationIfNeeded(cd, locker))
+            if (!abortContainerHibernationIfNeeded(cd))
             {
                 AI_LOG_WARN("failed to abort hibernation for container %d", cd);
-                AI_LOG_FN_EXIT();
-                return false;
-            }
-            // Re-find the container; abortContainerHibernationIfNeeded released
-            // and reacquired mLock internally.
-            it = mContainers.cbegin();
-            for (; it != mContainers.cend(); ++it)
-            {
-                if (it->second && (it->second->descriptor == cd))
-                    break;
-            }
-            if (it == mContainers.cend())
-            {
-                AI_LOG_WARN("container %d not found after aborting hibernation", cd);
                 AI_LOG_FN_EXIT();
                 return false;
             }
@@ -1790,25 +1776,23 @@ bool DobbyManager::hibernateContainer(int32_t cd, const std::string& options)
  *  which is written under mLock immediately before each HibernateProcess() call
  *  and cleared under mLock when the full hibernation sequence completes.
  *
+ *  mLock is held throughout this function, including during the WakeupProcess
+ *  call. The hibernate thread is blocked inside HibernateProcess() (a memcr
+ *  socket call) when inflightPid != 0 and does not hold mLock at that point,
+ *  so there is no deadlock risk.
+ *
  *  Unlike wakeupContainer(), this runs entirely on the calling thread (no new
  *  thread spawned) and does not emit the awoken callback.
  *
  *  @param[in]  cd      The descriptor of the container to abort hibernation for.
- *  @param[in]  locker  The unique_lock already held by the caller; released
- *                      internally around the WakeupProcess call and reacquired
- *                      before returning.
  *
- *  @return true on success (or if no abort was needed); false in any of these
- *          cases:
- *            - the container was not found by descriptor at entry,
+ *  @return true on success (or if no abort was needed); false if:
+ *            - the container was not found by descriptor at entry, or
  *            - WakeupProcess() failed for the in-flight PID (state is reverted
- *              to Hibernating so the hibernate thread can complete on its own),
- *            - the container was removed from mContainers while the lock was
- *              released around the WakeupProcess() call.
+ *              to Hibernating so the hibernate thread can complete on its own).
  *          Callers must not proceed with killCont() when false is returned.
  */
-bool DobbyManager::abortContainerHibernationIfNeeded(int32_t cd,
-                                                     std::unique_lock<std::mutex>& locker)
+bool DobbyManager::abortContainerHibernationIfNeeded(int32_t cd)
 {
     AI_LOG_FN_ENTRY();
 
@@ -1850,12 +1834,12 @@ bool DobbyManager::abortContainerHibernationIfNeeded(int32_t cd,
 
     if (inflightPid != 0)
     {
-        // Release mLock while we block on the memcr socket call.
-        locker.unlock();
-
         // WakeupProcess sends MEMCR_RESTORE for the single in-flight PID.
         // memcr responds by calling unseize_target() and returning, after which
         // it is safe to SIGKILL the process.
+        // The hibernate thread is blocked inside HibernateProcess() at this
+        // point and does not hold mLock, so calling WakeupProcess under mLock
+        // is safe — there is no deadlock risk.
         // Previously-checkpointed PIDs need no wakeup: they are frozen but
         // respond to SIGKILL normally (memcr holds no ptrace seize on them).
         // Future PIDs will not be reached because state is now Awakening.
@@ -1863,58 +1847,23 @@ bool DobbyManager::abortContainerHibernationIfNeeded(int32_t cd,
                     id.c_str(), inflightPid);
         const DobbyHibernate::Error wakeRet = DobbyHibernate::WakeupProcess(static_cast<pid_t>(inflightPid));
 
-        locker.lock();
-
         if (wakeRet != DobbyHibernate::Error::ErrorNone)
         {
+            // WakeupProcess failed. Revert state to Hibernating so the hibernate
+            // thread can complete on its own.
+            it->second->state = DobbyContainer::State::Hibernating;
             AI_LOG_WARN("WakeupProcess failed for in-flight PID %u (ret=%d) while aborting hibernation of '%s'",
                         inflightPid, static_cast<int>(wakeRet), id.c_str());
-
-            // Revert the container state from Awakening back to Hibernating so
-            // the container is not left permanently stuck. The hibernate thread
-            // is still running and will complete (or fail) on its own.
-            it = mContainers.cbegin();
-            for (; it != mContainers.cend(); ++it)
-            {
-                if (it->second && (it->second->descriptor == cd))
-                    break;
-            }
-            if (it != mContainers.cend() &&
-                it->second->state == DobbyContainer::State::Awakening)
-            {
-                it->second->state = DobbyContainer::State::Hibernating;
-            }
-
             AI_LOG_FN_EXIT();
             return false;
         }
 
-        // Re-find the container: it may have been removed while the lock was released.
-        it = mContainers.cbegin();
-        for (; it != mContainers.cend(); ++it)
-        {
-            if (it->second && (it->second->descriptor == cd))
-                break;
-        }
-        if (it == mContainers.cend())
-        {
-            AI_LOG_WARN("container '%s'(%d) removed during hibernation abort", id.c_str(), cd);
-            AI_LOG_FN_EXIT();
-            return false;
-        }
-
-        // mLock is held again (locker.lock() above). Clear correlated fields
-        // inside this branch so the lock state is locally unambiguous.
         it->second->hibernatingPid = 0;
         it->second->state = DobbyContainer::State::Running;
     }
     else
     {
-        AI_LOG_INFO("Aborting hibernation of '%s': no in-flight PID, state set to Awakening",
-                    id.c_str());
-
-        // mLock was never released in this branch. Clear correlated fields here
-        // so the lock state is locally unambiguous.
+        AI_LOG_INFO("Aborting hibernation of '%s': no in-flight PID", id.c_str());
         it->second->hibernatingPid = 0;
         it->second->state = DobbyContainer::State::Running;
     }
