@@ -1403,9 +1403,9 @@ bool DobbyManager::stopContainer(int32_t cd, bool withPrejudice)
             }
         }
 
-        if (!mRunc->killCont(it->first, withPrejudice ? SIGKILL : SIGTERM))
+        if (!mRunc->killCont(id, withPrejudice ? SIGKILL : SIGTERM))
         {
-            AI_LOG_WARN("failed to send signal to '%s'", it->first.c_str());
+            AI_LOG_WARN("failed to send signal to '%s'", id.c_str());
             AI_LOG_FN_EXIT();
             return false;
         }
@@ -1820,8 +1820,10 @@ bool DobbyManager::hibernateContainer(int32_t cd, const std::string& options)
  *
  *  @return true on success (or if no abort was needed); false if:
  *            - the container was not found by descriptor at entry, or
- *            - WakeupProcess() failed for the in-flight PID (state is reverted
- *              to Hibernating so the hibernate thread can complete on its own).
+ *            - WakeupProcess() failed for the in-flight PID (state is set to
+ *              Stopping so that cleanupContainersShutdown() does not attempt a
+ *              redundant killCont(); the hibernate thread will see
+ *              state != Hibernating and abort its loop).
  *          Callers must not proceed with killCont() when false is returned.
  */
 bool DobbyManager::abortContainerHibernationIfNeeded(int32_t cd)
