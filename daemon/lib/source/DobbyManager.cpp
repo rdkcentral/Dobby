@@ -1798,8 +1798,14 @@ bool DobbyManager::hibernateContainer(int32_t cd, const std::string& options)
  *                      internally around the WakeupProcess call and reacquired
  *                      before returning.
  *
- *  @return true on success (or if no abort was needed); false if the container
- *          was removed from mContainers while the lock was released.
+ *  @return true on success (or if no abort was needed); false in any of these
+ *          cases:
+ *            - the container was not found by descriptor at entry,
+ *            - WakeupProcess() failed for the in-flight PID (state is reverted
+ *              to Hibernating so the hibernate thread can complete on its own),
+ *            - the container was removed from mContainers while the lock was
+ *              released around the WakeupProcess() call.
+ *          Callers must not proceed with killCont() when false is returned.
  */
 bool DobbyManager::abortContainerHibernationIfNeeded(int32_t cd,
                                                      std::unique_lock<std::mutex>& locker)
@@ -1863,6 +1869,22 @@ bool DobbyManager::abortContainerHibernationIfNeeded(int32_t cd,
         {
             AI_LOG_WARN("WakeupProcess failed for in-flight PID %u (ret=%d) while aborting hibernation of '%s'",
                         inflightPid, static_cast<int>(wakeRet), id.c_str());
+
+            // Revert the container state from Awakening back to Hibernating so
+            // the container is not left permanently stuck. The hibernate thread
+            // is still running and will complete (or fail) on its own.
+            it = mContainers.cbegin();
+            for (; it != mContainers.cend(); ++it)
+            {
+                if (it->second && (it->second->descriptor == cd))
+                    break;
+            }
+            if (it != mContainers.cend() &&
+                it->second->state == DobbyContainer::State::Awakening)
+            {
+                it->second->state = DobbyContainer::State::Hibernating;
+            }
+
             AI_LOG_FN_EXIT();
             return false;
         }
