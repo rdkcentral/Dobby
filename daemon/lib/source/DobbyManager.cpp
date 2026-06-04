@@ -1392,7 +1392,7 @@ bool DobbyManager::stopContainer(int32_t cd, bool withPrejudice)
         {
             if (!abortContainerHibernationIfNeeded(cd, locker))
             {
-                AI_LOG_WARN("container %d was removed while aborting hibernation", cd);
+                AI_LOG_WARN("failed to abort hibernation for container %d", cd);
                 AI_LOG_FN_EXIT();
                 return false;
             }
