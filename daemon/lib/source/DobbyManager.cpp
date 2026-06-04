@@ -1319,8 +1319,13 @@ bool DobbyManager::restartContainer(const ContainerId &id,
  *
  *  If the withPrejudice is true then we use the SIGKILL signal.
  *
- *  This call is asynchronous, i.e. it is a request to stop rather than a
- *  blocking call that ensures the container is stopped before returning.
+ *  The kill signal itself is sent asynchronously (the actual container teardown
+ *  happens in the background and @a mContainerStoppedCb is called when it
+ *  completes). However, if the container is in the Hibernating state when this
+ *  is called, the function will block for up to DobbyHibernate::DFL_TIMEOUTE_MS
+ *  while aborting the in-progress hibernation via WakeupProcess() before
+ *  sending the kill signal. This is necessary to ensure memcr_worker has
+ *  unseized the in-flight PID before it is killed.
  *
  *  The @a mContainerStoppedCb callback will be called when the container
  *  has actually been torn down.
@@ -1796,7 +1801,7 @@ bool DobbyManager::abortContainerHibernationIfNeeded(int32_t cd)
 {
     AI_LOG_FN_ENTRY();
 
-    // find the container (mLock already held by caller via locker)
+    // find the container (mLock must already be held by the caller)
     auto it = mContainers.cbegin();
     for (; it != mContainers.cend(); ++it)
     {
