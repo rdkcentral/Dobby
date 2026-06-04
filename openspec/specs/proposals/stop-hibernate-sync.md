@@ -79,11 +79,8 @@ In the hibernate thread loop, the assignment happens while the lock is held, imm
 locker.lock();
 if (/* container gone or state != Hibernating */) { return; }
 uint32_t pid = pidIt->asUInt();
-mContainers[id]->hibernatingPid = pid;   // record before releasing lock
+containerIt->second->hibernatingPid = pid;   // record before releasing lock
 locker.unlock();
-
-// Defensive OOM/crash guard (not the primary race-fix):
-if (kill(static_cast<pid_t>(pid), 0) != 0) { return; }
 
 ret = DobbyHibernate::HibernateProcess(pid, ...);
 ```
@@ -100,21 +97,19 @@ else
     mContainers[id]->state = DobbyContainer::State::Running;
 ```
 
-### Part 2 — `abortContainerHibernationIfNeeded(int32_t cd, std::unique_lock<std::mutex>& locker)`
+### Part 2 — `abortContainerHibernationIfNeeded(int32_t cd)`
 
 Called by `stopContainer()` when it finds the container in `Hibernating` state. The method:
 
 1. Reads `hibernatingPid` while holding `mLock`.
 2. Sets `state = Awakening` — the hibernate thread's per-iteration state check will see a non-`Hibernating` state and abort before starting any further `HibernateProcess()` call.
-3. If `hibernatingPid != 0`: releases `mLock`, calls `DobbyHibernate::WakeupProcess(inflightPid)` (default 20 s timeout). `WakeupProcess` sends `MEMCR_RESTORE` to the in-flight worker, which causes it to take the graceful `unseize_target()` + return path rather than proceeding to `execute_blob()`.
-4. Reacquires `mLock`, re-finds the container (it may have vanished while unlocked), returns `false` if gone.
-5. Sets `state = Running` so `killCont()` can proceed.
+3. If `hibernatingPid != 0`: calls `DobbyHibernate::WakeupProcess(inflightPid)` (default 20 s timeout) **while holding `mLock`**. The hibernate thread is blocked inside `HibernateProcess()` (a memcr socket call) at this point and does not hold `mLock`, so there is no deadlock risk. `WakeupProcess` sends `MEMCR_RESTORE` to the in-flight worker, which causes it to take the graceful `unseize_target()` + return path rather than proceeding to `execute_blob()`. If `WakeupProcess` fails, state is reverted to `Hibernating` and the method returns `false`.
+4. Sets `state = Running` so `killCont()` can proceed.
 
 ```cpp
-bool DobbyManager::abortContainerHibernationIfNeeded(int32_t cd,
-                                                     std::unique_lock<std::mutex>& locker)
+bool DobbyManager::abortContainerHibernationIfNeeded(int32_t cd)
 {
-    // ... find container ...
+    // ... find container (mLock must already be held by the caller) ...
 
     if (it->second->state != DobbyContainer::State::Hibernating)
         return true;   // nothing to do
@@ -124,31 +119,37 @@ bool DobbyManager::abortContainerHibernationIfNeeded(int32_t cd,
 
     if (inflightPid != 0)
     {
-        locker.unlock();
-        DobbyHibernate::WakeupProcess(static_cast<pid_t>(inflightPid));
-        locker.lock();
-        // re-find container; return false if gone
+        // mLock held throughout — hibernate thread is blocked in HibernateProcess(),
+        // not holding mLock, so no deadlock risk.
+        const DobbyHibernate::Error wakeRet =
+            DobbyHibernate::WakeupProcess(static_cast<pid_t>(inflightPid));
+        if (wakeRet != DobbyHibernate::Error::ErrorNone)
+        {
+            it->second->state = DobbyContainer::State::Hibernating;  // revert
+            return false;
+        }
     }
 
+    it->second->hibernatingPid = 0;
     it->second->state = DobbyContainer::State::Running;
     return true;
 }
 ```
 
-`stopContainer()` uses `std::unique_lock` (required for the unlock/relock) and copies `id` by value (safe across the lock release):
+`stopContainer()` calls the method — `mLock` is already held via its own `std::unique_lock`:
 
 ```cpp
 std::unique_lock<std::mutex> locker(mLock);
 // ...
 if (container->state == DobbyContainer::State::Hibernating)
 {
-    if (!abortContainerHibernationIfNeeded(cd, locker))
+    if (!abortContainerHibernationIfNeeded(cd))
     {
         AI_LOG_FN_EXIT();
         return false;
     }
 }
-if (!mRunc->killCont(id, withPrejudice ? SIGKILL : SIGTERM)) { ... }
+if (!mRunc->killCont(it->first, withPrejudice ? SIGKILL : SIGTERM)) { ... }
 ```
 
 ### Why only the one in-flight PID
@@ -185,9 +186,14 @@ After (no in-flight PID — hibernatingPid == 0):
         state = Running
     → killCont()
 
-After (container disappears during WakeupProcess):
-  abortContainerHibernationIfNeeded() returns false
-  → stopContainer() returns false (safe; caller may retry)
+After (WakeupProcess fails):
+  stopContainer() on Hibernating
+    → abortContainerHibernationIfNeeded():
+        state = Awakening
+        WakeupProcess(inflightPid) → error
+        state = Hibernating  (reverted)
+    → returns false
+  → stopContainer() returns false (caller may retry)
 ```
 
 ### Sequence Diagram
@@ -206,15 +212,14 @@ sequenceDiagram
     HibernateWorker->>memcr: HibernateProcess(N) [memcr holds ptrace seize]
 
     Client->>stopContainer: stopContainer(cd)
-    stopContainer->>abortHibernation: abortContainerHibernationIfNeeded(cd, locker)
+    stopContainer->>abortHibernation: abortContainerHibernationIfNeeded(cd)
     abortHibernation->>abortHibernation: read hibernatingPid=N, state=Awakening
-    abortHibernation->>abortHibernation: unlock mLock
-    abortHibernation->>memcr: WakeupProcess(N) [blocks on socket]
+    abortHibernation->>memcr: WakeupProcess(N) [blocks on socket, mLock held]
     memcr->>memcr: MEMCR_RESTORE → unseize_target(N) → return
-    abortHibernation->>abortHibernation: relock mLock, state=Running
+    abortHibernation->>abortHibernation: state=Running
     abortHibernation-->>stopContainer: return true
 
-    HibernateWorker->>HibernateWorker: lock → check state == Awakening → abort
+    HibernateWorker->>HibernateWorker: lock → check state != Hibernating → abort
     stopContainer->>Container: killCont() [SIGKILL — no ptrace seize held]
     stopContainer-->>Client: return true
 ```
@@ -226,8 +231,8 @@ sequenceDiagram
 | File | Change |
 |------|--------|
 | `daemon/lib/source/include/DobbyContainer.h` | Add `uint32_t hibernatingPid = 0` public field |
-| `daemon/lib/source/DobbyManager.cpp` | Hibernate thread: record/clear `hibernatingPid` under `mLock`. `stopContainer()`: `lock_guard` → `unique_lock`, value-copy `id`, call `abortContainerHibernationIfNeeded()` for `Hibernating` state. New method `abortContainerHibernationIfNeeded()`. |
-| `daemon/lib/source/include/DobbyManager.h` | Add private declaration for `abortContainerHibernationIfNeeded()` |
+| `daemon/lib/source/DobbyManager.cpp` | Hibernate thread: record/clear `hibernatingPid` under `mLock`. `stopContainer()`: `lock_guard` → `unique_lock`, call `abortContainerHibernationIfNeeded()` for `Hibernating` state. New method `abortContainerHibernationIfNeeded()` (holds `mLock` throughout, no unlock/relock). `WakeupProcess` return value checked in abort, wakeup, and hibernation rollback paths; state reverted to `Hibernating` on failure in the abort path. `stopContainer()` doc comment updated to document blocking behaviour when the container is in `Hibernating` state. |
+| `daemon/lib/source/include/DobbyManager.h` | Add private declaration for `abortContainerHibernationIfNeeded(int32_t cd)`. |
 
 ---
 
@@ -237,7 +242,8 @@ sequenceDiagram
 - **Backward compatibility**: No D-Bus API change. Behavioral change is internal.
 - **`hibernatingPid == 0` race**: If `stopContainer()` reads `hibernatingPid == 0` (thread has not yet set it, or has already cleared it), no `WakeupProcess` call is made. The `state = Awakening` transition still prevents the thread from starting the next `HibernateProcess()` call, so at most one final call may proceed — but in that case the thread will see `state != Hibernating` immediately after and abort before the assert window.
 - **Container removed mid-iteration (abort path null-deref fix)**: When the per-PID abort-check fires and the container has been removed from `mContainers` (the `find(id) == end()` branch), `mContainers[id]` must not be used — `operator[]` would insert a null `unique_ptr` and `->hibernatingPid` would crash. The implementation guards the `hibernatingPid = 0` clear with an explicit `find` result check.
-- **Container disappears during WakeupProcess**: If the container is removed from `mContainers` while the lock is released, `abortContainerHibernationIfNeeded()` returns `false` and `stopContainer()` returns `false`. The caller may retry.
+- **WakeupProcess failure**: If `WakeupProcess()` returns an error, state is reverted from `Awakening` to `Hibernating` and `abortContainerHibernationIfNeeded()` returns `false`. `stopContainer()` propagates this as a `false` return. The hibernate thread is still running and will complete or fail on its own.
+- **No deadlock from holding mLock during WakeupProcess**: `abortContainerHibernationIfNeeded()` holds `mLock` throughout the `WakeupProcess()` call. This is safe because the hibernate thread releases `mLock` before entering `HibernateProcess()` (the memcr socket call) and does not reacquire it until that call returns. The two functions therefore cannot deadlock.
 - **`Hibernated` state not affected**: Fully hibernated processes respond to SIGKILL directly; no wakeup needed.
 
 ---
@@ -250,8 +256,8 @@ sequenceDiagram
 | Stop after hibernation completes (`Hibernated`) | Call hibernate, wait for completion, then stop. Verify container is killed directly with no regression. |
 | Stop during wakeup (`Awakening`) | Call wakeup, then immediately stop. Verify container stops cleanly. |
 | Stop when `hibernatingPid == 0` | Stop arrives between per-PID iterations (lock held by thread, PID not yet recorded). Verify `state = Awakening` alone prevents the next PID from being checkpointed. |
-| `WakeupProcess` timeout | Simulate memcr not responding. Verify `stopContainer()` propagates the timeout, container state is consistent, and no assert occurs. |
-| Container removed during WakeupProcess | Remove container from map while `WakeupProcess` is blocking. Verify `abortContainerHibernationIfNeeded()` returns `false` and no use-after-free occurs. |
+| `WakeupProcess` timeout/failure | Simulate memcr not responding or returning an error. Verify `stopContainer()` returns `false`, container state is reverted to `Hibernating`, and the hibernate thread can complete on its own. |
+| `WakeupProcess` failure in wakeup/rollback paths | Simulate `WakeupProcess` failure in `wakeupContainer` thread loop and `hibernateContainer` rollback loop. Verify a warning is logged but the loop continues attempting all remaining PIDs. |
 | Concurrent stop/hibernate races | Stress test with rapid stop/hibernate cycling. Verify no crashes and no stuck states. |
 
 ---
