@@ -87,6 +87,7 @@ _Not applicable — bundle creation is a one-time setup operation per container 
 ## Security
 - Config recovery mechanism prevents container launch with corrupted configurations.
 - UID/GID mapping support enables user namespace isolation.
+- `noNewPrivileges` is always set in the generated OCI config.json: `true` when no capabilities are requested, `false` when capabilities are present (required for file-based capability inheritance through execve on all platforms).
 
 ## Versioning & Compatibility
 - OCI version `1.0.2` for standard bundles, `1.0.2-dobby` for extended bundles.
