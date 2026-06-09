@@ -112,15 +112,31 @@ public:
     enum class Cgroup
         { Freezer, Memory, Cpu, CpuAcct, CpuSet, Devices, Gpu, NetCls, Blkio, Ion };
 
+    enum class CgroupVersion
+        { V1, V2 };
+
     // -------------------------------------------------------------------------
     /**
      *  @brief Returns the absolute path to the cgroup mount point for the
      *  given cgroup
      *
-     *  This is typically "/sys/fs/cgroup/<cgroup>"
+     *  On cgroups v1 this is typically "/sys/fs/cgroup/<controller>".
+     *  On cgroups v2 (unified) this is the single unified mount, typically
+     *  "/sys/fs/cgroup".
      *
      */
     virtual std::string cgroupMountPath(Cgroup cgroup) const = 0;
+
+    // -------------------------------------------------------------------------
+    /**
+     *  @brief Returns the detected cgroup version (V1 or V2)
+     *
+     *  On cgroups v2 systems all controllers are under a single unified
+     *  hierarchy. Plugins should use this to select the correct file names
+     *  when reading/writing cgroup control files.
+     *
+     */
+    virtual CgroupVersion cgroupVersion() const = 0;
 
 };
 

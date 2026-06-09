@@ -74,3 +74,10 @@ std::string DobbyEnv::cgroupMountPath(IDobbyEnv::Cgroup cgroup) const
    return impl->cgroupMountPath(cgroup);
 }
 
+IDobbyEnv::CgroupVersion DobbyEnv::cgroupVersion() const
+{
+   EXPECT_NE(impl, nullptr);
+
+   return impl->cgroupVersion();
+}
+
