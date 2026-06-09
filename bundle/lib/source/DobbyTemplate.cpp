@@ -474,7 +474,15 @@ void DobbyTemplate::setTemplateCpuRtSched()
         if (!mnt->mnt_type || !mnt->mnt_dir || !mnt->mnt_opts)
             continue;
 
-        // skip non-cgroup mounts
+        // On cgroups v2, the unified hierarchy doesn't expose per-group
+        // rt_runtime_us; RT scheduling is handled differently.
+        // Leave values as 0 → null in template.
+        if (strcmp(mnt->mnt_type, "cgroup2") == 0)
+        {
+            break;
+        }
+
+        // skip non-cgroup mounts (v1 path)
         if (strcmp(mnt->mnt_type, "cgroup") != 0)
             continue;
 

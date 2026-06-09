@@ -182,6 +182,8 @@ private:
     bool restartContainer(const ContainerId& id,
                           const std::unique_ptr<DobbyContainer>& container);
 
+    bool abortContainerHibernationIfNeeded(int32_t cd);
+
 private:
     ContainerStartedFunc mContainerStartedCb;
     ContainerStoppedFunc mContainerStoppedCb;

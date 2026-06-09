@@ -116,19 +116,6 @@ jobs:
          </policy>
          </busconfig>' > "/etc/dbus-1/system.d/org.rdk.dobby.conf"
 
-      - name: Patch OCI templates for cgroupv2 compatibility
-        working-directory: Dobby/bundle/lib/source/templates/
-        run: |
-            # Check if running on cgroupv2
-            if [ -f /sys/fs/cgroup/cgroup.controllers ]; then
-                echo "Detected cgroupv2 - removing swappiness from OCI templates"
-                # Remove the trailing comma from swap line and delete swappiness line
-                sed -i '/"swap": {{MEM_SWAP}},/{s/,//}; /"swappiness": 60/d' OciConfigJson1.0.2-dobby.template
-                sed -i '/"swap": {{MEM_SWAP}},/{s/,//}; /"swappiness": 60/d' OciConfigJsonVM1.0.2-dobby.template
-            else
-                echo "Detected cgroupv1 - keeping swappiness in OCI templates"
-            fi
-
       - name: build Dobby
         run: |
           sudo ln -sf /run/systemd/resolve/resolv.conf /etc/resolv.conf
