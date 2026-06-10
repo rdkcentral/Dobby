@@ -65,6 +65,8 @@ static const ctemplate::StaticTemplateString MEM_LIMIT =
     STS_INIT(MEM_LIMIT, "MEM_LIMIT");
 static const ctemplate::StaticTemplateString MEM_SWAP =
     STS_INIT(MEM_SWAP, "MEM_SWAP");
+static const ctemplate::StaticTemplateString SWAPPINESS_ENABLED =
+    STS_INIT(SWAPPINESS_ENABLED, "SWAPPINESS_ENABLED");
 
 static const ctemplate::StaticTemplateString CPU_SHARES_ENABLED =
     STS_INIT(CPU_SHARES_ENABLED, "CPU_SHARES_ENABLED");
@@ -636,6 +638,15 @@ bool DobbySpecConfig::parseSpec(ctemplate::TemplateDictionary* dictionary,
     {
         // swapLimit not supplied: leave memory+swap unlimited (-1)
         dictionary->SetIntValue(MEM_SWAP, -1);
+    }
+
+    // swappiness is not supported on cgroups v2, only show if on v1
+    {
+        struct stat st;
+        if (stat("/sys/fs/cgroup/cgroup.controllers", &st) != 0 && errno == ENOENT)
+        {
+            dictionary->ShowSection(SWAPPINESS_ENABLED);
+        }
     }
 
     if (!(flags & JSON_FLAG_CAPABILITIES))
@@ -2627,12 +2638,10 @@ bool DobbySpecConfig::processCapabilities(const Json::Value& value,
                                            EXTRA_CAPS_SECTION);
     }
 
-#if !defined(RDK)
     // allow the containered apps to inherit any file base capabilities, this
     // is needed if wanting to execute programs that have the file capabilities
     // that match the capabilities we've given the container
     dictionary->SetValue(NO_NEW_PRIVS, "false");
-#endif // !defined(RDK)
 
     return true;
 }

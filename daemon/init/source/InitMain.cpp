@@ -179,6 +179,12 @@ static void closeAllFileDescriptors(int logPipeFd)
 
 #if (AI_BUILD_TYPE == AI_DEBUG)
 
+static bool isCgroupV2()
+{
+    struct stat st;
+    return (stat("/sys/fs/cgroup/cgroup.controllers", &st) == 0);
+}
+
 static bool readCgroup(const std::string &cgroup, unsigned long *val)
 {
     static const std::string base = "/sys/fs/cgroup/";
@@ -214,18 +220,64 @@ static bool readCgroup(const std::string &cgroup, unsigned long *val)
     return true;
 }
 
+static bool readCgroupKeyValue(const std::string &path, const std::string &key, unsigned long *val)
+{
+    FILE *fp = fopen(path.c_str(), "r");
+    if (!fp)
+    {
+        if (errno != ENOENT)
+            LOG_ERR("failed to open '%s' (%d - %s)", path.c_str(), errno, strerror(errno));
+        return false;
+    }
+
+    char* line = nullptr;
+    size_t len = 0;
+    bool found = false;
+
+    while (getline(&line, &len, fp) >= 0)
+    {
+        unsigned long v = 0;
+        char keyBuf[64] = {};
+        if (sscanf(line, "%63s %lu", keyBuf, &v) == 2)
+        {
+            if (key == keyBuf)
+            {
+                *val = v;
+                found = true;
+                break;
+            }
+        }
+    }
+
+    free(line);
+    fclose(fp);
+    return found;
+}
+
 static void checkForOOM(void)
 {
     unsigned long failCnt;
 
-    if (readCgroup("memory/memory.failcnt", &failCnt) && (failCnt > 0))
+    if (isCgroupV2())
     {
-        LOG_ERR("memory allocation failure detected in container, likely OOM (failcnt = %lu)", failCnt);
+        // On cgroups v2, check memory.events for oom_kill count
+        if (readCgroupKeyValue("/sys/fs/cgroup/memory.events", "oom_kill", &failCnt) && (failCnt > 0))
+        {
+            LOG_ERR("memory allocation failure detected in container, likely OOM (oom_kill = %lu)", failCnt);
+        }
     }
-
-    if (readCgroup("gpu/gpu.failcnt", &failCnt) && (failCnt > 0))
+    else
     {
-        LOG_NFO("GPU memory allocation failure detected in container (failcnt = %lu)", failCnt);
+        // On cgroups v1
+        if (readCgroup("memory/memory.failcnt", &failCnt) && (failCnt > 0))
+        {
+            LOG_ERR("memory allocation failure detected in container, likely OOM (failcnt = %lu)", failCnt);
+        }
+
+        if (readCgroup("gpu/gpu.failcnt", &failCnt) && (failCnt > 0))
+        {
+            LOG_NFO("GPU memory allocation failure detected in container (failcnt = %lu)", failCnt);
+        }
     }
 }
 
