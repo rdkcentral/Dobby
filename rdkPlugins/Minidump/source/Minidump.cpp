@@ -20,9 +20,11 @@
 #include "Minidump.h"
 #include "AnonymousFile.h"
 
+#include <chrono>
 #include <sstream>
 #include <unistd.h>
 #include <iomanip>
+#include <sys/stat.h>
 
 /**
  * Need to do this at the start of every plugin to make sure the correct
@@ -116,7 +118,7 @@ bool Minidump::postHalt()
     }
 
     int hostFd = fileFds.front();
-    std::string destFile = getDestinationFile();
+    std::string destFile = getDestinationFile(hostFd);
 
     // copies content of volatile file from RAM to a disk
     bool success = AnonymousFile(hostFd).copyContentTo(destFile);
@@ -135,16 +137,51 @@ bool Minidump::postHalt()
  *
  * @return Destination minidump file path string
  */
-#define FIREBOLT_STATE  "fireboltState"
+#define FIREBOLT_STATE          "fireboltState"
+#define FIREBOLT_STATE_TS       "fireboltState_ts"
+#define FIREBOLT_STATE_PREV     "fireboltState_prev"
+#define FIREBOLT_STATE_PREV_TS  "fireboltState_prev_ts"
 #define MINIDUMP_FILENAME_LENGTH 44
 #define MINIDUMP_FN_SEPERATOR "<#=#>"
 
-std::string Minidump::getDestinationFile()
+// Helper to safely parse a millisecond timestamp string, returns 0 on failure
+static long long parseTimestampMs(const std::string &str)
 {
-    // If an app crashes multiple times, a previous dump might still exist in the destination
-    // path. Append the current date/time to the filename to prevent conflicts
-    auto now = std::chrono::system_clock::now();
-    std::time_t currentTime = std::chrono::system_clock::to_time_t(now);
+    try
+    {
+        return std::stoll(str);
+    }
+    catch (const std::exception &e)
+    {
+        AI_LOG_WARN("failed to parse timestamp '%s': %s", str.c_str(), e.what());
+        return 0;
+    }
+}
+
+std::string Minidump::getDestinationFile(int fd)
+{
+    // Use the modification time of the anonymous file (set when breakpad writes the
+    // minidump at crash time) rather than the current time which is some variable
+    // delay later when the postHalt hook runs.
+    // We need millisecond resolution because AppService can update the
+    // fireboltState annotation within a few ms of the crash.
+    long long crashTimeMs = 0;
+    std::time_t currentTime;
+    struct stat st;
+    if (fd >= 0 && fstat(fd, &st) == 0 && st.st_mtime != 0)
+    {
+        currentTime = st.st_mtime;
+        crashTimeMs = static_cast<long long>(st.st_mtim.tv_sec) * 1000
+                    + st.st_mtim.tv_nsec / 1000000;
+    }
+    else
+    {
+        AI_LOG_WARN("failed to get mtime from minidump fd, falling back to current time");
+        auto now = std::chrono::system_clock::now();
+        currentTime = std::chrono::system_clock::to_time_t(now);
+        crashTimeMs = std::chrono::duration_cast<std::chrono::milliseconds>(
+                          now.time_since_epoch()).count();
+    }
     std::stringstream timeString;
     timeString << std::put_time(std::localtime(&currentTime), "%FT%T");
     std::string destFile;
@@ -154,16 +191,67 @@ std::string Minidump::getDestinationFile()
 
     std::map<std::string, std::string> annotations = mUtils->getAnnotations();
 
+    // Only use the fireboltState annotation if it was set BEFORE the crash.
+    // AppService often transitions the app to "background" after the crash but
+    // before postHalt runs, which would record the wrong state.  If the current
+    // annotation is stale, fall back to the previous value (which was the state
+    // at the time of the crash, e.g. "foreground").
     auto it = annotations.find(FIREBOLT_STATE);
+    if (it != annotations.end())
+    {
+        auto tsIt = annotations.find(FIREBOLT_STATE_TS);
+        if (tsIt != annotations.end())
+        {
+            long long annotationMs = parseTimestampMs(tsIt->second);
+            if (annotationMs > 0 && annotationMs > crashTimeMs)
+            {
+                AI_LOG_INFO("Current fireboltState '%s' was set after crash "
+                            "(annotation_ms=%lld, crash_ms=%lld) - checking previous value",
+                            it->second.c_str(),
+                            annotationMs,
+                            crashTimeMs);
+
+                // Try the previous annotation value that was valid at crash time
+                auto prevIt = annotations.find(FIREBOLT_STATE_PREV);
+                auto prevTsIt = annotations.find(FIREBOLT_STATE_PREV_TS);
+                if (prevIt != annotations.end() && prevTsIt != annotations.end())
+                {
+                    long long prevMs = parseTimestampMs(prevTsIt->second);
+                    if (prevMs > 0 && prevMs <= crashTimeMs)
+                    {
+                        AI_LOG_INFO("Using previous fireboltState '%s' (set_ms=%lld, crash_ms=%lld)",
+                                    prevIt->second.c_str(),
+                                    prevMs,
+                                    crashTimeMs);
+                        it = prevIt;
+                    }
+                    else
+                    {
+                        it = annotations.end(); // both are after crash or parse failed
+                    }
+                }
+                else
+                {
+                    it = annotations.end(); // no previous value available
+                }
+            }
+        }
+    }
+
+    std::string containerId = mUtils->getContainerId();
+    if (containerId.find("apps_") != std::string::npos) {
+        //remove prefix before "apps_" from containerId
+        containerId = containerId.substr(containerId.find("apps_"));
+    }
     if (it != annotations.end()) {
-        fileName = mUtils->getContainerId() + MINIDUMP_FN_SEPERATOR + it->second.c_str() + MINIDUMP_FN_SEPERATOR + timeString.str();
+        fileName = containerId + MINIDUMP_FN_SEPERATOR + it->second.c_str() + MINIDUMP_FN_SEPERATOR + timeString.str();
         if (fileName.length() > MINIDUMP_FILENAME_LENGTH)
             fileName.resize(MINIDUMP_FILENAME_LENGTH);
         destFile = dir + "/" + fileName + ".dmp";
         AI_LOG_INFO("Firebolt state: %s, minidump filename: %s", it->second.c_str(), destFile.c_str());
-    }else{
-        AI_LOG_INFO("Firebolt state not found");
-        fileName = mUtils->getContainerId() + MINIDUMP_FN_SEPERATOR + timeString.str();
+    } else {
+        AI_LOG_INFO("Firebolt state not found or not valid at crash time");
+        fileName = containerId + MINIDUMP_FN_SEPERATOR + timeString.str();
         if (fileName.length() > MINIDUMP_FILENAME_LENGTH)
             fileName.resize(MINIDUMP_FILENAME_LENGTH);
         destFile = dir + "/" + fileName + ".dmp";
@@ -192,3 +280,4 @@ std::vector<std::string> Minidump::getDependencies() const
 
     return dependencies;
 }
+

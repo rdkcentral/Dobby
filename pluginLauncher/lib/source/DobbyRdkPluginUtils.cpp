@@ -21,6 +21,7 @@
 
 #include <Logging.h>
 #include <string.h>
+#include <chrono>
 #include <fstream>
 #include <unistd.h>
 #include <fcntl.h>
@@ -764,7 +765,30 @@ bool DobbyRdkPluginUtils::addAnnotation(const std::string &key, const std::strin
 
     std::lock_guard<std::mutex> locker(mLock);
 
+    // Before overwriting, preserve the previous value and its timestamp
+    // so that plugins can recover the state that was valid at an earlier point
+    // in time (e.g. the state at crash time vs the state set after the crash).
+    auto existing = mAnnotations.find(key);
+    if (existing != mAnnotations.end())
+    {
+        mAnnotations[key + "_prev"] = existing->second;
+        auto existingTs = mAnnotations.find(key + "_ts");
+        if (existingTs != mAnnotations.end())
+        {
+            mAnnotations[key + "_prev_ts"] = existingTs->second;
+        }
+    }
+
     mAnnotations[key] = value;
+
+    // Store the time the annotation was set (in milliseconds since epoch)
+    // so plugins can determine if the annotation arrived before or after an
+    // event (e.g. a crash).  Millisecond resolution is needed because
+    // AppService can update the annotation within a few ms of the crash.
+    auto now = std::chrono::system_clock::now();
+    auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(
+                  now.time_since_epoch()).count();
+    mAnnotations[key + "_ts"] = std::to_string(ms);
 
     AI_LOG_FN_EXIT();
 
@@ -798,3 +822,4 @@ bool DobbyRdkPluginUtils::removeAnnotation(const std::string &key)
 
     return success;
 }
+
