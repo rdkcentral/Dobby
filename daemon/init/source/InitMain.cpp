@@ -351,7 +351,6 @@ static int doForkExec(int argc, char * argv[])
                     // and the container can be stopped cleanly.
                     kill(-1, SIGKILL);
                 }
-
             }
 
             // if the process died because of a signal, or it didn't exit with
