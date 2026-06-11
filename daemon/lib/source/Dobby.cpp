@@ -1077,8 +1077,8 @@ void Dobby::startFromBundle(std::shared_ptr<AI_IPC::IAsyncReplySender> replySend
 #if defined(DOBBY_PROD)
     AI_LOG_ERROR("startFromBundle IPC method is disabled in production builds");
 
-    AI_IPC::VariantList results = { int32_t(-1) };
-    if (!replySender->sendReply(results))
+    AI_IPC::VariantList prodResults = { int32_t(-1) };
+    if (!replySender->sendReply(prodResults))
     {
         AI_LOG_ERROR("failed to send reply");
     }
