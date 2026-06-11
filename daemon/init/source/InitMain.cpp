@@ -344,13 +344,14 @@ static int doForkExec(int argc, char * argv[])
                 if (pid == exePid)
                 {
                     ret = WEXITSTATUS(status);
+
+                    // The main child has exited (normally or with an error).
+                    // Any grandchildren it spawned are now reparented to us
+                    // (PID 1). Kill them so we don't block in wait() forever
+                    // and the container can be stopped cleanly.
+                    kill(-1, SIGKILL);
                 }
 
-                // The main child has exited (normally or with an error).
-                // Any grandchildren it spawned are now reparented to us
-                // (PID 1). Kill them so we don't block in wait() forever
-                // and the container can be stopped cleanly.
-                kill(-1, SIGKILL);
             }
 
             // if the process died because of a signal, or it didn't exit with
