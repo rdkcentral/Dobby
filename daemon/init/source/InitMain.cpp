@@ -352,6 +352,16 @@ static int doForkExec(int argc, char * argv[])
                     kill(-1, SIGKILL);
                 }
             }
+            else if (WIFSIGNALED(status) && pid == exePid)
+            {
+                ret = EXIT_FAILURE;
+
+                // The main child was killed by a signal. Any grandchildren
+                // it spawned are now reparented to us (PID 1). Kill them
+                // unconditionally so we don't block in wait() forever and
+                // the container can be stopped cleanly.
+                kill(-1, SIGKILL);
+            }
 
             // if the process died because of a signal, or it didn't exit with
             // success then log as an error, otherwise it's just info
