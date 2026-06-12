@@ -2475,11 +2475,18 @@ bool DobbyManager::removeMount(int32_t cd, const std::string &source)
  *  @param[in]  options     Options to execute the command with.
  *
  *  @return true if a container with a matching descriptor was found and the command
- *  was run
+ *  was run. Always returns false in release/production builds as exec is only
+ *  supported in debug/development builds.
  */
 bool DobbyManager::execInContainer(int32_t cd, const std::string &options, const std::string &command)
 {
     AI_LOG_FN_ENTRY();
+
+#if defined(DOBBY_PROD)
+    AI_LOG_ERROR("exec is not supported in production builds");
+    AI_LOG_FN_EXIT();
+    return false;
+#else
 
     std::lock_guard<std::mutex> locker(mLock);
 
@@ -2539,6 +2546,7 @@ bool DobbyManager::execInContainer(int32_t cd, const std::string &options, const
     AI_LOG_WARN("Container '%s' was not running, command could not be executed", id.c_str());
     AI_LOG_FN_EXIT();
     return false;
+#endif // defined(DOBBY_PROD)
 }
 
 // -----------------------------------------------------------------------------
@@ -3723,3 +3731,4 @@ bool DobbyManager::shouldEnableSTrace(const std::shared_ptr<DobbyConfig> &config
 
     return std::find(apps.begin(), apps.end(), hostName) != apps.end();
 }
+

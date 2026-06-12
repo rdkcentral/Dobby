@@ -638,10 +638,14 @@ void Dobby::initIpcMethods()
         {   DOBBY_CTRL_INTERFACE,        DOBBY_CTRL_METHOD_START,                   &Dobby::startFromSpec          },
         {   DOBBY_CTRL_INTERFACE,        DOBBY_CTRL_METHOD_START_FROM_SPEC,         &Dobby::startFromSpec          },
 #else
+#if !defined(DOBBY_PROD)
         {   DOBBY_CTRL_INTERFACE,        DOBBY_CTRL_METHOD_START,                   &Dobby::startFromBundle        },
+#endif // !defined(DOBBY_PROD)
 #endif //defined(LEGACY_COMPONENTS)
 
+#if !defined(DOBBY_PROD)
         {   DOBBY_CTRL_INTERFACE,        DOBBY_CTRL_METHOD_START_FROM_BUNDLE,       &Dobby::startFromBundle        },
+#endif // !defined(DOBBY_PROD)
         {   DOBBY_CTRL_INTERFACE,        DOBBY_CTRL_METHOD_STOP,                    &Dobby::stop                   },
         {   DOBBY_CTRL_INTERFACE,        DOBBY_CTRL_METHOD_PAUSE,                   &Dobby::pause                  },
         {   DOBBY_CTRL_INTERFACE,        DOBBY_CTRL_METHOD_RESUME,                  &Dobby::resume                 },
@@ -1069,6 +1073,19 @@ void Dobby::startFromSpec(std::shared_ptr<AI_IPC::IAsyncReplySender> replySender
 void Dobby::startFromBundle(std::shared_ptr<AI_IPC::IAsyncReplySender> replySender)
 {
     AI_LOG_FN_ENTRY();
+
+#if defined(DOBBY_PROD)
+    AI_LOG_ERROR("startFromBundle IPC method is disabled in production builds");
+
+    AI_IPC::VariantList prodResults = { int32_t(-1) };
+    if (!replySender->sendReply(prodResults))
+    {
+        AI_LOG_ERROR("failed to send reply");
+    }
+
+    AI_LOG_FN_EXIT();
+    return;
+#endif // defined(DOBBY_PROD)
 
     // Expecting 3/6/8 args:
     // (string id, string bundlePath, vector<unixfd> files)
@@ -2442,3 +2459,4 @@ bool Dobby::onWatchdogTimer()
 }
 
 #endif // defined(RDK) && defined(USE_SYSTEMD)
+
