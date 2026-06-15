@@ -17,6 +17,11 @@
 
 option(DOBBY_HIBERNATE_MEMCR_IMPL "Hibernate containers using Memcr tool" OFF)
 option(DOBBY_HIBERNATE_MEMCR_PARAMS_ENABLED "Enable optional parameters in Memcr protocol" OFF)
+option(DOBBY_PROD "Enable production checks (userNs enforcement, exec disable)" OFF)
+
+if(DOBBY_PROD)
+        add_definitions( -DDOBBY_PROD=1 )
+endif()
 
 if (LEGACY_COMPONENTS)
         list(APPEND ADDITIONAL_SOURCES
@@ -111,3 +116,4 @@ endif()
 install( DIRECTORY include/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/Dobby/rdkPlugins/
         FILES_MATCHING PATTERN "IDobbyStartState.h"
 )
+

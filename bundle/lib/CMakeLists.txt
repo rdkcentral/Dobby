@@ -17,6 +17,12 @@
 
 project(DobbyBundleGenLib)
 
+option(DOBBY_PROD "Enable production checks (userNs enforcement, exec disable)" OFF)
+
+if(DOBBY_PROD)
+    add_definitions( -DDOBBY_PROD=1 )
+endif()
+
 if (LEGACY_COMPONENTS)
     list(APPEND ADDITIONAL_SOURCES
         "source/DobbySpecConfig.cpp"
@@ -53,3 +59,4 @@ target_link_libraries(${PROJECT_NAME}
     DobbyIpcUtils
     libocispec
 )
+

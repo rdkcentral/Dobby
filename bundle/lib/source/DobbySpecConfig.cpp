@@ -882,10 +882,9 @@ bool DobbySpecConfig::processUser(const Json::Value& value,
  *  Example json:
  *
  *          "userNs": true
- *          "userNs": false
  *
- *  This field controls whether to enable user namespacing or not, by default
- *  userns is enabled, it must explicitly be disabled.
+ *  User namespacing is mandatory for all containers. Setting userNs=false
+ *  is not supported and will result in an error.
  *
  *  @param[in]  value       The json spec document from the client
  *  @param[in]  dictionary  Pointer to the OCI dictionary to populate
@@ -895,22 +894,33 @@ bool DobbySpecConfig::processUser(const Json::Value& value,
 bool DobbySpecConfig::processUserNs(const Json::Value& value,
                                 ctemplate::TemplateDictionary* dictionary)
 {
-    bool enabled;
     if (value.isBool())
     {
-        enabled = value.asBool();
+#if defined(DOBBY_PROD)
+        if (!value.asBool())
+        {
+            AI_LOG_ERROR("userNs=false is not supported, user namespacing is mandatory for all containers");
+            return false;
+        }
+        dictionary->ShowSection(USERNS_ENABLED);
+#else
+        dictionary->ShowSection(value.asBool() ? USERNS_ENABLED : USERNS_DISABLED);
+#endif
     }
     else if (value.isNull())
     {
-        enabled = false;
+#if defined(DOBBY_PROD)
+        // null is treated as enabled when user namespace enforcement is active
+        dictionary->ShowSection(USERNS_ENABLED);
+#else
+        dictionary->ShowSection(USERNS_DISABLED);
+#endif
     }
     else
     {
         AI_LOG_ERROR("invalid userNs field");
         return false;
     }
-
-    dictionary->ShowSection(enabled ? USERNS_ENABLED : USERNS_DISABLED);
 
     return true;
 }
@@ -2881,3 +2891,4 @@ bool DobbySpecConfig::processRdkPlugins(const Json::Value& value,
 
     return true;
 }
+
