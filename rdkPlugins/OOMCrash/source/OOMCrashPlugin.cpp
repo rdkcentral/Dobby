@@ -118,7 +118,9 @@ bool OOMCrash::postHalt()
         return false;
     }
 
-    bool oomDetected = checkForOOM();
+    bool oomDetected = false;
+    if (mUtils->exitStatus != 0)
+        oomDetected = checkForOOM();
 
     const char *pathPtr = mContainerConfig->rdk_plugins->oomcrash->data->path;
     const std::string path = pathPtr ? pathPtr : "";
@@ -343,9 +345,13 @@ bool OOMCrash::isMemoryAtLimit()
  * @brief Check for Out of Memory by reading cgroup files.
  *
  *  Detection priority:
- *    1. oom_kill  > 0            (kernel >= 4.13, definitive)
- *    2. under_oom > 0            (kernel <  4.13, transient flag)
- *    3. max_usage_in_bytes >= limit  (all kernels, persistent high-water mark)
+ *    1. oom_kill > 0   — from memory.oom_control (v1) or memory.events (v2).
+ *                        Authoritative: if readCgroup() succeeds and returns 0,
+ *                        the kernel confirms no OOM kill occurred and detection
+ *                        stops here (isMemoryAtLimit() is NOT consulted).
+ *    2. isMemoryAtLimit() — only reached when readCgroup() itself failed (cgroup
+ *                        file unreadable).  Compares max usage against the
+ *                        configured limit as a last-resort heuristic.
  *
  * @return true if OOM detected.
  */
@@ -355,17 +361,23 @@ bool OOMCrash::checkForOOM()
     unsigned long oomKill = 0;
     bool cgroupRead = readCgroup(&oomKill);
 
-    // Priority 1 & 2: oom_kill or under_oom confirmed OOM
     if (cgroupRead && oomKill > 0)
     {
+        // cgroup counter is authoritative — OOM kill confirmed
         AI_LOG_INFO("oom_control reports OOM (value=%lu) for container '%s'",
                     oomKill, mUtils->getContainerId().c_str());
     }
-    // Priority 3: on kernel < 4.13 under_oom may have cleared — check max_usage
+    else if (cgroupRead)
+    {
+        // cgroup read succeeded and counter is 0 — kernel says no OOM kill
+        AI_LOG_INFO("No OOM kill detected in container '%s'", mUtils->getContainerId().c_str());
+        return false;
+    }
     else if (isMemoryAtLimit())
     {
-        AI_LOG_WARN("oom_control did not confirm OOM but max memory usage reached limit "
-                    "for container '%s'", mUtils->getContainerId().c_str());
+        // cgroup file was unreadable — fall back to high-water-mark heuristic
+        AI_LOG_WARN("cgroup unreadable; max memory usage reached limit for container '%s'",
+                    mUtils->getContainerId().c_str());
     }
     else
     {
@@ -374,11 +386,12 @@ bool OOMCrash::checkForOOM()
     }
 
     // OOM kill confirmed - retrieve firebolt state from annotations.
-    // AppService often transitions the app to "background" after the OOM kill
-    // but before postHalt runs.  Since the container exited abnormally, prefer
-    // the previous fireboltState value (which was the state at the time of the
-    // actual OOM kill) over the current value which may have been overwritten
-    // by a post-crash transition.
+    // Both the previous (fireboltState_prev) and current (fireboltState) values
+    // are read.  AppService often transitions the app (e.g. to "background")
+    // after the OOM kill but before postHalt runs, so the current value may
+    // reflect a post-crash transition rather than the state at the time of the
+    // kill.  fireboltState_prev is therefore preferred for the final log; both
+    // are reported so the transition can be observed in the logs.
     std::map<std::string, std::string> annotations = mUtils->getAnnotations();
     std::string fireboltState;
 
@@ -386,8 +399,12 @@ bool OOMCrash::checkForOOM()
     if (prevIt != annotations.end())
     {
         fireboltState = prevIt->second;
-        AI_LOG_INFO("Using previous fireboltState '%s' (current may have been "
-                    "set after OOM kill)", fireboltState.c_str());
+        std::string currentState;
+        auto curIt = annotations.find(FIREBOLT_STATE);
+        if (curIt != annotations.end())
+            currentState = curIt->second;
+        AI_LOG_INFO("Using previous fireboltState '%s' (current '%s' may have been "
+                    "set after OOM kill)", fireboltState.c_str(), currentState.c_str());
     }
     else
     {
