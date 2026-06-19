@@ -88,6 +88,11 @@ private:
                                              const std::string &cgroupMntPath,
                                              const std::string &cgroupfileName);
 
+    static Json::Value readCgroupKeyValue(const ContainerId &id,
+                                          const std::string &cgroupMntPath,
+                                          const std::string &cgroupfileName,
+                                          const std::string &key);
+
     static std::vector<int64_t> readMultipleCgroupValues(const ContainerId &id,
                                                          const std::string &cgroupMntPath,
                                                          const std::string &cgroupfileName);

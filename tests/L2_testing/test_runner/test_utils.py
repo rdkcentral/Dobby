@@ -40,23 +40,64 @@ TestResult = namedtuple('TestResult', ['name',
 class untar_bundle:
     """Context manager for working with tarball bundles"""
     def __init__(self, container_id):
-        self.path = get_bundle_path(container_id + "_bundle")
+        self.container_id = container_id
+        self.extract_root = get_bundle_path(container_id + "_bundle")
+        self.path = self.extract_root
+        self.valid = True
 
         print_log("untar'ing file %s.tar.gz" % self.path, Severity.debug)
-        run_command_line(["tar",
-                          "-C",
-                          get_bundle_path(""),
-                          "-zxvf",
-                          self.path + ".tar.gz"])
+
+        status = run_command_line(["tar",
+                                   "-C",
+                                   get_bundle_path(""),
+                                   "-zxvf",
+                                   self.path + ".tar.gz"])
+
+        if status.returncode != 0:
+            print_log("FATAL: Failed to extract bundle tarball '%s.tar.gz' (rc=%d): %s"
+                      % (self.path, status.returncode, status.stderr.strip()),
+                      Severity.error)
+            self.valid = False
+            return
+
+        config_path = path.join(self.path, "config.json")
+        if not path.exists(config_path):
+            # It might be nested - tarball could contain "dirname/config.json"
+            # Try to find it in the first level subdirectory
+            try:
+                import os
+                entries = os.listdir(self.path)
+                for entry in entries:
+                    candidate = path.join(self.path, entry, "config.json")
+                    if path.exists(candidate):
+                        print_log("Found config.json nested in %s, updating path" % entry, Severity.debug)
+                        self.path = path.join(self.path, entry)
+                        config_path = candidate
+                        break
+            except Exception as err:
+                print_log("Error checking nested bundle structure: %s" % err, Severity.warning)
+
+        if not path.exists(config_path):
+            print_log("FATAL: Extracted bundle is missing config.json. Expected at: %s" % config_path,
+                      Severity.error)
+            self.valid = False
 
     def __enter__(self):
+        """Returns the bundle path when valid, or None when extraction/validation
+        failed.  Callers must check .valid (or the returned path) before use."""
+        if not self.valid:
+            return None
         return self.path
 
     def __exit__(self, etype, value, traceback):
-        print_log("deleting folder %s" % self.path, Severity.debug)
-        run_command_line(["rm",
-                          "-rf",
-                          self.path])
+        # Always clean up extraction root, even when runtime path was nested
+        if path.exists(self.extract_root):
+            print_log("Cleaning up bundle at: %s" % self.extract_root, Severity.debug)
+            run_command_line(["rm",
+                              "-rf",
+                              self.extract_root])
+        else:
+            print_log("Bundle path doesn't exist, skipping cleanup: %s" % self.extract_root, Severity.debug)
 
 class dobby_daemon:
     """Starts and stops DobbyDaemon service."""
@@ -84,6 +125,25 @@ class dobby_daemon:
         self.subproc = subprocess.Popen(cmd, **kvargs)
         sleep(1) # give DobbyDaemon time to initialise
 
+        # Wait for D-Bus service registration (can be delayed on CI)
+        for _ in range(20):
+            probe = subprocess.run(["DobbyTool", "info", "__dobby_probe__"],
+                                   stdout=subprocess.PIPE,
+                                   stderr=subprocess.PIPE,
+                                   universal_newlines=True)
+
+            combined = (probe.stdout + probe.stderr).lower()
+
+            # If daemon crashed/exited, stop waiting
+            if self.subproc.poll() is not None:
+                break
+
+            # Service is ready once ServiceUnknown is gone (unknown container is fine)
+            if "serviceunknown" not in combined and "org.rdk.dobby was not provided" not in combined:
+                break
+
+            sleep(0.25)
+
     def __enter__(self):
         return self.subproc
 
@@ -93,11 +153,16 @@ class dobby_daemon:
         if selected_platform == Platforms.xi_6:
             self.subproc.kill()
         else:
-            subprocess.run(["sudo", "pkill", "DobbyDaemon"])
-        sleep(0.2)
+            subprocess.run(["sudo", "pkill", "-9", "DobbyDaemon"])
+        sleep(1)  # Give process time to fully terminate and be reaped
 
         # check for segfault
-        self.subproc.communicate()
+        try:
+            self.subproc.communicate(timeout=2)
+        except subprocess.TimeoutExpired:
+            self.subproc.kill()
+            self.subproc.wait()
+        
         if self.subproc.returncode == -11: # -11 == SIGSEGV
             print_log("Received SIGSEGV from DobbyDaemon", Severity.error)
 
@@ -346,9 +411,35 @@ def launch_container(container_id, spec_path):
 
     print_log("Launching container %s with spec %s" % (container_id, spec_path), Severity.debug)
 
+    # Validate input path early for clearer errors.
+    if path.isdir(spec_path):
+        config_path = path.join(spec_path, "config.json")
+        if not path.exists(config_path):
+            print_log("Bundle path missing config.json: %s" % config_path, Severity.error)
+            return False
+    elif not path.exists(spec_path):
+        print_log("Spec path does not exist: %s" % spec_path, Severity.error)
+        return False
+
     # Use DobbyTool to launch container
-    process = run_command_line(["DobbyTool", "start", container_id, spec_path])
-    output = process.stdout
+    process = None
+    output = ""
+    combined_output = ""
+
+    # Retry start when D-Bus registration races on CI
+    for _ in range(3):
+        process = run_command_line(["DobbyTool", "start", container_id, spec_path])
+        output = process.stdout
+        combined_output = (process.stdout + process.stderr).lower()
+
+        if "started" in output:
+            break
+
+        if "serviceunknown" in combined_output or "org.rdk.dobby was not provided" in combined_output:
+            sleep(0.5)
+            continue
+
+        break
 
     # Check DobbyTool has started the container
     if "started" in output:
@@ -367,6 +458,9 @@ def launch_container(container_id, spec_path):
         # Timeout
         print_log("Waited 5 seconds for exit.. timeout", Severity.error)
         return True
+    if process and process.stderr:
+        print_log("DobbyTool start failed for %s: %s" % (container_id, process.stderr.strip()), Severity.error)
+
     return False
 
 
@@ -507,3 +601,4 @@ def dobby_tool_command(command, container_id, params=None):
     process = run_command_line(full_command)
 
     return process
+

@@ -106,7 +106,9 @@
 
 #endif
 
-
+// Signal number received by DobbyInit, set by the signal handler so the
+// main code path can propagate the signal death after children have exited.
+static volatile sig_atomic_t gReceivedSignal = 0;
 
 static void closeAllFileDescriptors(int logPipeFd)
 {
@@ -177,6 +179,12 @@ static void closeAllFileDescriptors(int logPipeFd)
 
 #if (AI_BUILD_TYPE == AI_DEBUG)
 
+static bool isCgroupV2()
+{
+    struct stat st;
+    return (stat("/sys/fs/cgroup/cgroup.controllers", &st) == 0);
+}
+
 static bool readCgroup(const std::string &cgroup, unsigned long *val)
 {
     static const std::string base = "/sys/fs/cgroup/";
@@ -212,18 +220,64 @@ static bool readCgroup(const std::string &cgroup, unsigned long *val)
     return true;
 }
 
+static bool readCgroupKeyValue(const std::string &path, const std::string &key, unsigned long *val)
+{
+    FILE *fp = fopen(path.c_str(), "r");
+    if (!fp)
+    {
+        if (errno != ENOENT)
+            LOG_ERR("failed to open '%s' (%d - %s)", path.c_str(), errno, strerror(errno));
+        return false;
+    }
+
+    char* line = nullptr;
+    size_t len = 0;
+    bool found = false;
+
+    while (getline(&line, &len, fp) >= 0)
+    {
+        unsigned long v = 0;
+        char keyBuf[64] = {};
+        if (sscanf(line, "%63s %lu", keyBuf, &v) == 2)
+        {
+            if (key == keyBuf)
+            {
+                *val = v;
+                found = true;
+                break;
+            }
+        }
+    }
+
+    free(line);
+    fclose(fp);
+    return found;
+}
+
 static void checkForOOM(void)
 {
     unsigned long failCnt;
 
-    if (readCgroup("memory/memory.failcnt", &failCnt) && (failCnt > 0))
+    if (isCgroupV2())
     {
-        LOG_ERR("memory allocation failure detected in container, likely OOM (failcnt = %lu)", failCnt);
+        // On cgroups v2, check memory.events for oom_kill count
+        if (readCgroupKeyValue("/sys/fs/cgroup/memory.events", "oom_kill", &failCnt) && (failCnt > 0))
+        {
+            LOG_ERR("memory allocation failure detected in container, likely OOM (oom_kill = %lu)", failCnt);
+        }
     }
-
-    if (readCgroup("gpu/gpu.failcnt", &failCnt) && (failCnt > 0))
+    else
     {
-        LOG_NFO("GPU memory allocation failure detected in container (failcnt = %lu)", failCnt);
+        // On cgroups v1
+        if (readCgroup("memory/memory.failcnt", &failCnt) && (failCnt > 0))
+        {
+            LOG_ERR("memory allocation failure detected in container, likely OOM (failcnt = %lu)", failCnt);
+        }
+
+        if (readCgroup("gpu/gpu.failcnt", &failCnt) && (failCnt > 0))
+        {
+            LOG_NFO("GPU memory allocation failure detected in container (failcnt = %lu)", failCnt);
+        }
     }
 }
 
@@ -344,7 +398,31 @@ static int doForkExec(int argc, char * argv[])
                 if (pid == exePid)
                 {
                     ret = WEXITSTATUS(status);
+
+                    // If the main child exited normally, clear any signal
+                    // recorded by the signal handler (e.g. SIGUSR1 used
+                    // for app control) so we don't falsely report a
+                    // signal death.
+                    if (ret == EXIT_SUCCESS)
+                        gReceivedSignal = 0;
                 }
+            }
+            else if (WIFSIGNALED(status) && pid == exePid)
+            {
+                // Direct child was killed by a signal — record it so
+                // the deferred _exit(128+sig) path propagates it to
+                // DobbyDaemon after all remaining children are reaped.
+                // Only set if signal handler hasn't already recorded a
+                // signal, to preserve the first (root cause) signal.
+                int sig = WTERMSIG(status);
+                if (gReceivedSignal == 0)
+                    gReceivedSignal = sig;
+                ret = EXIT_FAILURE;
+
+                // The main child's orphaned descendants have been
+                // reparented to us (PID 1).  Send them the same signal
+                // so they terminate and we don't block in wait() forever.
+                kill(-1, sig);
             }
 
             // if the process died because of a signal, or it didn't exit with
@@ -369,12 +447,36 @@ static int doForkExec(int argc, char * argv[])
 
 #endif
 
+    // If DobbyInit was signalled, exit with code 128+signal
+    // so the parent process (DobbyDaemon) can reconstruct the signal info.
+    //
+    // NOTE: We cannot use the conventional approach of resetting to SIG_DFL
+    // and calling raise() because DobbyInit is PID 1 inside the container's
+    // PID namespace.  The Linux kernel protects namespace init (PID 1) from
+    // signals with SIG_DFL disposition sent from within the same namespace -
+    // including self-signals via raise().  The kernel simply drops the signal,
+    // so raise() returns without killing the process.
+    //
+    // Instead, we use the shell convention of _exit(128 + signum).  The
+    // DobbyDaemon side detects this exit code pattern and synthesises the
+    // equivalent WIFSIGNALED wait status.
+    if (gReceivedSignal != 0)
+    {
+        int sig = gReceivedSignal;
+        LOG_NFO("DobbyInit received signal %d (%s), exiting with code %d",
+                sig, strsignal(sig), 128 + sig);
+        _exit(128 + sig);
+    }
+
     return ret;
 }
 
 static void signalHandler(int sigNum)
 {
-    // consume the signal but passes it onto all processes in the container
+    // record which signal we received so the main code path can propagate it
+    gReceivedSignal = sigNum;
+
+    // forward the signal to all processes in the container
     kill(-1, sigNum);
 }
 

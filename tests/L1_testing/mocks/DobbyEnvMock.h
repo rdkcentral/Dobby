@@ -32,6 +32,7 @@ public:
     MOCK_METHOD(std::string, pluginsWorkspacePath, (), (const,override));
     MOCK_METHOD(uint16_t, platformIdent, (), (const,override));
     MOCK_METHOD(std::string ,cgroupMountPath, (IDobbyEnv::Cgroup cgroup), (const,override));
+    MOCK_METHOD(IDobbyEnv::CgroupVersion, cgroupVersion, (), (const,override));
 
 private:
     const std::shared_ptr<const IDobbySettings> mSettings;

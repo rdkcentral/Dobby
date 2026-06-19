@@ -115,6 +115,8 @@ Json::Value DobbyStats::getStats(const ContainerId& id,
 
     Json::Value stats(Json::objectValue);
 
+    const IDobbyEnv::CgroupVersion cgroupVer = env->cgroupVersion();
+
     const std::string cpuCgroupPath(env->cgroupMountPath(IDobbyEnv::Cgroup::CpuAcct));
     if (!cpuCgroupPath.empty())
     {
@@ -126,11 +128,26 @@ Json::Value DobbyStats::getStats(const ContainerId& id,
         stats["processes"] =
             getProcessTree(id, cpuCgroupPath, utils);
 
-        // get the cpu usage values
-        stats["cpu"]["usage"]["total"] =
-            readSingleCgroupValue(id, cpuCgroupPath, "cpuacct.usage");
-        stats["cpu"]["usage"]["percpu"] =
-            readMultipleCgroupValuesJson(id, cpuCgroupPath, "cpuacct.usage_percpu");
+        // get the cpu usage values - file names differ between v1 and v2
+        if (cgroupVer == IDobbyEnv::CgroupVersion::V1)
+        {
+            stats["cpu"]["usage"]["total"] =
+                readSingleCgroupValue(id, cpuCgroupPath, "cpuacct.usage");
+            stats["cpu"]["usage"]["percpu"] =
+                readMultipleCgroupValuesJson(id, cpuCgroupPath, "cpuacct.usage_percpu");
+        }
+        else
+        {
+            // on v2, cpu accounting is under cpu.stat (usage_usec field)
+            // usage_usec is in microseconds; convert to nanoseconds to match v1
+            Json::Value usec = readCgroupKeyValue(id, cpuCgroupPath, "cpu.stat", "usage_usec");
+            if (usec.isNull())
+                stats["cpu"]["usage"]["total"] = Json::Value::null;
+            else
+                stats["cpu"]["usage"]["total"] =
+                    Json::Value(static_cast<Json::LargestUInt>(usec.asUInt64() * 1000ULL));
+            stats["cpu"]["usage"]["percpu"] = Json::Value::null;
+        }
     }
 
     // the timestamp value is generally used to calculate the cpu usage, so set
@@ -146,36 +163,66 @@ Json::Value DobbyStats::getStats(const ContainerId& id,
     const std::string memCgroupPath(env->cgroupMountPath(IDobbyEnv::Cgroup::Memory));
     if (!memCgroupPath.empty())
     {
-        // get the userspace memory consumed
-        stats["memory"]["user"]["limit"] =
-            readSingleCgroupValue(id, memCgroupPath, "memory.limit_in_bytes");
-        stats["memory"]["user"]["usage"] =
-            readSingleCgroupValue(id, memCgroupPath, "memory.usage_in_bytes");
-        stats["memory"]["user"]["max"] =
-            readSingleCgroupValue(id, memCgroupPath, "memory.max_usage_in_bytes");
-        stats["memory"]["user"]["failcnt"] =
-            readSingleCgroupValue(id, memCgroupPath, "memory.failcnt");
+        if (cgroupVer == IDobbyEnv::CgroupVersion::V1)
+        {
+            // cgroups v1 memory file names
+            stats["memory"]["user"]["limit"] =
+                readSingleCgroupValue(id, memCgroupPath, "memory.limit_in_bytes");
+            stats["memory"]["user"]["usage"] =
+                readSingleCgroupValue(id, memCgroupPath, "memory.usage_in_bytes");
+            stats["memory"]["user"]["max"] =
+                readSingleCgroupValue(id, memCgroupPath, "memory.max_usage_in_bytes");
+            stats["memory"]["user"]["failcnt"] =
+                readSingleCgroupValue(id, memCgroupPath, "memory.failcnt");
+        }
+        else
+        {
+            // cgroups v2 memory file names
+            stats["memory"]["user"]["limit"] =
+                readSingleCgroupValue(id, memCgroupPath, "memory.max");
+            stats["memory"]["user"]["usage"] =
+                readSingleCgroupValue(id, memCgroupPath, "memory.current");
+            stats["memory"]["user"]["max"] =
+                readSingleCgroupValue(id, memCgroupPath, "memory.peak");
+            // v2 has no direct failcnt; oom_kill count is in memory.events
+            stats["memory"]["user"]["failcnt"] = Json::Value::null;
+        }
     }
 
     const std::string gpuCgroupPath(env->cgroupMountPath(IDobbyEnv::Cgroup::Gpu));
     if (!gpuCgroupPath.empty())
     {
-        // get the gpu memory consumed
-        stats["gpu"]["memory"]["limit"] =
-            readSingleCgroupValue(id, gpuCgroupPath, "gpu.limit_in_bytes");
-        stats["gpu"]["memory"]["usage"] =
-            readSingleCgroupValue(id, gpuCgroupPath, "gpu.usage_in_bytes");
-        stats["gpu"]["memory"]["max"] =
-            readSingleCgroupValue(id, gpuCgroupPath, "gpu.max_usage_in_bytes");
-        stats["gpu"]["memory"]["failcnt"] =
-            readSingleCgroupValue(id, gpuCgroupPath, "gpu.failcnt");
+        // gpu cgroup is a custom controller; only available on v1
+        if (cgroupVer == IDobbyEnv::CgroupVersion::V1)
+        {
+            stats["gpu"]["memory"]["limit"] =
+                readSingleCgroupValue(id, gpuCgroupPath, "gpu.limit_in_bytes");
+            stats["gpu"]["memory"]["usage"] =
+                readSingleCgroupValue(id, gpuCgroupPath, "gpu.usage_in_bytes");
+            stats["gpu"]["memory"]["max"] =
+                readSingleCgroupValue(id, gpuCgroupPath, "gpu.max_usage_in_bytes");
+            stats["gpu"]["memory"]["failcnt"] =
+                readSingleCgroupValue(id, gpuCgroupPath, "gpu.failcnt");
+        }
+        else
+        {
+            AI_LOG_DEBUG("gpu cgroup stats not available on cgroups v2");
+        }
     }
 
 #if defined(RDK)
     const std::string ionCgroupPath(env->cgroupMountPath(IDobbyEnv::Cgroup::Ion));
     if (!ionCgroupPath.empty())
     {
-        stats["ion"]["heaps"] = readIonCgroupHeaps(id, ionCgroupPath);
+        // ion cgroup is a custom controller; only available on v1
+        if (cgroupVer == IDobbyEnv::CgroupVersion::V1)
+        {
+            stats["ion"]["heaps"] = readIonCgroupHeaps(id, ionCgroupPath);
+        }
+        else
+        {
+            AI_LOG_DEBUG("ion cgroup stats not available on cgroups v2");
+        }
     }
 #endif
 
@@ -330,6 +377,11 @@ Json::Value DobbyStats::readSingleCgroupValue(const ContainerId& id,
     if (!token)
         return Json::Value::null;
 
+    // cgroups v2 files like memory.max can contain the literal "max" meaning
+    // unlimited; represent as -1 to match v1's ULONG_LONG_MAX convention
+    if (strcmp(token, "max") == 0)
+        return Json::Value(-1);
+
     unsigned long long value = strtoull(token, nullptr, 0);
     if ((value == 0) && (errno == EINVAL))
     {
@@ -342,6 +394,55 @@ Json::Value DobbyStats::readSingleCgroupValue(const ContainerId& id,
         return Json::Value(-1);
     else
         return Json::Value(static_cast<Json::LargestUInt>(value));
+}
+
+// -----------------------------------------------------------------------------
+/**
+ *  @brief Reads a named value from a key-value format cgroup file.
+ *
+ *  Cgroups v2 files like cpu.stat use a key-value format with one pair per
+ *  line, e.g.:
+ *      usage_usec 123456
+ *      user_usec 100000
+ *      system_usec 23456
+ *
+ *  @param[in]  id              The string id of the container.
+ *  @param[in]  cgroupMntPath   The path to the cgroup mount point.
+ *  @param[in]  cgroupfileName  The name of the cgroup file.
+ *  @param[in]  key             The key whose value to extract.
+ *
+ *  @return The value as a json integer, or null if not found.
+ */
+Json::Value DobbyStats::readCgroupKeyValue(const ContainerId& id,
+                                           const std::string& cgroupMntPath,
+                                           const std::string& cgroupfileName,
+                                           const std::string& key)
+{
+    char buf[4096];
+
+    if (readCgroupFile(id, cgroupMntPath, cgroupfileName, buf, sizeof(buf)) <= 0)
+        return Json::Value::null;
+
+    // Parse line by line looking for "key value"
+    char* saveptr = nullptr;
+    char* line = strtok_r(buf, "\n", &saveptr);
+    while (line)
+    {
+        char keyBuf[64] = {};
+        unsigned long long value = 0;
+        if (sscanf(line, "%63s %llu", keyBuf, &value) == 2)
+        {
+            if (key == keyBuf)
+            {
+                if (value == ULONG_LONG_MAX)
+                    return Json::Value(-1);
+                return Json::Value(static_cast<Json::LargestUInt>(value));
+            }
+        }
+        line = strtok_r(nullptr, "\n", &saveptr);
+    }
+
+    return Json::Value::null;
 }
 
 // -----------------------------------------------------------------------------

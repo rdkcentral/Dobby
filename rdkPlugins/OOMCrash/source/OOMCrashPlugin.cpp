@@ -173,7 +173,13 @@ std::vector<std::string> OOMCrash::getDependencies() const
 }
 
 /**
- * @brief Read the oom_kill counter from the cgroup memory.oom_control file.
+ * @brief Read cgroup file to detect OOM.
+ *
+ *  On cgroups v1 reads memory.failcnt from
+ *  /sys/fs/cgroup/memory/<id>/memory.failcnt.
+ *
+ *  On cgroups v2 reads the oom_kill field from
+ *  /sys/fs/cgroup/<id>/memory.events.
  *
  *  The memory.oom_control file contains multiple key-value lines, e.g.:
  *
@@ -197,13 +203,42 @@ std::vector<std::string> OOMCrash::getDependencies() const
 
 bool OOMCrash::readCgroup(unsigned long *val)
 {
-    std::string path = "/sys/fs/cgroup/memory/" + mUtils->getContainerId() + "/memory.oom_control";
+    const std::string containerId = mUtils->getContainerId();
+
+    // Detect cgroups version by checking for the v2 unified hierarchy
+    struct stat st;
+    const bool isCgroupV2 = (stat("/sys/fs/cgroup/cgroup.controllers", &st) == 0);
+
+    std::string path;
+    if (isCgroupV2)
+    {
+        // On cgroups v2, OOM events are in memory.events under the container's
+        // cgroup directory within the unified hierarchy
+        path = "/sys/fs/cgroup/" + containerId + "/memory.events";
+    }
+    else
+    {
+        // On cgroups v1, use the legacy per-controller path
+        path = "/sys/fs/cgroup/memory/" + containerId + "/memory.failcnt";
+    }
 
     FILE *fp = fopen(path.c_str(), "r");
     if (!fp)
     {
-        AI_LOG_ERROR("failed to open '%s' (%d - %s)", path.c_str(), errno, strerror(errno));
-        return false;
+        // On v2 the container may be scoped under system.slice
+        if (isCgroupV2 && errno == ENOENT)
+        {
+            path = "/sys/fs/cgroup/system.slice/dobby-" + containerId + ".scope/memory.events";
+            fp = fopen(path.c_str(), "r");
+        }
+
+        if (!fp)
+        {
+            if (errno != ENOENT)
+                AI_LOG_ERROR("failed to open '%s' (%d - %s)", path.c_str(), errno, strerror(errno));
+
+            return false;
+        }
     }
 
     char* line = nullptr;
@@ -213,41 +248,49 @@ bool OOMCrash::readCgroup(unsigned long *val)
     unsigned long underOom = 0;
     bool foundUnderOom = false;
 
-    while ((rd = getline(&line, &len, fp)) > 0)
+    if (isCgroupV2)
     {
-        unsigned long v;
-        // sscanf won't match "oom_kill_disable" because the space in the
-        // format requires whitespace where "_disable" has an underscore.
-        if (sscanf(line, "oom_kill %lu", &v) == 1)
+        // memory.events is a key-value file, look for "oom_kill <N>"
+        bool found = false;
+        *val = 0;
+        while ((rd = getline(&line, &len, fp)) >= 0)
         {
-            *val = v;
-            foundOomKill = true;
-            break;
+            unsigned long v = 0;
+            if (sscanf(line, "oom_kill %lu", &v) == 1)
+            {
+                *val = v;
+                found = true;
+                break;
+            }
         }
-        if (sscanf(line, "under_oom %lu", &v) == 1)
-        {
-            underOom = v;
-            foundUnderOom = true;
-        }
-    }
-
-    if (line)
         free(line);
-    fclose(fp);
-
-    // Prefer oom_kill (kernel >= 4.13); fall back to under_oom for older kernels
-    if (foundOomKill)
-        return true;
-
-    if (foundUnderOom)
-    {
-        AI_LOG_INFO("'oom_kill' field not present (kernel < 4.13), using 'under_oom' fallback");
-        *val = underOom;
+        fclose(fp);
+        if (!found)
+        {
+            AI_LOG_ERROR("'oom_kill' key not found in '%s'", path.c_str());
+            return false;
+        }
         return true;
     }
+    else
+    {
+        // v1: single numeric value in memory.failcnt
+        if ((rd = getline(&line, &len, fp)) < 0)
+        {
+            if (line)
+                free(line);
+            fclose(fp);
+            AI_LOG_ERROR("failed to read cgroup file line (%d - %s)", errno, strerror(errno));
+            return false;
+        }
 
-    AI_LOG_ERROR("neither 'oom_kill' nor 'under_oom' found in '%s'", path.c_str());
-    return false;
+        *val = strtoul(line, nullptr, 0);
+
+        fclose(fp);
+        free(line);
+
+        return true;
+    }
 }
 
 /**

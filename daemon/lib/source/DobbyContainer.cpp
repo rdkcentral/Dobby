@@ -110,6 +110,7 @@ DobbyContainer::DobbyContainer(const std::shared_ptr<const DobbyBundle>& _bundle
     , containerPid(-1)
     , hasCurseOfDeath(false)
     , state(State::Starting)
+    , hibernatingPid(0)
     , mRestartOnCrash(false)
     , mRestartCount(0)
 {
@@ -127,6 +128,7 @@ DobbyContainer::DobbyContainer(const std::shared_ptr<const DobbyBundle>& _bundle
     , containerPid(-1)
     , hasCurseOfDeath(false)
     , state(State::Starting)
+    , hibernatingPid(0)
     , mRestartOnCrash(false)
     , mRestartCount(0)
 {

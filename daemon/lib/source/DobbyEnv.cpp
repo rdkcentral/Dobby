@@ -30,6 +30,7 @@
 #include <errno.h>
 #include <mntent.h>
 #include <limits.h>
+#include <sys/stat.h>
 
 
 
@@ -37,7 +38,8 @@ DobbyEnv::DobbyEnv(const std::shared_ptr<const IDobbySettings>& settings)
     : mWorkspacePath(settings->workspaceDir())
     , mFlashMountPath(settings->persistentDir())
     , mPluginsWorkspacePath(mWorkspacePath + "/dobby/plugins")
-    , mCgroupMountPaths(getCgroupMountPoints())
+    , mCgroupVersion(detectCgroupVersion())
+    , mCgroupMountPaths(getCgroupMountPoints(mCgroupVersion))
     , mPlatformIdent(getPlatformIdent())
 {
     // create a directory within the top level workspace dir for the plugins
@@ -73,6 +75,11 @@ std::string DobbyEnv::cgroupMountPath(Cgroup cgroup) const
         return std::string();
     else
         return it->second;
+}
+
+IDobbyEnv::CgroupVersion DobbyEnv::cgroupVersion() const
+{
+    return mCgroupVersion;
 }
 
 uint16_t DobbyEnv::platformIdent() const
@@ -123,16 +130,42 @@ uint16_t DobbyEnv::getPlatformIdent()
 
 // -----------------------------------------------------------------------------
 /**
+ *  @brief Detects whether the system uses cgroups v1 or v2.
+ *
+ *  Checks for the presence of /sys/fs/cgroup/cgroup.controllers which only
+ *  exists on cgroup v2 (unified hierarchy) systems.
+ *
+ *  @return CgroupVersion::V2 if unified hierarchy is detected, otherwise V1.
+ */
+IDobbyEnv::CgroupVersion DobbyEnv::detectCgroupVersion()
+{
+    struct stat st;
+    if (stat("/sys/fs/cgroup/cgroup.controllers", &st) == 0)
+    {
+        AI_LOG_INFO("detected cgroup v2 support");
+        return IDobbyEnv::CgroupVersion::V2;
+    }
+
+    AI_LOG_INFO("detected cgroup v1 hierarchy");
+    return IDobbyEnv::CgroupVersion::V1;
+}
+
+// -----------------------------------------------------------------------------
+/**
  *  @brief Attempts to get the mount points of the cgroup filesystems
  *
  *  This scans the mount table looking for the cgroups mounts, if this fails
  *  it's pretty fatal.
  *
- *  This is typically the name of the cgroup prefixed with "/sys/fs/cgroup"
+ *  On cgroups v1 this is typically the name of the cgroup prefixed with
+ *  "/sys/fs/cgroup".  On cgroups v2 all controllers are under a single
+ *  unified mount (typically "/sys/fs/cgroup").
+ *
+ *  @param[in]  version   The detected cgroup version.
  *
  *  @return a map of cgroup type to path
  */
-std::map<IDobbyEnv::Cgroup, std::string> DobbyEnv::getCgroupMountPoints()
+std::map<IDobbyEnv::Cgroup, std::string> DobbyEnv::getCgroupMountPoints(CgroupVersion version)
 {
     AI_LOG_FN_ENTRY();
 
@@ -172,25 +205,43 @@ std::map<IDobbyEnv::Cgroup, std::string> DobbyEnv::getCgroupMountPoints()
         if (!mnt->mnt_type || !mnt->mnt_dir || !mnt->mnt_opts)
             continue;
 
-        // skip non-cgroup mounts
-        if (strcmp(mnt->mnt_type, "cgroup") != 0)
-            continue;
-
-        // check for the cgroup type
-        for (const std::pair<const std::string, IDobbyEnv::Cgroup> cgroup : cgroupNames)
+        if (version == CgroupVersion::V2)
         {
-            char* mntopt = hasmntopt(mnt, cgroup.first.c_str());
-            if (!mntopt)
+            // on cgroups v2 look for the unified "cgroup2" mount
+            if (strcmp(mnt->mnt_type, "cgroup2") != 0)
                 continue;
 
-            if (strcmp(mntopt, cgroup.first.c_str()) != 0)
-                continue;
+            AI_LOG_INFO("found cgroup2 unified mount @ '%s'", mnt->mnt_dir);
 
-            AI_LOG_INFO("found cgroup '%s' mounted @ '%s'",
-                        cgroup.first.c_str(), mnt->mnt_dir);
-
-            mounts[cgroup.second] = mnt->mnt_dir;
+            // on v2, all controllers share the same mount path
+            for (const auto& cgroup : cgroupNames)
+            {
+                mounts[cgroup.second] = mnt->mnt_dir;
+            }
             break;
+        }
+        else
+        {
+            // skip non-cgroup mounts (v1)
+            if (strcmp(mnt->mnt_type, "cgroup") != 0)
+                continue;
+
+            // check for the cgroup type
+            for (const std::pair<const std::string, IDobbyEnv::Cgroup> cgroup : cgroupNames)
+            {
+                char* mntopt = hasmntopt(mnt, cgroup.first.c_str());
+                if (!mntopt)
+                    continue;
+
+                if (strcmp(mntopt, cgroup.first.c_str()) != 0)
+                    continue;
+
+                AI_LOG_INFO("found cgroup '%s' mounted @ '%s'",
+                            cgroup.first.c_str(), mnt->mnt_dir);
+
+                mounts[cgroup.second] = mnt->mnt_dir;
+                break;
+            }
         }
     }
 

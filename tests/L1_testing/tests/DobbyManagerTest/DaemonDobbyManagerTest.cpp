@@ -4417,5 +4417,383 @@ TEST_F(DaemonDobbyManagerTest, hibernateContainer_successWithParametersCombinati
     }
 }
 
+// =============================================================================
+// Unit tests for stopContainer() while hibernation is in progress.
+//
+// Regression suite for RDKEMW-13969: verifies that stopContainer() calls
+// WakeupProcess() for the in-flight PID before issuing killCont(), so that
+// memcr fully unseizes the process before SIGKILL is sent (preventing the
+// assert(WIFSTOPPED(status)) crash inside memcr_worker).
+// =============================================================================
 
+/**
+ * @brief stopContainer() on a Hibernating container — WakeupProcess succeeds.
+ *
+ * Scenario: hibernateContainer() is called and its worker thread is blocked
+ * inside HibernateProcess() for the first PID.  stopContainer() is then called
+ * from the test thread.  The test verifies:
+ *  1. WakeupProcess() is invoked with the in-flight PID before killCont().
+ *  2. killCont() is called exactly once after WakeupProcess() returns.
+ *  3. stopContainer() returns true.
+ */
+TEST_F(DaemonDobbyManagerTest, stopContainer_HibernatingState_WakeupCalledBeforeKill)
+{
+    // Container stats with a single PID so the race window is deterministic.
+    Json::Value expected_json;
+    expected_json["id"] = "container1";
+    expected_json["state"] = "running";
+    expected_json["pids"] = Json::arrayValue;
+    expected_json["pids"].append(1);   // PID 1 is the only in-flight PID
+
+    int32_t cd = 1234;
+    ContainerId id = ContainerId::create("container1");
+    expect_invalidContainerCleanupTask();
+    expect_startContainerFromBundle(cd, id);
+
+    EXPECT_CALL(*p_statsMock, stats())
+        .Times(1)
+        .WillOnce(::testing::ReturnRef(expected_json));
+
+    // Synchronisation: HibernateProcess blocks until WakeupProcess releases it.
+    std::promise<void> wakeupCalledPromise;
+    std::future<void> wakeupCalledFuture = wakeupCalledPromise.get_future();
+
+    // Synchronisation: fires when HibernateProcess is actually entered, meaning
+    // the thread has set hibernatingPid under mLock and released it.  stopContainer()
+    // must not run until this point so it sees a non-zero hibernatingPid.
+    std::promise<void> hibernateStartedPromise;
+    std::future<void> hibernateStartedFuture = hibernateStartedPromise.get_future();
+
+    // Track call ordering to verify WakeupProcess precedes killCont.
+    std::vector<std::string> callOrder;
+    std::mutex callOrderMutex;
+
+    EXPECT_CALL(*p_hibernateMock, HibernateProcess(
+            ::testing::_, ::testing::_, ::testing::_, ::testing::_, ::testing::_))
+        .Times(1)
+        .WillOnce(::testing::Invoke(
+            [&](const pid_t pid, const uint32_t, const std::string&,
+                const std::string&, DobbyHibernate::CompressionAlg)
+            {
+                // Signal that HibernateProcess is now in-flight (hibernatingPid
+                // has been set under mLock and mLock has been released).
+                hibernateStartedPromise.set_value();
+                // Block until the abort path has called WakeupProcess.
+                wakeupCalledFuture.wait();
+                {
+                    std::lock_guard<std::mutex> lk(callOrderMutex);
+                    callOrder.push_back("HibernateProcess_returned");
+                }
+                return DobbyHibernate::Error::ErrorNone;
+            }));
+
+    EXPECT_CALL(*p_hibernateMock, WakeupProcess(
+            static_cast<pid_t>(1), ::testing::_, ::testing::_))
+        .Times(1)
+        .WillOnce(::testing::Invoke(
+            [&](const pid_t, const uint32_t, const std::string&)
+            {
+                {
+                    std::lock_guard<std::mutex> lk(callOrderMutex);
+                    callOrder.push_back("WakeupProcess");
+                }
+                // Unblock HibernateProcess now that WakeupProcess has been called.
+                wakeupCalledPromise.set_value();
+                return DobbyHibernate::Error::ErrorNone;
+            }));
+
+    EXPECT_CALL(*p_runcMock, killCont(::testing::_, ::testing::_, ::testing::_))
+        .Times(1)
+        .WillOnce(::testing::Invoke(
+            [&](const ContainerId&, int, bool)
+            {
+                std::lock_guard<std::mutex> lk(callOrderMutex);
+                callOrder.push_back("killCont");
+                return true;
+            }));
+
+    // Start hibernation (spawns a detached worker thread that blocks in HibernateProcess).
+    bool ret = dobbyManager_test->hibernateContainer(cd, "");
+    EXPECT_EQ(ret, true);
+
+    // Wait until HibernateProcess is actually invoked — the thread has set
+    // hibernatingPid under mLock and released it, so stopContainer() will
+    // see a non-zero hibernatingPid and correctly call WakeupProcess.
+    hibernateStartedFuture.wait();
+
+    // Now call stopContainer — this must call WakeupProcess then killCont.
+    ret = dobbyManager_test->stopContainer(cd, true);
+    EXPECT_EQ(ret, true);
+
+    // Verify ordering.
+    {
+        std::lock_guard<std::mutex> lk(callOrderMutex);
+        ASSERT_GE(callOrder.size(), 2u);
+        EXPECT_EQ(callOrder[0], "WakeupProcess");
+        EXPECT_EQ(callOrder[1], "killCont");
+    }
+}
+
+/**
+ * @brief stopContainer() on a Hibernating container — WakeupProcess fails.
+ *
+ * When WakeupProcess returns an error, abortContainerHibernationIfNeeded()
+ * sets state to Stopping (so cleanupContainersShutdown() skips the container)
+ * and returns false.  stopContainer() must propagate this as a false return
+ * without calling killCont().
+ */
+TEST_F(DaemonDobbyManagerTest, stopContainer_HibernatingState_WakeupFails_ReturnsFalse)
+{
+    Json::Value expected_json;
+    expected_json["id"] = "container1";
+    expected_json["state"] = "running";
+    expected_json["pids"] = Json::arrayValue;
+    expected_json["pids"].append(1);
+
+    int32_t cd = 1234;
+    ContainerId id = ContainerId::create("container1");
+    expect_invalidContainerCleanupTask();
+    expect_startContainerFromBundle(cd, id);
+
+    EXPECT_CALL(*p_statsMock, stats())
+        .Times(1)
+        .WillOnce(::testing::ReturnRef(expected_json));
+
+    std::promise<void> wakeupCalledPromise;
+    std::future<void> wakeupCalledFuture = wakeupCalledPromise.get_future();
+
+    std::promise<void> hibernateStartedPromise;
+    std::future<void> hibernateStartedFuture = hibernateStartedPromise.get_future();
+
+    EXPECT_CALL(*p_hibernateMock, HibernateProcess(
+            ::testing::_, ::testing::_, ::testing::_, ::testing::_, ::testing::_))
+        .Times(1)
+        .WillOnce(::testing::Invoke(
+            [&](const pid_t, const uint32_t, const std::string&,
+                const std::string&, DobbyHibernate::CompressionAlg)
+            {
+                hibernateStartedPromise.set_value();
+                wakeupCalledFuture.wait();
+                return DobbyHibernate::Error::ErrorNone;
+            }));
+
+    EXPECT_CALL(*p_hibernateMock, WakeupProcess(
+            static_cast<pid_t>(1), ::testing::_, ::testing::_))
+        .Times(1)
+        .WillOnce(::testing::Invoke(
+            [&](const pid_t, const uint32_t, const std::string&)
+            {
+                wakeupCalledPromise.set_value();
+                return DobbyHibernate::Error::ErrorGeneral;
+            }));
+
+    // killCont must NOT be called when the abort fails.
+    EXPECT_CALL(*p_runcMock, killCont(::testing::_, ::testing::_, ::testing::_))
+        .Times(0);
+
+    bool ret = dobbyManager_test->hibernateContainer(cd, "");
+    EXPECT_EQ(ret, true);
+
+    hibernateStartedFuture.wait();
+
+    ret = dobbyManager_test->stopContainer(cd, true);
+    EXPECT_EQ(ret, false);
+}
+
+// =============================================================================
+// Unit tests for DobbyManager::synthesizeContainerSignalStatus()
+//
+// These validate the 128+signum exit code to WIFSIGNALED status synthesis
+// that bridges the DobbyInit (PID 1) convention to standard wait-status.
+// =============================================================================
+
+// Helper: encode a normal _exit(code) as a raw waitpid() status word.
+// On Linux the encoding is (exitCode << 8) with bits 0-6 = 0.
+static int makeExitStatus(int exitCode)
+{
+    return (exitCode & 0xff) << 8;
+}
+
+// ---------------------------------------------------------------------------
+// Normal exit codes - must pass through unchanged
+// ---------------------------------------------------------------------------
+
+TEST_F(DaemonDobbyManagerTest, synthesizeContainerSignalStatus_NormalExitZero_Unchanged)
+{
+    int raw = makeExitStatus(0);
+    int out = DobbyManager::synthesizeContainerSignalStatus(raw);
+    EXPECT_EQ(out, raw);
+    EXPECT_TRUE(WIFEXITED(out));
+    EXPECT_EQ(WEXITSTATUS(out), 0);
+}
+
+TEST_F(DaemonDobbyManagerTest, synthesizeContainerSignalStatus_NormalExitOne_Unchanged)
+{
+    int raw = makeExitStatus(1);
+    int out = DobbyManager::synthesizeContainerSignalStatus(raw);
+    EXPECT_EQ(out, raw);
+    EXPECT_TRUE(WIFEXITED(out));
+    EXPECT_EQ(WEXITSTATUS(out), 1);
+}
+
+TEST_F(DaemonDobbyManagerTest, synthesizeContainerSignalStatus_ExitCode128_Unchanged)
+{
+    // 128 is NOT > 128, so it should NOT be synthesised.
+    int raw = makeExitStatus(128);
+    int out = DobbyManager::synthesizeContainerSignalStatus(raw);
+    EXPECT_EQ(out, raw);
+    EXPECT_TRUE(WIFEXITED(out));
+    EXPECT_EQ(WEXITSTATUS(out), 128);
+}
+
+// ---------------------------------------------------------------------------
+// 128+signum exit codes - core-dumping signals
+// ---------------------------------------------------------------------------
+
+TEST_F(DaemonDobbyManagerTest, synthesizeContainerSignalStatus_ExitCode134_SIGABRT)
+{
+    // 128 + 6 = 134 -> SIGABRT (core-dumping signal)
+    int raw = makeExitStatus(134);
+    int out = DobbyManager::synthesizeContainerSignalStatus(raw);
+
+    EXPECT_TRUE(WIFSIGNALED(out));
+    EXPECT_EQ(WTERMSIG(out), SIGABRT);
+#ifdef WCOREDUMP
+    EXPECT_TRUE(WCOREDUMP(out));
+#endif
+}
+
+TEST_F(DaemonDobbyManagerTest, synthesizeContainerSignalStatus_ExitCode139_SIGSEGV)
+{
+    // 128 + 11 = 139 -> SIGSEGV (core-dumping signal)
+    int raw = makeExitStatus(139);
+    int out = DobbyManager::synthesizeContainerSignalStatus(raw);
+
+    EXPECT_TRUE(WIFSIGNALED(out));
+    EXPECT_EQ(WTERMSIG(out), SIGSEGV);
+#ifdef WCOREDUMP
+    EXPECT_TRUE(WCOREDUMP(out));
+#endif
+}
+
+TEST_F(DaemonDobbyManagerTest, synthesizeContainerSignalStatus_ExitCode136_SIGFPE)
+{
+    // 128 + 8 = 136 -> SIGFPE (core-dumping signal)
+    int raw = makeExitStatus(136);
+    int out = DobbyManager::synthesizeContainerSignalStatus(raw);
+
+    EXPECT_TRUE(WIFSIGNALED(out));
+    EXPECT_EQ(WTERMSIG(out), SIGFPE);
+#ifdef WCOREDUMP
+    EXPECT_TRUE(WCOREDUMP(out));
+#endif
+}
+
+TEST_F(DaemonDobbyManagerTest, synthesizeContainerSignalStatus_ExitCode132_SIGILL)
+{
+    // 128 + 4 = 132 -> SIGILL (core-dumping signal)
+    int raw = makeExitStatus(132);
+    int out = DobbyManager::synthesizeContainerSignalStatus(raw);
+
+    EXPECT_TRUE(WIFSIGNALED(out));
+    EXPECT_EQ(WTERMSIG(out), SIGILL);
+#ifdef WCOREDUMP
+    EXPECT_TRUE(WCOREDUMP(out));
+#endif
+}
+
+TEST_F(DaemonDobbyManagerTest, synthesizeContainerSignalStatus_ExitCode131_SIGQUIT)
+{
+    // 128 + 3 = 131 -> SIGQUIT (core-dumping signal)
+    int raw = makeExitStatus(131);
+    int out = DobbyManager::synthesizeContainerSignalStatus(raw);
+
+    EXPECT_TRUE(WIFSIGNALED(out));
+    EXPECT_EQ(WTERMSIG(out), SIGQUIT);
+#ifdef WCOREDUMP
+    EXPECT_TRUE(WCOREDUMP(out));
+#endif
+}
+
+// ---------------------------------------------------------------------------
+// 128+signum exit codes - non-core-dumping signals
+// ---------------------------------------------------------------------------
+
+TEST_F(DaemonDobbyManagerTest, synthesizeContainerSignalStatus_ExitCode137_SIGKILL)
+{
+    // 128 + 9 = 137 -> SIGKILL (no core dump)
+    int raw = makeExitStatus(137);
+    int out = DobbyManager::synthesizeContainerSignalStatus(raw);
+
+    EXPECT_TRUE(WIFSIGNALED(out));
+    EXPECT_EQ(WTERMSIG(out), SIGKILL);
+#ifdef WCOREDUMP
+    EXPECT_FALSE(WCOREDUMP(out));
+#endif
+}
+
+TEST_F(DaemonDobbyManagerTest, synthesizeContainerSignalStatus_ExitCode143_SIGTERM)
+{
+    // 128 + 15 = 143 -> SIGTERM (no core dump)
+    int raw = makeExitStatus(143);
+    int out = DobbyManager::synthesizeContainerSignalStatus(raw);
+
+    EXPECT_TRUE(WIFSIGNALED(out));
+    EXPECT_EQ(WTERMSIG(out), SIGTERM);
+#ifdef WCOREDUMP
+    EXPECT_FALSE(WCOREDUMP(out));
+#endif
+}
+
+TEST_F(DaemonDobbyManagerTest, synthesizeContainerSignalStatus_ExitCode130_SIGINT)
+{
+    // 128 + 2 = 130 -> SIGINT (no core dump)
+    int raw = makeExitStatus(130);
+    int out = DobbyManager::synthesizeContainerSignalStatus(raw);
+
+    EXPECT_TRUE(WIFSIGNALED(out));
+    EXPECT_EQ(WTERMSIG(out), SIGINT);
+#ifdef WCOREDUMP
+    EXPECT_FALSE(WCOREDUMP(out));
+#endif
+}
+
+TEST_F(DaemonDobbyManagerTest, synthesizeContainerSignalStatus_ExitCode129_SIGHUP)
+{
+    // 128 + 1 = 129 -> SIGHUP (no core dump)
+    int raw = makeExitStatus(129);
+    int out = DobbyManager::synthesizeContainerSignalStatus(raw);
+
+    EXPECT_TRUE(WIFSIGNALED(out));
+    EXPECT_EQ(WTERMSIG(out), SIGHUP);
+#ifdef WCOREDUMP
+    EXPECT_FALSE(WCOREDUMP(out));
+#endif
+}
+
+// ---------------------------------------------------------------------------
+// Boundary: exit code above signal range - must NOT be synthesised
+// ---------------------------------------------------------------------------
+
+TEST_F(DaemonDobbyManagerTest, synthesizeContainerSignalStatus_ExitCodeAboveSignalRange_Unchanged)
+{
+    // 128 + NSIG is out of range (signals go from 1 to NSIG-1)
+    int raw = makeExitStatus(128 + NSIG);
+    int out = DobbyManager::synthesizeContainerSignalStatus(raw);
+    EXPECT_EQ(out, raw);
+    EXPECT_TRUE(WIFEXITED(out));
+}
+
+// ---------------------------------------------------------------------------
+// Already-signalled status (not WIFEXITED) - must pass through unchanged
+// ---------------------------------------------------------------------------
+
+TEST_F(DaemonDobbyManagerTest, synthesizeContainerSignalStatus_AlreadySignalled_Unchanged)
+{
+    // A raw WIFSIGNALED status with signal 9 (SIGKILL): bits 0-6 = 9
+    int raw = SIGKILL;  // 9 - WIFSIGNALED true, WTERMSIG = 9
+    ASSERT_TRUE(WIFSIGNALED(raw));
+    int out = DobbyManager::synthesizeContainerSignalStatus(raw);
+    EXPECT_EQ(out, raw);
+}
 

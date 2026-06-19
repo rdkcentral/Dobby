@@ -28,6 +28,7 @@
 #include <array>
 #include <atomic>
 #include <algorithm>
+#include <cinttypes>
 #include <grp.h>
 #include <fcntl.h>
 #include <limits.h>
@@ -62,6 +63,10 @@ static const ctemplate::StaticTemplateString USERNS_DISABLED =
 
 static const ctemplate::StaticTemplateString MEM_LIMIT =
     STS_INIT(MEM_LIMIT, "MEM_LIMIT");
+static const ctemplate::StaticTemplateString MEM_SWAP =
+    STS_INIT(MEM_SWAP, "MEM_SWAP");
+static const ctemplate::StaticTemplateString SWAPPINESS_ENABLED =
+    STS_INIT(SWAPPINESS_ENABLED, "SWAPPINESS_ENABLED");
 
 static const ctemplate::StaticTemplateString CPU_SHARES_ENABLED =
     STS_INIT(CPU_SHARES_ENABLED, "CPU_SHARES_ENABLED");
@@ -187,6 +192,7 @@ static const ctemplate::StaticTemplateString SECCOMP_SYSCALLS =
 #define JSON_FLAG_FILECAPABILITIES  (0x1U << 20)
 #define JSON_FLAG_VPU               (0x1U << 21)
 #define JSON_FLAG_SECCOMP           (0x1U << 22)
+#define JSON_FLAG_SWAPLIMIT          (0x1U << 23)
 
 int DobbySpecConfig::mNumCores = -1;
 
@@ -504,7 +510,8 @@ bool DobbySpecConfig::parseSpec(ctemplate::TemplateDictionary* dictionary,
         { "cpu",            {   JSON_FLAG_CPU,              &DobbySpecConfig::processCpu            }   },
         { "devices",        {   JSON_FLAG_DEVICES,          &DobbySpecConfig::processDevices        }   },
         { "capabilities",   {   JSON_FLAG_CAPABILITIES,     &DobbySpecConfig::processCapabilities   }   },
-        { "seccomp",        {   JSON_FLAG_SECCOMP,          &DobbySpecConfig::processSeccomp        }   }
+        { "seccomp",        {   JSON_FLAG_SECCOMP,          &DobbySpecConfig::processSeccomp        }   },
+        { "swapLimit",      {   JSON_FLAG_SWAPLIMIT,         &DobbySpecConfig::processSwapLimit      }   }
     };
 
     // step 1 - parse the 'dobby' spec document
@@ -625,6 +632,21 @@ bool DobbySpecConfig::parseSpec(ctemplate::TemplateDictionary* dictionary,
     {
         dictionary->ShowSection(RTLIMIT_ENABLED);
         dictionary->SetIntValue(RLIMIT_RTPRIO, 0);
+    }
+
+    if (!(flags & JSON_FLAG_SWAPLIMIT))
+    {
+        // swapLimit not supplied: leave memory+swap unlimited (-1)
+        dictionary->SetIntValue(MEM_SWAP, -1);
+    }
+
+    // swappiness is not supported on cgroups v2, only show if on v1
+    {
+        struct stat st;
+        if (stat("/sys/fs/cgroup/cgroup.controllers", &st) != 0 && errno == ENOENT)
+        {
+            dictionary->ShowSection(SWAPPINESS_ENABLED);
+        }
     }
 
     if (!(flags & JSON_FLAG_CAPABILITIES))
@@ -867,10 +889,9 @@ bool DobbySpecConfig::processUser(const Json::Value& value,
  *  Example json:
  *
  *          "userNs": true
- *          "userNs": false
  *
- *  This field controls whether to enable user namespacing or not, by default
- *  userns is enabled, it must explicitly be disabled.
+ *  User namespacing is mandatory for all containers. Setting userNs=false
+ *  is not supported and will result in an error.
  *
  *  @param[in]  value       The json spec document from the client
  *  @param[in]  dictionary  Pointer to the OCI dictionary to populate
@@ -880,22 +901,33 @@ bool DobbySpecConfig::processUser(const Json::Value& value,
 bool DobbySpecConfig::processUserNs(const Json::Value& value,
                                 ctemplate::TemplateDictionary* dictionary)
 {
-    bool enabled;
     if (value.isBool())
     {
-        enabled = value.asBool();
+#if defined(DOBBY_PROD)
+        if (!value.asBool())
+        {
+            AI_LOG_ERROR("userNs=false is not supported, user namespacing is mandatory for all containers");
+            return false;
+        }
+        dictionary->ShowSection(USERNS_ENABLED);
+#else
+        dictionary->ShowSection(value.asBool() ? USERNS_ENABLED : USERNS_DISABLED);
+#endif
     }
     else if (value.isNull())
     {
-        enabled = false;
+#if defined(DOBBY_PROD)
+        // null is treated as enabled when user namespace enforcement is active
+        dictionary->ShowSection(USERNS_ENABLED);
+#else
+        dictionary->ShowSection(USERNS_DISABLED);
+#endif
     }
     else
     {
         AI_LOG_ERROR("invalid userNs field");
         return false;
     }
-
-    dictionary->ShowSection(enabled ? USERNS_ENABLED : USERNS_DISABLED);
 
     return true;
 }
@@ -1282,6 +1314,78 @@ bool DobbySpecConfig::processMemLimit(const Json::Value& value,
     }
 
     dictionary->SetIntValue(MEM_LIMIT, memLimit);
+
+    return true;
+}
+
+// -----------------------------------------------------------------------------
+/**
+ *  @brief Processes the optional swap limit field.
+ *
+ *  When present, this value is used as the cgroup memory.memsw.limit_in_bytes,
+ *  allowing swap to be configured independently of the memory limit.  When
+ *  absent the swap limit is set to -1 (unlimited).
+ *
+ *  The kernel requires swap >= memLimit, so an error is returned if the
+ *  supplied value is smaller than the memLimit already set.
+ *
+ *  Example json:
+ *
+ *      "swapLimit": 2097152
+ *
+ *
+ *
+ *  @param[in]  value       The json spec document from the client
+ *  @param[in]  dictionary  Pointer to the OCI dictionary to populate
+ *
+ *  @return true if correctly processed the value, otherwise false.
+ */
+bool DobbySpecConfig::processSwapLimit(const Json::Value& value,
+                                       ctemplate::TemplateDictionary* dictionary)
+{
+    // Reject non-numeric values up front.
+    if (!value.isIntegral())
+    {
+        AI_LOG_ERROR("invalid swapLimit field");
+        return false;
+    }
+
+    // JsonCpp's isIntegral() returns true for negative integers too.  A
+    // negative value would silently wrap to a huge unsigned number and bypass
+    // the swap >= memLimit guard, so we must check sign before casting.
+    const int64_t memSwapSigned = value.asInt64();
+    if (memSwapSigned < 0)
+    {
+        AI_LOG_ERROR("swapLimit must be non-negative, got %" PRId64, memSwapSigned);
+        return false;
+    }
+
+    // The kernel requires memory.memsw.limit_in_bytes >= memory.limit_in_bytes.
+    const Json::Value& memLimitVal = mSpec["memLimit"];
+    if (memLimitVal.isIntegral())
+    {
+        const int64_t memLimitSigned = memLimitVal.asInt64();
+        if (memLimitSigned < 0)
+        {
+            AI_LOG_ERROR("memLimit is negative; cannot validate swapLimit");
+            return false;
+        }
+        if (memSwapSigned < memLimitSigned)
+        {
+            AI_LOG_ERROR("swapLimit (%" PRId64 ") must be >= memLimit (%" PRId64 ")",
+                         memSwapSigned, memLimitSigned);
+            return false;
+        }
+    }
+
+    if (memSwapSigned > static_cast<int64_t>(UINT_MAX))
+    {
+        AI_LOG_ERROR("swapLimit (%" PRId64 ") exceeds maximum supported value for template field (%u)",
+                     memSwapSigned, UINT_MAX);
+        return false;
+    }
+
+    dictionary->SetIntValue(MEM_SWAP, static_cast<unsigned>(memSwapSigned));
 
     return true;
 }
@@ -2551,12 +2655,10 @@ bool DobbySpecConfig::processCapabilities(const Json::Value& value,
                                            EXTRA_CAPS_SECTION);
     }
 
-#if !defined(RDK)
     // allow the containered apps to inherit any file base capabilities, this
     // is needed if wanting to execute programs that have the file capabilities
     // that match the capabilities we've given the container
     dictionary->SetValue(NO_NEW_PRIVS, "false");
-#endif // !defined(RDK)
 
     return true;
 }
@@ -2796,3 +2898,4 @@ bool DobbySpecConfig::processRdkPlugins(const Json::Value& value,
 
     return true;
 }
+

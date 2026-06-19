@@ -35,6 +35,7 @@ public:
     virtual std::string pluginsWorkspacePath() const = 0;
     virtual uint16_t platformIdent() const = 0;
     virtual std::string cgroupMountPath(IDobbyEnv::Cgroup cgroup) const = 0;
+    virtual IDobbyEnv::CgroupVersion cgroupVersion() const = 0;
 };
 
 class DobbyEnv :  public IDobbyEnv{
@@ -53,6 +54,7 @@ public:
     std::string pluginsWorkspacePath() const override;
     uint16_t platformIdent() const override;
     std::string cgroupMountPath(Cgroup cgroup) const override;
+    CgroupVersion cgroupVersion() const override;
 
 };
 

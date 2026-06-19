@@ -28,6 +28,7 @@ import network_tests
 import pid_limit_tests
 import memcr_tests
 import annotation_tests
+import swap_limit_tests
 import sys
 import json
 
@@ -44,7 +45,8 @@ supported_tests = [basic_sanity_tests,
                    network_tests,
                    gui_containers,
                    pid_limit_tests,
-                   memcr_tests]
+                   memcr_tests,
+                   swap_limit_tests]
 
 def run_all_tests():
     success_count = 0
@@ -68,11 +70,11 @@ def run_all_tests():
             success_count += success
             total_count += total
             testsuites_info.append({"name":test.__name__,"tests":total,"Passed Tests":success,"Failed Tests":total - success})
-            with open('test_results.json', 'r') as json_file:
-                current_test_result = json.load(json_file)
-            testsuites_info[tested_groups_count]['testsuite'] = []
-            testsuites_info[tested_groups_count]["testsuite"].append(current_test_result)
             if total > 0:
+                with open('test_results.json', 'r') as json_file:
+                    current_test_result = json.load(json_file)
+                testsuites_info[-1]['testsuite'] = []
+                testsuites_info[-1]["testsuite"].append(current_test_result)
                 tested_groups_count += 1
             sleep(1)
 
@@ -97,3 +99,4 @@ def run_all_tests():
 if __name__ == "__main__":
     test_utils.parse_arguments(__file__)
     run_all_tests()
+

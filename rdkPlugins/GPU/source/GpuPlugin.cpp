@@ -67,6 +67,13 @@ bool GpuPlugin::createRuntime()
     // sanity check we have a gpu cgroup dir
     if (cgroupDirPath.empty())
     {
+        // On cgroups v2 the gpu controller is unavailable; degrade gracefully
+        struct stat st;
+        if (stat("/sys/fs/cgroup/cgroup.controllers", &st) == 0)
+        {
+            AI_LOG_WARN("gpu cgroup not available on cgroups v2, skipping");
+            return true;
+        }
         AI_LOG_ERROR_EXIT("missing gpu cgroup directory");
         return false;
     }
@@ -111,6 +118,13 @@ bool GpuPlugin::postStop()
     // sanity check we have a gpu cgroup dir
     if (cgroupDirPath.empty())
     {
+        // On cgroups v2 the gpu controller is unavailable; nothing to clean up
+        struct stat st;
+        if (stat("/sys/fs/cgroup/cgroup.controllers", &st) == 0)
+        {
+            AI_LOG_FN_EXIT();
+            return true;
+        }
         AI_LOG_ERROR_EXIT("missing gpu cgroup directory");
         return false;
     }
@@ -165,13 +179,23 @@ std::vector<std::string> GpuPlugin::getDependencies() const
  *  This scans the mount table looking for the cgroups mount, if this fails
  *  it's pretty fatal.
  *
- *  This is typically "/sys/fs/cgroup/gpu".
+ *  On cgroups v1 this is typically "/sys/fs/cgroup/gpu".
+ *  On cgroups v2 the gpu custom controller is not available (returns empty).
  *
- *  @return a string to the gpu cgroup path.
+ *  @return a string to the gpu cgroup path, or empty if not found.
  */
 std::string GpuPlugin::getGpuCgroupMountPoint()
 {
     AI_LOG_FN_ENTRY();
+
+    // On cgroups v2 there is no separate gpu cgroup controller
+    struct stat st;
+    if (stat("/sys/fs/cgroup/cgroup.controllers", &st) == 0)
+    {
+        AI_LOG_WARN("gpu cgroup controller not available on cgroups v2");
+        AI_LOG_FN_EXIT();
+        return std::string();
+    }
 
     std::string mountPoint;
 

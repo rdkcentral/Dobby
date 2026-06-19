@@ -28,6 +28,8 @@ public:
     virtual ~DobbyBundleMock() = default;
 
     MOCK_METHOD(void, setPersistence, (bool persist), (override));
+    MOCK_METHOD(bool, getPersistence, (), (const,override));
+    MOCK_METHOD(int,  dirFd,          (), (const,override));
     MOCK_METHOD(bool, isValid, (), (const,override));
     MOCK_METHOD((const std::string&), path, (), (const,override));
 };
