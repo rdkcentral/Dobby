@@ -18,6 +18,8 @@
 */
 
 #include "OOMCrashPlugin.h"
+#include <signal.h>
+#include <sys/wait.h>
 /**
  * Need to do this at the start of every plugin to make sure the correct
  * C methods are visible to allow PluginLauncher to find the plugin
@@ -173,15 +175,15 @@ std::vector<std::string> OOMCrash::getDependencies() const
 }
 
 /**
- * @brief Read cgroup file to detect OOM.
+ * @brief Read cgroup file to detect OOM kills.
  *
- *  On cgroups v1 reads memory.failcnt from
- *  /sys/fs/cgroup/memory/<id>/memory.failcnt.
+ *  On cgroups v1 reads the oom_kill field from
+ *  /sys/fs/cgroup/memory/<id>/memory.oom_control.
  *
  *  On cgroups v2 reads the oom_kill field from
  *  /sys/fs/cgroup/<id>/memory.events.
  *
- *  @param[out]  val      gives the number of times that the cgroup limit was exceeded.
+ *  @param[out]  val      number of times the OOM killer was invoked for this cgroup.
  *
  * @return true on successfully reading from the file.
  */
@@ -204,7 +206,7 @@ bool OOMCrash::readCgroup(unsigned long *val)
     else
     {
         // On cgroups v1, use the legacy per-controller path
-        path = "/sys/fs/cgroup/memory/" + containerId + "/memory.failcnt";
+        path = "/sys/fs/cgroup/memory/" + containerId + "/memory.oom_control";
     }
 
     FILE *fp = fopen(path.c_str(), "r");
@@ -256,21 +258,53 @@ bool OOMCrash::readCgroup(unsigned long *val)
     }
     else
     {
-        // v1: single numeric value in memory.failcnt
-        if ((rd = getline(&line, &len, fp)) < 0)
+        // v1: memory.oom_control is a key-value file, look for "oom_kill <N>"
+        bool found = false;
+        *val = 0;
+        while ((rd = getline(&line, &len, fp)) >= 0)
         {
-            if (line)
-                free(line);
-            fclose(fp);
-            AI_LOG_ERROR("failed to read cgroup file line (%d - %s)", errno, strerror(errno));
+            unsigned long v = 0;
+            if (sscanf(line, "oom_kill %lu", &v) == 1)
+            {
+                *val = v;
+                found = true;
+                break;
+            }
+        }
+        free(line);
+        fclose(fp);
+        if (!found)
+        {
+            // oom_kill was added to memory.oom_control in kernel 4.13.
+            // Fall back to a heuristic: memory.failcnt > 0 AND the container
+            // was killed by SIGKILL (synthesized exit status from DobbyInit).
+            const std::string failcntPath = "/sys/fs/cgroup/memory/" + containerId + "/memory.failcnt";
+            FILE *fcFp = fopen(failcntPath.c_str(), "r");
+            if (fcFp)
+            {
+                char *fcLine = nullptr;
+                size_t fcLen = 0;
+                unsigned long failcnt = 0;
+                if (getline(&fcLine, &fcLen, fcFp) >= 0)
+                    failcnt = strtoul(fcLine, nullptr, 0);
+                free(fcLine);
+                fclose(fcFp);
+
+                const bool killedBySIGKILL = WIFSIGNALED(mUtils->exitStatus) &&
+                                             (WTERMSIG(mUtils->exitStatus) == SIGKILL);
+                if (failcnt > 0 && killedBySIGKILL)
+                {
+                    AI_LOG_WARN("'oom_kill' not available in '%s' (kernel < 4.13); "
+                                "heuristic: failcnt=%lu and container killed by SIGKILL — likely OOM",
+                                path.c_str(), failcnt);
+                    *val = failcnt;
+                    return true;
+                }
+            }
+            AI_LOG_WARN("'oom_kill' key not found in '%s' — kernel may be older than 4.13, OOM kill detection unavailable",
+                        path.c_str());
             return false;
         }
-
-        *val = strtoul(line, nullptr, 0);
-
-        fclose(fp);
-        free(line);
-
         return true;
     }
 }
@@ -283,16 +317,29 @@ bool OOMCrash::readCgroup(unsigned long *val)
 
 bool OOMCrash::checkForOOM()
 {
-    unsigned long failCnt;
+    unsigned long oomKillCount;
     bool status;
-    if (readCgroup(&failCnt) && (failCnt > 0))
+    if (readCgroup(&oomKillCount) && (oomKillCount > 0))
     {
-        AI_LOG_WARN("memory allocation failure detected in %s container, likely OOM (failcnt = %lu)", mUtils->getContainerId().c_str(), failCnt);
-        status = true; 
+        const std::map<std::string, std::string> annotations = mUtils->getAnnotations();
+
+        auto stateIt = annotations.find("fireboltState");
+        const std::string fireboltState = (stateIt != annotations.end())
+                                          ? stateIt->second : "unknown";
+
+        auto prevIt = annotations.find("fireboltState_prev");
+        const std::string fireboltStatePrev = (prevIt != annotations.end())
+                                              ? prevIt->second : "unknown";
+
+        AI_LOG_WARN("OOM kill detected in container '%s' (oom events = %lu), "
+                    "firebolt state: %s (prev: %s)",
+                    mUtils->getContainerId().c_str(), oomKillCount,
+                    fireboltState.c_str(), fireboltStatePrev.c_str());
+        status = true;
     }
     else
     {
-        AI_LOG_WARN("No OOM failure detected in %s container", mUtils->getContainerId().c_str());
+        AI_LOG_WARN("No OOM kill detected in %s container", mUtils->getContainerId().c_str());
         status = false;
     }
     return status;
