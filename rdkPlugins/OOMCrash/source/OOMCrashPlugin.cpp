@@ -175,32 +175,30 @@ std::vector<std::string> OOMCrash::getDependencies() const
 }
 
 /**
- * @brief Read cgroup file to detect OOM.
+ * @brief Read the cgroup OOM kill counter for the container.
  *
- *  On cgroups v1 reads memory.failcnt from
- *  /sys/fs/cgroup/memory/<id>/memory.failcnt.
+ *  cgroups v1: parses memory.oom_control from
+ *    /sys/fs/cgroup/memory/<id>/memory.oom_control
  *
- *  On cgroups v2 reads the oom_kill field from
- *  /sys/fs/cgroup/<id>/memory.events.
+ *    Kernel >= 4.13 exposes an 'oom_kill' field — a monotonic count of
+ *    processes killed by the OOM killer.  This is the preferred value.
  *
- *  The memory.oom_control file contains multiple key-value lines, e.g.:
+ *    Kernel < 4.13 does not have 'oom_kill'; 'under_oom' is 1 while the
+ *    cgroup is actively under OOM pressure (transient — may clear before
+ *    postHalt runs; isMemoryAtLimit() is then used as a final fallback).
  *
- *  Kernel >= 4.13:
- *    oom_kill_disable 0
- *    under_oom        0
- *    oom_kill         1
+ *    Note: memory.failcnt counts allocation failures, NOT OOM kills.
+ *    With swap available the kernel may swap rather than kill, and the
+ *    counter resets to 0 on cgroup recreation, making it unreliable.
  *
- *  Kernel < 4.13:
- *    oom_kill_disable 0
- *    under_oom        0
+ *  cgroups v2: reads the 'oom_kill' field from
+ *    /sys/fs/cgroup/<id>/memory.events — a monotonic count of OOM kills.
+ *    Falls back to the system.slice scope path if the direct path is absent.
  *
- *  On older kernels the 'oom_kill' counter does not exist, so we fall back
- *  to the 'under_oom' flag which is 1 while the cgroup is in OOM state.
+ *  @param[out]  val   Set to the oom_kill counter (v1 kernel >= 4.13 or v2),
+ *                     or the under_oom flag (v1 kernel < 4.13) on success.
  *
- *  @param[out]  val   Set to the value of the 'oom_kill' field (or 'under_oom'
- *                     on older kernels) on success.
- *
- * @return true on successfully reading and parsing the field.
+ * @return true on successfully reading and parsing the value.
  */
 
 bool OOMCrash::readCgroup(unsigned long *val)
@@ -221,7 +219,7 @@ bool OOMCrash::readCgroup(unsigned long *val)
     else
     {
         // On cgroups v1, use the legacy per-controller path
-        path = "/sys/fs/cgroup/memory/" + containerId + "/memory.failcnt";
+        path = "/sys/fs/cgroup/memory/" + containerId + "/memory.oom_control";
     }
 
     FILE *fp = fopen(path.c_str(), "r");
@@ -246,9 +244,6 @@ bool OOMCrash::readCgroup(unsigned long *val)
     char* line = nullptr;
     size_t len = 0;
     ssize_t rd;
-    bool foundOomKill = false;
-    unsigned long underOom = 0;
-    bool foundUnderOom = false;
 
     if (isCgroupV2)
     {
@@ -276,22 +271,42 @@ bool OOMCrash::readCgroup(unsigned long *val)
     }
     else
     {
-        // v1: single numeric value in memory.failcnt
-        if ((rd = getline(&line, &len, fp)) < 0)
+        // v1: parse key-value memory.oom_control.
+        // Prefer 'oom_kill' (kernel >= 4.13, monotonic); fall back to
+        // 'under_oom' (kernel < 4.13, transient — 1 while OOM is active).
+        unsigned long oomKill = 0, underOom = 0;
+        bool foundOomKill = false, foundUnderOom = false;
+
+        while ((rd = getline(&line, &len, fp)) > 0)
         {
-            if (line)
-                free(line);
-            fclose(fp);
-            AI_LOG_ERROR("failed to read cgroup file line (%d - %s)", errno, strerror(errno));
-            return false;
+            unsigned long v;
+            if (sscanf(line, "oom_kill %lu", &v) == 1)
+            {
+                oomKill = v;
+                foundOomKill = true;
+            }
+            else if (sscanf(line, "under_oom %lu", &v) == 1)
+            {
+                underOom = v;
+                foundUnderOom = true;
+            }
         }
-
-        *val = strtoul(line, nullptr, 0);
-
-        fclose(fp);
         free(line);
+        fclose(fp);
 
-        return true;
+        if (foundOomKill)
+        {
+            *val = oomKill;
+            return true;
+        }
+        if (foundUnderOom)
+        {
+            AI_LOG_INFO("'oom_kill' not present (kernel < 4.13), using 'under_oom' value");
+            *val = underOom;
+            return true;
+        }
+        AI_LOG_ERROR("neither 'oom_kill' nor 'under_oom' found in '%s'", path.c_str());
+        return false;
     }
 }
 
