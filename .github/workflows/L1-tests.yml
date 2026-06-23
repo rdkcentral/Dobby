@@ -1,5 +1,8 @@
 name: DobbyL1Test
-on: [push, pull_request]
+on:
+  push:
+  pull_request:
+  workflow_call:
 
 jobs:
   build:
@@ -114,11 +117,12 @@ jobs:
         if: ${{ !env.ACT && matrix.coverage == 'with-coverage' && matrix.extra_flags == 'RUN_TESTS' && matrix.build_type == 'Debug' }}
         uses: actions/upload-artifact@v4
         with:
-          name: artifacts
+          name: artifacts-L1-dobby
           path: |
             DobbyL1TestResults.json
             DobbyUtilsL1TestResults.json
             DobbyManagerL1TestResults.json
             DobbySpecConfigL1TestResults.json
+            filtered_coverage.info
             coverage
           if-no-files-found: warn
