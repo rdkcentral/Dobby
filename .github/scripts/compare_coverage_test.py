@@ -630,56 +630,51 @@ class TestMainIntegration(unittest.TestCase):
         self.assertEqual(r.returncode, 0, msg=r.stdout + r.stderr)
 
     # ===========================================================================
-    # SCENARIO 10 — L0 job fails
-    # Coverage Gate does NOT trigger (workflow-level behaviour).
-    #
-    # GitHub Actions: coverage-gate has `needs: [trigger-L0, trigger-L1]`
-    # with no custom `if:`.  The implicit success() check means coverage-gate
-    # is SKIPPED whenever trigger-L0 fails.  update-baseline then sees
-    # needs.coverage-gate.result == 'skipped' (not 'success') and is also
-    # skipped.  This cannot be unit-tested here; it is enforced by the
-    # workflow graph.
+    # SCENARIO 10 — Requested suite artifact missing (requested but no data)
+    # Script-level: suite is reported as WARN (data missing), exit 0.
+    # Workflow-level: coverage-gate depends on trigger-L1 via needs:;
+    # if trigger-L1 fails, coverage-gate is skipped automatically.
     # ===========================================================================
 
     def test_s10_l0_artifacts_absent_l1_passes(self):
         """
-        Simulates the artifact-level effect: L0 .info absent (download step
-        with continue-on-error:true produced no file), L1 coverage present
-        and passing.  Script-level: L0 is WARN (data missing), L1 is PASS.
+        --l0 is explicitly requested but the artifact file is absent.
+        L1 coverage is present and passing.
+        Script-level: L0 is WARN (data missing), L1 is PASS.
         """
         bl = self._baseline({"L0": 75.0, "L1": 75.0})
-        l1 = self._lcov("l1.info", 100, 80)  # L0 omitted intentionally
-        r = self._run("--baseline", bl, "--l1", l1)
-        # L0 WARN (missing) → overall WARN, but exit 0 (informational)
+        l1 = self._lcov("l1.info", 100, 80)
+        r = self._run("--baseline", bl, "--l0", "/nonexistent/l0.info", "--l1", l1)
+        # L0 requested but missing → overall WARN, but exit 0 (informational)
         self.assertEqual(r.returncode, 0, msg=r.stdout + r.stderr)
         self.assertIn("coverage data missing", r.stdout)
         self.assertIn("[WARN]", r.stdout)
 
     # ===========================================================================
-    # SCENARIO 11 — L1 job fails (symmetric to scenario 10)
+    # SCENARIO 11 — L1 artifact missing (symmetric to scenario 10)
     # ===========================================================================
 
     def test_s11_l1_artifacts_absent_l0_passes(self):
         bl = self._baseline({"L0": 75.0, "L1": 75.0})
-        l0 = self._lcov("l0.info", 100, 80)  # L1 omitted intentionally
-        r = self._run("--baseline", bl, "--l0", l0)
+        l0 = self._lcov("l0.info", 100, 80)
+        r = self._run("--baseline", bl, "--l0", l0, "--l1", "/nonexistent/l1.info")
         self.assertEqual(r.returncode, 0, msg=r.stdout + r.stderr)
         self.assertIn("coverage data missing", r.stdout)
         self.assertIn("[WARN]", r.stdout)
 
     # ===========================================================================
-    # SCENARIO 12 — Both L0 AND L1 jobs fail
-    # Coverage Gate does NOT trigger (workflow-level).  At script level, both
-    # .info files are absent → both SKIP → exit 0 (harmless; gate is already
-    # blocked at the workflow graph layer before the script is ever called).
+    # SCENARIO 12 — Both artifacts missing (both explicitly requested but absent)
     # ===========================================================================
 
     def test_s12_both_artifacts_absent(self):
         bl = self._baseline({"L0": 75.0, "L1": 75.0})
-        # Neither --l0 nor --l1 provided
-        r = self._run("--baseline", bl)
+        r = self._run(
+            "--baseline", bl,
+            "--l0", "/nonexistent/l0.info",
+            "--l1", "/nonexistent/l1.info",
+        )
         self.assertEqual(r.returncode, 0, msg=r.stdout + r.stderr)
-        # Both rows + summary line show coverage data missing, OVERALL WARN
+        # Both rows show coverage data missing, OVERALL WARN
         self.assertGreaterEqual(r.stdout.count("coverage data missing"), 2)
         self.assertIn("[WARN]", r.stdout)
         self.assertIn("NOTE:", r.stdout)

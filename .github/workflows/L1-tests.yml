@@ -1,7 +1,9 @@
 name: DobbyL1Test
 on:
   push:
+    branches-ignore: [ main, develop, 'sprint/**', 'release/**' ]
   pull_request:
+    branches-ignore: [ main, develop, 'sprint/**', 'release/**' ]
   workflow_call:
 
 jobs:

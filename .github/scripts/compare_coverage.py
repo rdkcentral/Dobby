@@ -200,8 +200,8 @@ def load_baseline(path: str) -> dict:
 def main() -> None:
     parser = argparse.ArgumentParser(
         description=(
-            "Compare L0/L1 coverage against the develop baseline.\n"
-            "Exits 1 when coverage fails threshold or regresses from baseline."
+            "Compare L1 (and optionally L0) coverage against the develop baseline.\n"
+            "Always exits 0; prints [WARN] when coverage is below threshold or regresses from baseline."
         )
     )
     parser.add_argument("--baseline", required=True, metavar="PATH",
@@ -255,10 +255,18 @@ def main() -> None:
                 file=sys.stderr,
             )
 
-    l0_ok, l0_result, l0_delta, l0_reason = _suite_analysis(l0_coverage, baseline_l0)
-    l1_ok, l1_result, l1_delta, l1_reason = _suite_analysis(l1_coverage, baseline_l1)
+    # Analyse only suites that were explicitly requested via --l0 / --l1.
+    # Non-requested suites are omitted entirely from the table and overall status.
+    _candidates = [("L0", l0_coverage, baseline_l0, args.l0),
+                   ("L1", l1_coverage, baseline_l1, args.l1)]
+    suite_results = []
+    for _name, _cov, _base, _arg in _candidates:
+        if not _arg:
+            continue
+        _ok, _result, _delta, _reason = _suite_analysis(_cov, _base)
+        suite_results.append((_name, _cov, _base, _result, _delta, _ok, _reason))
 
-    all_ok       = l0_ok and l1_ok
+    all_ok       = all(ok for _, _, _, _, _, ok, _ in suite_results) if suite_results else True
     status_token = _colored("[PASS]", True) if all_ok else _colored("[WARN]", False)
 
     # Output report
@@ -275,10 +283,7 @@ def main() -> None:
 
     # Coverage table
     print(f"  {'Suite':<7}{'Current':<9}{'Baseline':<10}{'Delta':<10}Result")
-    for name, current, base, result, delta_disp in [
-        ("L0", l0_coverage, baseline_l0, l0_result, l0_delta),
-        ("L1", l1_coverage, baseline_l1, l1_result, l1_delta),
-    ]:
+    for name, current, base, result, delta_disp, ok, reason in suite_results:
         cur_str  = f"{current:.2f}%" if current is not None else "N/A"
         base_str = f"{base:.2f}%"    if base    is not None else "N/A"
         print(f"  {name:<7}{cur_str:<9}{base_str:<10}{delta_disp:<10}{result}")
@@ -286,14 +291,14 @@ def main() -> None:
     print(_SEP)
 
     # Summary + overall bar
-    warn_suites = [(n, r) for n, r in [("L0", l0_reason), ("L1", l1_reason)] if r]
+    warn_suites = [(name, reason) for name, _, _, _, _, ok, reason in suite_results if reason]
     summary = _build_summary(warn_suites)
     if summary:
         print(f"  {summary}")
 
-    # Notify when one or both suites had no coverage data (artifact absent).
-    # Gate logic is unchanged — SKIP is treated as passing by design.
-    skipped = [n for n, cov in [("L0", l0_coverage), ("L1", l1_coverage)] if cov is None]
+    # Notify only when a requested suite had no coverage data (broken artifact).
+    # Gate logic is unchanged — missing data is treated as WARN by design.
+    skipped = [name for name, cov, _, _, _, _, _ in suite_results if cov is None]
     if skipped:
         print(f"  NOTE: {_join_names(skipped)} coverage data absent \u2014 artifact missing or unreadable.")
 

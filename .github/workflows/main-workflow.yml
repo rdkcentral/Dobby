@@ -16,6 +16,9 @@ jobs:
     name: Coverage Gate
     needs: [trigger-L1]
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
     # Transient runner/action failures must not block
     continue-on-error: true
     steps:
