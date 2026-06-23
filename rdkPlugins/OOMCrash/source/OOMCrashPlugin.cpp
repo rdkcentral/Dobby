@@ -19,7 +19,10 @@
 
 #include "OOMCrashPlugin.h"
 
+#include <cstdarg>
+#include <fcntl.h>
 #include <map>
+#include <unistd.h>
 
 #define FIREBOLT_STATE          "fireboltState"
 #define FIREBOLT_STATE_PREV     "fireboltState_prev"
@@ -234,7 +237,11 @@ bool OOMCrash::readCgroup(unsigned long *val)
 
         if (!fp)
         {
-            if (errno != ENOENT)
+            if (errno == ENOENT)
+                AI_LOG_WARN("cgroup file '%s' not found — cgroup may have been "
+                            "destroyed before postHalt (race condition)",
+                            path.c_str());
+            else
                 AI_LOG_ERROR("failed to open '%s' (%d - %s)", path.c_str(), errno, strerror(errno));
 
             return false;
@@ -299,11 +306,19 @@ bool OOMCrash::readCgroup(unsigned long *val)
             *val = oomKill;
             return true;
         }
-        if (foundUnderOom)
+        if (foundUnderOom && underOom > 0)
         {
-            AI_LOG_INFO("'oom_kill' not present (kernel < 4.13), using 'under_oom' value");
+            AI_LOG_INFO("'oom_kill' not present (kernel < 4.13), 'under_oom' is active");
             *val = underOom;
             return true;
+        }
+        if (foundUnderOom)
+        {
+            // under_oom is 0 — OOM pressure may have cleared before postHalt.
+            // Return false so checkForOOM() falls through to isMemoryAtLimit().
+            AI_LOG_INFO("'oom_kill' not present (kernel < 4.13), 'under_oom' is 0 "
+                        "(transient flag may have cleared); deferring to memory limit check");
+            return false;
         }
         AI_LOG_ERROR("neither 'oom_kill' nor 'under_oom' found in '%s'", path.c_str());
         return false;
@@ -361,12 +376,17 @@ bool OOMCrash::isMemoryAtLimit()
  *
  *  Detection priority:
  *    1. oom_kill > 0   — from memory.oom_control (v1) or memory.events (v2).
- *                        Authoritative: if readCgroup() succeeds and returns 0,
- *                        the kernel confirms no OOM kill occurred and detection
- *                        stops here (isMemoryAtLimit() is NOT consulted).
- *    2. isMemoryAtLimit() — only reached when readCgroup() itself failed (cgroup
- *                        file unreadable).  Compares max usage against the
- *                        configured limit as a last-resort heuristic.
+ *                        Authoritative: kernel OOM kill confirmed.
+ *    2. oom_kill == 0 but isMemoryAtLimit() — "soft OOM".  When swap is
+ *                        available (memsw.limit > mem.limit), the kernel swaps
+ *                        rather than invoking the OOM killer.  DobbyInit detects
+ *                        allocation failures (failcnt) and kills the app with
+ *                        SIGTERM.  oom_kill stays 0 but max_usage hitting the
+ *                        limit confirms memory pressure caused the death.
+ *    3. oom_kill == 0 and memory not at limit — no OOM, normal termination.
+ *    4. readCgroup() failed + isMemoryAtLimit() — cgroup files unreadable
+ *                        (under_oom=0 on kernel < 4.13, or ENOENT race).
+ *                        Falls back to high-water-mark heuristic.
  *
  * @return true if OOM detected.
  */
@@ -376,15 +396,52 @@ bool OOMCrash::checkForOOM()
     unsigned long oomKill = 0;
     bool cgroupRead = readCgroup(&oomKill);
 
+    // Helper: append a log line to /tmp/oomcrash_<id>.log using direct file I/O.
+    // sd_journal_send() from the forked child is unreliable under memory pressure
+    // (and stderr routes through the same journald socket on systemd services).
+    // Direct file writes use page cache and are far more resilient.
+    const std::string logFile = "/tmp/oomcrash_" + mUtils->getContainerId() + ".log";
+    auto fileLog = [&logFile](const char *fmt, ...)
+    {
+        char buf[256];
+        va_list ap;
+        va_start(ap, fmt);
+        int n = vsnprintf(buf, sizeof(buf), fmt, ap);
+        va_end(ap);
+        if (n > 0)
+        {
+            int fd = open(logFile.c_str(), O_WRONLY | O_CREAT | O_APPEND, 0644);
+            if (fd >= 0)
+            {
+                (void)write(fd, buf, std::min(n, (int)sizeof(buf) - 1));
+                close(fd);
+            }
+        }
+    };
+
     if (cgroupRead && oomKill > 0)
     {
         // cgroup counter is authoritative — OOM kill confirmed
         AI_LOG_INFO("oom_control reports OOM (value=%lu) for container '%s'",
                     oomKill, mUtils->getContainerId().c_str());
+        fileLog("OOMCrash: oom_control reports OOM (value=%lu) for container '%s'\n",
+                oomKill, mUtils->getContainerId().c_str());
+    }
+    else if (cgroupRead && isMemoryAtLimit())
+    {
+        // oom_kill is 0 (kernel OOM killer didn't fire) but memory usage hit
+        // the limit.  This happens when swap is available: the kernel swaps
+        // rather than killing, failcnt increments, and DobbyInit terminates
+        // the app with SIGTERM.  Treat as a "soft OOM".
+        AI_LOG_WARN("oom_kill=0 but max memory usage reached limit for container '%s' "
+                    "(soft OOM — killed by init due to memory pressure, not by kernel OOM killer)",
+                    mUtils->getContainerId().c_str());
+        fileLog("OOMCrash: soft OOM for container '%s' (oom_kill=0, memory at limit)\n",
+                mUtils->getContainerId().c_str());
     }
     else if (cgroupRead)
     {
-        // cgroup read succeeded and counter is 0 — kernel says no OOM kill
+        // cgroup read succeeded, counter is 0, and memory didn't hit limit
         AI_LOG_INFO("No OOM kill detected in container '%s'", mUtils->getContainerId().c_str());
         return false;
     }
@@ -393,6 +450,8 @@ bool OOMCrash::checkForOOM()
         // cgroup file was unreadable — fall back to high-water-mark heuristic
         AI_LOG_WARN("cgroup unreadable; max memory usage reached limit for container '%s'",
                     mUtils->getContainerId().c_str());
+        fileLog("OOMCrash: cgroup unreadable, memory at limit for container '%s'\n",
+                mUtils->getContainerId().c_str());
     }
     else
     {
@@ -434,11 +493,15 @@ bool OOMCrash::checkForOOM()
     {
         AI_LOG_WARN("OOM kill detected: container '%s' fireboltState '%s'",
                     mUtils->getContainerId().c_str(), fireboltState.c_str());
+        fileLog("OOMCrash: container '%s' fireboltState '%s'\n",
+                mUtils->getContainerId().c_str(), fireboltState.c_str());
     }
     else
     {
         AI_LOG_WARN("OOM kill detected: container '%s' (firebolt state unknown)",
                     mUtils->getContainerId().c_str());
+        fileLog("OOMCrash: container '%s' (firebolt state unknown)\n",
+                mUtils->getContainerId().c_str());
     }
 
     return true;
