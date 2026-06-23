@@ -240,9 +240,9 @@ std::string Minidump::getDestinationFile(int fd)
 
     std::string containerId = mUtils->getContainerId();
     if (containerId.find("apps_") != std::string::npos) {
-        //remove prefix before "apps_" from containerId
-        containerId = containerId.substr(containerId.find("apps_"));
-    }
+         //remove prefix before and including "apps_" from containerId
+        containerId = containerId.substr(containerId.find("apps_") + 5);
+      }
     if (it != annotations.end()) {
         fileName = containerId + MINIDUMP_FN_SEPERATOR + it->second.c_str() + MINIDUMP_FN_SEPERATOR + timeString.str();
         if (fileName.length() > MINIDUMP_FILENAME_LENGTH)
