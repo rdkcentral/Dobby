@@ -19,10 +19,8 @@
 
 #include "OOMCrashPlugin.h"
 
-#include <cstdarg>
-#include <fcntl.h>
 #include <map>
-#include <unistd.h>
+#include <syslog.h>
 
 #define FIREBOLT_STATE          "fireboltState"
 #define FIREBOLT_STATE_PREV     "fireboltState_prev"
@@ -396,36 +394,19 @@ bool OOMCrash::checkForOOM()
     unsigned long oomKill = 0;
     bool cgroupRead = readCgroup(&oomKill);
 
-    // Helper: append a log line to /tmp/oomcrash_<id>.log using direct file I/O.
-    // sd_journal_send() from the forked child is unreliable under memory pressure
-    // (and stderr routes through the same journald socket on systemd services).
-    // Direct file writes use page cache and are far more resilient.
-    const std::string logFile = "/tmp/oomcrash_" + mUtils->getContainerId() + ".log";
-    auto fileLog = [&logFile](const char *fmt, ...)
-    {
-        char buf[256];
-        va_list ap;
-        va_start(ap, fmt);
-        int n = vsnprintf(buf, sizeof(buf), fmt, ap);
-        va_end(ap);
-        if (n > 0)
-        {
-            int fd = open(logFile.c_str(), O_WRONLY | O_CREAT | O_APPEND, 0644);
-            if (fd >= 0)
-            {
-                (void)write(fd, buf, std::min(n, (int)sizeof(buf) - 1));
-                close(fd);
-            }
-        }
-    };
+    // Open syslog connection immediately (LOG_NDELAY) so the socket credentials
+    // are captured while this child PID still exists.  Unlike sd_journal_send()
+    // (used by AI_LOG), syslog() embeds the ident and PID in the message text
+    // itself, so journald can process the message even after the child exits.
+    openlog("DobbyDaemon", LOG_PID | LOG_NDELAY, LOG_DAEMON);
 
     if (cgroupRead && oomKill > 0)
     {
         // cgroup counter is authoritative — OOM kill confirmed
         AI_LOG_INFO("oom_control reports OOM (value=%lu) for container '%s'",
                     oomKill, mUtils->getContainerId().c_str());
-        fileLog("OOMCrash: oom_control reports OOM (value=%lu) for container '%s'\n",
-                oomKill, mUtils->getContainerId().c_str());
+        syslog(LOG_WARNING, "OOMCrash: oom_control reports OOM (value=%lu) for container '%s'",
+               oomKill, mUtils->getContainerId().c_str());
     }
     else if (cgroupRead && isMemoryAtLimit())
     {
@@ -436,13 +417,14 @@ bool OOMCrash::checkForOOM()
         AI_LOG_WARN("oom_kill=0 but max memory usage reached limit for container '%s' "
                     "(soft OOM — killed by init due to memory pressure, not by kernel OOM killer)",
                     mUtils->getContainerId().c_str());
-        fileLog("OOMCrash: soft OOM for container '%s' (oom_kill=0, memory at limit)\n",
-                mUtils->getContainerId().c_str());
+        syslog(LOG_WARNING, "OOMCrash: soft OOM for container '%s' (oom_kill=0, memory at limit)",
+               mUtils->getContainerId().c_str());
     }
     else if (cgroupRead)
     {
         // cgroup read succeeded, counter is 0, and memory didn't hit limit
         AI_LOG_INFO("No OOM kill detected in container '%s'", mUtils->getContainerId().c_str());
+        closelog();
         return false;
     }
     else if (isMemoryAtLimit())
@@ -450,12 +432,13 @@ bool OOMCrash::checkForOOM()
         // cgroup file was unreadable — fall back to high-water-mark heuristic
         AI_LOG_WARN("cgroup unreadable; max memory usage reached limit for container '%s'",
                     mUtils->getContainerId().c_str());
-        fileLog("OOMCrash: cgroup unreadable, memory at limit for container '%s'\n",
-                mUtils->getContainerId().c_str());
+        syslog(LOG_WARNING, "OOMCrash: cgroup unreadable, memory at limit for container '%s'",
+               mUtils->getContainerId().c_str());
     }
     else
     {
         AI_LOG_INFO("No OOM kill detected in container '%s'", mUtils->getContainerId().c_str());
+        closelog();
         return false;
     }
 
@@ -493,17 +476,18 @@ bool OOMCrash::checkForOOM()
     {
         AI_LOG_WARN("OOM kill detected: container '%s' fireboltState '%s'",
                     mUtils->getContainerId().c_str(), fireboltState.c_str());
-        fileLog("OOMCrash: container '%s' fireboltState '%s'\n",
-                mUtils->getContainerId().c_str(), fireboltState.c_str());
+        syslog(LOG_WARNING, "OOMCrash: container '%s' fireboltState '%s'",
+               mUtils->getContainerId().c_str(), fireboltState.c_str());
     }
     else
     {
         AI_LOG_WARN("OOM kill detected: container '%s' (firebolt state unknown)",
                     mUtils->getContainerId().c_str());
-        fileLog("OOMCrash: container '%s' (firebolt state unknown)\n",
-                mUtils->getContainerId().c_str());
+        syslog(LOG_WARNING, "OOMCrash: container '%s' (firebolt state unknown)",
+               mUtils->getContainerId().c_str());
     }
 
+    closelog();
     return true;
 }
 
