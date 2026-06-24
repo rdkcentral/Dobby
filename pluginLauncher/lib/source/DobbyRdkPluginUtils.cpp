@@ -813,6 +813,11 @@ bool DobbyRdkPluginUtils::removeAnnotation(const std::string &key)
     const auto it = mAnnotations.find(key);
     if (it != mAnnotations.end()){
         mAnnotations.erase(it);
+        // remove metadata entries derived in addAnnotation()
+        mAnnotations.erase(key + "_ts");
+        mAnnotations.erase(key + "_prev");
+        mAnnotations.erase(key + "_prev_ts");
+      
         success = true;
     } else {
         AI_LOG_ERROR("Key %s not found in annotations", key.c_str());
