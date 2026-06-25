@@ -72,11 +72,15 @@ bool OOMCrash::postInstallation()
         return false;
     }
 
-    const std::string path = mContainerConfig->rdk_plugins->oomcrash->data->path;
+    const std::string path = mContainerConfig->rdk_plugins->oomcrash->data->path
+                             ? mContainerConfig->rdk_plugins->oomcrash->data->path
+                             : "";
     if (path.empty())
     {
-        AI_LOG_ERROR("OOMCrash path is empty");
-        return false;
+        // No path configured — log-only mode, skip filesystem setup
+        AI_LOG_INFO("OOMCrash running in log-only mode (no path configured) for container %s",
+                    mUtils->getContainerId().c_str());
+        return true;
     }
 
     if (!mUtils->mkdirRecursive((mRootfsPath + path).c_str(), 0755) && errno != EEXIST)
@@ -114,23 +118,20 @@ bool OOMCrash::postHalt()
         return false;
     }
 
+    const std::string path = mContainerConfig->rdk_plugins->oomcrash->data->path
+                             ? mContainerConfig->rdk_plugins->oomcrash->data->path
+                             : "";
+
     bool oomDetected = false;
     if (mUtils->exitStatus != 0)
         oomDetected = checkForOOM();
 
-    if (oomDetected)
+    if (oomDetected && !path.empty())
         createFileForOOM();
 
     // Remove the crashFile if container exits normally or if no OOM detected
-    if (mUtils->exitStatus == 0 || !oomDetected)
+    if (!path.empty() && (mUtils->exitStatus == 0 || !oomDetected))
     {
-        std::string path = mContainerConfig->rdk_plugins->oomcrash->data->path;
-        if (path.empty())
-        {
-            AI_LOG_ERROR("OOMCrash path is empty");
-            return false;
-        }
-
         std::string crashFile = path + "/oom_crashed_" + mUtils->getContainerId() + ".txt";
         if (remove(crashFile.c_str()) != 0)
         {
@@ -166,9 +167,12 @@ std::vector<std::string> OOMCrash::getDependencies() const
     std::vector<std::string> dependencies;
     const rt_defs_plugins_oom_crash* pluginConfig = mContainerConfig->rdk_plugins->oomcrash;
 
-    for (size_t i = 0; i < pluginConfig->depends_on_len; i++)
+    if (pluginConfig && pluginConfig->depends_on)
     {
-        dependencies.push_back(pluginConfig->depends_on[i]);
+        for (size_t i = 0; i < pluginConfig->depends_on_len; i++)
+        {
+            dependencies.push_back(pluginConfig->depends_on[i]);
+        }
     }
 
     return dependencies;
@@ -290,12 +294,10 @@ bool OOMCrash::readCgroup(unsigned long *val)
                 free(fcLine);
                 fclose(fcFp);
 
-                const bool killedBySIGKILL = WIFSIGNALED(mUtils->exitStatus) &&
-                                             (WTERMSIG(mUtils->exitStatus) == SIGKILL);
-                if (failcnt > 0 && killedBySIGKILL)
+                if (failcnt > 0)
                 {
                     AI_LOG_WARN("'oom_kill' not available in '%s' (kernel < 4.13); "
-                                "heuristic: failcnt=%lu and container killed by SIGKILL — likely OOM",
+                                "heuristic: failcnt=%lu — likely OOM",
                                 path.c_str(), failcnt);
                     *val = failcnt;
                     return true;
