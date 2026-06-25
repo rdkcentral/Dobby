@@ -718,6 +718,7 @@ bool DobbyRdkPluginManager::executeHookTimeout(const std::string &pluginName,
         char result = static_cast<char>(executeHook(pluginName, hook));
          // Set result in shared memory
         *static_cast<char*>(sharedMemory) = result;
+        usleep(100000); // 100ms delay — gives journald time to process
         _exit(0);
     }
     else if (workerPid < 0)
