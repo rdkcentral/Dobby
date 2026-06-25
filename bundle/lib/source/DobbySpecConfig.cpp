@@ -665,6 +665,13 @@ bool DobbySpecConfig::parseSpec(ctemplate::TemplateDictionary* dictionary,
         mRdkPluginsJson[pluginName]["required"] = false;
     }
 
+    // step 6.2 - always enable the OOMCrash plugin (unless already configured)
+    if (!mRdkPluginsJson.isMember("oomcrash"))
+    {
+        mRdkPluginsJson["oomcrash"]["data"] = Json::Value(Json::objectValue);
+        mRdkPluginsJson["oomcrash"]["required"] = false;
+    }
+
     // step 7 - process RDK plugins json into dictionary
     if (!processRdkPlugins(mSpec["rdkPlugins"], mDictionary))
     {
