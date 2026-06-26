@@ -20,7 +20,6 @@
 #include "OOMCrashPlugin.h"
 
 #include <map>
-#include <unistd.h>
 
 #define FIREBOLT_STATE          "fireboltState"
 #define FIREBOLT_STATE_PREV     "fireboltState_prev"
@@ -148,16 +147,6 @@ bool OOMCrash::postHalt()
     }
 
     AI_LOG_INFO("OOMCrash postHalt hook is running for container with hostname %s", mUtils->getContainerId().c_str());
-
-    // TEMPORARY DIAGNOSTIC: keep this forked child process alive briefly so
-    // journald has time to resolve /proc/<pid>/ and process the AI_LOG
-    // messages above before the child calls _exit(0).  If the AI_LOG lines
-    // now appear reliably in the journal (whereas without this sleep they
-    // were intermittently dropped), it proves the log loss is a journald
-    // PID-resolution race against the short-lived child, not a logging bug.
-    // REMOVE before merging.
-    usleep(200000); // 200 ms
-
     return true;
 }
 
