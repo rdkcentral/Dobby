@@ -42,80 +42,6 @@
 #include <list>
 #include <thread>
 
-#ifdef USE_SYSTEMD
-#define SD_JOURNAL_SUPPRESS_LOCATION
-#include <systemd/sd-journal.h>
-#include <syslog.h>
-
-// -----------------------------------------------------------------------------
-/**
- * @brief Redirect this process's AI_LOG output to a journald *stream* fd
- * instead of per-message datagrams.
- *
- * Plugin hooks run inside a short-lived worker process forked by
- * executeHookTimeout(). If that worker logs via sd_journal_send() (datagrams)
- * and then _exit()s, journald may not have resolved /proc/<pid> for message
- * attribution before the pid disappears, so the messages get dropped (a
- * journald PID-resolution race). A journald stream fd avoids this: journald
- * captures the sender's identity via SO_PEERCRED at connect time - while we
- * are still alive - so every line written is attributed correctly even after
- * we exit, and the kernel preserves the buffered stream data until journald
- * reads EOF.
- *
- * @return The stream fd on success (left open for the lifetime of the
- *         process), or -1 on failure (logging is left unchanged).
- */
-static int redirectLoggingToJournaldStream()
-{
-    int journalFd = sd_journal_stream_fd("DobbyDaemon", LOG_INFO, 1 /* level_prefix */);
-    if (journalFd < 0)
-    {
-        // Leave the inherited logger in place - no worse than before
-        return -1;
-    }
-
-    AICommon::initLogging(
-        [journalFd](int level, const char *file, const char *func, int line, const char *message)
-        {
-            int priority;
-            const char *levelStr;
-            switch (level)
-            {
-                case AI_DEBUG_LEVEL_FATAL:     priority = LOG_CRIT;    levelStr = "FTL: "; break;
-                case AI_DEBUG_LEVEL_ERROR:     priority = LOG_ERR;     levelStr = "ERR: "; break;
-                case AI_DEBUG_LEVEL_WARNING:   priority = LOG_WARNING; levelStr = "WRN: "; break;
-                case AI_DEBUG_LEVEL_MILESTONE: priority = LOG_NOTICE;  levelStr = "MIL: "; break;
-                case AI_DEBUG_LEVEL_INFO:      priority = LOG_INFO;    levelStr = "NFO: "; break;
-                case AI_DEBUG_LEVEL_DEBUG:     priority = LOG_DEBUG;   levelStr = "DBG: "; break;
-                default:                       priority = LOG_INFO;    levelStr = ": ";    break;
-            }
-
-            // With level_prefix enabled, journald reads a leading "<N>" on each
-            // line to set the message priority, then stores the remainder as
-            // the message text. Match the daemon's journald format exactly: the
-            // text is just "<level>: <message>" (file/func/line were carried in
-            // separate CODE_* fields, not the message text).
-            (void)file;
-            (void)func;
-            (void)line;
-            char buf[512];
-            int len = snprintf(buf, sizeof(buf), "<%d>%s%s\n",
-                               priority, levelStr, message);
-            if (len < 0)
-                return;
-            if (len > static_cast<int>(sizeof(buf)))
-                len = sizeof(buf);
-
-            // write() copies into journald's socket buffer synchronously, so the
-            // data is safe even if we _exit() immediately afterwards.
-            ssize_t written = TEMP_FAILURE_RETRY(write(journalFd, buf, len));
-            (void)written;
-        });
-
-    return journalFd;
-}
-#endif // USE_SYSTEMD
-
 // -----------------------------------------------------------------------------
 /**
  * @brief Create instance of DobbyRdkPlugin Manager and load all plugins that
@@ -788,13 +714,6 @@ bool DobbyRdkPluginManager::executeHookTimeout(const std::string &pluginName,
         // Create a new SID for the child process
         if (setsid() < 0)
             _exit(EXIT_FAILURE);
-
-#ifdef USE_SYSTEMD
-        // This worker is short-lived: it runs the hook and then _exit()s below.
-        // Route its logs through a journald stream fd so they aren't dropped by
-        // the journald PID-resolution race (see redirectLoggingToJournaldStream).
-        redirectLoggingToJournaldStream();
-#endif
 
         char result = static_cast<char>(executeHook(pluginName, hook));
          // Set result in shared memory
