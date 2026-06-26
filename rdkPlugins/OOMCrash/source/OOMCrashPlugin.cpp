@@ -330,38 +330,83 @@ bool OOMCrash::readCgroup(unsigned long *val)
  *        limit, indicating the container hit its memory ceiling.
  *
  *  This is used as a fallback OOM indicator on older kernels (< 4.13) where
- *  the oom_kill counter does not exist and under_oom is transient.
- *  memory.max_usage_in_bytes is the high-water mark and persists until the
- *  cgroup is destroyed.
+ *  the oom_kill counter does not exist and under_oom is transient. The
+ *  high-water mark persists until the cgroup is destroyed.
+ *
+ *  cgroups v1: compares memory.max_usage_in_bytes against memory.limit_in_bytes
+ *    (and the memsw equivalents) under /sys/fs/cgroup/memory/<id>.
+ *
+ *  cgroups v2: compares memory.peak against memory.max (and the swap
+ *    equivalents) under /sys/fs/cgroup/<id>, falling back to the
+ *    system.slice scope path - mirroring readCgroup(). A limit file may
+ *    hold the literal "max" (unlimited); such pairs are skipped.
  *
  * @return true if max usage >= limit for memory or memory+swap.
  */
 bool OOMCrash::isMemoryAtLimit()
 {
-    std::string basePath = "/sys/fs/cgroup/memory/" + mUtils->getContainerId();
+    const std::string containerId = mUtils->getContainerId();
 
-    const char *pairs[][2] = {
-        { "/memory.max_usage_in_bytes",      "/memory.limit_in_bytes" },
-        { "/memory.memsw.max_usage_in_bytes", "/memory.memsw.limit_in_bytes" },
+    // Detect cgroups version by checking for the v2 unified hierarchy
+    struct stat st;
+    const bool isCgroupV2 = (stat("/sys/fs/cgroup/cgroup.controllers", &st) == 0);
+
+    // Reads a single value from a cgroup file. Returns false on open/parse
+    // failure or when the file holds the literal "max" (v2 unlimited).
+    auto readValue = [](const std::string &filePath, unsigned long *out) -> bool
+    {
+        FILE *fp = fopen(filePath.c_str(), "r");
+        if (!fp)
+            return false;
+
+        char token[64] = {0};
+        bool ok = (fscanf(fp, "%63s", token) == 1);
+        fclose(fp);
+
+        if (!ok || strcmp(token, "max") == 0)
+            return false;
+
+        char *end = nullptr;
+        unsigned long v = strtoul(token, &end, 10);
+        if (end == token || *end != '\0')
+            return false;
+
+        *out = v;
+        return true;
     };
+
+    std::string basePath;
+    const char *pairs[2][2];
+
+    if (isCgroupV2)
+    {
+        // Resolve the container's cgroup dir in the unified hierarchy, matching
+        // readCgroup()'s direct + system.slice scope fallback.
+        basePath = "/sys/fs/cgroup/" + containerId;
+        if (stat((basePath + "/memory.max").c_str(), &st) != 0)
+        {
+            basePath = "/sys/fs/cgroup/system.slice/dobby-" + containerId + ".scope";
+        }
+
+        // memory.peak      (kernel >= 5.19) vs memory.max
+        // memory.swap.peak (kernel >= 6.5)  vs memory.swap.max
+        pairs[0][0] = "/memory.peak";       pairs[0][1] = "/memory.max";
+        pairs[1][0] = "/memory.swap.peak";  pairs[1][1] = "/memory.swap.max";
+    }
+    else
+    {
+        basePath = "/sys/fs/cgroup/memory/" + containerId;
+
+        pairs[0][0] = "/memory.max_usage_in_bytes";        pairs[0][1] = "/memory.limit_in_bytes";
+        pairs[1][0] = "/memory.memsw.max_usage_in_bytes";  pairs[1][1] = "/memory.memsw.limit_in_bytes";
+    }
 
     for (const auto &pair : pairs)
     {
         unsigned long maxUsage = 0, limit = 0;
-        std::string maxPath  = basePath + pair[0];
-        std::string limPath  = basePath + pair[1];
-
-        FILE *fpMax = fopen(maxPath.c_str(), "r");
-        FILE *fpLim = fopen(limPath.c_str(), "r");
-
-        bool ok = (fpMax && fpLim &&
-                   fscanf(fpMax, "%lu", &maxUsage) == 1 &&
-                   fscanf(fpLim, "%lu", &limit) == 1);
-
-        if (fpMax) fclose(fpMax);
-        if (fpLim) fclose(fpLim);
-
-        if (ok && limit > 0 && maxUsage >= limit)
+        if (readValue(basePath + pair[0], &maxUsage) &&
+            readValue(basePath + pair[1], &limit) &&
+            limit > 0 && maxUsage >= limit)
         {
             AI_LOG_INFO("%s=%lu reached %s=%lu", pair[0]+1, maxUsage, pair[1]+1, limit);
             return true;
@@ -393,14 +438,17 @@ bool OOMCrash::isMemoryAtLimit()
 
 bool OOMCrash::checkForOOM()
 {
-    unsigned long oomKill = 0;
-    bool cgroupRead = readCgroup(&oomKill);
+    unsigned long oomIndicator = 0;
+    bool cgroupRead = readCgroup(&oomIndicator);
 
-    if (cgroupRead && oomKill > 0)
+    if (cgroupRead && oomIndicator > 0)
     {
-        // cgroup counter is authoritative — OOM kill confirmed
-        AI_LOG_INFO("oom_control reports OOM (value=%lu) for container '%s'",
-                    oomKill, mUtils->getContainerId().c_str());
+        // cgroup OOM indicator is authoritative — OOM confirmed. The exact
+        // source depends on the hierarchy/kernel (memory.oom_control oom_kill
+        // or under_oom on v1, memory.events oom_kill on v2), so keep the
+        // wording generic.
+        AI_LOG_INFO("cgroup OOM indicator set (value=%lu) for container '%s'",
+                    oomIndicator, mUtils->getContainerId().c_str());
     }
     else if (cgroupRead && isMemoryAtLimit())
     {
