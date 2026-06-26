@@ -92,19 +92,15 @@ static int redirectLoggingToJournaldStream()
 
             // With level_prefix enabled, journald reads a leading "<N>" on each
             // line to set the message priority, then stores the remainder as
-            // the message text. Mirror the usual Dobby log format for the text.
+            // the message text. Match the daemon's journald format exactly: the
+            // text is just "<level>: <message>" (file/func/line were carried in
+            // separate CODE_* fields, not the message text).
+            (void)file;
+            (void)func;
+            (void)line;
             char buf[512];
-            int len;
-            if (!file || !func || (line <= 0))
-            {
-                len = snprintf(buf, sizeof(buf), "<%d>%s%s\n",
+            int len = snprintf(buf, sizeof(buf), "<%d>%s%s\n",
                                priority, levelStr, message);
-            }
-            else
-            {
-                len = snprintf(buf, sizeof(buf), "<%d>%s< M:%.64s F:%.64s L:%d > %s\n",
-                               priority, levelStr, file, func, line, message);
-            }
             if (len < 0)
                 return;
             if (len > static_cast<int>(sizeof(buf)))
