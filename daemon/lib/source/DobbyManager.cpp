@@ -831,6 +831,9 @@ int32_t DobbyManager::startContainerFromSpec(const ContainerId &id,
 {
     AI_LOG_FN_ENTRY();
 
+    const auto launchStart = std::chrono::steady_clock::now();
+    auto stageStart = launchStart;
+
     std::lock_guard<std::mutex> locker(mLock);
 
     // the first step is to check we don't already have a container with the
@@ -860,6 +863,12 @@ int32_t DobbyManager::startContainerFromSpec(const ContainerId &id,
         return -1;
     }
 
+    AI_LOG_INFO("Launch timing [%s] phase=parseSpecConfig durationMs=%lld",
+                id.c_str(),
+                static_cast<long long>(std::chrono::duration_cast<std::chrono::milliseconds>(
+                    std::chrono::steady_clock::now() - stageStart).count()));
+    stageStart = std::chrono::steady_clock::now();
+
     // create a (populated) rootfs directory within the bundle from the config
     std::shared_ptr<DobbyRootfs> rootfs =
         std::make_shared<DobbyRootfs>(mUtilities, bundle, config);
@@ -869,6 +878,12 @@ int32_t DobbyManager::startContainerFromSpec(const ContainerId &id,
         return -1;
     }
 
+    AI_LOG_INFO("Launch timing [%s] phase=createRootfs durationMs=%lld",
+                id.c_str(),
+                static_cast<long long>(std::chrono::duration_cast<std::chrono::milliseconds>(
+                    std::chrono::steady_clock::now() - stageStart).count()));
+    stageStart = std::chrono::steady_clock::now();
+
     // create a 'start state' object that wraps the file descriptors
     std::shared_ptr<DobbyStartState> startState =
         std::make_shared<DobbyStartState>(config, files);
@@ -877,6 +892,12 @@ int32_t DobbyManager::startContainerFromSpec(const ContainerId &id,
         AI_LOG_ERROR_EXIT("failed to create 'start state' object");
         return -1;
     }
+
+    AI_LOG_INFO("Launch timing [%s] phase=createStartState durationMs=%lld",
+                id.c_str(),
+                static_cast<long long>(std::chrono::duration_cast<std::chrono::milliseconds>(
+                    std::chrono::steady_clock::now() - stageStart).count()));
+    stageStart = std::chrono::steady_clock::now();
 
     // Set Apparmor profile
     if (mSettings->apparmorSettings().enabled)
@@ -946,11 +967,25 @@ int32_t DobbyManager::startContainerFromSpec(const ContainerId &id,
         }
     }
 
+    AI_LOG_INFO("Launch timing [%s] phase=pluginHooks durationMs=%lld pluginFailure=%s loadedPlugins=%zu",
+                id.c_str(),
+                static_cast<long long>(std::chrono::duration_cast<std::chrono::milliseconds>(
+                    std::chrono::steady_clock::now() - stageStart).count()),
+                pluginFailure ? "true" : "false",
+                rdkPlugins.size());
+    stageStart = std::chrono::steady_clock::now();
+
     // Don't start if necessary plugins have failed
     if (!pluginFailure)
     {
         // Customise the config if necessary
         customiseConfig(config, command, displaySocket, envVars);
+
+        AI_LOG_INFO("Launch timing [%s] phase=customiseConfig durationMs=%lld",
+                    id.c_str(),
+                    static_cast<long long>(std::chrono::duration_cast<std::chrono::milliseconds>(
+                        std::chrono::steady_clock::now() - stageStart).count()));
+        stageStart = std::chrono::steady_clock::now();
 
         if (!config->writeConfigJson(bundle->path() + "/config.json"))
         {
@@ -958,6 +993,11 @@ int32_t DobbyManager::startContainerFromSpec(const ContainerId &id,
         }
         else
         {
+            AI_LOG_INFO("Launch timing [%s] phase=writeConfig durationMs=%lld",
+                        id.c_str(),
+                        static_cast<long long>(std::chrono::duration_cast<std::chrono::milliseconds>(
+                            std::chrono::steady_clock::now() - stageStart).count()));
+
             // if the respawn flag is set in the spec file then we need to store
             // any file descriptors for use at respawn time
             if (config->restartOnCrash())
@@ -966,8 +1006,14 @@ int32_t DobbyManager::startContainerFromSpec(const ContainerId &id,
             }
 
             // try and create and start the container
+            stageStart = std::chrono::steady_clock::now();
             if (createAndStartContainer(id, container, startState->files()))
             {
+                AI_LOG_INFO("Launch timing [%s] phase=createAndStartContainer durationMs=%lld",
+                            id.c_str(),
+                            static_cast<long long>(std::chrono::duration_cast<std::chrono::milliseconds>(
+                                std::chrono::steady_clock::now() - stageStart).count()));
+
                 // get the descriptor of the container and return that to the
                 // caller (need to do this before we move into the map)
                 int32_t cd = container->descriptor;
@@ -976,9 +1022,19 @@ int32_t DobbyManager::startContainerFromSpec(const ContainerId &id,
                 // into the map and then we're done
                 mContainers.emplace(id, std::move(container));
 
+                AI_LOG_INFO("Launch timing [%s] totalStartContainerFromSpecMs=%lld",
+                            id.c_str(),
+                            static_cast<long long>(std::chrono::duration_cast<std::chrono::milliseconds>(
+                                std::chrono::steady_clock::now() - launchStart).count()));
+
                 AI_LOG_FN_EXIT();
                 return cd;
             }
+
+            AI_LOG_INFO("Launch timing [%s] phase=createAndStartContainer durationMs=%lld success=false",
+                        id.c_str(),
+                        static_cast<long long>(std::chrono::duration_cast<std::chrono::milliseconds>(
+                            std::chrono::steady_clock::now() - stageStart).count()));
         }
     }
 
@@ -989,6 +1045,11 @@ int32_t DobbyManager::startContainerFromSpec(const ContainerId &id,
     // something went wrong, however we still want to call the preDestruction
     // hook, in case a hook setup some stuff the post-construction phase above
     onPreDestructionHook(id, container);
+
+    AI_LOG_INFO("Launch timing [%s] totalStartContainerFromSpecMs=%lld success=false",
+                id.c_str(),
+                static_cast<long long>(std::chrono::duration_cast<std::chrono::milliseconds>(
+                    std::chrono::steady_clock::now() - launchStart).count()));
 
     AI_LOG_FN_EXIT();
     return -1;
@@ -3731,4 +3792,5 @@ bool DobbyManager::shouldEnableSTrace(const std::shared_ptr<DobbyConfig> &config
 
     return std::find(apps.begin(), apps.end(), hostName) != apps.end();
 }
+
 
