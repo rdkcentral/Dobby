@@ -149,6 +149,7 @@ std::string Minidump::getDestinationFile()
     timeString << std::put_time(std::localtime(&currentTime), "%FT%T");
     std::string destFile;
     std::string fileName;
+    std::string containerId = mUtils->getContainerId();
 
     std::string dir(mContainerConfig->rdk_plugins->minidump->data->destination_path);
 
@@ -156,17 +157,57 @@ std::string Minidump::getDestinationFile()
 
     auto it = annotations.find(FIREBOLT_STATE);
     if (it != annotations.end()) {
-        fileName = mUtils->getContainerId() + MINIDUMP_FN_SEPERATOR + it->second.c_str() + MINIDUMP_FN_SEPERATOR + timeString.str();
-        if (fileName.length() > MINIDUMP_FILENAME_LENGTH)
-            fileName.resize(MINIDUMP_FILENAME_LENGTH);
+        // Format: containerId<#=#>state<#=#>timestamp
+        // Timestamp length is fixed at 19 chars (e.g., "2021-07-06T12:34:56")
+        // Separator length is 5 chars each
+        // Total fixed: 19 (timestamp) + 5 (sep1) + 5 (sep2) = 29 chars
+        // Available for containerId + state: 44 - 29 = 15 chars
+        
+        std::string state = it->second.c_str();
+        int fixedLength = timeString.str().length() + (2 * MINIDUMP_FN_SEPERATOR.length()); // timestamp + 2 separators
+        int availableLength = MINIDUMP_FILENAME_LENGTH - fixedLength;
+        
+        // Allocate space: try to keep full state, truncate containerId if needed
+        int containerIdLength = availableLength - state.length();
+        if (containerIdLength < 1)
+        {
+            // If state is too long, truncate state and give containerId minimal space
+            containerIdLength = 1;
+            state.resize(availableLength - containerIdLength);
+        }
+        else if (containerIdLength > (int)containerId.length())
+        {
+            // If full containerId fits, use it all
+            containerIdLength = containerId.length();
+        }
+        
+        std::string truncatedContainerId = containerId.substr(0, containerIdLength);
+        fileName = truncatedContainerId + MINIDUMP_FN_SEPERATOR + state + MINIDUMP_FN_SEPERATOR + timeString.str();
         destFile = dir + "/" + fileName + ".dmp";
         AI_LOG_INFO("Firebolt state: %s, minidump filename: %s", it->second.c_str(), destFile.c_str());
     }else{
-        AI_LOG_INFO("Firebolt state not found");
-        fileName = mUtils->getContainerId() + MINIDUMP_FN_SEPERATOR + timeString.str();
-        if (fileName.length() > MINIDUMP_FILENAME_LENGTH)
-            fileName.resize(MINIDUMP_FILENAME_LENGTH);
+        // Format: containerId<#=#>timestamp
+        // Timestamp length is fixed at 19 chars
+        // Separator length is 5 chars
+        // Total fixed: 19 (timestamp) + 5 (separator) = 24 chars
+        // Available for containerId: 44 - 24 = 20 chars
+        
+        int fixedLength = timeString.str().length() + MINIDUMP_FN_SEPERATOR.length(); // timestamp + separator
+        int containerIdLength = MINIDUMP_FILENAME_LENGTH - fixedLength;
+        
+        if (containerIdLength > (int)containerId.length())
+        {
+            containerIdLength = containerId.length();
+        }
+        else if (containerIdLength < 1)
+        {
+            containerIdLength = 1;
+        }
+        
+        std::string truncatedContainerId = containerId.substr(0, containerIdLength);
+        fileName = truncatedContainerId + MINIDUMP_FN_SEPERATOR + timeString.str();
         destFile = dir + "/" + fileName + ".dmp";
+        AI_LOG_INFO("Firebolt state not found");
     }
 
     return destFile;
@@ -192,3 +233,4 @@ std::vector<std::string> Minidump::getDependencies() const
 
     return dependencies;
 }
+
