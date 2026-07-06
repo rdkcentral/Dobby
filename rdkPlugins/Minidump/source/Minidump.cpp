@@ -23,6 +23,7 @@
 #include <sstream>
 #include <unistd.h>
 #include <iomanip>
+#include <cstring>
 
 /**
  * Need to do this at the start of every plugin to make sure the correct
@@ -164,7 +165,7 @@ std::string Minidump::getDestinationFile()
         // Available for containerId + state: 44 - 29 = 15 chars
         
         std::string state = it->second.c_str();
-        int fixedLength = timeString.str().length() + (2 * MINIDUMP_FN_SEPERATOR.length()); // timestamp + 2 separators
+        int fixedLength = timeString.str().length() + (2 * strlen(MINIDUMP_FN_SEPERATOR)); // timestamp + 2 separators
         int availableLength = MINIDUMP_FILENAME_LENGTH - fixedLength;
         
         // Allocate space: try to keep full state, truncate containerId if needed
@@ -192,7 +193,7 @@ std::string Minidump::getDestinationFile()
         // Total fixed: 19 (timestamp) + 5 (separator) = 24 chars
         // Available for containerId: 44 - 24 = 20 chars
         
-        int fixedLength = timeString.str().length() + MINIDUMP_FN_SEPERATOR.length(); // timestamp + separator
+        int fixedLength = timeString.str().length() + strlen(MINIDUMP_FN_SEPERATOR); // timestamp + separator
         int containerIdLength = MINIDUMP_FILENAME_LENGTH - fixedLength;
         
         if (containerIdLength > (int)containerId.length())
