@@ -573,6 +573,9 @@ bool DobbyManager::createAndStart(const ContainerId &id,
 {
     AI_LOG_FN_ENTRY();
 
+    const auto createAndStartBegin = std::chrono::steady_clock::now();
+    auto stageStart = createAndStartBegin;
+
     // Create the container, but don't start it yet
     auto loggingPlugin = GetContainerLogger(container);
     std::shared_ptr<DobbyBufferStream> createBuffer = std::make_shared<DobbyBufferStream>();
@@ -582,6 +585,12 @@ bool DobbyManager::createAndStart(const ContainerId &id,
                               createBuffer,
                               files,
                               container->customConfigFilePath);
+
+    AI_LOG_INFO("Launch timing [%s] phase=runcCreate durationMs=%lld",
+                id.c_str(),
+                static_cast<long long>(std::chrono::duration_cast<std::chrono::milliseconds>(
+                    std::chrono::steady_clock::now() - stageStart).count()));
+    stageStart = std::chrono::steady_clock::now();
 
 
     // First PID = crun
@@ -608,6 +617,16 @@ bool DobbyManager::createAndStart(const ContainerId &id,
         AI_LOG_ERROR("failure in one of the PreStart hooks");
         return false;
     }
+
+    AI_LOG_INFO("Launch timing [%s] phase=preStartHooks durationMs=%lld",
+                id.c_str(),
+                static_cast<long long>(std::chrono::duration_cast<std::chrono::milliseconds>(
+                    std::chrono::steady_clock::now() - stageStart).count()));
+    stageStart = std::chrono::steady_clock::now();
+#else
+    AI_LOG_INFO("Launch timing [%s] phase=preStartHooks durationMs=0",
+                id.c_str());
+    stageStart = std::chrono::steady_clock::now();
 #endif //defined(LEGACY_COMPONENTS)
 
     // if we've survived to this point then the container is pretty much
@@ -617,6 +636,12 @@ bool DobbyManager::createAndStart(const ContainerId &id,
     // Attempt to start the container
     std::shared_ptr<DobbyBufferStream> startBuffer = std::make_shared<DobbyBufferStream>();
     bool started = mRunc->start(id, startBuffer);
+
+    AI_LOG_INFO("Launch timing [%s] phase=runcStart durationMs=%lld success=%s",
+                id.c_str(),
+                static_cast<long long>(std::chrono::duration_cast<std::chrono::milliseconds>(
+                    std::chrono::steady_clock::now() - stageStart).count()),
+                started ? "true" : "false");
 
     if (!started)
     {
@@ -636,6 +661,12 @@ bool DobbyManager::createAndStart(const ContainerId &id,
             mLogger->StartContainerLogging(id.str(), pids.first, pids.second, std::move(loggingPlugin));
         }
     }
+
+    AI_LOG_INFO("Launch timing [%s] phase=createAndStartInternal durationMs=%lld success=%s",
+                id.c_str(),
+                static_cast<long long>(std::chrono::duration_cast<std::chrono::milliseconds>(
+                    std::chrono::steady_clock::now() - createAndStartBegin).count()),
+                started ? "true" : "false");
 
     AI_LOG_FN_EXIT();
     return started;

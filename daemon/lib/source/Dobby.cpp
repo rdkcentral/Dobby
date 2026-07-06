@@ -66,6 +66,7 @@
 #include <sys/uio.h>
 #include <sys/syscall.h>
 #include <inttypes.h>
+#include <chrono>
 
 volatile sig_atomic_t Dobby::mSigTerm = 0;
 
@@ -1014,6 +1015,8 @@ void Dobby::startFromSpec(std::shared_ptr<AI_IPC::IAsyncReplySender> replySender
         }
         else
         {
+            const auto enqueueTime = std::chrono::steady_clock::now();
+
             // Try and start the container on the work queue thread
             auto doStartFromSpecLambda =
                 [manager = mManager,
@@ -1023,8 +1026,14 @@ void Dobby::startFromSpec(std::shared_ptr<AI_IPC::IAsyncReplySender> replySender
                  command = std::move(command),
                  displaySocket = std::move(displaySocket),
                  envVars = std::move(envVars),
+                 enqueueTime,
                  replySender]()
                 {
+                    AI_LOG_INFO("Launch timing [%s] phase=workQueueWait durationMs=%lld",
+                                id.c_str(),
+                                static_cast<long long>(std::chrono::duration_cast<std::chrono::milliseconds>(
+                                    std::chrono::steady_clock::now() - enqueueTime).count()));
+
                     // Convert the vector of AI_IPC::UnixFd to a list of plain
                     // old integer file descriptors
                     std::list<int> fileList;
@@ -2459,4 +2468,5 @@ bool Dobby::onWatchdogTimer()
 }
 
 #endif // defined(RDK) && defined(USE_SYSTEMD)
+
 
