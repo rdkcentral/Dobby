@@ -244,16 +244,24 @@ std::string Minidump::getDestinationFile(int fd)
         containerId = containerId.substr(containerId.find("apps_") + 5);
       }
     if (it != annotations.end()) {
-        fileName = containerId + MINIDUMP_FN_SEPERATOR + it->second.c_str() + MINIDUMP_FN_SEPERATOR + timeString.str();
-        if (fileName.length() > MINIDUMP_FILENAME_LENGTH)
-            fileName.resize(MINIDUMP_FILENAME_LENGTH);
+        std::string suffix = std::string(MINIDUMP_FN_SEPERATOR) + it->second + MINIDUMP_FN_SEPERATOR + timeString.str();
+        if (suffix.length() < MINIDUMP_FILENAME_LENGTH && containerId.length() + suffix.length() > MINIDUMP_FILENAME_LENGTH)
+        {
+            AI_LOG_WARN("Container id '%s' is too long, truncating to fit filename length limit", containerId.c_str());
+            containerId.resize(MINIDUMP_FILENAME_LENGTH - suffix.length());
+        }
+        fileName = containerId + suffix;
         destFile = dir + "/" + fileName + ".dmp";
         AI_LOG_INFO("Firebolt state: %s, minidump filename: %s", it->second.c_str(), destFile.c_str());
     } else {
         AI_LOG_INFO("Firebolt state not found or not valid at crash time");
-        fileName = containerId + MINIDUMP_FN_SEPERATOR + timeString.str();
-        if (fileName.length() > MINIDUMP_FILENAME_LENGTH)
-            fileName.resize(MINIDUMP_FILENAME_LENGTH);
+        std::string suffix = std::string(MINIDUMP_FN_SEPERATOR) + timeString.str();
+        if (suffix.length() < MINIDUMP_FILENAME_LENGTH && containerId.length() + suffix.length() > MINIDUMP_FILENAME_LENGTH)
+        {
+            AI_LOG_WARN("Container id '%s' is too long, truncating to fit filename length limit", containerId.c_str());
+            containerId.resize(MINIDUMP_FILENAME_LENGTH - suffix.length());
+        }
+        fileName = containerId + suffix;
         destFile = dir + "/" + fileName + ".dmp";
     }
 
@@ -280,4 +288,5 @@ std::vector<std::string> Minidump::getDependencies() const
 
     return dependencies;
 }
+
 
