@@ -1,0 +1,168 @@
+permissions:
+  contents: read
+name: main-workflow
+
+on:
+  push:
+    branches: [ main, develop, 'sprint/**', 'release/**' ]
+  pull_request:
+    branches: [ main, develop, 'sprint/**', 'release/**' ]
+
+jobs:
+  trigger-L1:
+    uses: ./.github/workflows/L1-tests.yml
+
+  coverage-gate:
+    name: Coverage Gate
+    needs: [trigger-L1]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
+    # Transient runner/action failures must not block
+    continue-on-error: true
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Fetch baseline from build-metadata branch
+        # Gracefully handle a missing build-metadata branch (first-time setup)
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          if git fetch origin build-metadata 2>/dev/null; then
+            if git cat-file -e FETCH_HEAD:coverage-baseline.json 2>/dev/null; then
+              git show FETCH_HEAD:coverage-baseline.json > coverage-baseline.json
+              echo "Loaded coverage-baseline.json from build-metadata branch"
+            else
+              echo "build-metadata branch exists but coverage-baseline.json not found — skipping baseline comparison"
+              echo "{}" > coverage-baseline.json
+            fi
+          else
+            echo "build-metadata branch not found — absolute threshold check only (first-time setup)"
+            echo "{}" > coverage-baseline.json
+          fi
+
+      - name: Download L1 coverage artifacts
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          name: artifacts-L1-dobby
+          path: ./l1-coverage
+
+      - name: Compare coverage to baseline
+        run: |
+          python3 .github/scripts/compare_coverage.py \
+            --baseline coverage-baseline.json \
+            --l1 ./l1-coverage/filtered_coverage.info
+
+  update-baseline:
+    name: Update Coverage Baseline
+    # Runs ONLY on a direct push to develop AND only when the L1 test suite
+    # passes. The coverage gate is informational only (always exits 0), so
+    # needs.coverage-gate.result == 'success' guards against infrastructure
+    # failures in the gate job itself, not coverage quality.
+    if: >-
+      github.event_name == 'push' &&
+      github.ref == 'refs/heads/develop' &&
+      needs.trigger-L1.result == 'success' &&
+      needs.coverage-gate.result == 'success'
+    needs: [trigger-L1, coverage-gate]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      actions: read
+    # Queue concurrent runs; do not cancel in-progress — each merge deserves a baseline update and force-push is atomic so queuing is safe.
+    concurrency:
+      group: update-baseline-develop
+      cancel-in-progress: false
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Fetch existing baseline for comparison report
+        # Best-effort — if the branch or file is absent we compare against nothing.
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          if git fetch origin build-metadata 2>/dev/null; then
+            if git cat-file -e FETCH_HEAD:coverage-baseline.json 2>/dev/null; then
+              git show FETCH_HEAD:coverage-baseline.json > old-baseline.json
+              echo "Loaded existing baseline for comparison"
+            else
+              echo '{}' > old-baseline.json
+            fi
+          else
+            echo '{}' > old-baseline.json
+          fi
+
+      - name: Download L1 coverage artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: artifacts-L1-dobby
+          path: ./l1-coverage
+
+      - name: Extract coverage and write new baseline
+        id: extract
+        run: |
+          set -euo pipefail
+          # Pass the old baseline so the report shows a before/after delta.
+          BL_ARG="old-baseline.json"
+          [ -f "$BL_ARG" ] || echo '{}' > "$BL_ARG"
+
+          python3 .github/scripts/compare_coverage.py \
+            --baseline "$BL_ARG" \
+            --l1 ./l1-coverage/filtered_coverage.info \
+            --output-json new-baseline.json \
+            --commit "$GITHUB_SHA" \
+            --timestamp "$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
+
+          if [ ! -s new-baseline.json ]; then
+            echo "Coverage extraction produced no output — skipping baseline update"
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "New baseline to commit:"
+            cat new-baseline.json
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Commit and push updated baseline to build-metadata
+        if: steps.extract.outputs.skip == 'false'
+        run: |
+          set -euo pipefail
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
+
+          # Check out the build-metadata branch, or create it as an orphan.
+          if git fetch origin build-metadata 2>/dev/null; then
+            git checkout -B build-metadata FETCH_HEAD
+          else
+            git checkout --orphan build-metadata
+            git rm -rf . --quiet 2>/dev/null || true
+          fi
+
+          cp -f new-baseline.json coverage-baseline.json
+
+          git add coverage-baseline.json
+
+          # Only commit when there is an actual change.
+          if git diff --cached --quiet; then
+            echo "Coverage baseline unchanged — no commit needed"
+          else
+            MSG=$(printf \
+              'chore: update coverage baseline after develop merge [skip ci]\n\nCommit : %s\nRun ID : %s' \
+              "$GITHUB_SHA" "$GITHUB_RUN_ID")
+            git commit -m "$MSG"
+            git push --force-with-lease origin build-metadata
+            echo "Pushed updated baseline to build-metadata"
+          fi
