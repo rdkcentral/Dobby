@@ -59,7 +59,7 @@ public:
     std::vector<std::string> getDependencies() const override;
 
 private:
-    std::string getDestinationFile();
+    std::string getDestinationFile(int fd);
 
     const std::string mName;
     std::shared_ptr<rt_dobby_schema> mContainerConfig;
@@ -68,3 +68,4 @@ private:
 };
 
 #endif // !defined(MINIDUMP_H)
+
