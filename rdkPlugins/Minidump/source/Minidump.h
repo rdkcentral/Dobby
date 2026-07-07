@@ -59,6 +59,9 @@ public:
     std::vector<std::string> getDependencies() const override;
 
 private:
+    static std::string buildDestinationFileName(const std::string &containerId,
+                                                const std::string &annotation,
+                                                const std::string &timeString);
     std::string getDestinationFile(int fd);
 
     const std::string mName;
@@ -68,4 +71,5 @@ private:
 };
 
 #endif // !defined(MINIDUMP_H)
+
 
