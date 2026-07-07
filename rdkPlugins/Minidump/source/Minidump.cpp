@@ -22,6 +22,7 @@
 
 #include <chrono>
 #include <sstream>
+#include <vector>
 #include <unistd.h>
 #include <iomanip>
 #include <sys/stat.h>
@@ -240,20 +241,79 @@ std::string Minidump::getDestinationFile(int fd)
 
     std::string containerId = mUtils->getContainerId();
     if (containerId.find("apps_") != std::string::npos) {
-         //remove prefix before and including "apps_" from containerId
+        // Remove prefix before and including "apps_"
+        // e.g. "com.sky.as.apps_charter_spectrum_news_a83cce3e-533e-..." -> "charter_spectrum_news_a83cce3e-533e-..."
         containerId = containerId.substr(containerId.find("apps_") + 5);
-      }
+
+        // Trim the UUID tail at the first '-'
+        // e.g. "charter_spectrum_news_a83cce3e-533e-..." -> "charter_spectrum_news_a83cce3e"
+        auto dashPos = containerId.find('-');
+        if (dashPos != std::string::npos) {
+            containerId = containerId.substr(0, dashPos);
+        }
+
+        // Split into underscore-delimited tokens.
+        std::vector<std::string> tokens;
+        std::istringstream ss(containerId);
+        std::string tok;
+        while (std::getline(ss, tok, '_')) {
+            if (!tok.empty()) tokens.push_back(tok);
+        }
+
+        // Detect whether the last token is an 8-char hex appinstance ID.
+        auto isInstanceId = [](const std::string &s) -> bool {
+            if (s.length() != 8) return false;
+            return s.find_first_not_of("0123456789abcdefABCDEF") == std::string::npos;
+        };
+
+        bool hasInstanceId = !tokens.empty() && isInstanceId(tokens.back());
+
+        if (hasInstanceId) {
+            if (tokens.size() >= 3) {
+                // [vendor, appName, ..., instanceId] -> "appName_instanceId"
+                containerId = tokens[1] + "_" + tokens.back();
+            }
+            // size == 2: already "appName_instanceId", keep as-is
+        } else {
+            // No UUID — just extract the app name portion
+            if (tokens.size() >= 3) {
+                // [vendor, appName, ...] -> "appName"
+                containerId = tokens[1];
+            } else if (tokens.size() == 2) {
+                // [appName, variant] -> "appName"
+                containerId = tokens[0];
+            }
+            // size == 1: keep as-is
+        }
+    }
+    // Helper lambda: truncate timestamp so that the full firebolt state is preserved
+    // and only the timestamp is shortened to fit within MINIDUMP_FILENAME_LENGTH.
+    auto truncatedTs = [&](size_t fixedLen) -> std::string {
+        std::string ts = timeString.str();
+        if (fixedLen >= MINIDUMP_FILENAME_LENGTH)
+            return ts.substr(0, 0); // no room at all
+        size_t avail = MINIDUMP_FILENAME_LENGTH - fixedLen;
+        if (ts.length() > avail)
+            ts.resize(avail);
+        return ts;
+    };
+
     if (it != annotations.end()) {
-        fileName = containerId + MINIDUMP_FN_SEPERATOR + it->second.c_str() + MINIDUMP_FN_SEPERATOR + timeString.str();
-        if (fileName.length() > MINIDUMP_FILENAME_LENGTH)
-            fileName.resize(MINIDUMP_FILENAME_LENGTH);
+        // fixed part = containerId + sep + fireboltState + sep
+        size_t fixedLen = containerId.length()
+                        + strlen(MINIDUMP_FN_SEPERATOR)
+                        + it->second.length()
+                        + strlen(MINIDUMP_FN_SEPERATOR);
+        std::string ts = truncatedTs(fixedLen);
+        fileName = containerId + MINIDUMP_FN_SEPERATOR + it->second.c_str() + MINIDUMP_FN_SEPERATOR + ts;
         destFile = dir + "/" + fileName + ".dmp";
         AI_LOG_INFO("Firebolt state: %s, minidump filename: %s", it->second.c_str(), destFile.c_str());
     } else {
         AI_LOG_INFO("Firebolt state not found or not valid at crash time");
-        fileName = containerId + MINIDUMP_FN_SEPERATOR + timeString.str();
-        if (fileName.length() > MINIDUMP_FILENAME_LENGTH)
-            fileName.resize(MINIDUMP_FILENAME_LENGTH);
+        // fixed part = containerId + sep
+        size_t fixedLen = containerId.length() + strlen(MINIDUMP_FN_SEPERATOR);
+        std::string ts = truncatedTs(fixedLen);
+        fileName = containerId + MINIDUMP_FN_SEPERATOR + ts;
         destFile = dir + "/" + fileName + ".dmp";
     }
 
@@ -280,4 +340,5 @@ std::vector<std::string> Minidump::getDependencies() const
 
     return dependencies;
 }
+
 
