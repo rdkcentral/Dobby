@@ -137,14 +137,15 @@ bool Minidump::postHalt()
  *
  * @return Destination minidump file path string
  */
+#define MINIDUMP_MAX_TOTAL_LENGTH 44
+#define MINIDUMP_FN_SEPERATOR "<#=#>"
+
 #define FIREBOLT_STATE          "fireboltState"
 #define FIREBOLT_STATE_TS       "fireboltState_ts"
 #define FIREBOLT_STATE_PREV     "fireboltState_prev"
 #define FIREBOLT_STATE_PREV_TS  "fireboltState_prev_ts"
-#define MINIDUMP_FILENAME_LENGTH 44
-#define MINIDUMP_FN_SEPERATOR "<#=#>"
 
-// Helper to safely parse a millisecond timestamp string, returns 0 on failure
+// Helper to safely parse a millisecond timestamp string, returns 0 on failure.
 static long long parseTimestampMs(const std::string &str)
 {
     try
@@ -191,11 +192,8 @@ std::string Minidump::getDestinationFile(int fd)
 
     std::map<std::string, std::string> annotations = mUtils->getAnnotations();
 
-    // Only use the fireboltState annotation if it was set BEFORE the crash.
-    // AppService often transitions the app to "background" after the crash but
-    // before postHalt runs, which would record the wrong state.  If the current
-    // annotation is stale, fall back to the previous value (which was the state
-    // at the time of the crash, e.g. "foreground").
+    // Keep existing Firebolt annotation timing logic; filename state is currently
+    // forced to "Initializing" below as requested.
     auto it = annotations.find(FIREBOLT_STATE);
     if (it != annotations.end())
     {
@@ -211,7 +209,6 @@ std::string Minidump::getDestinationFile(int fd)
                             annotationMs,
                             crashTimeMs);
 
-                // Try the previous annotation value that was valid at crash time
                 auto prevIt = annotations.find(FIREBOLT_STATE_PREV);
                 auto prevTsIt = annotations.find(FIREBOLT_STATE_PREV_TS);
                 if (prevIt != annotations.end() && prevTsIt != annotations.end())
@@ -227,35 +224,75 @@ std::string Minidump::getDestinationFile(int fd)
                     }
                     else
                     {
-                        it = annotations.end(); // both are after crash or parse failed
+                        it = annotations.end();
                     }
                 }
                 else
                 {
-                    it = annotations.end(); // no previous value available
+                    it = annotations.end();
                 }
             }
         }
     }
 
+    const std::string fireboltState = (it != annotations.end()) ? it->second : "Initializing";
+
     std::string containerId = mUtils->getContainerId();
-    if (containerId.find("apps_") != std::string::npos) {
-         //remove prefix before and including "apps_" from containerId
+    if (containerId.find("apps_") != std::string::npos)
+    {
+        
         containerId = containerId.substr(containerId.find("apps_") + 5);
-      }
-    if (it != annotations.end()) {
-        fileName = containerId + MINIDUMP_FN_SEPERATOR + it->second.c_str() + MINIDUMP_FN_SEPERATOR + timeString.str();
-        if (fileName.length() > MINIDUMP_FILENAME_LENGTH)
-            fileName.resize(MINIDUMP_FILENAME_LENGTH);
-        destFile = dir + "/" + fileName + ".dmp";
-        AI_LOG_INFO("Firebolt state: %s, minidump filename: %s", it->second.c_str(), destFile.c_str());
-    } else {
-        AI_LOG_INFO("Firebolt state not found or not valid at crash time");
-        fileName = containerId + MINIDUMP_FN_SEPERATOR + timeString.str();
-        if (fileName.length() > MINIDUMP_FILENAME_LENGTH)
-            fileName.resize(MINIDUMP_FILENAME_LENGTH);
-        destFile = dir + "/" + fileName + ".dmp";
     }
+
+    const size_t maxFileNameLength = MINIDUMP_MAX_TOTAL_LENGTH - 4;
+    const size_t separatorLen = sizeof(MINIDUMP_FN_SEPERATOR) - 1;
+    const size_t fixedLen = (2 * separatorLen) + fireboltState.length();
+    const size_t maxTimestampLen = 10;
+    const size_t minContainerLen = 7;
+
+    std::string timestamp = timeString.str();
+    if (timestamp.length() > maxTimestampLen)
+    {
+        timestamp.resize(maxTimestampLen);
+    }
+
+    size_t maxContainerLen = (maxFileNameLength > (fixedLen + timestamp.length()))
+                                 ? (maxFileNameLength - fixedLen - timestamp.length())
+                                 : 0;
+
+    if ((containerId.length() >= minContainerLen) && (maxContainerLen < minContainerLen))
+    {
+        const size_t requiredTimestampLen = (maxFileNameLength > (fixedLen + minContainerLen))
+                                                ? (maxFileNameLength - fixedLen - minContainerLen)
+                                                : 0;
+        if (requiredTimestampLen < timestamp.length())
+        {
+            timestamp.resize(requiredTimestampLen);
+        }
+
+        maxContainerLen = (maxFileNameLength > (fixedLen + timestamp.length()))
+                              ? (maxFileNameLength - fixedLen - timestamp.length())
+                              : 0;
+    }
+
+    if (containerId.length() > maxContainerLen)
+    {
+        containerId.resize(maxContainerLen);
+    }
+
+    fileName = containerId + MINIDUMP_FN_SEPERATOR + fireboltState + MINIDUMP_FN_SEPERATOR + timestamp;
+    destFile = dir + "/" + fileName + ".dmp";
+    if (it != annotations.end())
+    {
+        AI_LOG_INFO("Resolved fireboltState annotation: %s", it->second.c_str());
+    }
+    else
+    {
+        AI_LOG_INFO("Resolved fireboltState annotation not available");
+    }
+    AI_LOG_INFO("Using firebolt state in minidump filename: %s, minidump filename: %s",
+                fireboltState.c_str(),
+                destFile.c_str());
 
     return destFile;
 }
@@ -280,4 +317,5 @@ std::vector<std::string> Minidump::getDependencies() const
 
     return dependencies;
 }
+
 
