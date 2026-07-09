@@ -25,6 +25,7 @@
 #include <sys/mman.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <errno.h>
 
 // some platforms are missing the memfd headers
 // #include <linux/memfd.h>
@@ -132,11 +133,15 @@ bool AnonymousFile::copyContentTo(const std::string& destFile)
     long fileSize = getFileSize(fp);
     if (fileSize <= 0)
     {
+        AI_LOG_WARN("Bad minidump detected before cleanup (reason=empty_or_invalid_size, fd=%d, size=%ld, dest=%s)",
+                    mFd,
+                    fileSize,
+                    destFile.c_str());
         AI_LOG_DEBUG("Empty or invalid file size %ld for fd %d", fileSize, mFd);
         fclose(fp);
         fp = nullptr;
         AI_LOG_FN_EXIT();
-        return true;
+        return false;
     }
 
     char* buffer = (char*) malloc(sizeof(char) * (fileSize + 1));
@@ -151,6 +156,11 @@ bool AnonymousFile::copyContentTo(const std::string& destFile)
     size_t elementsRead = fread(buffer, 1, fileSize, fp);
     if (elementsRead != fileSize)
     {
+        AI_LOG_WARN("Bad minidump detected before cleanup (reason=short_read, fd=%d, expected=%ld, actual=%zu, dest=%s)",
+                    mFd,
+                    fileSize,
+                    elementsRead,
+                    destFile.c_str());
         AI_LOG_ERROR_EXIT("failed to read fd %d correctly", mFd);
         fclose(fp);
         fp = nullptr;
@@ -161,8 +171,20 @@ bool AnonymousFile::copyContentTo(const std::string& destFile)
     buffer[fileSize] = '\0';
 
     // check file header
-    if (strncmp(buffer, "MDMP", 4) != 0)
+    if (fileSize < 4 || strncmp(buffer, "MDMP", 4) != 0)
     {
+        const unsigned char b0 = (fileSize > 0) ? static_cast<unsigned char>(buffer[0]) : 0;
+        const unsigned char b1 = (fileSize > 1) ? static_cast<unsigned char>(buffer[1]) : 0;
+        const unsigned char b2 = (fileSize > 2) ? static_cast<unsigned char>(buffer[2]) : 0;
+        const unsigned char b3 = (fileSize > 3) ? static_cast<unsigned char>(buffer[3]) : 0;
+        AI_LOG_WARN("Bad minidump detected before cleanup (reason=invalid_header, fd=%d, size=%ld, hdr=%02X%02X%02X%02X, dest=%s)",
+                    mFd,
+                    fileSize,
+                    b0,
+                    b1,
+                    b2,
+                    b3,
+                    destFile.c_str());
         AI_LOG_WARN("Incorrect file header for fd %d", mFd);
         fclose(fp);
         fp = nullptr;
@@ -181,7 +203,72 @@ bool AnonymousFile::copyContentTo(const std::string& destFile)
         return false;
     }
 
-    write(destFd, buffer, fileSize + 1);
+    // Minidumps are binary files; write exactly fileSize bytes and handle partial writes.
+    ssize_t totalWritten = 0;
+    while (totalWritten < static_cast<ssize_t>(fileSize))
+    {
+        const ssize_t written = write(destFd,
+                                      buffer + totalWritten,
+                                      fileSize - totalWritten);
+        if (written < 0)
+        {
+            if (errno == EINTR)
+            {
+                continue;
+            }
+
+            AI_LOG_WARN("Bad minidump detected before cleanup (reason=write_error, fd=%d, size=%ld, written=%zd, errno=%d, dest=%s)",
+                        mFd,
+                        fileSize,
+                        totalWritten,
+                        errno,
+                        destFile.c_str());
+            AI_LOG_SYS_ERROR(errno, "failed to write minidump to %s", destFile.c_str());
+            fclose(fp);
+            fp = nullptr;
+            free(buffer);
+            close(destFd);
+            if (unlink(destFile.c_str()) == 0)
+            {
+                AI_LOG_INFO("Removed partial minidump after write failure: %s", destFile.c_str());
+            }
+            else
+            {
+                AI_LOG_WARN("Failed to remove partial minidump '%s' after write failure (errno=%d)",
+                            destFile.c_str(),
+                            errno);
+            }
+            return false;
+        }
+
+        if (written == 0)
+        {
+            AI_LOG_WARN("Bad minidump detected before cleanup (reason=write_zero_progress, fd=%d, size=%ld, written=%zd, dest=%s)",
+                        mFd,
+                        fileSize,
+                        totalWritten,
+                        destFile.c_str());
+            AI_LOG_ERROR("write returned 0 while writing minidump to %s", destFile.c_str());
+            fclose(fp);
+            fp = nullptr;
+            free(buffer);
+            close(destFd);
+            if (unlink(destFile.c_str()) == 0)
+            {
+                AI_LOG_INFO("Removed partial minidump after zero-progress write: %s", destFile.c_str());
+            }
+            else
+            {
+                AI_LOG_WARN("Failed to remove partial minidump '%s' after zero-progress write (errno=%d)",
+                            destFile.c_str(),
+                            errno);
+            }
+            return false;
+        }
+
+        totalWritten += written;
+    }
+
     fclose(fp);
 
     fp = nullptr;
