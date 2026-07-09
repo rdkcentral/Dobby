@@ -141,6 +141,7 @@ bool Minidump::postHalt()
 #define FIREBOLT_STATE_TS       "fireboltState_ts"
 #define FIREBOLT_STATE_PREV     "fireboltState_prev"
 #define FIREBOLT_STATE_PREV_TS  "fireboltState_prev_ts"
+#define MINIDUMP_PREFIX         "minidump_prefix"
 #define MINIDUMP_FILENAME_LENGTH 44
 #define MINIDUMP_FN_SEPERATOR "<#=#>"
 
@@ -243,15 +244,29 @@ std::string Minidump::getDestinationFile(int fd)
          //remove prefix before and including "apps_" from containerId
         containerId = containerId.substr(containerId.find("apps_") + 5);
       }
+
+    /* Use minidump_prefix annotation (set to appId after OnStarted) as the filename prefix */
+    std::string filePrefix = containerId;
+    auto prefixIt = annotations.find(MINIDUMP_PREFIX);
+    if (prefixIt != annotations.end() && !prefixIt->second.empty())
+    {
+        filePrefix = prefixIt->second;
+        AI_LOG_INFO("Using minidump_prefix annotation '%s' for filename", filePrefix.c_str());
+    }
+    else
+    {
+        AI_LOG_INFO("minidump_prefix annotation not found, falling back to containerId '%s'", containerId.c_str());
+    }
+
     if (it != annotations.end()) {
-        fileName = containerId + MINIDUMP_FN_SEPERATOR + it->second.c_str() + MINIDUMP_FN_SEPERATOR + timeString.str();
+        fileName = filePrefix + MINIDUMP_FN_SEPERATOR + it->second.c_str() + MINIDUMP_FN_SEPERATOR + timeString.str();
         if (fileName.length() > MINIDUMP_FILENAME_LENGTH)
             fileName.resize(MINIDUMP_FILENAME_LENGTH);
         destFile = dir + "/" + fileName + ".dmp";
         AI_LOG_INFO("Firebolt state: %s, minidump filename: %s", it->second.c_str(), destFile.c_str());
     } else {
         AI_LOG_INFO("Firebolt state not found or not valid at crash time");
-        fileName = containerId + MINIDUMP_FN_SEPERATOR + timeString.str();
+        fileName = filePrefix + MINIDUMP_FN_SEPERATOR + timeString.str();
         if (fileName.length() > MINIDUMP_FILENAME_LENGTH)
             fileName.resize(MINIDUMP_FILENAME_LENGTH);
         destFile = dir + "/" + fileName + ".dmp";
@@ -280,4 +295,5 @@ std::vector<std::string> Minidump::getDependencies() const
 
     return dependencies;
 }
+
 
