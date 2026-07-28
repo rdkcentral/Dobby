@@ -92,6 +92,7 @@ std::promise<void> promise;
  */
 void containerStopCallback(int32_t cd, const std::string &containerId,
                            IDobbyProxyEvents::ContainerState state,
+                           int32_t exitCode,
                            const void *params)
 {
     const std::string *id = static_cast<const std::string *>(params);
