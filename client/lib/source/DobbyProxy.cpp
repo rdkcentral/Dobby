@@ -27,6 +27,7 @@
 
 #include <Logging.h>
 
+#include <sys/wait.h>
 #include <thread>
 
 
@@ -89,7 +90,8 @@ DobbyProxy::DobbyProxy(const std::shared_ptr<AI_IPC::IIpcService>& ipcService,
     const AI_IPC::SignalHandler startedHandler(std::bind(&DobbyProxy::onContainerStartedEvent, this, std::placeholders::_1));
     mContainerStartedSignal = mIpcService->registerSignalHandler(startedSignal, startedHandler);
 
-    const AI_IPC::Signal stoppedSignal(objectName, DOBBY_CTRL_INTERFACE, DOBBY_CTRL_EVENT_STOPPED);
+    // Subscribe to stopped-with-status — carries exit code directly alongside descriptor and id.
+    const AI_IPC::Signal stoppedSignal(objectName, DOBBY_CTRL_INTERFACE, DOBBY_CTRL_EVENT_STOPPED_WITH_STATUS);
     const AI_IPC::SignalHandler stoppedHandler(std::bind(&DobbyProxy::onContainerStoppedEvent, this, std::placeholders::_1));
     mContainerStoppedSignal = mIpcService->registerSignalHandler(stoppedSignal, stoppedHandler);
 
@@ -244,20 +246,24 @@ void DobbyProxy::onContainerStoppedEvent(const AI_IPC::VariantList& args)
 {
     AI_LOG_FN_ENTRY();
 
-    // the event should container two args; container descriptor and id
+    // STOPPED_WITH_STATUS carries three args: descriptor, id, raw waitpid status.
     int32_t descriptor;
     std::string id;
+    int32_t rawStatus;
 
-    if (!AI_IPC::parseVariantList<int32_t, std::string>(args, &descriptor, &id))
+    if (!AI_IPC::parseVariantList<int32_t, std::string, int32_t>(args, &descriptor, &id, &rawStatus))
     {
         AI_LOG_ERROR("failed to read all args from %s.%s signal",
-                     DOBBY_CTRL_INTERFACE, DOBBY_CTRL_EVENT_STOPPED);
+                     DOBBY_CTRL_INTERFACE, DOBBY_CTRL_EVENT_STOPPED_WITH_STATUS);
     }
     else
     {
-        // ping off an event
+        const int32_t exitCode = WIFEXITED(rawStatus) ? WEXITSTATUS(rawStatus) : -1;
+
         std::lock_guard<std::mutex> locker(mStateChangeLock);
-        mStateChangeQueue.emplace_back(StateChangeEvent::ContainerStopped, descriptor, id);
+        StateChangeEvent ev(StateChangeEvent::ContainerStopped, descriptor, id);
+        ev.exitCode = exitCode;
+        mStateChangeQueue.push_back(ev);
         mStateChangeCond.notify_all();
     }
 
@@ -1507,7 +1513,7 @@ void DobbyProxy::containerStateChangeThread()
                     const StateChangeListener& callback = handler.second.first;
                     const void* cbParams = handler.second.second;
                     if (callback)
-                        callback(event.descriptor, event.name, state, cbParams);
+                        callback(event.descriptor, event.name, state, event.exitCode, cbParams);
                 }
             }
 

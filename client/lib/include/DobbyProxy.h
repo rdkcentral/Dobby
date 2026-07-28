@@ -188,12 +188,13 @@ private:
         { }
 
         StateChangeEvent(Type type_, int32_t descriptor_, const std::string& name_)
-            : type(type_), descriptor(descriptor_), name(name_)
+            : type(type_), descriptor(descriptor_), name(name_), exitCode(-1)
         { }
 
         Type type;
         int32_t descriptor;
         std::string name;
+        int32_t exitCode;
     };
 
     std::deque<StateChangeEvent> mStateChangeQueue;

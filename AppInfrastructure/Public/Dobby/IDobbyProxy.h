@@ -192,7 +192,7 @@ public:
     }
 
 public:
-    typedef std::function<void(int32_t, const std::string&, IDobbyProxyEvents::ContainerState, const void*)> StateChangeListener;
+    typedef std::function<void(int32_t, const std::string&, IDobbyProxyEvents::ContainerState, int32_t, const void*)> StateChangeListener;
 
     virtual int registerListener(const StateChangeListener &listener, const void* cbParams) = 0;
 
