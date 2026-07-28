@@ -130,8 +130,6 @@ public:
     int registerListenerWithStatus(const StateChangeWithStatusListener &listener, const void* cbParams) override;
     void unregisterListenerWithStatus(int id) override;
 
-    void unregisterListener(int tag) override;
-
     std::string getContainerInfo(int32_t descriptor) const override;
 
     std::list<std::pair<int32_t, std::string>> listContainers() const override;
