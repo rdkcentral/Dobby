@@ -39,6 +39,7 @@ public:
     virtual std::string registerSignalHandler(const Signal& signal, const SignalHandler& handler) = 0;
     virtual bool unregisterHandler(const std::string& regId) = 0;
     virtual bool enableMonitor(const std::set<std::string>& matchRules, const MonitorHandler& handler) = 0;
+    virtual bool isServiceAvailable(const std::string& serviceName) const = 0;
     virtual void flush() = 0;
 };
 class IIpcService {
@@ -57,6 +58,7 @@ public:
         std::string registerSignalHandler(const Signal& signal, const SignalHandler& handler);
         bool unregisterHandler(const std::string& regId);
         bool enableMonitor(const std::set<std::string>& matchRules, const MonitorHandler& handler);
+        bool isServiceAvailable(const std::string& serviceName) const;
         void flush();
 };
 
