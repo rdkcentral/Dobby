@@ -51,9 +51,12 @@
 #include <thread>
 
 // ---------------------------------------------------------------------------
-// Static impl pointer required by the IIpcService shim
+// Static impl pointer definitions required by the IIpcService, IAsyncReplySender
+// and IpcFileDescriptor shims used across the mock TUs linked into this test.
 // ---------------------------------------------------------------------------
-AI_IPC::IIpcServiceImpl* AI_IPC::IIpcService::impl = nullptr;
+AI_IPC::IIpcServiceImpl*         AI_IPC::IIpcService::impl         = nullptr;
+AI_IPC::IAsyncReplySenderApiImpl* AI_IPC::IAsyncReplySender::impl  = nullptr;
+AI_IPC::IpcFileDescriptorApiImpl* AI_IPC::IpcFileDescriptor::impl  = nullptr;
 
 // ---------------------------------------------------------------------------
 // Helper: build an AI_IPC::VariantList from (int32, string, int32)
