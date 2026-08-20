@@ -37,6 +37,7 @@
 #include <sys/capability.h>
 #include <sys/stat.h>
 #include <fstream>
+#include <sstream>
 
 // Compile time generated strings that (in theory) speeds up the processing
 // of ctemplate expanding
@@ -195,6 +196,55 @@ static const ctemplate::StaticTemplateString SECCOMP_SYSCALLS =
 #define JSON_FLAG_SWAPLIMIT          (0x1U << 23)
 
 int DobbySpecConfig::mNumCores = -1;
+
+static double getZramPercentage()
+{
+    std::ifstream meminfo("/proc/meminfo");
+    if (!meminfo.is_open())
+    {
+        return 0.0;
+    }
+
+    unsigned long long memTotalKb = 0;
+    unsigned long long swapTotalKb = 0;
+    std::string line;
+
+    while (std::getline(meminfo, line))
+    {
+        std::istringstream iss(line);
+        std::string key;
+        iss >> key;
+
+        if (key == "MemTotal:")
+        {
+            unsigned long long value = 0;
+            std::string units;
+            if (!(iss >> value >> units))
+            {
+                return 0.0;
+            }
+            memTotalKb = value;
+        }
+        else if (key == "SwapTotal:")
+        {
+            unsigned long long value = 0;
+            std::string units;
+            if (!(iss >> value >> units))
+            {
+                return 0.0;
+            }
+            swapTotalKb = value;
+        }
+    }
+
+    if (memTotalKb == 0 || swapTotalKb == 0)
+    {
+        return 0.0;
+    }
+
+    const double alpha = static_cast<double>(swapTotalKb) / static_cast<double>(memTotalKb);
+    return std::max(0.0, std::min(alpha, 1.0));
+}
 
 // TODO: should we only allowed these if a network namespace is enabled ?
 const std::map<std::string, int> DobbySpecConfig::mAllowedCaps =
@@ -636,8 +686,15 @@ bool DobbySpecConfig::parseSpec(ctemplate::TemplateDictionary* dictionary,
 
     if (!(flags & JSON_FLAG_SWAPLIMIT))
     {
-        // swapLimit not supplied: leave memory+swap unlimited (-1)
-        dictionary->SetIntValue(MEM_SWAP, -1);
+        const Json::Value& memLimitVal = mSpec["memLimit"];
+        if (memLimitVal.isIntegral())
+        {
+            dictionary->SetIntValue(MEM_SWAP, static_cast<unsigned>(memLimitVal.asUInt()));
+        }
+        else
+        {
+            dictionary->SetIntValue(MEM_SWAP, -1);
+        }
     }
 
     // swappiness is not supported on cgroups v2, only show if on v1
@@ -1306,7 +1363,9 @@ bool DobbySpecConfig::processMemLimit(const Json::Value& value,
         AI_LOG_WARN("memory limit looks dangerously low");
     }
 
-    dictionary->SetIntValue(MEM_LIMIT, memLimit);
+    const double alpha = getZramPercentage();
+    const unsigned physLimit = static_cast<unsigned>((1.0 - alpha) * static_cast<double>(memLimit));
+    dictionary->SetIntValue(MEM_LIMIT, physLimit);
 
     return true;
 }
@@ -1363,10 +1422,13 @@ bool DobbySpecConfig::processSwapLimit(const Json::Value& value,
             AI_LOG_ERROR("memLimit is negative; cannot validate swapLimit");
             return false;
         }
-        if (memSwapSigned < memLimitSigned)
+
+        const double alpha = getZramPercentage();
+        const int64_t physLimit = static_cast<int64_t>((1.0 - alpha) * static_cast<double>(memLimitSigned));
+        if (memSwapSigned < physLimit)
         {
-            AI_LOG_ERROR("swapLimit (%" PRId64 ") must be >= memLimit (%" PRId64 ")",
-                         memSwapSigned, memLimitSigned);
+            AI_LOG_ERROR("swapLimit (%" PRId64 ") must be >= memory.limit_in_bytes (%" PRId64 ")",
+                         memSwapSigned, physLimit);
             return false;
         }
     }
