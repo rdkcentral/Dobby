@@ -37,6 +37,7 @@ public:
     MOCK_METHOD(std::string, registerSignalHandler, (const Signal& signal, const SignalHandler& handler), (override));
     MOCK_METHOD(bool, unregisterHandler, (const std::string& regId), (override));
     MOCK_METHOD(bool, enableMonitor, (const std::set<std::string>& matchRules, const MonitorHandler& handler), (override));
+    MOCK_METHOD(bool, isServiceAvailable, (const std::string& serviceName), (const, override));
     MOCK_METHOD(void, flush, (), (override));
 };
 
