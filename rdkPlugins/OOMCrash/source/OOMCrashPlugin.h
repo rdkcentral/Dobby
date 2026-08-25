@@ -57,6 +57,7 @@ public:
 
 private:
     bool readCgroup(unsigned long *val);
+    bool isMemoryAtLimit();
     bool checkForOOM();
     void createFileForOOM();
     

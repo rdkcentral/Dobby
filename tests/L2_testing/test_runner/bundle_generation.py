@@ -85,8 +85,10 @@ def _normalise_config(config):
             mount["options"] = [opt for opt in mount["options"] if not str(opt).startswith("size=")]
 
     # Networking plugin can be auto-disabled depending on environment
+    # OOMCrash plugin is auto-injected by DobbySpecConfig when not present
     if isinstance(cfg.get("rdkPlugins"), dict):
         cfg["rdkPlugins"].pop("networking", None)
+        cfg["rdkPlugins"].pop("oomcrash", None)
 
     return cfg
 
