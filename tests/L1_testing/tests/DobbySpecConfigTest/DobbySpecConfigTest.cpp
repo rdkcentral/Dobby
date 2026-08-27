@@ -247,16 +247,15 @@ protected:
 // ── Tests ─────────────────────────────────────────────────────────────────────
 
 /**
- * When 'swapLimit' is absent, MEM_SWAP must default to the original maxAppRam
- * while MEM_LIMIT reflects the zram-adjusted physical RAM budget.
+ * When 'swapLimit' is absent, MEM_SWAP must default to -1 (unlimited) and
+ * MEM_LIMIT must be left as the raw memLimit (no zram adjustment applied).
  */
-TEST_F(DobbySpecConfigTest, SwapLimit_DefaultsToMemLimit)
+TEST_F(DobbySpecConfigTest, SwapLimit_DefaultsToUnlimited)
 {
     auto cfg = makeConfig(kSpecMemOnly);
     EXPECT_TRUE(cfg->isValid());
 
-    const unsigned expectedLimit = expectedPhysicalLimit(2998272);
-    EXPECT_EQ(expandMemTemplate(*cfg), "LIMIT=" + std::to_string(expectedLimit) + " SWAP=2998272");
+    EXPECT_EQ(expandMemTemplate(*cfg), "LIMIT=2998272 SWAP=-1");
 }
 
 /**

@@ -686,15 +686,8 @@ bool DobbySpecConfig::parseSpec(ctemplate::TemplateDictionary* dictionary,
 
     if (!(flags & JSON_FLAG_SWAPLIMIT))
     {
-        const Json::Value& memLimitVal = mSpec["memLimit"];
-        if (memLimitVal.isIntegral())
-        {
-            dictionary->SetIntValue(MEM_SWAP, static_cast<unsigned>(memLimitVal.asUInt()));
-        }
-        else
-        {
-            dictionary->SetIntValue(MEM_SWAP, -1);
-        }
+        // swapLimit not supplied: leave memory+swap unlimited (-1)
+        dictionary->SetIntValue(MEM_SWAP, -1);
     }
 
     // swappiness is not supported on cgroups v2, only show if on v1
@@ -1363,8 +1356,14 @@ bool DobbySpecConfig::processMemLimit(const Json::Value& value,
         AI_LOG_WARN("memory limit looks dangerously low");
     }
 
-    const double alpha = getZramPercentage();
-    const unsigned physLimit = static_cast<unsigned>((1.0 - alpha) * static_cast<double>(memLimit));
+    // Only apply the zram-aware adjustment when swapLimit is explicitly
+    // set; otherwise keep memLimit as-is to match the memory.limit_in_bytes.
+    unsigned physLimit = memLimit;
+    if (mSpec["swapLimit"].isIntegral())
+    {
+        const double alpha = getZramPercentage();
+        physLimit = static_cast<unsigned>((1.0 - alpha) * static_cast<double>(memLimit));
+    }
     dictionary->SetIntValue(MEM_LIMIT, physLimit);
 
     return true;
