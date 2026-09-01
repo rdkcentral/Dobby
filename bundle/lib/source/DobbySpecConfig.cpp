@@ -1359,7 +1359,7 @@ bool DobbySpecConfig::processMemLimit(const Json::Value& value,
     // Only apply the zram-aware adjustment when swapLimit is explicitly
     // set; otherwise keep memLimit as-is to match the memory.limit_in_bytes.
     unsigned physLimit = memLimit;
-    if (mSpec["swapLimit"].isIntegral())
+    if (mSpec.isMember("swapLimit") && mSpec["swapLimit"].isIntegral())
     {
         const double alpha = getZramPercentage();
         physLimit = static_cast<unsigned>((1.0 - alpha) * static_cast<double>(memLimit));
