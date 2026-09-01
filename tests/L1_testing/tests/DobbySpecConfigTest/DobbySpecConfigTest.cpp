@@ -23,10 +23,13 @@
 #include <gmock/gmock.h>
 #include <ctemplate/template.h>
 #include <json/json.h>
+#include <algorithm>
 #include <climits>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <fstream>
+#include <sstream>
 #include <string>
 #include <memory>
 #include <unistd.h>
@@ -97,6 +100,42 @@ static const char* kMemTemplateStr  = "LIMIT={{MEM_LIMIT}} SWAP={{MEM_SWAP}}";
 // ── Inline ctemplate for reading NO_NEW_PRIVS back from the dict ─────────────
 static const char* kPrivsTemplateName = "test_no_new_privs";
 static const char* kPrivsTemplateStr  = "NO_NEW_PRIVS={{NO_NEW_PRIVS}}";
+
+static unsigned expectedPhysicalLimit(unsigned memLimit)
+{
+    std::ifstream meminfo("/proc/meminfo");
+    unsigned long long memTotalKb = 0;
+    unsigned long long swapTotalKb = 0;
+    std::string line;
+
+    while (std::getline(meminfo, line))
+    {
+        std::istringstream iss(line);
+        std::string key;
+        iss >> key;
+
+        if (key == "MemTotal:")
+        {
+            unsigned long long value = 0;
+            std::string units;
+            iss >> value >> units;
+            memTotalKb = value;
+        }
+        else if (key == "SwapTotal:")
+        {
+            unsigned long long value = 0;
+            std::string units;
+            iss >> value >> units;
+            swapTotalKb = value;
+        }
+    }
+
+    const double alpha = (memTotalKb > 0 && swapTotalKb > 0)
+        ? std::min(1.0, static_cast<double>(swapTotalKb) / static_cast<double>(memTotalKb))
+        : 0.0;
+
+    return static_cast<unsigned>((1.0 - alpha) * static_cast<double>(memLimit));
+}
 
 // ── Fixture ───────────────────────────────────────────────────────────────────
 
@@ -208,12 +247,14 @@ protected:
 // ── Tests ─────────────────────────────────────────────────────────────────────
 
 /**
- * When 'swapLimit' is absent, MEM_SWAP must default to -1 (unlimited).
+ * When 'swapLimit' is absent, MEM_SWAP must default to -1 (unlimited) and
+ * MEM_LIMIT must be left as the raw memLimit (no zram adjustment applied).
  */
 TEST_F(DobbySpecConfigTest, SwapLimit_DefaultsToUnlimited)
 {
     auto cfg = makeConfig(kSpecMemOnly);
     EXPECT_TRUE(cfg->isValid());
+
     EXPECT_EQ(expandMemTemplate(*cfg), "LIMIT=2998272 SWAP=-1");
 }
 
@@ -225,7 +266,9 @@ TEST_F(DobbySpecConfigTest, SwapLimit_SetIndependently)
 {
     auto cfg = makeConfig(kSpecWithSwap);
     EXPECT_TRUE(cfg->isValid());
-    EXPECT_EQ(expandMemTemplate(*cfg), "LIMIT=2998272 SWAP=5996544");
+
+    const unsigned expectedLimit = expectedPhysicalLimit(2998272);
+    EXPECT_EQ(expandMemTemplate(*cfg), "LIMIT=" + std::to_string(expectedLimit) + " SWAP=5996544");
 }
 
 /**
@@ -236,7 +279,9 @@ TEST_F(DobbySpecConfigTest, SwapLimit_EqualToMemLimit_Succeeds)
 {
     auto cfg = makeConfig(kSpecSwapEqualsLimit);
     EXPECT_TRUE(cfg->isValid());
-    EXPECT_EQ(expandMemTemplate(*cfg), "LIMIT=2998272 SWAP=2998272");
+
+    const unsigned expectedLimit = expectedPhysicalLimit(2998272);
+    EXPECT_EQ(expandMemTemplate(*cfg), "LIMIT=" + std::to_string(expectedLimit) + " SWAP=2998272");
 }
 
 /**
