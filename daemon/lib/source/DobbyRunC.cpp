@@ -402,13 +402,14 @@ bool DobbyRunC::killCont(const ContainerId& id, int signal, bool all) const
     AI_LOG_FN_ENTRY();
 
     AI_TRACE_EVENT("Dobby", "runc::kill");
-
+	AI_LOG_WARN("rj-dbg: dobby kill enter");
     // convert the signal to string
     std::string strSignal;
     switch (signal)
     {
         case SIGTERM:
             strSignal = "TERM";
+			AI_LOG_WARN("rj-dbg: TERM received");
             break;
         case SIGKILL:
             strSignal = "KILL";
@@ -431,10 +432,16 @@ bool DobbyRunC::killCont(const ContainerId& id, int signal, bool all) const
     pid_t pid = -1;
     if (all)
     {
+		AI_LOG_WARN("rj-dbg: pid all");
+		AI_LOG_WARN("runc kill launched (pid=%d) for container='%s' signal='%s' all=%d",
+             pid, id.c_str(), strSignal.c_str(), all);
         pid = forkExecRunC({"kill", "--all", id.c_str(), strSignal.c_str()}, {});
     }
     else
     {
+		AI_LOG_WARN("rj-dbg: killcon else");
+		AI_LOG_WARN("runc kill launched (pid=%d) for container='%s' signal='%s' all=%d",
+             pid, id.c_str(), strSignal.c_str(), all);
         pid = forkExecRunC({"kill", id.c_str(), strSignal.c_str()}, {});
     }
 
@@ -476,18 +483,19 @@ bool DobbyRunC::killCont(const ContainerId& id, int signal, bool all) const
                retryCounter > 0)
         {
             retryCounter--;
-            usleep(50000);
+			AI_LOG_WARN("rj-dbg: increased 50k to 500k ");
+            usleep(500000);
             contStatus = state(id);
         }
 
         // Container wasn't killed
-        if(retryCounter <= 0)
-        {
-            AI_LOG_WARN("SIGTERM kill did not kill container (probably masked), "
-                        "retrying kill with SIGKILL");
-            // retry kill with SIGKILL now, its result will be proper result now
-            returnValue = DobbyRunC::killCont(id, SIGKILL, all);
-        }
+        // if(retryCounter <= 0)
+        // {
+        //     AI_LOG_WARN("SIGTERM kill did not kill container (probably masked), "
+        //                 "retrying kill with SIGKILL");
+        //     // retry kill with SIGKILL now, its result will be proper result now
+        //     returnValue = DobbyRunC::killCont(id, SIGKILL, all);
+        // }
     }
 
     AI_LOG_FN_EXIT();
