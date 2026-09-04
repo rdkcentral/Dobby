@@ -433,16 +433,16 @@ bool DobbyRunC::killCont(const ContainerId& id, int signal, bool all) const
     if (all)
     {
 		AI_LOG_WARN("rj-dbg: pid all");
+        pid = forkExecRunC({"kill", "--all", id.c_str(), strSignal.c_str()}, {});
 		AI_LOG_WARN("runc kill launched (pid=%d) for container='%s' signal='%s' all=%d",
              pid, id.c_str(), strSignal.c_str(), all);
-        pid = forkExecRunC({"kill", "--all", id.c_str(), strSignal.c_str()}, {});
     }
     else
     {
 		AI_LOG_WARN("rj-dbg: killcon else");
+        pid = forkExecRunC({"kill", id.c_str(), strSignal.c_str()}, {});
 		AI_LOG_WARN("runc kill launched (pid=%d) for container='%s' signal='%s' all=%d",
              pid, id.c_str(), strSignal.c_str(), all);
-        pid = forkExecRunC({"kill", id.c_str(), strSignal.c_str()}, {});
     }
 
     if (pid <= 0)
@@ -483,8 +483,8 @@ bool DobbyRunC::killCont(const ContainerId& id, int signal, bool all) const
                retryCounter > 0)
         {
             retryCounter--;
-			AI_LOG_WARN("rj-dbg: increased 50k to 500k ");
-            usleep(500000);
+			AI_LOG_WARN("rj-dbg: increased 50k to 900k ");
+            usleep(900000);
             contStatus = state(id);
         }
 
