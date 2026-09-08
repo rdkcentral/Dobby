@@ -191,6 +191,7 @@ private:
 private:
     bool mValid;
     ctemplate::TemplateDictionary* mDictionary;
+    double mZramSwapToRamRatio;
 
 private:
     Json::Value mSpec;

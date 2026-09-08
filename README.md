@@ -135,7 +135,7 @@ The table below lists the supported top-level fields. Fields marked **mandatory*
 | `version` | string | Yes | Spec version. Currently `"1.0"` or `"1.1"`. |
 | `args` | array | Yes | Command and arguments to run inside the container. |
 | `user` | object | Yes | `uid` and `gid` the container process runs as. |
-| `memLimit` | integer | Yes | Requested memory limit in bytes. When `swapLimit` is present, this value is scaled down according to the host's RAM and swap capacity before being applied to `memory.limit_in_bytes`. Values below 256 KiB are accepted but will only generate a warning and may not be effective. |
+| `memLimit` | integer | Yes | Requested memory limit in bytes. When `swapLimit` is present, this value is scaled down according to the host's RAM and active zram swap capacity before being applied to `memory.limit_in_bytes`. Other swap types, such as swapfiles and partitions, are ignored. Values below 256 KiB are accepted but will only generate a warning and may not be effective. |
 | `swapLimit` | integer | No | Swap+memory limit in bytes (`memory.memsw.limit_in_bytes`). Must be ≥ the effective scaled memory limit. Defaults to unlimited (-1) when absent. |
 | `env` | array | No | Environment variables in `"KEY=VALUE"` format. |
 | `cwd` | string | No | Working directory inside the container. |
@@ -168,7 +168,7 @@ The table below lists the supported top-level fields. Fields marked **mandatory*
 }
 ```
 
-When `swapLimit` is present, `memLimit` is scaled down based on the host's swap-to-RAM ratio before it is applied to `memory.limit_in_bytes`. `swapLimit` sets the combined memory+swap ceiling enforced by the kernel cgroup (`memory.memsw.limit_in_bytes`). When omitted, `memLimit` is applied directly and memory+swap is unlimited (-1), allowing the container to use as much swap as the system provides.
+When `swapLimit` is present, `memLimit` is scaled down based on the host's active zram-swap-to-RAM ratio before it is applied to `memory.limit_in_bytes`. Swapfiles and swap partitions are not included in this ratio. `swapLimit` sets the combined memory+swap ceiling enforced by the kernel cgroup (`memory.memsw.limit_in_bytes`). When omitted, `memLimit` is applied directly and memory+swap is unlimited (-1), allowing the container to use as much swap as the system provides.
 
 ## DobbyTool
 This is a simple command line tool that is used for debugging purporses. It connects to the Dobby daemon over dbus and allows for debugging and testing containers.

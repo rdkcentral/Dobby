@@ -203,7 +203,7 @@ int64_t DobbySpecConfig::calculatePhysicalMemoryLimit(int64_t memLimit,
     return static_cast<int64_t>((1.0 / (1.0 + swapToRamRatio)) * static_cast<double>(memLimit));
 }
 
-static double getZramPercentage()
+static double getZramSwapToRamRatio()
 {
     std::ifstream meminfo("/proc/meminfo");
     if (!meminfo.is_open())
@@ -295,6 +295,7 @@ DobbySpecConfig::DobbySpecConfig(const std::shared_ptr<IDobbyUtils> &utils,
     , mDefaultPlugins(settings->defaultPlugins())
     , mRdkPluginsData(settings->rdkPluginsData())
     , mDictionary(nullptr)
+    , mZramSwapToRamRatio(0.0)
     , mConf(nullptr)
     , mSpecVersion(SpecVersion::Unknown)
     , mUserId(-1)
@@ -378,6 +379,7 @@ DobbySpecConfig::DobbySpecConfig(const std::shared_ptr<IDobbyUtils> &utils,
     , mGpuSettings(settings->gpuAccessSettings())
     , mVpuSettings(settings->vpuAccessSettings())
     , mDictionary(nullptr)
+    , mZramSwapToRamRatio(0.0)
     , mConf(nullptr)
     , mSpecVersion(SpecVersion::Unknown)
     , mUserId(-1)
@@ -600,6 +602,11 @@ bool DobbySpecConfig::parseSpec(ctemplate::TemplateDictionary* dictionary,
                               reader.getFormattedErrorMessages().c_str());
             return false;
         }
+    }
+
+    if (mSpec.isMember("swapLimit") && mSpec["swapLimit"].isIntegral())
+    {
+        mZramSwapToRamRatio = getZramSwapToRamRatio();
     }
 
     // step 2 - get the version number of the spec first, it may determine how
@@ -1381,8 +1388,7 @@ bool DobbySpecConfig::processMemLimit(const Json::Value& value,
     unsigned physLimit = memLimit;
     if (mSpec.isMember("swapLimit") && mSpec["swapLimit"].isIntegral())
     {
-        const double alpha = getZramPercentage();
-        physLimit = static_cast<unsigned>(calculatePhysicalMemoryLimit(memLimit, alpha));
+        physLimit = static_cast<unsigned>(calculatePhysicalMemoryLimit(memLimit, mZramSwapToRamRatio));
     }
     dictionary->SetIntValue(MEM_LIMIT, physLimit);
 
@@ -1444,8 +1450,7 @@ bool DobbySpecConfig::processSwapLimit(const Json::Value& value,
         }
 
         // swapLimit must be at least the effective zram-adjusted physical limit.
-        const double alpha = getZramPercentage();
-        const int64_t physLimit = calculatePhysicalMemoryLimit(memLimitSigned, alpha);
+        const int64_t physLimit = calculatePhysicalMemoryLimit(memLimitSigned, mZramSwapToRamRatio);
         if (memSwapSigned < physLimit)
         {
             AI_LOG_ERROR("swapLimit (%" PRId64 ") must be >= memory.limit_in_bytes (%" PRId64 ")",
