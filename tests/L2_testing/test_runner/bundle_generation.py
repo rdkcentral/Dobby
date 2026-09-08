@@ -73,13 +73,17 @@ def _normalise_config(config):
             if not cpu:
                 resources.pop("cpu", None)
 
-        # memory limit/swap are now scaled by the host's zram ratio, so they
-        # vary between the CI runner and whatever host generated the
-        # original fixture bundle. Strip both to keep the comparison stable.
+        # Swap is generated as -1 when no swapLimit is configured. Preserve the
+        # stable physical memory limit in that case; only omit it when an
+        # explicit swap limit caused host-dependent zram scaling.
         if isinstance(resources, dict) and isinstance(resources.get("memory"), dict):
-            resources["memory"].pop("swap", None)
-            resources["memory"].pop("limit", None)
-            if not resources["memory"]:
+            memory = resources["memory"]
+            swap = memory.get("swap")
+            limit = memory.get("limit")
+            memory.pop("swap", None)
+            if swap is not None and swap != -1 and swap != limit:
+                memory.pop("limit", None)
+            if not memory:
                 resources.pop("memory", None)
 
     # Runtime may append tmpfs size options at generation time

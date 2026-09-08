@@ -197,6 +197,12 @@ static const ctemplate::StaticTemplateString SECCOMP_SYSCALLS =
 
 int DobbySpecConfig::mNumCores = -1;
 
+int64_t DobbySpecConfig::calculatePhysicalMemoryLimit(int64_t memLimit,
+                                                      double swapToRamRatio)
+{
+    return static_cast<int64_t>((1.0 / (1.0 + swapToRamRatio)) * static_cast<double>(memLimit));
+}
+
 static double getZramPercentage()
 {
     std::ifstream meminfo("/proc/meminfo");
@@ -206,7 +212,6 @@ static double getZramPercentage()
     }
 
     unsigned long long memTotalKb = 0;
-    unsigned long long swapTotalKb = 0;
     std::string line;
 
     while (std::getline(meminfo, line))
@@ -225,25 +230,40 @@ static double getZramPercentage()
             }
             memTotalKb = value;
         }
-        else if (key == "SwapTotal:")
-        {
-            unsigned long long value = 0;
-            std::string units;
-            if (!(iss >> value >> units))
-            {
-                return 0.0;
-            }
-            swapTotalKb = value;
-        }
     }
 
-    if (memTotalKb == 0 || swapTotalKb == 0)
+    if (memTotalKb == 0)
     {
         return 0.0;
     }
 
-    const double alpha = static_cast<double>(swapTotalKb) / static_cast<double>(memTotalKb);
-    return std::max(0.0, std::min(alpha, 1.0));
+    std::ifstream swaps("/proc/swaps");
+    if (!swaps.is_open())
+    {
+        return 0.0;
+    }
+
+    unsigned long long zramTotalKb = 0;
+    std::string filename;
+    std::string type;
+    unsigned long long sizeKb = 0;
+    unsigned long long usedKb = 0;
+    int priority = 0;
+    std::getline(swaps, line);
+    while (swaps >> filename >> type >> sizeKb >> usedKb >> priority)
+    {
+        if (filename.rfind("/dev/zram", 0) == 0)
+        {
+            zramTotalKb += sizeKb;
+        }
+    }
+
+    if (zramTotalKb == 0)
+    {
+        return 0.0;
+    }
+
+    return static_cast<double>(zramTotalKb) / static_cast<double>(memTotalKb);
 }
 
 // TODO: should we only allowed these if a network namespace is enabled ?
@@ -1362,7 +1382,7 @@ bool DobbySpecConfig::processMemLimit(const Json::Value& value,
     if (mSpec.isMember("swapLimit") && mSpec["swapLimit"].isIntegral())
     {
         const double alpha = getZramPercentage();
-        physLimit = static_cast<unsigned>((1.0 - alpha) * static_cast<double>(memLimit));
+        physLimit = static_cast<unsigned>(calculatePhysicalMemoryLimit(memLimit, alpha));
     }
     dictionary->SetIntValue(MEM_LIMIT, physLimit);
 
@@ -1377,8 +1397,9 @@ bool DobbySpecConfig::processMemLimit(const Json::Value& value,
  *  allowing swap to be configured independently of the memory limit.  When
  *  absent the swap limit is set to -1 (unlimited).
  *
- *  The kernel requires swap >= memLimit, so an error is returned if the
- *  supplied value is smaller than the memLimit already set.
+ *  The kernel requires swap >= the effective physical memory limit, so an
+ *  error is returned if the supplied value is smaller than the adjusted
+ *  memory.limit_in_bytes value.
  *
  *  Example json:
  *
@@ -1422,8 +1443,9 @@ bool DobbySpecConfig::processSwapLimit(const Json::Value& value,
             return false;
         }
 
+        // swapLimit must be at least the effective zram-adjusted physical limit.
         const double alpha = getZramPercentage();
-        const int64_t physLimit = static_cast<int64_t>((1.0 - alpha) * static_cast<double>(memLimitSigned));
+        const int64_t physLimit = calculatePhysicalMemoryLimit(memLimitSigned, alpha);
         if (memSwapSigned < physLimit)
         {
             AI_LOG_ERROR("swapLimit (%" PRId64 ") must be >= memory.limit_in_bytes (%" PRId64 ")",
