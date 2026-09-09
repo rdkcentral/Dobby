@@ -404,29 +404,29 @@ bool DobbyRunC::killCont(const ContainerId& id, int signal, bool all) const
     AI_TRACE_EVENT("Dobby", "runc::kill");
 	AI_LOG_WARN("rj-dbg: dobby kill enter");
     // convert the signal to string
-    std::string strSignal;
-    switch (signal)
-    {
-        case SIGTERM:
-            strSignal = "TERM";
-			AI_LOG_WARN("rj-dbg: TERM received");
-            break;
-        case SIGKILL:
-            strSignal = "KILL";
-            break;
-        case SIGUSR1:
-            strSignal = "USR1";
-            break;
-        case SIGUSR2:
-            strSignal = "USR2";
-            break;
-        case SIGHUP:
-            strSignal = "HUP";
-            break;
-        default:
-            AI_LOG_ERROR_EXIT("signal %d not supported", signal);
-            return false;
-    }
+   //  std::string strSignal;
+   //  switch (signal)
+   //  {
+   //      case SIGTERM:
+   //          strSignal = "TERM";
+			// AI_LOG_WARN("rj-dbg: TERM received");
+   //          break;
+   //      case SIGKILL:
+   //          strSignal = "KILL";
+   //          break;
+   //      case SIGUSR1:
+   //          strSignal = "USR1";
+   //          break;
+   //      case SIGUSR2:
+   //          strSignal = "USR2";
+   //          break;
+   //      case SIGHUP:
+   //          strSignal = "HUP";
+   //          break;
+   //      default:
+   //          AI_LOG_ERROR_EXIT("signal %d not supported", signal);
+   //          return false;
+   //  }
 
     // run the following command "runc kill <id> KILL"
   //   pid_t pid = -1;
@@ -452,7 +452,7 @@ bool DobbyRunC::killCont(const ContainerId& id, int signal, bool all) const
   //   }
 
   //   // block waiting for the forked process to complete
-     int status;
+  //   int status;
   //   if (TEMP_FAILURE_RETRY(waitpid(pid, &status, 0)) < 0)
   //   {
   //       AI_LOG_SYS_ERROR_EXIT(errno, "waitpid failed");
@@ -466,7 +466,7 @@ bool DobbyRunC::killCont(const ContainerId& id, int signal, bool all) const
 
 
   //   // get the return code, 0 for success, 1 for failure
-     bool returnValue = (WEXITSTATUS(status) == EXIT_SUCCESS);
+  //   bool returnValue = (WEXITSTATUS(status) == EXIT_SUCCESS);
 
   //   // Fix problem where SIGTERM was masked and containers never exited
   //   if(signal == SIGTERM)
@@ -499,7 +499,7 @@ bool DobbyRunC::killCont(const ContainerId& id, int signal, bool all) const
     }
 
     AI_LOG_FN_EXIT();
-    return returnValue;
+    return 0;
 }
 
 // -----------------------------------------------------------------------------
