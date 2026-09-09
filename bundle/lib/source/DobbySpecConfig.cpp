@@ -37,6 +37,7 @@
 #include <sys/capability.h>
 #include <sys/stat.h>
 #include <fstream>
+#include <sstream>
 
 // Compile time generated strings that (in theory) speeds up the processing
 // of ctemplate expanding
@@ -196,6 +197,75 @@ static const ctemplate::StaticTemplateString SECCOMP_SYSCALLS =
 
 int DobbySpecConfig::mNumCores = -1;
 
+int64_t DobbySpecConfig::calculatePhysicalMemoryLimit(int64_t memLimit,
+                                                      double swapToRamRatio)
+{
+    return static_cast<int64_t>((1.0 / (1.0 + swapToRamRatio)) * static_cast<double>(memLimit));
+}
+
+static double getZramSwapToRamRatio()
+{
+    std::ifstream meminfo("/proc/meminfo");
+    if (!meminfo.is_open())
+    {
+        return 0.0;
+    }
+
+    unsigned long long memTotalKb = 0;
+    std::string line;
+
+    while (std::getline(meminfo, line))
+    {
+        std::istringstream iss(line);
+        std::string key;
+        iss >> key;
+
+        if (key == "MemTotal:")
+        {
+            unsigned long long value = 0;
+            std::string units;
+            if (!(iss >> value >> units))
+            {
+                return 0.0;
+            }
+            memTotalKb = value;
+        }
+    }
+
+    if (memTotalKb == 0)
+    {
+        return 0.0;
+    }
+
+    std::ifstream swaps("/proc/swaps");
+    if (!swaps.is_open())
+    {
+        return 0.0;
+    }
+
+    unsigned long long zramTotalKb = 0;
+    std::string filename;
+    std::string type;
+    unsigned long long sizeKb = 0;
+    unsigned long long usedKb = 0;
+    int priority = 0;
+    std::getline(swaps, line);
+    while (swaps >> filename >> type >> sizeKb >> usedKb >> priority)
+    {
+        if (filename.rfind("/dev/zram", 0) == 0)
+        {
+            zramTotalKb += sizeKb;
+        }
+    }
+
+    if (zramTotalKb == 0)
+    {
+        return 0.0;
+    }
+
+    return static_cast<double>(zramTotalKb) / static_cast<double>(memTotalKb);
+}
+
 // TODO: should we only allowed these if a network namespace is enabled ?
 const std::map<std::string, int> DobbySpecConfig::mAllowedCaps =
 {
@@ -225,6 +295,7 @@ DobbySpecConfig::DobbySpecConfig(const std::shared_ptr<IDobbyUtils> &utils,
     , mDefaultPlugins(settings->defaultPlugins())
     , mRdkPluginsData(settings->rdkPluginsData())
     , mDictionary(nullptr)
+    , mZramSwapToRamRatio(0.0)
     , mConf(nullptr)
     , mSpecVersion(SpecVersion::Unknown)
     , mUserId(-1)
@@ -308,6 +379,7 @@ DobbySpecConfig::DobbySpecConfig(const std::shared_ptr<IDobbyUtils> &utils,
     , mGpuSettings(settings->gpuAccessSettings())
     , mVpuSettings(settings->vpuAccessSettings())
     , mDictionary(nullptr)
+    , mZramSwapToRamRatio(0.0)
     , mConf(nullptr)
     , mSpecVersion(SpecVersion::Unknown)
     , mUserId(-1)
@@ -530,6 +602,11 @@ bool DobbySpecConfig::parseSpec(ctemplate::TemplateDictionary* dictionary,
                               reader.getFormattedErrorMessages().c_str());
             return false;
         }
+    }
+
+    if (mSpec.isMember("swapLimit") && mSpec["swapLimit"].isIntegral())
+    {
+        mZramSwapToRamRatio = getZramSwapToRamRatio();
     }
 
     // step 2 - get the version number of the spec first, it may determine how
@@ -1306,7 +1383,14 @@ bool DobbySpecConfig::processMemLimit(const Json::Value& value,
         AI_LOG_WARN("memory limit looks dangerously low");
     }
 
-    dictionary->SetIntValue(MEM_LIMIT, memLimit);
+    // Only apply the zram-aware adjustment when swapLimit is explicitly
+    // set; otherwise keep memLimit as-is to match the memory.limit_in_bytes.
+    unsigned physLimit = memLimit;
+    if (mSpec.isMember("swapLimit") && mSpec["swapLimit"].isIntegral())
+    {
+        physLimit = static_cast<unsigned>(calculatePhysicalMemoryLimit(memLimit, mZramSwapToRamRatio));
+    }
+    dictionary->SetIntValue(MEM_LIMIT, physLimit);
 
     return true;
 }
@@ -1319,8 +1403,9 @@ bool DobbySpecConfig::processMemLimit(const Json::Value& value,
  *  allowing swap to be configured independently of the memory limit.  When
  *  absent the swap limit is set to -1 (unlimited).
  *
- *  The kernel requires swap >= memLimit, so an error is returned if the
- *  supplied value is smaller than the memLimit already set.
+ *  The kernel requires swap >= the effective physical memory limit, so an
+ *  error is returned if the supplied value is smaller than the adjusted
+ *  memory.limit_in_bytes value.
  *
  *  Example json:
  *
@@ -1363,10 +1448,13 @@ bool DobbySpecConfig::processSwapLimit(const Json::Value& value,
             AI_LOG_ERROR("memLimit is negative; cannot validate swapLimit");
             return false;
         }
-        if (memSwapSigned < memLimitSigned)
+
+        // swapLimit must be at least the effective zram-adjusted physical limit.
+        const int64_t physLimit = calculatePhysicalMemoryLimit(memLimitSigned, mZramSwapToRamRatio);
+        if (memSwapSigned < physLimit)
         {
-            AI_LOG_ERROR("swapLimit (%" PRId64 ") must be >= memLimit (%" PRId64 ")",
-                         memSwapSigned, memLimitSigned);
+            AI_LOG_ERROR("swapLimit (%" PRId64 ") must be >= memory.limit_in_bytes (%" PRId64 ")",
+                         memSwapSigned, physLimit);
             return false;
         }
     }
