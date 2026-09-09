@@ -429,64 +429,64 @@ bool DobbyRunC::killCont(const ContainerId& id, int signal, bool all) const
     }
 
     // run the following command "runc kill <id> KILL"
-    pid_t pid = -1;
-    if (all)
-    {
-		AI_LOG_WARN("rj-dbg: pid all");
-        pid = forkExecRunC({"kill", "--all", id.c_str(), strSignal.c_str()}, {});
-		AI_LOG_WARN("runc kill launched (pid=%d) for container='%s' signal='%s' all=%d",
-             pid, id.c_str(), strSignal.c_str(), all);
-    }
-    else
-    {
-		AI_LOG_WARN("rj-dbg: killcon else");
-        pid = forkExecRunC({"kill", id.c_str(), strSignal.c_str()}, {});
-		AI_LOG_WARN("runc kill launched (pid=%d) for container='%s' signal='%s' all=%d",
-             pid, id.c_str(), strSignal.c_str(), all);
-    }
+  //   pid_t pid = -1;
+  //   if (all)
+  //   {
+		// AI_LOG_WARN("rj-dbg: pid all");
+  //       pid = forkExecRunC({"kill", "--all", id.c_str(), strSignal.c_str()}, {});
+		// AI_LOG_WARN("runc kill launched (pid=%d) for container='%s' signal='%s' all=%d",
+  //            pid, id.c_str(), strSignal.c_str(), all);
+  //   }
+  //   else
+  //   {
+		// AI_LOG_WARN("rj-dbg: killcon else");
+  //       pid = forkExecRunC({"kill", id.c_str(), strSignal.c_str()}, {});
+		// AI_LOG_WARN("runc kill launched (pid=%d) for container='%s' signal='%s' all=%d",
+  //            pid, id.c_str(), strSignal.c_str(), all);
+  //   }
 
-    if (pid <= 0)
-    {
-        AI_LOG_ERROR_EXIT("failed to execute runc tool");
-        return false;
-    }
+  //   if (pid <= 0)
+  //   {
+  //       AI_LOG_ERROR_EXIT("failed to execute runc tool");
+  //       return false;
+  //   }
 
-    // block waiting for the forked process to complete
-    int status;
-    if (TEMP_FAILURE_RETRY(waitpid(pid, &status, 0)) < 0)
-    {
-        AI_LOG_SYS_ERROR_EXIT(errno, "waitpid failed");
-        return false;
-    }
-    if (!WIFEXITED(status))
-    {
-        AI_LOG_ERROR_EXIT("runc didn't exit?  status=0x%08x", status);
-        return false;
-    }
+  //   // block waiting for the forked process to complete
+     int status;
+  //   if (TEMP_FAILURE_RETRY(waitpid(pid, &status, 0)) < 0)
+  //   {
+  //       AI_LOG_SYS_ERROR_EXIT(errno, "waitpid failed");
+  //       return false;
+  //   }
+  //   if (!WIFEXITED(status))
+  //   {
+  //       AI_LOG_ERROR_EXIT("runc didn't exit?  status=0x%08x", status);
+  //       return false;
+  //   }
 
 
-    // get the return code, 0 for success, 1 for failure
-    bool returnValue = (WEXITSTATUS(status) == EXIT_SUCCESS);
+  //   // get the return code, 0 for success, 1 for failure
+     bool returnValue = (WEXITSTATUS(status) == EXIT_SUCCESS);
 
-    // Fix problem where SIGTERM was masked and containers never exited
-    if(signal == SIGTERM)
-    {
-        int retryCounter = 10;
+  //   // Fix problem where SIGTERM was masked and containers never exited
+  //   if(signal == SIGTERM)
+  //   {
+  //       int retryCounter = 10;
 
-        // get current container status
-        ContainerStatus contStatus = state(id);
+  //       // get current container status
+  //       ContainerStatus contStatus = state(id);
 
-        // Unknown (container deleted), or Stopped (continer stopped)
-        // are both valid options after successful kill
-        while (contStatus != ContainerStatus::Unknown &&
-               contStatus != ContainerStatus::Stopped &&
-               retryCounter > 0)
-        {
-            retryCounter--;
-			AI_LOG_WARN("rj-dbg: increased 50k to 900k ");
-            usleep(900000);
-            contStatus = state(id);
-        }
+  //       // Unknown (container deleted), or Stopped (continer stopped)
+  //       // are both valid options after successful kill
+  //       while (contStatus != ContainerStatus::Unknown &&
+  //              contStatus != ContainerStatus::Stopped &&
+  //              retryCounter > 0)
+  //       {
+  //           retryCounter--;
+		// 	AI_LOG_WARN("rj-dbg: increased 50k to 900k ");
+  //           usleep(900000);
+  //           contStatus = state(id);
+  //       }
 
         // Container wasn't killed
         // if(retryCounter <= 0)
