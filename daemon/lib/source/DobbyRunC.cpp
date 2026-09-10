@@ -496,7 +496,7 @@ bool DobbyRunC::killCont(const ContainerId& id, int signal, bool all) const
         //     // retry kill with SIGKILL now, its result will be proper result now
         //     returnValue = DobbyRunC::killCont(id, SIGKILL, all);
         // }
-    }
+  //  }
 
     AI_LOG_FN_EXIT();
     return 0;
