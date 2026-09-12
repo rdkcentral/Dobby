@@ -651,9 +651,6 @@
                 },
                 "data": {
                     "type": "object",
-                    "required": [
-                        "path"
-                    ],
                     "properties": {
                         "path": {
                             "type": "string"
