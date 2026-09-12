@@ -17,7 +17,7 @@
 
 add_library( ethanlog
         SHARED
-        source/ethanlog.c
+        source/ethanlog.cpp
 
         )
 
@@ -28,11 +28,16 @@ target_include_directories( ethanlog
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
         )
 
+target_link_libraries( ethanlog
+        PUBLIC
+        Threads::Threads
+
+        )
 
 set_target_properties( ethanlog
         PROPERTIES
         PUBLIC_HEADER include/ethanlog.h
-        VERSION       ${DOBBY_MAJOR_VERSION}.1.0
+        VERSION       ${DOBBY_MAJOR_VERSION}.2.0
         SOVERSION     ${DOBBY_MAJOR_VERSION}
 
         )
