@@ -40,13 +40,13 @@
 // -----------------------------------------------------------------------------
 /**
  *  @class ThunderPlugin
- *  @brief Plugin used to map in the wpeframework (aka thunder) server.
+ *  @brief Plugin used to map in the thunder server.
  *
- *  @note This is NOT a "thunder plugin" for the WPEFramework, instead it is
- *  plugin to dobby to allow containers to access the WPEFramework services.
+ *  @note This is NOT a "thunder plugin" for the Thunder, instead it is
+ *  plugin to dobby to allow containers to access the Thunder services.
  *
  *  This plugin does two things; it uses iptables to setup routing to the
- *  wpeframework server, and it optionally creates a security token for the app
+ *  thunder server, and it optionally creates a security token for the app
  *  and puts it in the containers env variables.
  *
  */
