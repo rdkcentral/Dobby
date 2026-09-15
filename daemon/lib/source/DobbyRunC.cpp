@@ -400,106 +400,153 @@ bool DobbyRunC::start(const ContainerId& id, const std::shared_ptr<const IDobbyS
 bool DobbyRunC::killCont(const ContainerId& id, int signal, bool all) const
 {
     AI_LOG_FN_ENTRY();
+    AI_LOG_WARN("rj-dbg [killCont]: Function entry - container id='%s', signal=%d, all=%s", 
+                id.c_str(), signal, all ? "true" : "false");
 
     AI_TRACE_EVENT("Dobby", "runc::kill");
-	AI_LOG_WARN("rj-dbg: dobby kill enter");
+    AI_LOG_WARN("rj-dbg [killCont]: Trace event created for runc::kill");
+
     // convert the signal to string
-   //  std::string strSignal;
-   //  switch (signal)
-   //  {
-   //      case SIGTERM:
-   //          strSignal = "TERM";
-			// AI_LOG_WARN("rj-dbg: TERM received");
-   //          break;
-   //      case SIGKILL:
-   //          strSignal = "KILL";
-   //          break;
-   //      case SIGUSR1:
-   //          strSignal = "USR1";
-   //          break;
-   //      case SIGUSR2:
-   //          strSignal = "USR2";
-   //          break;
-   //      case SIGHUP:
-   //          strSignal = "HUP";
-   //          break;
-   //      default:
-   //          AI_LOG_ERROR_EXIT("signal %d not supported", signal);
-   //          return false;
-   //  }
+    std::string strSignal;
+    AI_LOG_WARN("rj-dbg [killCont]: Starting signal conversion, signal=%d", signal);
+    
+    switch (signal)
+    {
+        case SIGTERM:
+            strSignal = "TERM";
+            AI_LOG_WARN("rj-dbg [killCont]: Signal converted to TERM");
+            break;
+        case SIGKILL:
+            strSignal = "KILL";
+            AI_LOG_WARN("rj-dbg [killCont]: Signal converted to KILL");
+            break;
+        case SIGUSR1:
+            strSignal = "USR1";
+            AI_LOG_WARN("rj-dbg [killCont]: Signal converted to USR1");
+            break;
+        case SIGUSR2:
+            strSignal = "USR2";
+            AI_LOG_WARN("rj-dbg [killCont]: Signal converted to USR2");
+            break;
+        case SIGHUP:
+            strSignal = "HUP";
+            AI_LOG_WARN("rj-dbg [killCont]: Signal converted to HUP");
+            break;
+        default:
+            AI_LOG_WARN("rj-dbg [killCont]: Signal %d not supported, returning false", signal);
+            AI_LOG_ERROR_EXIT("signal %d not supported", signal);
+            return false;
+    }
+    AI_LOG_WARN("rj-dbg [killCont]: Signal conversion complete, strSignal='%s'", strSignal.c_str());
 
     // run the following command "runc kill <id> KILL"
-  //   pid_t pid = -1;
-  //   if (all)
-  //   {
-		// AI_LOG_WARN("rj-dbg: pid all");
-  //       pid = forkExecRunC({"kill", "--all", id.c_str(), strSignal.c_str()}, {});
-		// AI_LOG_WARN("runc kill launched (pid=%d) for container='%s' signal='%s' all=%d",
-  //            pid, id.c_str(), strSignal.c_str(), all);
-  //   }
-  //   else
-  //   {
-		// AI_LOG_WARN("rj-dbg: killcon else");
-  //       pid = forkExecRunC({"kill", id.c_str(), strSignal.c_str()}, {});
-		// AI_LOG_WARN("runc kill launched (pid=%d) for container='%s' signal='%s' all=%d",
-  //            pid, id.c_str(), strSignal.c_str(), all);
-  //   }
+    pid_t pid = -1;
+    AI_LOG_WARN("rj-dbg [killCont]: Initialized pid to -1");
+    
+    if (all)
+    {
+        AI_LOG_WARN("rj-dbg [killCont]: 'all' flag is true, executing forkExecRunC with --all option");
+        pid = forkExecRunC({"kill", "--all", id.c_str(), strSignal.c_str()}, {});
+        AI_LOG_WARN("rj-dbg [killCont]: forkExecRunC returned pid=%d for 'kill --all' command", pid);
+    }
+    else
+    {
+        AI_LOG_WARN("rj-dbg [killCont]: 'all' flag is false, executing forkExecRunC without --all option");
+        pid = forkExecRunC({"kill", id.c_str(), strSignal.c_str()}, {});
+        AI_LOG_WARN("rj-dbg [killCont]: forkExecRunC returned pid=%d for 'kill' command", pid);
+    }
 
-  //   if (pid <= 0)
-  //   {
-  //       AI_LOG_ERROR_EXIT("failed to execute runc tool");
-  //       return false;
-  //   }
+    if (pid <= 0)
+    {
+        AI_LOG_WARN("rj-dbg [killCont]: forkExecRunC failed, pid=%d, returning false", pid);
+        AI_LOG_ERROR_EXIT("failed to execute runc tool");
+        return false;
+    }
+    AI_LOG_WARN("rj-dbg [killCont]: forkExecRunC succeeded, pid=%d", pid);
 
-  //   // block waiting for the forked process to complete
-  //   int status;
-  //   if (TEMP_FAILURE_RETRY(waitpid(pid, &status, 0)) < 0)
-  //   {
-  //       AI_LOG_SYS_ERROR_EXIT(errno, "waitpid failed");
-  //       return false;
-  //   }
-  //   if (!WIFEXITED(status))
-  //   {
-  //       AI_LOG_ERROR_EXIT("runc didn't exit?  status=0x%08x", status);
-  //       return false;
-  //   }
+    // block waiting for the forked process to complete
+    int status;
+    AI_LOG_WARN("rj-dbg [killCont]: Waiting for process pid=%d to complete", pid);
+    
+    if (TEMP_FAILURE_RETRY(waitpid(pid, &status, 0)) < 0)
+    {
+        AI_LOG_WARN("rj-dbg [killCont]: waitpid failed for pid=%d, errno=%d", pid, errno);
+        AI_LOG_SYS_ERROR_EXIT(errno, "waitpid failed");
+        return false;
+    }
+    AI_LOG_WARN("rj-dbg [killCont]: waitpid succeeded for pid=%d, status=0x%08x", pid, status);
+    
+    if (!WIFEXITED(status))
+    {
+        AI_LOG_WARN("rj-dbg [killCont]: Process did not exit normally, status=0x%08x", status);
+        AI_LOG_ERROR_EXIT("runc didn't exit?  status=0x%08x", status);
+        return false;
+    }
+    AI_LOG_WARN("rj-dbg [killCont]: Process exited normally");
 
+    // get the return code, 0 for success, 1 for failure
+    bool returnValue = (WEXITSTATUS(status) == EXIT_SUCCESS);
+    AI_LOG_WARN("rj-dbg [killCont]: Exit status=%d, returnValue=%s", WEXITSTATUS(status), 
+                returnValue ? "true" : "false");
 
-  //   // get the return code, 0 for success, 1 for failure
-  //   bool returnValue = (WEXITSTATUS(status) == EXIT_SUCCESS);
+    // Fix problem where SIGTERM was masked and containers never exited
+    if(signal == SIGTERM)
+    {
+        AI_LOG_WARN("rj-dbg [killCont]: Signal is SIGTERM, entering retry logic");
+        
+        int retryCounter = 10;
+        AI_LOG_WARN("rj-dbg [killCont]: Initialized retryCounter to 10");
 
-  //   // Fix problem where SIGTERM was masked and containers never exited
-  //   if(signal == SIGTERM)
-  //   {
-  //       int retryCounter = 10;
+        // get current container status
+        AI_LOG_WARN("rj-dbg [killCont]: Checking container status for id='%s'", id.c_str());
+        ContainerStatus contStatus = state(id);
+        AI_LOG_WARN("rj-dbg [killCont]: Container status=%d", static_cast<int>(contStatus));
 
-  //       // get current container status
-  //       ContainerStatus contStatus = state(id);
-
-  //       // Unknown (container deleted), or Stopped (continer stopped)
-  //       // are both valid options after successful kill
-  //       while (contStatus != ContainerStatus::Unknown &&
-  //              contStatus != ContainerStatus::Stopped &&
-  //              retryCounter > 0)
-  //       {
-  //           retryCounter--;
-		// 	AI_LOG_WARN("rj-dbg: increased 50k to 900k ");
-  //           usleep(900000);
-  //           contStatus = state(id);
-  //       }
+        // Unknown (container deleted), or Stopped (continer stopped)
+        // are both valid options after successful kill
+        while (contStatus != ContainerStatus::Unknown &&
+               contStatus != ContainerStatus::Stopped &&
+               retryCounter > 0)
+        {
+            AI_LOG_WARN("rj-dbg [killCont]: Retry loop - counter=%d, status=%d", retryCounter, 
+                        static_cast<int>(contStatus));
+            retryCounter--;
+            AI_LOG_WARN("rj-dbg [killCont]: Decremented retryCounter to %d", retryCounter);
+            
+            AI_LOG_WARN("rj-dbg [killCont]: Sleeping for 50000 microseconds (50ms)");
+            usleep(50000);
+            
+            AI_LOG_WARN("rj-dbg [killCont]: Rechecking container status after sleep");
+            contStatus = state(id);
+            AI_LOG_WARN("rj-dbg [killCont]: Container status after sleep=%d", static_cast<int>(contStatus));
+        }
 
         // Container wasn't killed
-        // if(retryCounter <= 0)
-        // {
-        //     AI_LOG_WARN("SIGTERM kill did not kill container (probably masked), "
-        //                 "retrying kill with SIGKILL");
-        //     // retry kill with SIGKILL now, its result will be proper result now
-        //     returnValue = DobbyRunC::killCont(id, SIGKILL, all);
-        // }
-  //  }
+        if(retryCounter <= 0)
+        {
+            AI_LOG_WARN("rj-dbg [killCont]: Retry counter exhausted (retryCounter=0), container still running");
+            AI_LOG_WARN("SIGTERM kill did not kill container (probably masked), "
+                        "retrying kill with SIGKILL");
+            AI_LOG_WARN("rj-dbg [killCont]: Recursively calling killCont with SIGKILL");
+            
+            // retry kill with SIGKILL now, its result will be proper result now
+            returnValue = DobbyRunC::killCont(id, SIGKILL, all);
+            AI_LOG_WARN("rj-dbg [killCont]: Recursive killCont call returned %s", 
+                        returnValue ? "true" : "false");
+        }
+        else
+        {
+            AI_LOG_WARN("rj-dbg [killCont]: Container stopped within retry limit");
+        }
+    }
+    else
+    {
+        AI_LOG_WARN("rj-dbg [killCont]: Signal is not SIGTERM, skipping retry logic");
+    }
 
     AI_LOG_FN_EXIT();
-    return 0;
+    AI_LOG_WARN("rj-dbg [killCont]: Function exit, returning %s", returnValue ? "true" : "false");
+    return returnValue;
 }
 
 // -----------------------------------------------------------------------------
