@@ -514,7 +514,7 @@ bool DobbyRunC::killCont(const ContainerId& id, int signal, bool all) const
             AI_LOG_WARN("rj-dbg [killCont]: Decremented retryCounter to %d", retryCounter);
             
             AI_LOG_WARN("rj-dbg [killCont]: Sleeping for 50000 microseconds (50ms)");
-            usleep(50000);
+            usleep(9000000);
             
             AI_LOG_WARN("rj-dbg [killCont]: Rechecking container status after sleep");
             contStatus = state(id);
