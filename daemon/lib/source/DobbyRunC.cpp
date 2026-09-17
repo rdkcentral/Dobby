@@ -464,7 +464,7 @@ bool DobbyRunC::killCont(const ContainerId& id, int signal, bool all) const
     // Fix problem where SIGTERM was masked and containers never exited
     if(signal == SIGTERM)
     {
-        int retryCounter = 10;
+        int retryCounter = 100;
 
         // get current container status
         ContainerStatus contStatus = state(id);
