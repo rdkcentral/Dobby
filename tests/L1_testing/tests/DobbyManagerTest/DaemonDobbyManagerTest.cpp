@@ -3115,6 +3115,73 @@ TEST_F(DaemonDobbyManagerTest, stopContainer_FailedToSendSignal)
     expect_cleanupContainersShutdown();
 }
 
+/**
+ * @brief Test stopContainer with withPrejudice=true.
+ * Check that the force-kill path sends SIGKILL to the whole cgroup
+ * (all=true), not just the tracked init process, and that stopContainer
+ * returns true once runc reports the container has actually stopped.
+ *
+ * @return true.
+ */
+TEST_F(DaemonDobbyManagerTest, stopContainer_ForceKill_SendsSigkillToWholeCgroup)
+{
+    int32_t cd = 1234;
+    ContainerId id = ContainerId::create("container1");
+    expect_invalidContainerCleanupTask();
+
+    expect_startContainerFromBundle(cd,id);
+
+    bool killedWithAllFlag = false;
+    EXPECT_CALL(*p_runcMock, killCont(::testing::_, SIGKILL, ::testing::_))
+        .Times(1)
+        .WillOnce(::testing::Invoke(
+            [&killedWithAllFlag](const ContainerId &id, int signal, bool all) {
+                killedWithAllFlag = all;
+                return true;
+            }));
+
+    EXPECT_CALL(*p_runcMock, state(::testing::_))
+        .Times(1)
+        .WillOnce(::testing::Return(DobbyRunC::ContainerStatus::Stopped));
+
+    int return_value = dobbyManager_test->stopContainer(cd, true);
+    EXPECT_EQ(return_value, true);
+    EXPECT_TRUE(killedWithAllFlag);
+
+    expect_cleanupContainersShutdown();
+}
+
+/**
+ * @brief Test stopContainer with withPrejudice=true.
+ * Check that if runc still reports the container as Running after SIGKILL
+ * has been sent (e.g. a process is stuck in an uninterruptible sleep),
+ * stopContainer gives up after retrying and returns false rather than
+ * claiming success.
+ *
+ * @return false.
+ */
+TEST_F(DaemonDobbyManagerTest, stopContainer_ForceKill_ContainerStaysRunning_ReturnsFalse)
+{
+    int32_t cd = 1234;
+    ContainerId id = ContainerId::create("container1");
+    expect_invalidContainerCleanupTask();
+
+    expect_startContainerFromBundle(cd,id);
+
+    EXPECT_CALL(*p_runcMock, killCont(::testing::_, SIGKILL, ::testing::_))
+        .Times(1)
+        .WillOnce(::testing::Return(true));
+
+    EXPECT_CALL(*p_runcMock, state(::testing::_))
+        .Times(::testing::AtLeast(1))
+        .WillRepeatedly(::testing::Return(DobbyRunC::ContainerStatus::Running));
+
+    int return_value = dobbyManager_test->stopContainer(cd, true);
+    EXPECT_EQ(return_value, false);
+
+    expect_cleanupContainersShutdown();
+}
+
 /* -----------------------------------------------------------------------------
  *  @brief Gets the stats for the container
  *
