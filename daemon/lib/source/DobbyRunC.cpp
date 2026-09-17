@@ -494,7 +494,7 @@ bool DobbyRunC::killCont(const ContainerId& id, int signal, bool all) const
     {
         AI_LOG_WARN("rj-dbg [killCont]: Signal is SIGTERM, entering retry logic");
         
-        int retryCounter = 60;
+        int retryCounter = 120;
         AI_LOG_WARN("rj-dbg [killCont]: Initialized retryCounter to 10");
 
         // get current container status
