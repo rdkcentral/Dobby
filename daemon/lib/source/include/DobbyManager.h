@@ -176,6 +176,8 @@ private:
     bool restartContainer(const ContainerId& id,
                           const std::unique_ptr<DobbyContainer>& container);
 
+    bool forceKillContainerAndVerify(const ContainerId& id);
+
 private:
     ContainerStartedFunc mContainerStartedCb;
     ContainerStoppedFunc mContainerStoppedCb;
