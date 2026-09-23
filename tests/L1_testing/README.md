@@ -1,6 +1,8 @@
 # Dobby L1 Test
 Main objective for L1_testing is checking the api’s functionality in Dobby component
 
+The test targets and mocks correspond to the components described in the [subsystem documentation index](../../docs/README.md). See the [AppInfrastructure guide](../../docs/app-infrastructure.md) and [IPC utilities/schema guide](../../docs/ipc-utils-and-schema.md) for the shared test seams.
+
 ## Environment Setup
 Dobby test runs on Ubuntu
 

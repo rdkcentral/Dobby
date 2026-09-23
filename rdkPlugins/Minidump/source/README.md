@@ -1,5 +1,7 @@
 # Dobby RDK Minidump Plugin
 
+For the shared hook contract and plugin loading flow, see the [RDK plugin guide](../../../docs/rdk-plugins.md) and [plugin launcher guide](../../../docs/plugin-launcher.md). This README remains the source for minidump configuration.
+
 ## Quick Start
 The main task of Minidump Plugin is to allow the collection of minidump core files from container bounds.
 
