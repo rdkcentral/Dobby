@@ -1,6 +1,6 @@
 # Dobby RDK LocalTime Plugin
 
-For the shared hook contract and plugin loading flow, see the [RDK plugin guide](../../docs/rdk-plugins.md) and [plugin launcher guide](../../docs/plugin-launcher.md). This README remains the source for LocalTime configuration.
+For the shared hook contract and plugin loading flow, see the [RDK plugin guide](../README.md) and [plugin launcher guide](../../pluginLauncher/README.md). This README remains the source for LocalTime configuration.
 
 ## Quick Start
 Add the following section to your OCI runtime configuration `config.json` file to automatically symlink the mentioned path to the container's rootfs.

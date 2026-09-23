@@ -38,7 +38,7 @@ The two backend directories contain the implementation files corresponding to co
 
 `IIpcService` exposes validity, synchronous/asynchronous method invocation, signals, handler registration, monitor mode, availability checks, flush, start, stop, and bus address access.
 
-Actual excerpt from [AppInfrastructure/IpcService/include/IIpcService.h](../AppInfrastructure/IpcService/include/IIpcService.h):
+Actual excerpt from [AppInfrastructure/IpcService/include/IIpcService.h](include/IIpcService.h):
 
 ```cpp
 virtual bool start() = 0;

@@ -35,7 +35,7 @@ Dobby daemon D-Bus interfaces
 
 `DobbyProxy` implements administrative and control operations, including start from spec/bundle, stop, pause, resume, hibernate, wakeup, mount, annotations, exec, state, info, listing, and listener registration. It maintains a state-change thread and event queue.
 
-Excerpt from [client/lib/include/DobbyProxy.h](../client/lib/include/DobbyProxy.h):
+Excerpt from [client/lib/include/DobbyProxy.h](lib/include/DobbyProxy.h):
 
 ```cpp
 bool stopContainer(int32_t cd, bool withPrejudice) const override;

@@ -4,4 +4,4 @@ If you would like to contribute code to this project you can do so through GitHu
 
 ## Codebase Documentation
 
-Before changing native code, use the [subsystem documentation index](docs/README.md) to find the relevant architecture, lifecycle, build, and testing guide. Plugin contributors should also read the [RDK plugin guide](docs/rdk-plugins.md) and the [plugin launcher guide](docs/plugin-launcher.md).
+Before changing native code, use the [subsystem documentation index](docs/README.md) to find the relevant architecture, lifecycle, build, and testing guide. Plugin contributors should also read the [RDK plugin guide](rdkPlugins/README.md) and the [plugin launcher guide](pluginLauncher/README.md).

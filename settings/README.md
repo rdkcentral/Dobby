@@ -30,7 +30,7 @@ Tracing --> daemon/plugin diagnostics
 
 The settings interface provides workspace and persistent paths, extra environment variables, console socket path, GPU/VPU access settings, external interfaces, and the Dobby address range. `HardwareAccessSettings` groups device nodes, supplementary groups, mounts, and environment.
 
-Excerpt from [settings/include/IDobbySettings.h](../settings/include/IDobbySettings.h):
+Excerpt from [settings/include/IDobbySettings.h](include/IDobbySettings.h):
 
 ```cpp
 virtual std::string workspaceDir() const = 0;

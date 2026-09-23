@@ -38,7 +38,7 @@ Each plugin generally has a `source/<Plugin>.h` and `.cpp`; complex plugins add 
 
 `RdkPluginBase` implements unused hooks as success and supplies an empty dependency list. A concrete plugin must implement `name()` and `hookHints()` and override only the hooks it needs.
 
-Excerpt from [rdkPlugins/Common/include/RdkPluginBase.h](../rdkPlugins/Common/include/RdkPluginBase.h):
+Excerpt from [rdkPlugins/Common/include/RdkPluginBase.h](Common/include/RdkPluginBase.h):
 
 ```cpp
 virtual bool preCreation()

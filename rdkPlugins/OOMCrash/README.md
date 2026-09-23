@@ -1,6 +1,6 @@
 # Dobby RDK OOMCrash Plugin
 
-For the shared hook contract and plugin loading flow, see the [RDK plugin guide](../../docs/rdk-plugins.md) and [plugin launcher guide](../../docs/plugin-launcher.md). This README remains the source for OOMCrash configuration.
+For the shared hook contract and plugin loading flow, see the [RDK plugin guide](../README.md) and [plugin launcher guide](../../pluginLauncher/README.md). This README remains the source for OOMCrash configuration.
 
 ## Quick Start
 The main task of OOMCrash Plugin is to create a OOM crash file named `oom_crashed_<container_name>.txt` on the configured path when a container is crashed due to Out of Memory and also delete that file when the container exits normally or if OOM not detected.

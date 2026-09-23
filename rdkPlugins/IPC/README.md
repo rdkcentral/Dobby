@@ -1,6 +1,6 @@
 # Dobby RDK IPC Plugin
 
-For the shared hook contract and plugin loading flow, see the [RDK plugin guide](../../docs/rdk-plugins.md), [plugin launcher guide](../../docs/plugin-launcher.md), and [IPC guide](../../docs/ipc.md). This README remains the source for container D-Bus configuration.
+For the shared hook contract and plugin loading flow, see the [RDK plugin guide](../README.md), [plugin launcher guide](../../pluginLauncher/README.md), and [IPC guide](../../AppInfrastructure/IpcService/README.md). This README remains the source for container D-Bus configuration.
 
 ## Quick Start
 Add the following section to your OCI runtime configuration `config.json` file to enable dbus inside the container.

@@ -38,7 +38,7 @@ Dobby spec / JSON
 
 `DobbyConfig` exposes validity, identity, bus choices, console policy, restart policy, rootfs, generated schema, and plugin maps. It also provides helpers such as `addMount`, `addEnvironmentVar`, `changeProcessArgs`, `writeConfigJson`, and `setPidsLimit`.
 
-Actual declaration from [bundle/lib/include/DobbyConfig.h](../bundle/lib/include/DobbyConfig.h):
+Actual declaration from [bundle/lib/include/DobbyConfig.h](lib/include/DobbyConfig.h):
 
 ```cpp
 virtual bool isValid() const = 0;

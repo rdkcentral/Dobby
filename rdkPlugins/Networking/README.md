@@ -1,6 +1,6 @@
 # Dobby RDK Networking Plugin
 
-For the plugin lifecycle contract and launcher flow, see the [RDK plugin guide](../../docs/rdk-plugins.md) and [plugin launcher guide](../../docs/plugin-launcher.md). This README remains the source for networking configuration options.
+For the plugin lifecycle contract and launcher flow, see the [RDK plugin guide](../README.md) and [plugin launcher guide](../../pluginLauncher/README.md). This README remains the source for networking configuration options.
 
 ## Quick Start
 Add the following section to your OCI runtime configuration `config.json` file to setup networking in the container.

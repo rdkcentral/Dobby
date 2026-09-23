@@ -38,7 +38,7 @@ load   dependency   execute
 
 Plugins provide a stable `name()`, a constant `hookHints()` bitmask, lifecycle hook methods, and `getDependencies()`. The available hooks include post-installation, pre-creation, create-runtime, create-container, optional start-container, post-start, post-halt, and post-stop.
 
-Excerpt from [pluginLauncher/lib/include/IDobbyRdkPlugin.h](../pluginLauncher/lib/include/IDobbyRdkPlugin.h):
+Excerpt from [pluginLauncher/lib/include/IDobbyRdkPlugin.h](lib/include/IDobbyRdkPlugin.h):
 
 ```cpp
 virtual std::string name() const = 0;

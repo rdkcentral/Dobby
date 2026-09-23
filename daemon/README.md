@@ -48,7 +48,7 @@ The exact sequencing between `DobbyManager`, `DobbyRunC`, and plugin hooks is di
 
 `Dobby` owns the daemon-level collaborators and exposes methods such as `startFromSpec`, `startFromBundle`, `stop`, `pause`, `resume`, `hibernate`, `wakeup`, `exec`, `list`, `getState`, and `getInfo`. It stores `mManager`, `mWorkQueue`, `mIpcService`, service/object names, and shutdown state.
 
-Representative declaration from [daemon/lib/include/Dobby.h](../daemon/lib/include/Dobby.h):
+Representative declaration from [daemon/lib/include/Dobby.h](lib/include/Dobby.h):
 
 ```cpp
 void run() const;

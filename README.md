@@ -80,16 +80,16 @@ If you with to develop Dobby further, detailed instructions on setting up a deve
 The repository also includes modular, self-contained guides for the native subsystems:
 
 * [Subsystem documentation index](docs/README.md)
-* [Daemon](docs/daemon.md)
-* [Bundle and OCI configuration](docs/bundle.md)
-* [IPC and D-Bus](docs/ipc.md)
-* [Client](docs/client.md)
-* [RDK plugin launcher](docs/plugin-launcher.md)
-* [RDK plugins](docs/rdk-plugins.md)
-* [AppInfrastructure](docs/app-infrastructure.md)
-* [Settings, utilities, tracing, and protocol](docs/settings-utils-tracing-protocol.md)
-* [Legacy plugins](docs/plugins.md)
-* [IPC utilities, runtime schema, and test infrastructure](docs/ipc-utils-and-schema.md)
+* [Daemon](daemon/README.md)
+* [Bundle and OCI configuration](bundle/README.md)
+* [IPC and D-Bus](AppInfrastructure/IpcService/README.md)
+* [Client](client/README.md)
+* [RDK plugin launcher](pluginLauncher/README.md)
+* [RDK plugins](rdkPlugins/README.md)
+* [AppInfrastructure](AppInfrastructure/README.md)
+* [Settings, utilities, tracing, and protocol](settings/README.md)
+* [Legacy plugins](plugins/README.md)
+* [IPC utilities, runtime schema, and test infrastructure](ipcUtils/README.md)
 
 # Usage
 ## DobbyDaemon
