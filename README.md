@@ -75,6 +75,22 @@ If you with to develop Dobby further, detailed instructions on setting up a deve
 * Code documentation can be generated with Doxygen by running `doxygen ./Doxyfile`
 * Doxygen documentation is hosted here: https://rdkcentral.github.io/Dobby/
 
+### Subsystem Documentation
+
+The repository also includes modular, self-contained guides for the native subsystems:
+
+* [Subsystem documentation index](docs/README.md)
+* [Daemon](docs/daemon.md)
+* [Bundle and OCI configuration](docs/bundle.md)
+* [IPC and D-Bus](docs/ipc.md)
+* [Client](docs/client.md)
+* [RDK plugin launcher](docs/plugin-launcher.md)
+* [RDK plugins](docs/rdk-plugins.md)
+* [AppInfrastructure](docs/app-infrastructure.md)
+* [Settings, utilities, tracing, and protocol](docs/settings-utils-tracing-protocol.md)
+* [Legacy plugins](docs/plugins.md)
+* [IPC utilities, runtime schema, and test infrastructure](docs/ipc-utils-and-schema.md)
+
 # Usage
 ## DobbyDaemon
 This is the main component of Dobby. This daemon is responsible for managing, controlling and creating containers. The daemon runs in the background and communicates over dbus. It connects on a few dbus addresses - one for admin, one for debugging and the other for Dobby commands.
