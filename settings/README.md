@@ -79,9 +79,7 @@ classDiagram
     class ContainerId
     class PerfettoTracing
     IDobbySettings <|.. Settings
-    Settings --> IDobbyUtils_v1
     IDobbyUtils_v1 --> ContainerId
-    PerfettoTracing ..> IDobbySettings
 ```
 
 ```mermaid
