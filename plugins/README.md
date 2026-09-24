@@ -68,7 +68,7 @@ classDiagram
     PluginBase <|-- EthanLogPlugin
     PluginBase <|-- OpenCDMPlugin
     PluginBase <|-- MulticastSocketsPlugin
-    ServiceMonitor --> EthanLogPlugin
+    %% ServiceMonitor is a standalone helper; no direct relationship is defined here.
 ```
 
 ```mermaid
