@@ -40,7 +40,7 @@ No representative snippet is quoted because the inspected central contracts were
 
 ## 5. Configuration & Build Integration
 
-`LEGACY_COMPONENTS` enables legacy plugins and related template/spec support. Legacy dependencies include ctemplate according to the root build configuration. Perfetto also requires debug tracing support and the Perfetto SDK.
+`LEGACY_COMPONENTS` enables legacy plugins and related template/spec support. The legacy Perfetto plugin bind-mounts the host producer socket; separate in-process tracing requires a debug build, `ENABLE_PERFETTO_TRACING`, and the Perfetto SDK.
 
 ## 6. Internal Workflows & Execution Flow
 
