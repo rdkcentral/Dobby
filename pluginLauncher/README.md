@@ -120,7 +120,7 @@ flowchart TD
 
 ## 8. Testing & Quality Analysis
 
-L1 tests include plugin manager mocks used by daemon tests. Suggested dedicated tests cover missing symbols, duplicate names, dependency cycles, optional versus required plugins, hook hint mismatches, timeout cancellation, and library unload ordering. No complete launcher integration test was identified in the inspected file inventory.
+L1 tests include plugin manager mocks used by daemon tests, and `tests/L2_testing/test_runner/plugin_launcher.py` provides launcher integration coverage for `createRuntime`. Suggested dedicated tests cover missing symbols, duplicate names, dependency cycles, optional versus required plugins, hook hint mismatches, timeout cancellation, and library unload ordering.
 
 ## 9. Beginner-to-Expert Teaching Mode
 
