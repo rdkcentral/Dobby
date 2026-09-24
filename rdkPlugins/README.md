@@ -92,7 +92,8 @@ classDiagram
     IDobbyRdkPlugin <|.. RdkPluginBase
     RdkPluginBase <|-- NetworkingPlugin
     RdkPluginBase <|-- Storage
-    RdkPluginBase <|-- LoggingPlugin
+    class DobbyLoggerBase
+    DobbyLoggerBase <|-- LoggingPlugin
 ```
 
 ```mermaid
