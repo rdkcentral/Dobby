@@ -1389,11 +1389,15 @@ bool DobbyManager::stopContainer(int32_t cd, bool withPrejudice)
              container->state == DobbyContainer::State::Hibernated ||
              container->state == DobbyContainer::State::Awakening)
     {
-        // If a hibernation is in progress, abort it in a blocking manner before
-        // killing the container. This ensures memcr_worker fully unseizes any
-        // in-flight PID before it is killed, preventing an assert crash in
-        // memcr_worker when it tries to operate on a terminated PID.
-        if (container->state == DobbyContainer::State::Hibernating)
+        // If a hibernation is in progress or has entered the abort path, stop
+        // it in a blocking manner before killing the container. This ensures
+        // memcr_worker has fully unseized any in-flight PID before it is killed.
+         // Awakening alone is not enough to identify an in-flight hibernation
+        // abort: wakeupContainer() also sets Awakening before issuing WakeupProcess
+        // for a container that is already hibernated. Only treat Awakening as a
+        // hibernation abort when there is still a live in-flight PID associated
+        // with the active HibernateProcess() call.
+        if (container->state == DobbyContainer::State::Hibernating ||  (container->state == DobbyContainer::State::Awakening &&  container->hibernatingPid != 0))
         {
             if (!abortContainerHibernationIfNeeded(cd))
             {
@@ -1860,11 +1864,15 @@ bool DobbyManager::abortContainerHibernationIfNeeded(int32_t cd)
     // assert(WIFSTOPPED(status)) inside memcr_worker. We must drive memcr to
     // unseize_target() for this PID before issuing killCont().
     const uint32_t inflightPid = it->second->hibernatingPid;
+    AI_LOG_INFO("Abort hibernation pre-check for '%s': currentState=%d inFlightPid=%u",
+                id.c_str(), static_cast<int>(it->second->state), inflightPid);
 
     // Set state to Awakening: the hibernate thread checks this at the top of
     // each PID loop iteration and will abort before starting any further
     // HibernateProcess() call.
     it->second->state = DobbyContainer::State::Awakening;
+    AI_LOG_INFO("Abort hibernation state transition for '%s': Hibernating -> Awakening (inFlightPid=%u)",
+                id.c_str(), inflightPid);
 
     if (inflightPid != 0)
     {
