@@ -92,7 +92,7 @@ classDiagram
     class IDobbyUtils
     DobbySpecConfig --|> DobbyConfig
     DobbyBundle --> IDobbyUtils
-    DobbyBundle --> DobbyRootfs
+    DobbyRootfs --> DobbyBundle
     DobbyConfig --> DobbyBundle
 ```
 
