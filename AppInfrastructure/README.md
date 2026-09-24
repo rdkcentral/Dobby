@@ -19,7 +19,7 @@ Daemon / client / plugins
 
 ## 3. Code Organization (Folder & File-Level)
 
-- `AppInfrastructure/Common/include`: `Timer`, `PollLoop`, `ThreadedDispatcher`, `ConditionVariable`, `Mutex`, `SpinLock`, `Notifier`, `FileUtilities`, `IDGenerator`, and related interfaces.
+- `AppInfrastructure/Common/include`: `Timer`, `PollLoop`, `ThreadedDispatcher`, `ConditionVariable`, `Mutex`, `SpinLock`, `FileUtilities`, `IDGenerator`, and related interfaces.
 - `AppInfrastructure/Common/source`: implementations including `PollLoop.cpp`, `ThreadedDispatcher.cpp`, `Timer.cpp`, and filesystem/hash helpers.
 - `AppInfrastructure/Common/test/source`: focused unit tests for timers, dispatchers, file utilities, watchers, IDs, and synchronization.
 - `AppInfrastructure/IpcService`: D-Bus abstraction and backends; documented in [AppInfrastructure/IpcService/README.md](IpcService/README.md).
