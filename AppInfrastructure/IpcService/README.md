@@ -46,7 +46,7 @@ virtual bool stop() = 0;
 virtual void flush() = 0;
 ```
 
-`start()` begins the dispatcher; `stop()` terminates it. `flush()` guarantees queued messages/handlers before the call are processed, and callers must not hold a lock needed by a handler.
+`start()` begins the dispatcher; `stop()` terminates it. For the libdbus backend, `flush()` drains queued messages/handlers, while the sd-bus implementation treats it as a no-op, so callers must not rely on it for synchronization there.
 
 ### Backend classes
 
