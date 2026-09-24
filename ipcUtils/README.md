@@ -23,9 +23,9 @@ runtime-schemas -> libocispec generation -> rt_dobby_schema.h
 - `ipcUtils/include/DobbyIpcBus.h`: bus address/setup contract.
 - `ipcUtils/include/DobbyIPCUtils.h`, `IDobbyIPCUtils.h`: Dobby-specific IPC operations.
 - `ipcUtils/source/DobbyIpcBus.cpp`, `DobbyIPCUtils.cpp`: implementations.
-- `runtime-schemas/dobby_schema.json`: base runtime schema.
-- `runtime-schemas/defs-plugins.json`: plugin definitions.
-- `runtime-schemas/add_external_plugin_schema.py`, `add_plugin_tables.py`: schema assembly scripts.
+- `bundle/runtime-schemas/dobby_schema.json`: base runtime schema.
+- `bundle/runtime-schemas/defs-plugins.json`: plugin definitions.
+- `bundle/runtime-schemas/add_external_plugin_schema.py`, `add_plugin_tables.py`: schema assembly scripts.
 - `tests/L1_testing/mocks/`: mock implementations for daemon, IPC, bundle, utility, plugin, and runtime collaborators.
 - `tests/L1_testing/tests/`: unit tests for daemon, manager, proxy, configuration, and utilities.
 
