@@ -453,6 +453,16 @@ static int doForkExec(int argc, char * argv[])
             {
                 LOG_NFO("%s", msg);
             }
+
+            if ((pid == exePid) && (getpid() == 1))
+            {
+                LOG_NFO("main process terminated, killing remaining container processes");
+                if ((kill(-1, SIGKILL) != 0) && (errno != ESRCH))
+                {
+                    LOG_ERR("failed to kill remaining container processes (%d - %s)",
+                            errno, strerror(errno));
+                }
+            }
         }
     }
 
