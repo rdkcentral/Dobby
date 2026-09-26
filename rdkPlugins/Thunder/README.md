@@ -1,5 +1,7 @@
 # Dobby RDK Thunder Plugin
 
+For the shared hook contract and dependency ordering, see the [RDK plugin guide](../README.md) and [plugin launcher guide](../../pluginLauncher/README.md). This README remains the source for Thunder-specific configuration.
+
 ## Quick Start
 Add the following section to your OCI runtime configuration `config.json` file to enable Thunder access from within a container.
 

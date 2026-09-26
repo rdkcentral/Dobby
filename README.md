@@ -52,7 +52,7 @@ cmake -DCMAKE_BUILD_TYPE=Debug -DRDK_PLATFORM=DEV_VM -DCMAKE_INSTALL_PREFIX:PATH
 | `-DSETTINGS_APPEND`         | Valid UNIX path                                      | Settings to append to the base settings file as defined in `-DSETTINGS_FILE`                                                                                                                                                                                        |
 | `-DLEGACY_COMPONENTS`       | ON/OFF                                               | Enable or disable legacy components (legacy plugins, Dobby specs, ...). Defaults to OFF                                                                                                                                                                             |
 | `-DENABLE_LTO`              | ON/OFF                                               | Enable Link Time Optimisation (https://gcc.gnu.org/onlinedocs/gccint/LTO-Overview.html). Requires GCC >4,5 although versions >6 are strongly recommended. Defaults to `OFF`                                                                                         |
-| `-DENABLE_PERFETTO_TRACING` | ON/OFF                                               | Option to enable or disable Perfetto tracing. Can not be enabled for release builds. Requires Perfetto SDK to be installed, and Legacy Components enabled                                                                                                           |
+| `-DENABLE_PERFETTO_TRACING` | ON/OFF                                               | Option to enable or disable Perfetto tracing. Can not be enabled for release builds. Requires Perfetto SDK to be installed.                                                                                                                                    |
 | `-DDOBBY_SERVICE`           | Reverse domain name string                           | Specify the Dobby dbus service name. Defaults to `org.rdk.dobby` if none specified.                                                                                                                                                                                 |
 | `-DDDOBBY_OBJECT`           | Valid UNIX path                                      | Specify the Dobby dbus object path. Defaults to `/org/rdk/dobby` if none specified.                                                                                                                                                                                 |
 | `-DUSE_STARTCONTAINER_HOOK` | ON/OFF                                               | Whether to use the startcontainer OCI hook or not. Defaults to OFF.                                                                                                                                                                                                 |
@@ -74,6 +74,22 @@ If you with to develop Dobby further, detailed instructions on setting up a deve
 * A high level overview of Dobby can be found at RDKCentral [here](https://wiki.rdkcentral.com/display/ASP/Dobby)
 * Code documentation can be generated with Doxygen by running `doxygen ./Doxyfile`
 * Doxygen documentation is hosted here: https://rdkcentral.github.io/Dobby/
+
+### Subsystem Documentation
+
+The repository also includes modular, self-contained guides for the native subsystems:
+
+* [Subsystem documentation index](docs/README.md)
+* [Daemon](daemon/README.md)
+* [Bundle and OCI configuration](bundle/README.md)
+* [IPC and D-Bus](AppInfrastructure/IpcService/README.md)
+* [Client](client/README.md)
+* [RDK plugin launcher](pluginLauncher/README.md)
+* [RDK plugins](rdkPlugins/README.md)
+* [AppInfrastructure](AppInfrastructure/README.md)
+* [Settings, utilities, tracing, and protocol](settings/README.md)
+* [Legacy plugins](plugins/README.md)
+* [IPC utilities, runtime schema, and test infrastructure](ipcUtils/README.md)
 
 # Usage
 ## DobbyDaemon

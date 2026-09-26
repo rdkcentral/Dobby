@@ -1,5 +1,7 @@
 # Automatic tests for dobby based features
 
+The L2 scenarios exercise the runtime workflows described in the [daemon guide](../../daemon/README.md), [bundle guide](../../bundle/README.md), and [RDK plugin guide](../../rdkPlugins/README.md).
+
 ## Requirements
 This test runner uses only basic python modules. This means that if you have python3 installed you can run it without any 'pip install *' commands. But because in yocto some basic modules are removed below there is list of all modules used in testcases:
 argparse
