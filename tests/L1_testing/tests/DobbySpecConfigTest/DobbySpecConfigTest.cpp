@@ -97,6 +97,8 @@ static const char* kMemTemplateStr  = "LIMIT={{MEM_LIMIT}} SWAP={{MEM_SWAP}}";
 // ── Inline ctemplate for reading NO_NEW_PRIVS back from the dict ─────────────
 static const char* kPrivsTemplateName = "test_no_new_privs";
 static const char* kPrivsTemplateStr  = "NO_NEW_PRIVS={{NO_NEW_PRIVS}}";
+static const char* kSeccompTemplateName = "test_seccomp_names";
+static const char* kSeccompTemplateStr = R"({"names":[{{SECCOMP_SYSCALLS}}]})";
 
 // ── Fixture ───────────────────────────────────────────────────────────────────
 
@@ -158,6 +160,10 @@ protected:
             kPrivsTemplateName,
             kPrivsTemplateStr,
             ctemplate::DO_NOT_STRIP);
+        ctemplate::StringToTemplateCache(
+            kSeccompTemplateName,
+            kSeccompTemplateStr,
+            ctemplate::DO_NOT_STRIP);
     }
 
     void TearDown() override
@@ -217,6 +223,30 @@ TEST_F(DobbySpecConfigTest, SwapLimit_DefaultsToUnlimited)
     EXPECT_TRUE(cfg->isValid());
 
     EXPECT_EQ(expandMemTemplate(*cfg), "LIMIT=2998272 SWAP=-1");
+}
+
+TEST_F(DobbySpecConfigTest, SeccompNamesAreJsonEncoded)
+{
+    auto cfg = makeConfig(kSpecMemOnly);
+    ASSERT_TRUE(cfg->isValid());
+
+    Json::Value seccomp;
+    seccomp["defaultAction"] = "SCMP_ACT_ALLOW";
+    seccomp["syscalls"]["action"] = "SCMP_ACT_ERRNO";
+    seccomp["syscalls"]["names"].append("read\"]},\"hooks\":{}");
+    ASSERT_TRUE(cfg->processSeccomp(seccomp, cfg->mDictionary));
+
+    std::string output;
+    ASSERT_TRUE(ctemplate::ExpandTemplate(kSeccompTemplateName,
+                                          ctemplate::DO_NOT_STRIP,
+                                          cfg->mDictionary,
+                                          &output));
+    Json::Value parsed;
+    Json::Reader reader;
+    ASSERT_TRUE(reader.parse(output, parsed));
+    EXPECT_EQ(parsed["names"].size(), 1u);
+    EXPECT_EQ(parsed["names"][0].asString(), "read\"]},\"hooks\":{}");
+    EXPECT_FALSE(parsed.isMember("hooks"));
 }
 
 TEST_F(DobbySpecConfigTest, PhysicalMemoryLimit_UsesRamShareOfTotalCapacity)

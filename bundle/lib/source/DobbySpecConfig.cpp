@@ -2808,19 +2808,23 @@ bool DobbySpecConfig::processSeccomp(const Json::Value& value,
     std::stringstream ss;
     if (names.size() > 0)
     {
-        for (int i = 0; i < (int)names.size() - 1; ++i)
+        Json::StreamWriterBuilder builder;
+        builder["indentation"] = "";
+        for (Json::ArrayIndex i = 0; i < names.size(); ++i)
         {
             const Json::Value& entry = names[i];
             if (!entry.isString())
             {
-                AI_LOG_ERROR("invalid 'seccomp.syscalls.names[%d]' field", i);
+                AI_LOG_ERROR("invalid 'seccomp.syscalls.names[%u]' field", i);
                 return false;
             }
 
-            ss << "\"" << entry.asString() << "\", ";
+            if (i > 0)
+            {
+                ss << ", ";
+            }
+            ss << Json::writeString(builder, entry);
         }
-
-        ss << "\"" << names[names.size() - 1].asString() << "\"";
     }
     else
     {
