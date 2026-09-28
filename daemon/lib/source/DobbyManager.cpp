@@ -1400,7 +1400,7 @@ bool DobbyManager::stopContainer(int32_t cd, bool withPrejudice)
         if (container->state == DobbyContainer::State::Hibernating ||
             (container->state == DobbyContainer::State::Awakening && container->hibernatingPid != 0))
         {
-            if (!abortContainerHibernationIfNeeded(cd, locker))
+            if (!abortContainerHibernationIfNeeded(cd))
             {
                 AI_LOG_WARN("failed to abort hibernation for container %d", cd);
                 AI_LOG_FN_EXIT();
@@ -1813,20 +1813,15 @@ bool DobbyManager::hibernateContainer(int32_t cd, const std::string& options)
  *  which is written under mLock immediately before each HibernateProcess() call
  *  and cleared under mLock when the full hibernation sequence completes.
  *
- *  mLock is released only around the blocking WakeupProcess socket call so
- *  that this call doesn't monopolize memcr (a resource shared with other
- *  memcr clients, e.g. JSPP) for the whole duration of the round-trip. It is
- *  re-acquired immediately afterwards before touching container state. The
- *  hibernate thread is blocked inside HibernateProcess() (a memcr socket
- *  call) when inflightPid != 0 and does not hold mLock at that point, so
- *  there is no deadlock risk from releasing/reacquiring here.
+ *  mLock is held throughout this function, including during the WakeupProcess
+ *  call. The hibernate thread is blocked inside HibernateProcess() (a memcr
+ *  socket call) when inflightPid != 0 and does not hold mLock at that point,
+ *  so there is no deadlock risk.
  *
  *  Unlike wakeupContainer(), this runs entirely on the calling thread (no new
  *  thread spawned) and does not emit the awoken callback.
  *
- *  @param[in]      cd      The descriptor of the container to abort hibernation for.
- *  @param[in,out]  locker  The caller's lock on mLock; briefly released around
- *                          the blocking WakeupProcess call.
+ *  @param[in]  cd      The descriptor of the container to abort hibernation for.
  *
  *  @return true on success (or if no abort was needed); false if:
  *            - the container was not found by descriptor at entry, or
@@ -1836,7 +1831,7 @@ bool DobbyManager::hibernateContainer(int32_t cd, const std::string& options)
  *              state != Hibernating and abort its loop).
  *          Callers must not proceed with killCont() when false is returned.
  */
-bool DobbyManager::abortContainerHibernationIfNeeded(int32_t cd, std::unique_lock<std::mutex>& locker)
+bool DobbyManager::abortContainerHibernationIfNeeded(int32_t cd)
 {
     AI_LOG_FN_ENTRY();
 
@@ -1896,21 +1891,7 @@ bool DobbyManager::abortContainerHibernationIfNeeded(int32_t cd, std::unique_loc
         // Future PIDs will not be reached because state is now Awakening.
         AI_LOG_INFO("Aborting hibernation of '%s': sending WakeupProcess for in-flight PID %u",
                     id.c_str(), inflightPid);
-        // Release mLock for the blocking memcr round-trip: this is a shared,
-        // serialized resource also used by other memcr clients, and holding
-        // the lock here otherwise starves them for the round-trip duration.
-        locker.unlock();
         const DobbyHibernate::Error wakeRet = DobbyHibernate::WakeupProcess(static_cast<pid_t>(inflightPid));
-        locker.lock();
-
-        // Container may have been removed while we were unlocked; re-find it.
-        it = mContainers.find(id);
-        if (it == mContainers.cend())
-        {
-            AI_LOG_WARN("container '%s' disappeared while aborting hibernation", id.c_str());
-            AI_LOG_FN_EXIT();
-            return false;
-        }
 
         if (wakeRet != DobbyHibernate::Error::ErrorNone)
         {
