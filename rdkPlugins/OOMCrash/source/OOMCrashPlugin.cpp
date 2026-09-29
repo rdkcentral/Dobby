@@ -18,6 +18,11 @@
 */
 
 #include "OOMCrashPlugin.h"
+
+#include <map>
+
+#define FIREBOLT_STATE          "fireboltState"
+#define FIREBOLT_STATE_PREV     "fireboltState_prev"
 /**
  * Need to do this at the start of every plugin to make sure the correct
  * C methods are visible to allow PluginLauncher to find the plugin
@@ -70,11 +75,12 @@ bool OOMCrash::postInstallation()
         return false;
     }
 
-    const std::string path = mContainerConfig->rdk_plugins->oomcrash->data->path;
+    const char *pathPtr = mContainerConfig->rdk_plugins->oomcrash->data->path;
+    const std::string path = pathPtr ? pathPtr : "";
     if (path.empty())
     {
-        AI_LOG_ERROR("OOMCrash path is empty");
-        return false;
+        AI_LOG_INFO("OOMCrash path not configured, skipping mount setup for container '%s'", mUtils->getContainerId().c_str());
+        return true;
     }
 
     if (!mUtils->mkdirRecursive((mRootfsPath + path).c_str(), 0755) && errno != EEXIST)
@@ -116,19 +122,15 @@ bool OOMCrash::postHalt()
     if (mUtils->exitStatus != 0)
         oomDetected = checkForOOM();
 
-    if (oomDetected)
+    const char *pathPtr = mContainerConfig->rdk_plugins->oomcrash->data->path;
+    const std::string path = pathPtr ? pathPtr : "";
+
+    if (oomDetected && !path.empty())
         createFileForOOM();
 
     // Remove the crashFile if container exits normally or if no OOM detected
-    if (mUtils->exitStatus == 0 || !oomDetected)
+    if (!path.empty() && (mUtils->exitStatus == 0 || !oomDetected))
     {
-        std::string path = mContainerConfig->rdk_plugins->oomcrash->data->path;
-        if (path.empty())
-        {
-            AI_LOG_ERROR("OOMCrash path is empty");
-            return false;
-        }
-
         std::string crashFile = path + "/oom_crashed_" + mUtils->getContainerId() + ".txt";
         if (remove(crashFile.c_str()) != 0)
         {
@@ -164,26 +166,42 @@ std::vector<std::string> OOMCrash::getDependencies() const
     std::vector<std::string> dependencies;
     const rt_defs_plugins_oom_crash* pluginConfig = mContainerConfig->rdk_plugins->oomcrash;
 
-    for (size_t i = 0; i < pluginConfig->depends_on_len; i++)
+    if (pluginConfig && pluginConfig->depends_on)
     {
-        dependencies.push_back(pluginConfig->depends_on[i]);
+        for (size_t i = 0; i < pluginConfig->depends_on_len; i++)
+        {
+            dependencies.push_back(pluginConfig->depends_on[i]);
+        }
     }
 
     return dependencies;
 }
 
 /**
- * @brief Read cgroup file to detect OOM.
+ * @brief Read the cgroup OOM kill counter for the container.
  *
- *  On cgroups v1 reads memory.failcnt from
- *  /sys/fs/cgroup/memory/<id>/memory.failcnt.
+ *  cgroups v1: parses memory.oom_control from
+ *    /sys/fs/cgroup/memory/<id>/memory.oom_control
  *
- *  On cgroups v2 reads the oom_kill field from
- *  /sys/fs/cgroup/<id>/memory.events.
+ *    Kernel >= 4.13 exposes an 'oom_kill' field — a monotonic count of
+ *    processes killed by the OOM killer.  This is the preferred value.
  *
- *  @param[out]  val      gives the number of times that the cgroup limit was exceeded.
+ *    Kernel < 4.13 does not have 'oom_kill'; 'under_oom' is 1 while the
+ *    cgroup is actively under OOM pressure (transient — may clear before
+ *    postHalt runs; isMemoryAtLimit() is then used as a final fallback).
  *
- * @return true on successfully reading from the file.
+ *    Note: memory.failcnt counts allocation failures, NOT OOM kills.
+ *    With swap available the kernel may swap rather than kill, and the
+ *    counter resets to 0 on cgroup recreation, making it unreliable.
+ *
+ *  cgroups v2: reads the 'oom_kill' field from
+ *    /sys/fs/cgroup/<id>/memory.events — a monotonic count of OOM kills.
+ *    Falls back to the system.slice scope path if the direct path is absent.
+ *
+ *  @param[out]  val   Set to the oom_kill counter (v1 kernel >= 4.13 or v2),
+ *                     or the under_oom flag (v1 kernel < 4.13) on success.
+ *
+ * @return true on successfully reading and parsing the value.
  */
 
 bool OOMCrash::readCgroup(unsigned long *val)
@@ -204,7 +222,7 @@ bool OOMCrash::readCgroup(unsigned long *val)
     else
     {
         // On cgroups v1, use the legacy per-controller path
-        path = "/sys/fs/cgroup/memory/" + containerId + "/memory.failcnt";
+        path = "/sys/fs/cgroup/memory/" + containerId + "/memory.oom_control";
     }
 
     FILE *fp = fopen(path.c_str(), "r");
@@ -219,7 +237,11 @@ bool OOMCrash::readCgroup(unsigned long *val)
 
         if (!fp)
         {
-            if (errno != ENOENT)
+            if (errno == ENOENT)
+                AI_LOG_WARN("cgroup file '%s' not found — cgroup may have been "
+                            "destroyed before postHalt (race condition)",
+                            path.c_str());
+            else
                 AI_LOG_ERROR("failed to open '%s' (%d - %s)", path.c_str(), errno, strerror(errno));
 
             return false;
@@ -256,46 +278,248 @@ bool OOMCrash::readCgroup(unsigned long *val)
     }
     else
     {
-        // v1: single numeric value in memory.failcnt
-        if ((rd = getline(&line, &len, fp)) < 0)
+        // v1: parse key-value memory.oom_control.
+        // Prefer 'oom_kill' (kernel >= 4.13, monotonic); fall back to
+        // 'under_oom' (kernel < 4.13, transient — 1 while OOM is active).
+        unsigned long oomKill = 0, underOom = 0;
+        bool foundOomKill = false, foundUnderOom = false;
+
+        while ((rd = getline(&line, &len, fp)) > 0)
         {
-            if (line)
-                free(line);
-            fclose(fp);
-            AI_LOG_ERROR("failed to read cgroup file line (%d - %s)", errno, strerror(errno));
+            unsigned long v;
+            if (sscanf(line, "oom_kill %lu", &v) == 1)
+            {
+                oomKill = v;
+                foundOomKill = true;
+            }
+            else if (sscanf(line, "under_oom %lu", &v) == 1)
+            {
+                underOom = v;
+                foundUnderOom = true;
+            }
+        }
+        free(line);
+        fclose(fp);
+
+        if (foundOomKill)
+        {
+            *val = oomKill;
+            return true;
+        }
+        if (foundUnderOom && underOom > 0)
+        {
+            AI_LOG_INFO("'oom_kill' not present (kernel < 4.13), 'under_oom' is active");
+            *val = underOom;
+            return true;
+        }
+        if (foundUnderOom)
+        {
+            // under_oom is 0 — OOM pressure may have cleared before postHalt.
+            // Return false so checkForOOM() falls through to isMemoryAtLimit().
+            AI_LOG_INFO("'oom_kill' not present (kernel < 4.13), 'under_oom' is 0 "
+                        "(transient flag may have cleared); deferring to memory limit check");
             return false;
         }
-
-        *val = strtoul(line, nullptr, 0);
-
-        fclose(fp);
-        free(line);
-
-        return true;
+        AI_LOG_ERROR("neither 'oom_kill' nor 'under_oom' found in '%s'", path.c_str());
+        return false;
     }
 }
 
 /**
- * @brief Check for Out of Memory by reading cgroup file.
+ * @brief Check if memory (or memory+swap) max usage reached the configured
+ *        limit, indicating the container hit its memory ceiling.
+ *
+ *  This is used as a fallback OOM indicator on older kernels (< 4.13) where
+ *  the oom_kill counter does not exist and under_oom is transient. The
+ *  high-water mark persists until the cgroup is destroyed.
+ *
+ *  cgroups v1: compares memory.max_usage_in_bytes against memory.limit_in_bytes
+ *    (and the memsw equivalents) under /sys/fs/cgroup/memory/<id>.
+ *
+ *  cgroups v2: compares memory.peak against memory.max (and the swap
+ *    equivalents) under /sys/fs/cgroup/<id>, falling back to the
+ *    system.slice scope path - mirroring readCgroup(). A limit file may
+ *    hold the literal "max" (unlimited); such pairs are skipped.
+ *
+ * @return true if max usage >= limit for memory or memory+swap.
+ */
+bool OOMCrash::isMemoryAtLimit()
+{
+    const std::string containerId = mUtils->getContainerId();
+
+    // Detect cgroups version by checking for the v2 unified hierarchy
+    struct stat st;
+    const bool isCgroupV2 = (stat("/sys/fs/cgroup/cgroup.controllers", &st) == 0);
+
+    // Reads a single value from a cgroup file. Returns false on open/parse
+    // failure or when the file holds the literal "max" (v2 unlimited).
+    auto readValue = [](const std::string &filePath, unsigned long *out) -> bool
+    {
+        FILE *fp = fopen(filePath.c_str(), "r");
+        if (!fp)
+            return false;
+
+        char token[64] = {0};
+        bool ok = (fscanf(fp, "%63s", token) == 1);
+        fclose(fp);
+
+        if (!ok || strcmp(token, "max") == 0)
+            return false;
+
+        char *end = nullptr;
+        unsigned long v = strtoul(token, &end, 10);
+        if (end == token || *end != '\0')
+            return false;
+
+        *out = v;
+        return true;
+    };
+
+    std::string basePath;
+    const char *pairs[2][2];
+
+    if (isCgroupV2)
+    {
+        // Resolve the container's cgroup dir in the unified hierarchy, matching
+        // readCgroup()'s direct + system.slice scope fallback.
+        basePath = "/sys/fs/cgroup/" + containerId;
+        if (stat((basePath + "/memory.max").c_str(), &st) != 0)
+        {
+            basePath = "/sys/fs/cgroup/system.slice/dobby-" + containerId + ".scope";
+        }
+
+        // memory.peak      (kernel >= 5.19) vs memory.max
+        // memory.swap.peak (kernel >= 6.5)  vs memory.swap.max
+        pairs[0][0] = "/memory.peak";       pairs[0][1] = "/memory.max";
+        pairs[1][0] = "/memory.swap.peak";  pairs[1][1] = "/memory.swap.max";
+    }
+    else
+    {
+        basePath = "/sys/fs/cgroup/memory/" + containerId;
+
+        pairs[0][0] = "/memory.max_usage_in_bytes";        pairs[0][1] = "/memory.limit_in_bytes";
+        pairs[1][0] = "/memory.memsw.max_usage_in_bytes";  pairs[1][1] = "/memory.memsw.limit_in_bytes";
+    }
+
+    for (const auto &pair : pairs)
+    {
+        unsigned long maxUsage = 0, limit = 0;
+        if (readValue(basePath + pair[0], &maxUsage) &&
+            readValue(basePath + pair[1], &limit) &&
+            limit > 0 && maxUsage >= limit)
+        {
+            AI_LOG_INFO("%s=%lu reached %s=%lu", pair[0]+1, maxUsage, pair[1]+1, limit);
+            return true;
+        }
+    }
+
+    return false;
+}
+
+/**
+ * @brief Check for Out of Memory by reading cgroup files.
+ *
+ *  Detection priority:
+ *    1. oom_kill > 0   — from memory.oom_control (v1) or memory.events (v2).
+ *                        Authoritative: kernel OOM kill confirmed.
+ *    2. oom_kill == 0 but isMemoryAtLimit() — "soft OOM".  When swap is
+ *                        available (memsw.limit > mem.limit), the kernel swaps
+ *                        rather than invoking the OOM killer.  DobbyInit detects
+ *                        allocation failures (failcnt) and kills the app with
+ *                        SIGTERM.  oom_kill stays 0 but max_usage hitting the
+ *                        limit confirms memory pressure caused the death.
+ *    3. oom_kill == 0 and memory not at limit — no OOM, normal termination.
+ *    4. readCgroup() failed + isMemoryAtLimit() — cgroup files unreadable
+ *                        (under_oom=0 on kernel < 4.13, or ENOENT race).
+ *                        Falls back to high-water-mark heuristic.
  *
  * @return true if OOM detected.
  */
 
 bool OOMCrash::checkForOOM()
 {
-    unsigned long failCnt;
-    bool status;
-    if (readCgroup(&failCnt) && (failCnt > 0))
+    unsigned long oomIndicator = 0;
+    bool cgroupRead = readCgroup(&oomIndicator);
+
+    if (cgroupRead && oomIndicator > 0)
     {
-        AI_LOG_WARN("memory allocation failure detected in %s container, likely OOM (failcnt = %lu)", mUtils->getContainerId().c_str(), failCnt);
-        status = true; 
+        // cgroup OOM indicator is authoritative — OOM confirmed. The exact
+        // source depends on the hierarchy/kernel (memory.oom_control oom_kill
+        // or under_oom on v1, memory.events oom_kill on v2), so keep the
+        // wording generic.
+        AI_LOG_INFO("cgroup OOM indicator set (value=%lu) for container '%s'",
+                    oomIndicator, mUtils->getContainerId().c_str());
+    }
+    else if (cgroupRead && isMemoryAtLimit())
+    {
+        // oom_kill is 0 (kernel OOM killer didn't fire) but memory usage hit
+        // the limit.  This happens when swap is available: the kernel swaps
+        // rather than killing, failcnt increments, and DobbyInit terminates
+        // the app with SIGTERM.  Treat as a "soft OOM".
+        AI_LOG_WARN("oom_kill=0 but max memory usage reached limit for container '%s' "
+                    "(soft OOM — killed by init due to memory pressure, not by kernel OOM killer)",
+                    mUtils->getContainerId().c_str());
+    }
+    else if (cgroupRead)
+    {
+        // cgroup read succeeded, counter is 0, and memory didn't hit limit
+        AI_LOG_INFO("No OOM kill detected in container '%s'", mUtils->getContainerId().c_str());
+        return false;
+    }
+    else if (isMemoryAtLimit())
+    {
+        // cgroup file was unreadable — fall back to high-water-mark heuristic
+        AI_LOG_WARN("cgroup unreadable; max memory usage reached limit for container '%s'",
+                    mUtils->getContainerId().c_str());
     }
     else
     {
-        AI_LOG_WARN("No OOM failure detected in %s container", mUtils->getContainerId().c_str());
-        status = false;
+        AI_LOG_INFO("No OOM kill detected in container '%s'", mUtils->getContainerId().c_str());
+        return false;
     }
-    return status;
+
+    // OOM kill confirmed - retrieve firebolt state from annotations.
+    // Both the previous (fireboltState_prev) and current (fireboltState) values
+    // are read.  AppService often transitions the app (e.g. to "background")
+    // after the OOM kill but before postHalt runs, so the current value may
+    // reflect a post-crash transition rather than the state at the time of the
+    // kill.  fireboltState_prev is therefore preferred for the final log; both
+    // are reported so the transition can be observed in the logs.
+    std::map<std::string, std::string> annotations = mUtils->getAnnotations();
+    std::string fireboltState;
+
+    auto prevIt = annotations.find(FIREBOLT_STATE_PREV);
+    if (prevIt != annotations.end())
+    {
+        fireboltState = prevIt->second;
+        std::string currentState;
+        auto curIt = annotations.find(FIREBOLT_STATE);
+        if (curIt != annotations.end())
+            currentState = curIt->second;
+        AI_LOG_INFO("Using previous fireboltState '%s' (current '%s' may have been "
+                    "set after OOM kill)", fireboltState.c_str(), currentState.c_str());
+    }
+    else
+    {
+        auto it = annotations.find(FIREBOLT_STATE);
+        if (it != annotations.end())
+        {
+            fireboltState = it->second;
+        }
+    }
+
+    if (!fireboltState.empty())
+    {
+        AI_LOG_WARN("OOM kill detected: container '%s' fireboltState '%s'",
+                    mUtils->getContainerId().c_str(), fireboltState.c_str());
+    }
+    else
+    {
+        AI_LOG_WARN("OOM kill detected: container '%s' (firebolt state unknown)",
+                    mUtils->getContainerId().c_str());
+    }
+
+    return true;
 }
 
 /**
