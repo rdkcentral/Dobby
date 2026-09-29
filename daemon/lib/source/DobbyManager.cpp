@@ -1389,11 +1389,16 @@ bool DobbyManager::stopContainer(int32_t cd, bool withPrejudice)
              container->state == DobbyContainer::State::Hibernated ||
              container->state == DobbyContainer::State::Awakening)
     {
-        // If a hibernation is in progress, abort it in a blocking manner before
-        // killing the container. This ensures memcr_worker fully unseizes any
-        // in-flight PID before it is killed, preventing an assert crash in
-        // memcr_worker when it tries to operate on a terminated PID.
-        if (container->state == DobbyContainer::State::Hibernating)
+        // If a hibernation is in progress or has entered the abort path, stop
+        // it in a blocking manner before killing the container. This ensures
+        // memcr_worker has fully unseized any in-flight PID before it is killed.
+        // Awakening alone is not enough to identify an in-flight hibernation
+        // abort: wakeupContainer() also sets Awakening before issuing WakeupProcess
+        // for a container that is already hibernated. Only treat Awakening as a
+        // hibernation abort when there is still a live in-flight PID associated
+        // with the active HibernateProcess() call.
+        if (container->state == DobbyContainer::State::Hibernating ||
+            (container->state == DobbyContainer::State::Awakening && container->hibernatingPid != 0))
         {
             if (!abortContainerHibernationIfNeeded(cd))
             {
@@ -1847,7 +1852,14 @@ bool DobbyManager::abortContainerHibernationIfNeeded(int32_t cd)
 
     const ContainerId id = it->first;
 
-    if (it->second->state != DobbyContainer::State::Hibernating)
+    // Awakening + hibernatingPid != 0 means wakeupContainer() raced ahead of the
+    // hibernate thread finishing its current PID: the state was already flipped
+    // but the in-flight PID hasn't been unseized yet, so it still needs an abort.
+    const bool inFlightAbortNeeded =
+        (it->second->state == DobbyContainer::State::Hibernating) ||
+        (it->second->state == DobbyContainer::State::Awakening && it->second->hibernatingPid != 0);
+
+    if (!inFlightAbortNeeded)
     {
         AI_LOG_INFO("Container '%s' is not hibernating, abort not needed", id.c_str());
         AI_LOG_FN_EXIT();
@@ -3731,4 +3743,5 @@ bool DobbyManager::shouldEnableSTrace(const std::shared_ptr<DobbyConfig> &config
 
     return std::find(apps.begin(), apps.end(), hostName) != apps.end();
 }
+
 
