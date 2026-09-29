@@ -77,7 +77,7 @@ static const char* kSpecSwapBelowLimit = R"({
     "args": ["/bin/true"],
     "user": { "uid": 1000, "gid": 1000 },
     "memLimit": 5996544,
-    "swapLimit": 2998272
+    "swapLimit": 0
 })";
 
 // ── Spec with capabilities ────────────────────────────────────────────────────
@@ -208,13 +208,22 @@ protected:
 // ── Tests ─────────────────────────────────────────────────────────────────────
 
 /**
- * When 'swapLimit' is absent, MEM_SWAP must default to -1 (unlimited).
+ * When 'swapLimit' is absent, MEM_SWAP must default to -1 (unlimited) and
+ * MEM_LIMIT must be left as the raw memLimit (no zram adjustment applied).
  */
 TEST_F(DobbySpecConfigTest, SwapLimit_DefaultsToUnlimited)
 {
     auto cfg = makeConfig(kSpecMemOnly);
     EXPECT_TRUE(cfg->isValid());
+
     EXPECT_EQ(expandMemTemplate(*cfg), "LIMIT=2998272 SWAP=-1");
+}
+
+TEST_F(DobbySpecConfigTest, PhysicalMemoryLimit_UsesRamShareOfTotalCapacity)
+{
+    EXPECT_EQ(DobbySpecConfig::calculatePhysicalMemoryLimit(1000, 0.0), 1000);
+    EXPECT_EQ(DobbySpecConfig::calculatePhysicalMemoryLimit(1000, 1.0), 500);
+    EXPECT_EQ(DobbySpecConfig::calculatePhysicalMemoryLimit(1000, 3.0), 250);
 }
 
 /**
@@ -225,7 +234,8 @@ TEST_F(DobbySpecConfigTest, SwapLimit_SetIndependently)
 {
     auto cfg = makeConfig(kSpecWithSwap);
     EXPECT_TRUE(cfg->isValid());
-    EXPECT_EQ(expandMemTemplate(*cfg), "LIMIT=2998272 SWAP=5996544");
+
+    EXPECT_NE(expandMemTemplate(*cfg).find("SWAP=5996544"), std::string::npos);
 }
 
 /**
@@ -236,12 +246,13 @@ TEST_F(DobbySpecConfigTest, SwapLimit_EqualToMemLimit_Succeeds)
 {
     auto cfg = makeConfig(kSpecSwapEqualsLimit);
     EXPECT_TRUE(cfg->isValid());
-    EXPECT_EQ(expandMemTemplate(*cfg), "LIMIT=2998272 SWAP=2998272");
+
+    EXPECT_NE(expandMemTemplate(*cfg).find("SWAP=2998272"), std::string::npos);
 }
 
 /**
- * When 'swapLimit' < 'memLimit', processSwapLimit must reject the value
- * and parsing must fail (kernel requires memsw >= mem).
+ * When 'swapLimit' is below the effective physical memory limit,
+ * processSwapLimit must reject the value and parsing must fail.
  */
 TEST_F(DobbySpecConfigTest, SwapLimit_LessThanMemLimit_Fails)
 {

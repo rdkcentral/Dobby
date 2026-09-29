@@ -125,8 +125,10 @@ public:
     int getContainerState(int32_t cd) const override;
 
     int registerListener(const StateChangeListener &listener, const void* cbParams) override;
+    void unregisterListener(int id) override;
 
-    void unregisterListener(int tag) override;
+    int registerListenerWithStatus(const StateChangeWithStatusListener &listener, const void* cbParams) override;
+    void unregisterListenerWithStatus(int id) override;
 
     std::string getContainerInfo(int32_t descriptor) const override;
 
@@ -155,6 +157,7 @@ public:
 private:
     void onContainerStartedEvent(const AI_IPC::VariantList& args);
     void onContainerStoppedEvent(const AI_IPC::VariantList& args);
+    void onContainerStoppedWithStatusEvent(const AI_IPC::VariantList& args);
     void onContainerHibernatedEvent(const AI_IPC::VariantList& args);
     void onContainerAwokenEvent(const AI_IPC::VariantList& args);
 
@@ -173,6 +176,7 @@ private:
 private:
     std::string mContainerStartedSignal;
     std::string mContainerStoppedSignal;
+    std::string mContainerStoppedWithStatusSignal;
 
 private:
     std::thread mStateChangeThread;
@@ -181,19 +185,20 @@ private:
 
     struct StateChangeEvent
     {
-        enum Type { Terminate, ContainerStarted, ContainerStopped, ContainerHibernated, ContainerAwoken };
+        enum Type { Terminate, ContainerStarted, ContainerStopped, ContainerStoppedWithStatus, ContainerHibernated, ContainerAwoken };
 
         explicit StateChangeEvent(Type type_)
             : type(type_), descriptor(-1)
         { }
 
         StateChangeEvent(Type type_, int32_t descriptor_, const std::string& name_)
-            : type(type_), descriptor(descriptor_), name(name_)
+            : type(type_), descriptor(descriptor_), name(name_), exitCode(-1)
         { }
 
         Type type;
         int32_t descriptor;
         std::string name;
+        int32_t exitCode;
     };
 
     std::deque<StateChangeEvent> mStateChangeQueue;
@@ -201,6 +206,10 @@ private:
     std::mutex mListenersLock;
     AICommon::IDGenerator<8> mListenerIdGen;
     std::map<int, std::pair<StateChangeListener, const void*>> mListeners;
+
+    std::mutex mStatusListenersLock;
+    AICommon::IDGenerator<8> mStatusListenerIdGen;
+    std::map<int, std::pair<StateChangeWithStatusListener, const void*>> mStatusListeners;
 
 };
 

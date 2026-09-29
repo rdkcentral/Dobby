@@ -28,6 +28,7 @@
 
 #include <set>
 #include <bitset>
+#include <cstdint>
 #include <memory>
 
 namespace ctemplate {
@@ -174,6 +175,9 @@ private:
     static void addGpuDevNodes(const std::shared_ptr<const IDobbySettings::HardwareAccessSettings> &settings,
                                ctemplate::TemplateDictionary *dict);
 
+    static int64_t calculatePhysicalMemoryLimit(int64_t memLimit,
+                                                double swapToRamRatio);
+
     static  void addVpuDevNodes(const std::shared_ptr<const IDobbySettings::HardwareAccessSettings> &settings,
                                 ctemplate::TemplateDictionary *dict);
 
@@ -187,6 +191,7 @@ private:
 private:
     bool mValid;
     ctemplate::TemplateDictionary* mDictionary;
+    double mZramSwapToRamRatio;
 
 private:
     Json::Value mSpec;

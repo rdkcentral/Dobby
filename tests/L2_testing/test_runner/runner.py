@@ -29,6 +29,7 @@ import pid_limit_tests
 import memcr_tests
 import annotation_tests
 import swap_limit_tests
+import exit_code_tests
 import sys
 import json
 
@@ -46,7 +47,8 @@ supported_tests = [basic_sanity_tests,
                    gui_containers,
                    pid_limit_tests,
                    memcr_tests,
-                   swap_limit_tests]
+                   swap_limit_tests,
+                   exit_code_tests]
 
 def run_all_tests():
     success_count = 0

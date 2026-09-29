@@ -81,6 +81,13 @@ bool AI_IPC::IIpcService::enableMonitor(const std::set<std::string>& matchRules,
     return impl->enableMonitor(matchRules, handler);
 }
 
+bool AI_IPC::IIpcService::isServiceAvailable(const std::string& serviceName) const
+{
+   EXPECT_NE(impl, nullptr);
+
+    return impl->isServiceAvailable(serviceName);
+}
+
 void AI_IPC::IIpcService::flush()
 {
    EXPECT_NE(impl, nullptr);

@@ -27,6 +27,7 @@
 
 #include <Logging.h>
 
+#include <sys/wait.h>
 #include <thread>
 
 
@@ -89,9 +90,15 @@ DobbyProxy::DobbyProxy(const std::shared_ptr<AI_IPC::IIpcService>& ipcService,
     const AI_IPC::SignalHandler startedHandler(std::bind(&DobbyProxy::onContainerStartedEvent, this, std::placeholders::_1));
     mContainerStartedSignal = mIpcService->registerSignalHandler(startedSignal, startedHandler);
 
+    // Subscribe to plain STOPPED to serve StateChangeListener clients (no exit code).
     const AI_IPC::Signal stoppedSignal(objectName, DOBBY_CTRL_INTERFACE, DOBBY_CTRL_EVENT_STOPPED);
     const AI_IPC::SignalHandler stoppedHandler(std::bind(&DobbyProxy::onContainerStoppedEvent, this, std::placeholders::_1));
     mContainerStoppedSignal = mIpcService->registerSignalHandler(stoppedSignal, stoppedHandler);
+
+    // Subscribe to STOPPED_WITH_STATUS to serve StateChangeWithStatusListener clients (with exit code).
+    const AI_IPC::Signal stoppedWithStatusSignal(objectName, DOBBY_CTRL_INTERFACE, DOBBY_CTRL_EVENT_STOPPED_WITH_STATUS);
+    const AI_IPC::SignalHandler stoppedWithStatusHandler(std::bind(&DobbyProxy::onContainerStoppedWithStatusEvent, this, std::placeholders::_1));
+    mContainerStoppedWithStatusSignal = mIpcService->registerSignalHandler(stoppedWithStatusSignal, stoppedWithStatusHandler);
 
     const AI_IPC::Signal hibernatedSignal(objectName, DOBBY_CTRL_INTERFACE, DOBBY_CTRL_EVENT_HIBERNATED);
     const AI_IPC::SignalHandler hibernatedHandler(std::bind(&DobbyProxy::onContainerHibernatedEvent, this, std::placeholders::_1));
@@ -101,7 +108,7 @@ DobbyProxy::DobbyProxy(const std::shared_ptr<AI_IPC::IIpcService>& ipcService,
     const AI_IPC::SignalHandler awokenHandler(std::bind(&DobbyProxy::onContainerAwokenEvent, this, std::placeholders::_1));
     mContainerStartedSignal = mIpcService->registerSignalHandler(awokenSignal, awokenHandler);
 
-    if (mContainerStartedSignal.empty() || mContainerStoppedSignal.empty())
+    if (mContainerStartedSignal.empty() || mContainerStoppedSignal.empty() || mContainerStoppedWithStatusSignal.empty())
     {
         AI_LOG_ERROR("failed to register dbus signal listeners");
     }
@@ -126,6 +133,9 @@ DobbyProxy::~DobbyProxy()
 
     if (!mContainerStoppedSignal.empty())
         mIpcService->unregisterHandler(mContainerStoppedSignal);
+
+    if (!mContainerStoppedWithStatusSignal.empty())
+        mIpcService->unregisterHandler(mContainerStoppedWithStatusSignal);
 
     // flush the ipc service to guarantee the signal handlers aren't going to
     // be called after we're done
@@ -196,6 +206,36 @@ void DobbyProxy::unregisterListener(int id)
     mListenerIdGen.put(id);
 }
 
+int DobbyProxy::registerListenerWithStatus(const StateChangeWithStatusListener &listener, const void* cbParams)
+{
+    std::lock_guard<std::mutex> locker(mStatusListenersLock);
+
+    int id = mStatusListenerIdGen.get();
+    if (id < 0)
+    {
+        AI_LOG_ERROR("too many status listeners installed");
+        return -1;
+    }
+
+    mStatusListeners.emplace(id, std::make_pair(listener, cbParams));
+    return id;
+}
+
+void DobbyProxy::unregisterListenerWithStatus(int id)
+{
+    std::lock_guard<std::mutex> locker(mStatusListenersLock);
+
+    auto it = mStatusListeners.find(id);
+    if (it == mStatusListeners.end())
+    {
+        AI_LOG_ERROR("no status listener installed with id %d", id);
+        return;
+    }
+
+    mStatusListeners.erase(it);
+    mStatusListenerIdGen.put(id);
+}
+
 // -----------------------------------------------------------------------------
 /**
  *  @brief Called when a org.rdk.dobby.ctrl1.Started event is received from
@@ -244,7 +284,7 @@ void DobbyProxy::onContainerStoppedEvent(const AI_IPC::VariantList& args)
 {
     AI_LOG_FN_ENTRY();
 
-    // the event should container two args; container descriptor and id
+    // STOPPED carries two args: container descriptor and id (no exit code).
     int32_t descriptor;
     std::string id;
 
@@ -255,9 +295,35 @@ void DobbyProxy::onContainerStoppedEvent(const AI_IPC::VariantList& args)
     }
     else
     {
-        // ping off an event
         std::lock_guard<std::mutex> locker(mStateChangeLock);
         mStateChangeQueue.emplace_back(StateChangeEvent::ContainerStopped, descriptor, id);
+        mStateChangeCond.notify_all();
+    }
+
+    AI_LOG_FN_EXIT();
+}
+
+void DobbyProxy::onContainerStoppedWithStatusEvent(const AI_IPC::VariantList& args)
+{
+    AI_LOG_FN_ENTRY();
+
+    // STOPPED_WITH_STATUS carries three args: descriptor, id, raw waitpid status.
+    int32_t descriptor;
+    std::string id;
+    int32_t rawStatus;
+
+    if (!AI_IPC::parseVariantList<int32_t, std::string, int32_t>(args, &descriptor, &id, &rawStatus))
+    {
+        AI_LOG_ERROR("failed to read all args from %s.%s signal",
+                     DOBBY_CTRL_INTERFACE, DOBBY_CTRL_EVENT_STOPPED_WITH_STATUS);
+    }
+    else
+    {
+        StateChangeEvent ev(StateChangeEvent::ContainerStoppedWithStatus, descriptor, id);
+        ev.exitCode = WIFEXITED(rawStatus) ? WEXITSTATUS(rawStatus) : -1;
+
+        std::lock_guard<std::mutex> locker(mStateChangeLock);
+        mStateChangeQueue.push_back(ev);
         mStateChangeCond.notify_all();
     }
 
@@ -1498,16 +1564,27 @@ void DobbyProxy::containerStateChangeThread()
                 notify(&IDobbyProxyEvents::containerStateChanged,
                        event.descriptor, event.name, state);
 
-                // need to hold the lock before searching
-                std::lock_guard<std::mutex> listenerLocker(mListenersLock);
-
-                // check if we have any listener interested in this service
-                for (const std::pair<const int, std::pair<StateChangeListener, const void*>>& handler : mListeners)
+                if (event.type == StateChangeEvent::ContainerStoppedWithStatus)
                 {
-                    const StateChangeListener& callback = handler.second.first;
-                    const void* cbParams = handler.second.second;
-                    if (callback)
-                        callback(event.descriptor, event.name, state, cbParams);
+                    // Notify status listeners (include exit code)
+                    std::lock_guard<std::mutex> listenerLocker(mStatusListenersLock);
+                    for (const auto& handler : mStatusListeners)
+                    {
+                        const StateChangeWithStatusListener& cb = handler.second.first;
+                        if (cb)
+                            cb(event.descriptor, event.name, state, event.exitCode, handler.second.second);
+                    }
+                }
+                else
+                {
+                    // Notify standard listeners (no exit code)
+                    std::lock_guard<std::mutex> listenerLocker(mListenersLock);
+                    for (const auto& handler : mListeners)
+                    {
+                        const StateChangeListener& cb = handler.second.first;
+                        if (cb)
+                            cb(event.descriptor, event.name, state, handler.second.second);
+                    }
                 }
             }
 

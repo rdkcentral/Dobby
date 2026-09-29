@@ -27,10 +27,13 @@
  *  https://blog.phusion.nl/2015/01/20/docker-and-the-pid-1-zombie-reaping-problem/
  *
  *  It boils down to ensuring we have an 'init' process that does at least the
- *  following two things:
+ *  following things:
  *
  *      1. Reaps adopted child processes.
  *      2. Forwards on signals to child processes.
+ *      3. Kills orphaned grandchildren when the main child exits, so
+ *         DobbyInit doesn't block in wait() forever and the container
+ *         can be stopped cleanly.
  *
  *  In addition to the above it provides some basic logging to indicate why a
  *  child process died.
@@ -405,6 +408,15 @@ static int doForkExec(int argc, char * argv[])
                     // signal death.
                     if (ret == EXIT_SUCCESS)
                         gReceivedSignal = 0;
+
+                    // The main child called exit() leaving any grandchildren
+                    // it spawned but did not reap reparented to us (PID 1).
+                    // Kill them so DobbyInit doesn't block in wait() forever,
+                    // which would prevent runc from quitting and leave the
+                    // container stuck.
+                    if (kill(-1, SIGKILL) != 0 && errno != ESRCH)
+                        LOG_ERR("failed to SIGKILL orphaned processes (%d - %s)",
+                                errno, strerror(errno));
                 }
             }
             else if (WIFSIGNALED(status) && pid == exePid)
@@ -420,9 +432,14 @@ static int doForkExec(int argc, char * argv[])
                 ret = EXIT_FAILURE;
 
                 // The main child's orphaned descendants have been
-                // reparented to us (PID 1).  Send them the same signal
-                // so they terminate and we don't block in wait() forever.
-                kill(-1, sig);
+                // reparented to us (PID 1).  The signal was already
+                // forwarded by signalHandler(); use SIGKILL here so
+                // any grandchild that caught/ignored the original signal
+                // is still guaranteed to terminate and we don't block
+                // in wait() forever.
+                if (kill(-1, SIGKILL) != 0 && errno != ESRCH)
+                    LOG_ERR("failed to SIGKILL orphaned processes (%d - %s)",
+                            errno, strerror(errno));
             }
 
             // if the process died because of a signal, or it didn't exit with
