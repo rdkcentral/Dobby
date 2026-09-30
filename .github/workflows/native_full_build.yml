@@ -2,9 +2,9 @@ name: Build Component in Native Environment
 
 on:
   push:
-    branches: [ main, 'sprint/**', 'release/**', master ]
+    branches: [ main, 'sprint/**', 'release/**', master, develop]
   pull_request:
-    branches: [ main, 'sprint/**', 'release/**', master ]
+    branches: [ main, 'sprint/**', 'release/**', master, develop ]
 
 jobs:
   build-dobby-on-pr:
