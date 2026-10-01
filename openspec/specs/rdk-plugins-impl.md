@@ -51,7 +51,7 @@ Bind-mounts D-Bus sockets (system, session, debug) into containers for IPC acces
 - `IpcPlugin` — Main plugin entry point
 
 ### Thunder Plugin
-Provides WPEFramework (Thunder) access by configuring iptables routing to Thunder ports and injecting bearer security tokens.
+Provides WPEFramework/Thunder access by configuring iptables routing to Thunder ports and injecting bearer security tokens.
 
 **Key classes:**
 - `ThunderPlugin` — Main plugin entry point
@@ -197,7 +197,7 @@ graph TD
 
 ## Security
 - Networking plugin manages iptables firewall rules for container isolation.
-- Thunder plugin handles bearer token injection for WPEFramework access control.
+- Thunder plugin handles bearer token injection for WPEFramework/Thunder access control.
 - DeviceMapper restricts device access to explicitly mapped nodes only.
 - OOMCrash detects resource exhaustion attacks via cgroup events.
 

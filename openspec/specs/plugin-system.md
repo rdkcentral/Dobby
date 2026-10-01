@@ -72,7 +72,7 @@ The RDK plugin system provides a lifecycle-hook-based architecture where plugins
 | **Logging** | Container console log routing to file, journald, or /dev/null | postInstallation, RegisterPollSources |
 | **IPC** | D-Bus socket bind-mount into container (system, session, debug buses) | postInstallation |
 | **AppServices** | iptables routing to Application Services (AS) ports | postInstallation, createRuntime, postHalt |
-| **Thunder** | WPEFramework access: iptables routing + security token injection | postInstallation, preCreation, createRuntime, postHalt |
+| **Thunder** | WPEFramework/Thunder access: iptables routing + security token injection | postInstallation, preCreation, createRuntime, postHalt |
 | **DeviceMapper** | Maps host device nodes into container with correct major/minor numbers | preCreation |
 | **Gamepad** | Exposes gamepad/joystick input device nodes to container | postInstallation |
 | **GPU** | GPU cgroup memory limit setup and enforcement | createRuntime, postStop |
@@ -122,7 +122,7 @@ The RDK plugin system provides a lifecycle-hook-based architecture where plugins
 ## Security
 - Plugins run in the daemon process context with full privileges.
 - Network plugins manage iptables rules for container isolation.
-- Thunder plugin handles security token injection for WPEFramework access control.
+- Thunder plugin handles security token injection for WPEFramework/Thunder access control.
 
 ## Versioning & Compatibility
 - RDK plugin interface is the current standard; legacy interface is deprecated.
