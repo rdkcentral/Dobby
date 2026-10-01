@@ -226,7 +226,7 @@ def stop_wpeframework(process):
 
 
 def start_wpeframework_vm():
-    """Starts wpeframework on virtual machine
+    """Starts wpeframework or thunder on virtual machine
 
     Parameters:
     None
@@ -236,10 +236,17 @@ def start_wpeframework_vm():
 
     """
 
-    test_utils.print_log("Starting WPEFramework", test_utils.Severity.debug)
+    binary = next(
+        (p for p in ("/usr/bin/Thunder", "/usr/bin/WPEFramework") if path.exists(p)),
+        None,
+    )
+    if binary is None:
+        raise FileNotFoundError("Neither /usr/bin/Thunder nor /usr/bin/WPEFramework found")
+
+    test_utils.print_log(f"Starting {binary}", test_utils.Severity.debug)
 
     # as this process is running infinitely we cannot use run_command_line as it waits for execution to end
-    subproc = subprocess.Popen(["/usr/bin/WPEFramework"],
+    subproc = subprocess.Popen([binary],
                                universal_newlines=True,
                                stdin=subprocess.PIPE,
                                stdout=subprocess.PIPE,
