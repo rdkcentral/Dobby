@@ -137,9 +137,19 @@ else()
 endif()
 
 if (USE_SYSTEMD)
+        find_package(Thunder QUIET)
+
+        if (Thunder_FOUND)
+            set(THUNDER_NAMESPACE_LC "thunder")
+        else()
+            set(THUNDER_NAMESPACE_LC "wpeframework")
+        endif()
+
+        configure_file(${CMAKE_CURRENT_SOURCE_DIR}/dobby.service.in ${CMAKE_BINARY_DIR}/dobby.service @ONLY)
+
         # Install a systemd launch service config and enables it by default
         install(
-                FILES       dobby.service
+                FILES       ${CMAKE_BINARY_DIR}/dobby.service
                 DESTINATION /lib/systemd/system/ )
 endif()
 

@@ -34,7 +34,7 @@
 [Unit]
 Description=RDK Dobby (Container) daemon
 Requires=dbus.socket dbus.service
-Before=wpeframework.service
+Before=@THUNDER_NAMESPACE_LC@.service
 After=dbus.socket dbus.service
 
 [Service]
