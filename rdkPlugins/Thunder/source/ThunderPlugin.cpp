@@ -20,7 +20,7 @@
 #include "ThunderPlugin.h"
 
 #ifdef HAS_SECURITY_AGENT
-#include <WPEFramework/securityagent/securityagent.h>
+#include <securityagent/securityagent.h>
 #endif
 
 #include <fcntl.h>
