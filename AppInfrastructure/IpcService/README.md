@@ -46,7 +46,7 @@ virtual bool stop() = 0;
 virtual void flush() = 0;
 ```
 
-`start()` begins the dispatcher; `stop()` terminates it. For the libdbus backend, `flush()` waits for queued handlers, while the sd-bus implementation treats it as a no-op, so callers must not rely on it for synchronization there.
+`start()` begins the dispatcher; `stop()` terminates it. In the current implementation, libdbus `flush()` waits for queued handlers via `mHandlerDispatcher.sync()` ([IpcService.cpp](source/libdbus/IpcService.cpp#L707)); the sd-bus implementation is explicitly a no-op ([SDBusIpcService.cpp](source/sdbus/SDBusIpcService.cpp#L286)). Callers must not rely on `flush()` for synchronization when using sd-bus.
 
 ### Backend classes
 
@@ -58,7 +58,7 @@ Top-level CMake requires `dbus`; `USE_SYSTEMD` selects systemd/sd-bus integratio
 
 ## 6. Internal Workflows & Execution Flow
 
-Initialization constructs a backend through the factory, registers methods/signals, and calls `start()`. A request is parsed into a `VariantList`, dispatched to a handler, and answered synchronously or through an async reply sender. Signals are emitted to subscribers. `flush()` is used to drain queued work before coordinated shutdown; `stop()` ends the dispatcher.
+Initialization constructs a backend through the factory, registers methods/signals, and calls `start()`. A request is parsed into a `VariantList`, dispatched to a handler, and answered synchronously or through an async reply sender. Signals are emitted to subscribers. On libdbus, `flush()` drains queued handler work before returning; the sd-bus implementation does not provide that synchronization. `stop()` ends the dispatcher.
 
 Error handling is represented by boolean/empty-pointer returns in the interface. Detailed backend error mapping is not documented here because it is implementation-specific.
 

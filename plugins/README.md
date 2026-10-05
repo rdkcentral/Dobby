@@ -36,7 +36,7 @@ Some build/runtime interactions are conditional on `LEGACY_COMPONENTS`; exact pl
 
 `PluginBase` and concrete plugin classes provide the legacy extension point. `ServiceMonitor` observes an external service and is used by components that need service availability. `EthanLogClient` and `EthanLogLoop` isolate the EthanLog transport/event behavior.
 
-No representative snippet is quoted because the inspected central contracts were in the modern launcher and bundle headers; the exact legacy method signatures should be taken from the individual headers before implementation changes.
+The legacy hook defaults are defined in [PluginBase.h](Common/include/PluginBase.h), and the hook contract and hints are declared in [IDobbyPlugin.h](../daemon/lib/include/IDobbyPlugin.h). The service monitor API and implementation are in [ServiceMonitor.h](Common/include/ServiceMonitor.h) and [ServiceMonitor.cpp](Common/source/ServiceMonitor.cpp). EthanLog client and event-loop interfaces are in [EthanLogClient.h](EthanLog/source/EthanLogClient.h) and [EthanLogLoop.h](EthanLog/source/EthanLogLoop.h).
 
 ## 5. Configuration & Build Integration
 
@@ -44,7 +44,7 @@ No representative snippet is quoted because the inspected central contracts were
 
 ## 6. Internal Workflows & Execution Flow
 
-A legacy-enabled build parses legacy plugin data, constructs the selected plugin/helper, performs setup during the relevant daemon or bundle operation, and releases resources during teardown. The exact hook names and ordering differ from modern RDK plugins and are not fully established by the inspected headers.
+A legacy-enabled build loads plugin libraries through [DobbyLegacyPluginManager.cpp](../daemon/lib/source/DobbyLegacyPluginManager.cpp), which dispatches the lifecycle hooks declared in [DobbyLegacyPluginManager.h](../daemon/lib/source/include/DobbyLegacyPluginManager.h). During container lifecycle operations, [DobbyManager.cpp](../daemon/lib/source/DobbyManager.cpp) calls `executePostConstructionHooks`, `executePreStartHooks`, `executePostStartHooks`, `executePostStopHooks`, and `executePreDestructionHooks`. These legacy hooks are distinct from the modern RDK hooks documented in [rdkPlugins/README.md](../rdkPlugins/README.md).
 
 ## 7. Diagrams & Visual Aids
 

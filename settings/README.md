@@ -17,12 +17,14 @@ Tracing --> daemon/plugin diagnostics
 
 ## 3. Code Organization (Folder & File-Level)
 
-- `settings/include/IDobbySettings.h`, `Settings.h`: settings contracts and implementation.
-- `settings/source/Settings.cpp`: JSON/settings loading.
-- `utils/include/IDobbyUtils.h`, `DobbyUtils.h`, `IDobbyEnv.h`, `ContainerId.h`, `DobbyFileAccessFixer.h`: utility/environment contracts.
-- `utils/source/DobbyUtils.cpp`, `ContainerId.cpp`, `DobbyTimer.cpp`, `DobbyFileAccessFixer.cpp`: implementations.
-- `tracing/include/PerfettoTracing.h`, `DobbyTraceCategories.h`; `tracing/source/PerfettoTracing.cpp`, `PerfettoTracingSingleton.*`: optional tracing.
-- `protocol/include/DobbyProtocol.h`: D-Bus interface, method, event, state, and log constants.
+This guide is located in `settings/` and also summarizes the sibling top-level `utils/`, `tracing/`, and `protocol/` components. Paths below are relative to this README.
+
+- `include/IDobbySettings.h`, `include/Settings.h`: settings contracts and implementation.
+- `source/Settings.cpp`: JSON/settings loading.
+- `../utils/include/IDobbyUtils.h`, `../utils/include/DobbyUtils.h`, `../utils/include/IDobbyEnv.h`, `../utils/include/ContainerId.h`, `../utils/include/DobbyFileAccessFixer.h`: utility/environment contracts.
+- `../utils/source/DobbyUtils.cpp`, `../utils/source/ContainerId.cpp`, `../utils/source/DobbyTimer.cpp`, `../utils/source/DobbyFileAccessFixer.cpp`: implementations.
+- `../tracing/include/PerfettoTracing.h`, `../tracing/include/DobbyTraceCategories.h`; `../tracing/source/PerfettoTracing.cpp`, `../tracing/source/PerfettoTracingSingleton.*`: optional tracing.
+- `../protocol/include/DobbyProtocol.h`: D-Bus interface, method, event, state, and log constants.
 
 ## 4. Class & Interface Documentation
 
