@@ -27,6 +27,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <fstream>
 #include <string>
 #include <memory>
 #include <utility>
@@ -45,6 +46,15 @@
 // Undefine immediately so the macro does not leak into gtest/gmock headers
 // below, which can cause hard-to-diagnose build failures on some compilers.
 #undef private
+
+// Include both production templates under distinct symbol names so this test
+// exercises JSON escaping for standard and DEV_VM builds in one run.
+#define ociJsonTemplate ociJsonTemplateStandard
+#include "../../../../bundle/lib/source/templates/OciConfigJson1.0.2-dobby.template"
+#undef ociJsonTemplate
+#define ociJsonTemplate ociJsonTemplateVm
+#include "../../../../bundle/lib/source/templates/OciConfigJsonVM1.0.2-dobby.template"
+#undef ociJsonTemplate
 
 using ::testing::NiceMock;
 using ::testing::Return;
@@ -332,6 +342,9 @@ TEST_F(DobbySpecConfigTest, Cwd_AcceptsAndNormalizesAbsolutePaths)
     const std::vector<std::pair<std::string, std::string>> validPaths = {
         {"/", "/"},
         {"/home/app", "/home/app"},
+        {"/home/my app", "/home/my app"},
+        {"/home/line\nbreak", "/home/line\nbreak"},
+        {"/home/caf\xc3\xa9", "/home/caf\xc3\xa9"},
         {"/var/run/my_app", "/var/run/my_app"},
         {"//var///run/my_app/", "/var/run/my_app"},
     };
@@ -357,8 +370,6 @@ TEST_F(DobbySpecConfigTest, Cwd_RejectsUnsafeOrMalformedPaths)
         "../../etc/shadow",
         "/tmp/../../",
         "/./bin",
-        "/bin\n/sh",
-        "/home/my app",
         "bin/sh",
         "",
         std::string("/\0bin", 5),
@@ -375,7 +386,7 @@ TEST_F(DobbySpecConfigTest, Cwd_RejectsUnsafeOrMalformedPaths)
     }
 }
 
-TEST_F(DobbySpecConfigTest, Cwd_IsMandatoryInSpec)
+TEST_F(DobbySpecConfigTest, Cwd_IsOptionalAndDefaultsToContainerRoot)
 {
     const std::string specWithoutCwd = R"({
         "version": "1.0",
@@ -385,6 +396,61 @@ TEST_F(DobbySpecConfigTest, Cwd_IsMandatoryInSpec)
     })";
 
     auto cfg = makeConfig(specWithoutCwd);
-    EXPECT_FALSE(cfg->isValid());
+    ASSERT_TRUE(cfg->isValid());
+    EXPECT_EQ(expandCwdTemplate(*cfg), "CWD=/");
+}
+
+TEST_F(DobbySpecConfigTest, Cwd_JsonEscapingProducesValidConfigForBothTemplates)
+{
+    const std::string cwd = "/home/my \"quoted\" app\\data";
+
+    Json::Value spec(Json::objectValue);
+    spec["version"] = "1.0";
+    spec["args"].append("/bin/true");
+    spec["cwd"] = cwd;
+    spec["user"]["uid"] = 1000;
+    spec["user"]["gid"] = 1000;
+    spec["memLimit"] = 2998272;
+
+    Json::StreamWriterBuilder writer;
+    writer["indentation"] = "";
+    auto cfg = makeConfig(Json::writeString(writer, spec));
+    ASSERT_TRUE(cfg->isValid());
+
+    // The selected production build variant must generate a parseable OCI
+    // config file with the original cwd value intact.
+    std::ifstream generatedConfigFile(std::string(mTmpDir) + "/config.json");
+    ASSERT_TRUE(generatedConfigFile.is_open());
+    Json::Value generatedConfig;
+    Json::Reader generatedConfigReader;
+    ASSERT_TRUE(generatedConfigReader.parse(generatedConfigFile, generatedConfig))
+        << generatedConfigReader.getFormattedErrorMessages();
+    ASSERT_TRUE(generatedConfig["process"].isObject());
+    EXPECT_EQ(generatedConfig["process"]["cwd"].asString(), cwd);
+
+    const std::pair<const char*, const char*> templateVariants[] = {
+        {"test_oci_standard_cwd_escape", ociJsonTemplateStandard},
+        {"test_oci_vm_cwd_escape", ociJsonTemplateVm},
+    };
+
+    for (const auto& variant : templateVariants)
+    {
+        ctemplate::TemplateCache cache;
+        ASSERT_TRUE(cache.StringToTemplateCache(variant.first, variant.second,
+                                                ctemplate::STRIP_WHITESPACE));
+        cache.Freeze();
+
+        std::string renderedConfig;
+        ASSERT_TRUE(cache.ExpandNoLoad(variant.first, ctemplate::STRIP_WHITESPACE,
+                                       cfg->mDictionary, nullptr, &renderedConfig));
+
+        Json::Value parsedConfig;
+        Json::Reader reader;
+        ASSERT_TRUE(reader.parse(renderedConfig, parsedConfig))
+            << variant.first << ": " << reader.getFormattedErrorMessages();
+        ASSERT_TRUE(parsedConfig["process"].isObject());
+        EXPECT_EQ(parsedConfig["process"]["cwd"].asString(), cwd)
+            << variant.first;
+    }
 }
 

@@ -663,7 +663,6 @@ bool DobbySpecConfig::parseSpec(ctemplate::TemplateDictionary* dictionary,
     if (success)
     {
         const unsigned mandatoryFlags = JSON_FLAG_ARGS |
-                                        JSON_FLAG_CWD |
                                         JSON_FLAG_USER | JSON_FLAG_MEMLIMIT;
         if ((flags & mandatoryFlags) != mandatoryFlags)
         {
@@ -697,6 +696,12 @@ bool DobbySpecConfig::parseSpec(ctemplate::TemplateDictionary* dictionary,
     }
 
     // step 5 - for any fields that haven't been set, ensure we set the defaults
+    if (!(flags & JSON_FLAG_CWD))
+    {
+        static const ctemplate::TemplateString cwdValue("WORKING_DIRECTORY");
+        dictionary->SetValue(cwdValue, "/");
+    }
+
     if (!(flags & JSON_FLAG_USERNS))
     {
         dictionary->ShowSection(USERNS_ENABLED);
@@ -900,19 +905,18 @@ bool DobbySpecConfig::processCwd(const Json::Value& value,
         return false;
     }
 
+    // A NUL byte cannot be represented in a Unix pathname. Other bytes,
+    // including whitespace and non-ASCII characters, are valid pathname data
+    // and are escaped when the value is inserted into the OCI JSON template.
+    if (cwd.find('\0') != std::string::npos)
+    {
+        AI_LOG_ERROR("invalid cwd field: embedded NUL byte is not allowed");
+        return false;
+    }
+
     // Treat cwd only as a container-root-relative OCI path. Do not use realpath()
     // or any host filesystem lookup here: path resolution must be done by the
     // container runtime after it has entered the container rootfs.
-    for (const unsigned char ch : cwd)
-    {
-        // Restrict paths to printable, non-whitespace ASCII. This also rejects
-        // embedded NULs and control characters decoded from JSON escapes.
-        if (ch < 0x21 || ch > 0x7e)
-        {
-            AI_LOG_ERROR("invalid cwd field: whitespace or non-printable character");
-            return false;
-        }
-    }
 
     // Normalize redundant separators while rejecting dot segments, including
     // traversal components. The normalized path is still interpreted inside
