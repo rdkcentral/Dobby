@@ -43,6 +43,20 @@ def _load_json(path):
         return json.load(f)
 
 
+def _assert_oomcrash_injected(config):
+    # DobbySpecConfig must auto-inject the oomcrash plugin as non-required
+    # with an object-valued "data" even when the spec doesn't configure it.
+    plugins = config.get("rdkPlugins")
+    if not isinstance(plugins, dict) or "oomcrash" not in plugins:
+        raise AssertionError("Generated config is missing auto-injected rdkPlugins.oomcrash")
+
+    oomcrash = plugins["oomcrash"]
+    if oomcrash.get("required") is not False:
+        raise AssertionError("rdkPlugins.oomcrash.required must be false, got: %r" % oomcrash.get("required"))
+    if not isinstance(oomcrash.get("data"), dict):
+        raise AssertionError("rdkPlugins.oomcrash.data must be an object, got: %r" % oomcrash.get("data"))
+
+
 def _normalise_config(config):
     # make a copy so we don't mutate the original object
     cfg = deepcopy(config)
@@ -150,7 +164,12 @@ def execute_test():
         log = ""
 
         try:
-            generated_config = _normalise_config(_load_json(generated_config_path))
+            generated_config_raw = _load_json(generated_config_path)
+            _assert_oomcrash_injected(generated_config_raw)
+
+            # Normalize only afterwards, to compare against the legacy bundle
+            # fixture, which predates the oomcrash auto-injection feature.
+            generated_config = _normalise_config(generated_config_raw)
             original_config = _normalise_config(_load_json(original_config_path))
 
             if generated_config != original_config:

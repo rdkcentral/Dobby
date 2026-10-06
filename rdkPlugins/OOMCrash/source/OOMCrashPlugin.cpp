@@ -340,6 +340,11 @@ bool OOMCrash::readCgroup(unsigned long *val)
  *    equivalents) under /sys/fs/cgroup/<id>, falling back to the
  *    system.slice scope path - mirroring readCgroup(). A limit file may
  *    hold the literal "max" (unlimited); such pairs are skipped.
+ *    memory.peak/memory.swap.peak only exist on kernel >= 5.19/6.5; when
+ *    absent, falls back to the "max" counter in memory.events (or
+ *    memory.swap.events), which has existed since v2's memory controller
+ *    was introduced and counts how many times usage tried to exceed the
+ *    corresponding limit.
  *
  * @return true if max usage >= limit for memory or memory+swap.
  */
@@ -375,8 +380,36 @@ bool OOMCrash::isMemoryAtLimit()
         return true;
     };
 
+    // Reads the "max" event counter from a memory.events-style file (count of
+    // times usage tried to exceed the corresponding limit). Used in place of
+    // memory.peak/memory.swap.peak on v2 kernels that predate those files.
+    auto readMaxEventCount = [](const std::string &filePath, unsigned long *out) -> bool
+    {
+        FILE *fp = fopen(filePath.c_str(), "r");
+        if (!fp)
+            return false;
+
+        char *line = nullptr;
+        size_t len = 0;
+        bool found = false;
+        while (getline(&line, &len, fp) >= 0)
+        {
+            unsigned long v = 0;
+            if (sscanf(line, "max %lu", &v) == 1)
+            {
+                *out = v;
+                found = true;
+                break;
+            }
+        }
+        free(line);
+        fclose(fp);
+        return found;
+    };
+
     std::string basePath;
     const char *pairs[2][2];
+    const char *eventFiles[2] = {nullptr, nullptr};
 
     if (isCgroupV2)
     {
@@ -392,6 +425,9 @@ bool OOMCrash::isMemoryAtLimit()
         // memory.swap.peak (kernel >= 6.5)  vs memory.swap.max
         pairs[0][0] = "/memory.peak";       pairs[0][1] = "/memory.max";
         pairs[1][0] = "/memory.swap.peak";  pairs[1][1] = "/memory.swap.max";
+
+        eventFiles[0] = "/memory.events";
+        eventFiles[1] = "/memory.swap.events";
     }
     else
     {
@@ -401,15 +437,32 @@ bool OOMCrash::isMemoryAtLimit()
         pairs[1][0] = "/memory.memsw.max_usage_in_bytes";  pairs[1][1] = "/memory.memsw.limit_in_bytes";
     }
 
-    for (const auto &pair : pairs)
+    for (size_t i = 0; i < 2; i++)
     {
         unsigned long maxUsage = 0, limit = 0;
-        if (readValue(basePath + pair[0], &maxUsage) &&
-            readValue(basePath + pair[1], &limit) &&
+        if (readValue(basePath + pairs[i][0], &maxUsage) &&
+            readValue(basePath + pairs[i][1], &limit) &&
             limit > 0 && maxUsage >= limit)
         {
-            AI_LOG_INFO("%s=%lu reached %s=%lu", pair[0]+1, maxUsage, pair[1]+1, limit);
+            AI_LOG_INFO("%s=%lu reached %s=%lu", pairs[i][0]+1, maxUsage, pairs[i][1]+1, limit);
             return true;
+        }
+
+        // On v2 kernels predating memory.peak/memory.swap.peak (< 5.19/6.5),
+        // fall back to the "max" event counter, available on all v2 kernels.
+        if (isCgroupV2)
+        {
+            struct stat peakSt;
+            if (stat((basePath + pairs[i][0]).c_str(), &peakSt) != 0)
+            {
+                unsigned long maxEvents = 0;
+                if (readMaxEventCount(basePath + eventFiles[i], &maxEvents) && maxEvents > 0)
+                {
+                    AI_LOG_INFO("%s 'max' event count=%lu (peak file unavailable)",
+                                eventFiles[i]+1, maxEvents);
+                    return true;
+                }
+            }
         }
     }
 
@@ -420,18 +473,17 @@ bool OOMCrash::isMemoryAtLimit()
  * @brief Check for Out of Memory by reading cgroup files.
  *
  *  Detection priority:
- *    1. oom_kill > 0   — from memory.oom_control (v1) or memory.events (v2).
- *                        Authoritative: kernel OOM kill confirmed.
- *    2. oom_kill == 0 but isMemoryAtLimit() — "soft OOM".  When swap is
- *                        available (memsw.limit > mem.limit), the kernel swaps
- *                        rather than invoking the OOM killer.  DobbyInit detects
- *                        allocation failures (failcnt) and kills the app with
- *                        SIGTERM.  oom_kill stays 0 but max_usage hitting the
- *                        limit confirms memory pressure caused the death.
- *    3. oom_kill == 0 and memory not at limit — no OOM, normal termination.
- *    4. readCgroup() failed + isMemoryAtLimit() — cgroup files unreadable
+ *    1. readCgroup() succeeds, oom_kill > 0 — from memory.oom_control (v1) or
+ *                        memory.events (v2). Authoritative: kernel OOM kill
+ *                        confirmed.
+ *    2. readCgroup() succeeds, oom_kill == 0 — authoritative: kernel OOM
+ *                        killer did not fire. A high memory watermark is NOT
+ *                        treated as OOM here, since it may just mean the
+ *                        process legitimately used its entire budget.
+ *    3. readCgroup() failed + isMemoryAtLimit() — cgroup counter unreadable
  *                        (under_oom=0 on kernel < 4.13, or ENOENT race).
- *                        Falls back to high-water-mark heuristic.
+ *                        Falls back to the high-water-mark heuristic.
+ *    4. readCgroup() failed and memory not at limit — no OOM.
  *
  * @return true if OOM detected.
  */
@@ -441,30 +493,21 @@ bool OOMCrash::checkForOOM()
     unsigned long oomIndicator = 0;
     bool cgroupRead = readCgroup(&oomIndicator);
 
-    if (cgroupRead && oomIndicator > 0)
+    if (cgroupRead)
     {
+        if (oomIndicator == 0)
+        {
+            // Authoritative: counter read successfully and reports no kill.
+            AI_LOG_INFO("No OOM kill detected in container '%s'", mUtils->getContainerId().c_str());
+            return false;
+        }
+
         // cgroup OOM indicator is authoritative — OOM confirmed. The exact
         // source depends on the hierarchy/kernel (memory.oom_control oom_kill
         // or under_oom on v1, memory.events oom_kill on v2), so keep the
         // wording generic.
         AI_LOG_INFO("cgroup OOM indicator set (value=%lu) for container '%s'",
                     oomIndicator, mUtils->getContainerId().c_str());
-    }
-    else if (cgroupRead && isMemoryAtLimit())
-    {
-        // oom_kill is 0 (kernel OOM killer didn't fire) but memory usage hit
-        // the limit.  This happens when swap is available: the kernel swaps
-        // rather than killing, failcnt increments, and DobbyInit terminates
-        // the app with SIGTERM.  Treat as a "soft OOM".
-        AI_LOG_WARN("oom_kill=0 but max memory usage reached limit for container '%s' "
-                    "(soft OOM — killed by init due to memory pressure, not by kernel OOM killer)",
-                    mUtils->getContainerId().c_str());
-    }
-    else if (cgroupRead)
-    {
-        // cgroup read succeeded, counter is 0, and memory didn't hit limit
-        AI_LOG_INFO("No OOM kill detected in container '%s'", mUtils->getContainerId().c_str());
-        return false;
     }
     else if (isMemoryAtLimit())
     {
