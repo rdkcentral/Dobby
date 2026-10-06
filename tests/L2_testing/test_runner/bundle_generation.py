@@ -44,11 +44,11 @@ def _load_json(path):
 
 
 def _assert_oomcrash_injected(config):
-    # DobbySpecConfig must auto-inject the oomcrash plugin as non-required
-    # with an object-valued "data" even when the spec doesn't configure it.
+    # oomcrash is enabled via "defaultPlugins" in the Dobby settings file; it
+    # must end up non-required with an object-valued "data" in the bundle.
     plugins = config.get("rdkPlugins")
     if not isinstance(plugins, dict) or "oomcrash" not in plugins:
-        raise AssertionError("Generated config is missing auto-injected rdkPlugins.oomcrash")
+        raise AssertionError("Generated config is missing rdkPlugins.oomcrash (check defaultPlugins in settings file)")
 
     oomcrash = plugins["oomcrash"]
     if oomcrash.get("required") is not False:
@@ -106,7 +106,7 @@ def _normalise_config(config):
             mount["options"] = [opt for opt in mount["options"] if not str(opt).startswith("size=")]
 
     # Networking plugin can be auto-disabled depending on environment
-    # OOMCrash plugin is auto-injected by DobbySpecConfig when not present
+    # OOMCrash plugin is enabled via defaultPlugins in the settings file
     if isinstance(cfg.get("rdkPlugins"), dict):
         cfg["rdkPlugins"].pop("networking", None)
         cfg["rdkPlugins"].pop("oomcrash", None)
@@ -168,7 +168,7 @@ def execute_test():
             _assert_oomcrash_injected(generated_config_raw)
 
             # Normalize only afterwards, to compare against the legacy bundle
-            # fixture, which predates the oomcrash auto-injection feature.
+            # fixture, which predates the oomcrash defaultPlugins entry.
             generated_config = _normalise_config(generated_config_raw)
             original_config = _normalise_config(_load_json(original_config_path))
 
