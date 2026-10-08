@@ -38,6 +38,7 @@
 #include <sys/stat.h>
 #include <fstream>
 #include <sstream>
+#include <string>
 
 // Compile time generated strings that (in theory) speeds up the processing
 // of ctemplate expanding
@@ -695,6 +696,12 @@ bool DobbySpecConfig::parseSpec(ctemplate::TemplateDictionary* dictionary,
     }
 
     // step 5 - for any fields that haven't been set, ensure we set the defaults
+    if (!(flags & JSON_FLAG_CWD))
+    {
+        static const ctemplate::TemplateString cwdValue("WORKING_DIRECTORY");
+        dictionary->SetValue(cwdValue, "/");
+    }
+
     if (!(flags & JSON_FLAG_USERNS))
     {
         dictionary->ShowSection(USERNS_ENABLED);
@@ -891,7 +898,67 @@ bool DobbySpecConfig::processCwd(const Json::Value& value,
         return false;
     }
 
-    dictionary->SetValue(cwdValue, value.asString());
+    const std::string cwd = value.asString();
+    if (cwd.empty() || cwd.front() != '/' || cwd.size() >= PATH_MAX)
+    {
+        AI_LOG_ERROR("invalid cwd field: expected a non-empty absolute path shorter than PATH_MAX");
+        return false;
+    }
+
+    // A NUL byte cannot be represented in a Unix pathname. Other bytes,
+    // including whitespace and non-ASCII characters, are valid pathname data
+    // and are escaped when the value is inserted into the OCI JSON template.
+    if (cwd.find('\0') != std::string::npos)
+    {
+        AI_LOG_ERROR("invalid cwd field: embedded NUL byte is not allowed");
+        return false;
+    }
+
+    // Treat cwd only as a container-root-relative OCI path. Do not use realpath()
+    // or any host filesystem lookup here: path resolution must be done by the
+    // container runtime after it has entered the container rootfs.
+
+    // Normalize redundant separators while rejecting dot segments, including
+    // traversal components. The normalized path is still interpreted inside
+    // the target rootfs by runc/crun; this is lexical validation, not host
+    // canonicalization and does not resolve symlinks.
+    std::string normalizedCwd;
+    normalizedCwd.reserve(cwd.size());
+    normalizedCwd = "/";
+    std::string::size_type componentStart = 1;
+    while (componentStart < cwd.size())
+    {
+        const std::string::size_type separator = cwd.find('/', componentStart);
+        const std::string::size_type componentEnd =
+            separator == std::string::npos ? cwd.size() : separator;
+        const std::string::size_type componentLength = componentEnd - componentStart;
+
+        if (componentLength != 0)
+        {
+            const std::string component = cwd.substr(componentStart, componentLength);
+            if (component == "." || component == "..")
+            {
+                AI_LOG_ERROR("invalid cwd field: dot path components are not allowed");
+                return false;
+            }
+
+            if (normalizedCwd.size() > 1)
+                normalizedCwd += '/';
+            normalizedCwd += component;
+        }
+
+        if (separator == std::string::npos)
+            break;
+        componentStart = separator + 1;
+    }
+
+    if (normalizedCwd.size() >= PATH_MAX)
+    {
+        AI_LOG_ERROR("invalid cwd field: normalized path exceeds PATH_MAX");
+        return false;
+    }
+
+    dictionary->SetValue(cwdValue, normalizedCwd);
     return true;
 }
 
@@ -2979,4 +3046,5 @@ bool DobbySpecConfig::processRdkPlugins(const Json::Value& value,
 
     return true;
 }
+
 
