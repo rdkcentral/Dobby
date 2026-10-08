@@ -378,6 +378,8 @@ DobbySpecConfig::DobbySpecConfig(const std::shared_ptr<IDobbyUtils> &utils,
     : mUtilities(utils)
     , mGpuSettings(settings->gpuAccessSettings())
     , mVpuSettings(settings->vpuAccessSettings())
+    , mDefaultPlugins(settings->defaultPlugins())
+    , mRdkPluginsData(settings->rdkPluginsData())
     , mDictionary(nullptr)
     , mZramSwapToRamRatio(0.0)
     , mConf(nullptr)

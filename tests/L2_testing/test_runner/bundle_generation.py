@@ -17,6 +17,8 @@
 
 import test_utils
 import json
+import os
+import tempfile
 from copy import deepcopy
 
 # in case we would like to change container name
@@ -135,11 +137,18 @@ def execute_test():
         
         # Test 0
         test = tests[0]
-        status = test_utils.run_command_line(["DobbyBundleGenerator",
-                                              "-i",
-                                              test_utils.get_container_spec_path(test.container_id),
-                                              "-o",
-                                              test_utils.get_bundle_path(test.container_id)])
+        with tempfile.TemporaryDirectory() as settings_dir:
+            settings_path = os.path.join(settings_dir, "dobby.json")
+            with open(settings_path, "w", encoding="utf-8") as settings_file:
+                json.dump({"defaultPlugins": [{"oomcrash": {}}]}, settings_file)
+
+            status = test_utils.run_command_line(["DobbyBundleGenerator",
+                                                  "-s",
+                                                  settings_path,
+                                                  "-i",
+                                                  test_utils.get_container_spec_path(test.container_id),
+                                                  "-o",
+                                                  test_utils.get_bundle_path(test.container_id)])
 
         message = ""
         result = True
@@ -181,7 +190,6 @@ def execute_test():
                 )
 
             # Verify rootfs directory exists in generated bundle
-            import os
             generated_rootfs = os.path.join(test_utils.get_bundle_path(test.container_id), "rootfs")
             if not os.path.isdir(generated_rootfs):
                 result = False
@@ -190,7 +198,7 @@ def execute_test():
         except Exception as err:
             result = False
             message = "Failed to compare bundle configs"
-            log = str(err)
+            log = "%s\nGenerator stdout:\n%s\nGenerator stderr:\n%s" % (err, status.stdout, status.stderr)
 
         output = test_utils.create_simple_test_output(test, result, message, log)
         output_table.append(output)
