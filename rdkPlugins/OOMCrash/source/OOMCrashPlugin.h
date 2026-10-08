@@ -26,6 +26,7 @@
 #include <RdkPluginBase.h>
 
 #include <sys/stat.h>
+#include <cstdint>
 
 /**
  * @brief Dobby RDK OOMCrash Plugin
@@ -56,7 +57,7 @@ public:
     std::vector<std::string> getDependencies() const override;
 
 private:
-    bool readCgroup(unsigned long *val);
+    bool readCgroup(uint64_t *val);
     bool isMemoryAtLimit();
     bool checkForOOM();
     void createFileForOOM();

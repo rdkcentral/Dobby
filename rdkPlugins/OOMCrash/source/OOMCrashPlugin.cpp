@@ -20,6 +20,7 @@
 #include "OOMCrashPlugin.h"
 
 #include <map>
+#include <cinttypes>
 
 #define FIREBOLT_STATE          "fireboltState"
 #define FIREBOLT_STATE_PREV     "fireboltState_prev"
@@ -204,7 +205,7 @@ std::vector<std::string> OOMCrash::getDependencies() const
  * @return true on successfully reading and parsing the value.
  */
 
-bool OOMCrash::readCgroup(unsigned long *val)
+bool OOMCrash::readCgroup(uint64_t *val)
 {
     const std::string containerId = mUtils->getContainerId();
 
@@ -259,8 +260,8 @@ bool OOMCrash::readCgroup(unsigned long *val)
         *val = 0;
         while ((rd = getline(&line, &len, fp)) >= 0)
         {
-            unsigned long v = 0;
-            if (sscanf(line, "oom_kill %lu", &v) == 1)
+            uint64_t v = 0;
+            if (sscanf(line, "oom_kill %" SCNu64, &v) == 1)
             {
                 *val = v;
                 found = true;
@@ -281,18 +282,18 @@ bool OOMCrash::readCgroup(unsigned long *val)
         // v1: parse key-value memory.oom_control.
         // Prefer 'oom_kill' (kernel >= 4.13, monotonic); fall back to
         // 'under_oom' (kernel < 4.13, transient — 1 while OOM is active).
-        unsigned long oomKill = 0, underOom = 0;
+        uint64_t oomKill = 0, underOom = 0;
         bool foundOomKill = false, foundUnderOom = false;
 
         while ((rd = getline(&line, &len, fp)) > 0)
         {
-            unsigned long v;
-            if (sscanf(line, "oom_kill %lu", &v) == 1)
+            uint64_t v;
+            if (sscanf(line, "oom_kill %" SCNu64, &v) == 1)
             {
                 oomKill = v;
                 foundOomKill = true;
             }
-            else if (sscanf(line, "under_oom %lu", &v) == 1)
+            else if (sscanf(line, "under_oom %" SCNu64, &v) == 1)
             {
                 underOom = v;
                 foundUnderOom = true;
@@ -358,7 +359,7 @@ bool OOMCrash::isMemoryAtLimit()
 
     // Reads a single value from a cgroup file. Returns false on open/parse
     // failure or when the file holds the literal "max" (v2 unlimited).
-    auto readValue = [](const std::string &filePath, unsigned long *out) -> bool
+    auto readValue = [](const std::string &filePath, uint64_t *out) -> bool
     {
         FILE *fp = fopen(filePath.c_str(), "r");
         if (!fp)
@@ -372,8 +373,9 @@ bool OOMCrash::isMemoryAtLimit()
             return false;
 
         char *end = nullptr;
-        unsigned long v = strtoul(token, &end, 10);
-        if (end == token || *end != '\0')
+        errno = 0;
+        uint64_t v = strtoull(token, &end, 10);
+        if (end == token || *end != '\0' || errno == ERANGE)
             return false;
 
         *out = v;
@@ -383,7 +385,7 @@ bool OOMCrash::isMemoryAtLimit()
     // Reads the "max" event counter from a memory.events-style file (count of
     // times usage tried to exceed the corresponding limit). Used in place of
     // memory.peak/memory.swap.peak on v2 kernels that predate those files.
-    auto readMaxEventCount = [](const std::string &filePath, unsigned long *out) -> bool
+    auto readMaxEventCount = [](const std::string &filePath, uint64_t *out) -> bool
     {
         FILE *fp = fopen(filePath.c_str(), "r");
         if (!fp)
@@ -394,8 +396,8 @@ bool OOMCrash::isMemoryAtLimit()
         bool found = false;
         while (getline(&line, &len, fp) >= 0)
         {
-            unsigned long v = 0;
-            if (sscanf(line, "max %lu", &v) == 1)
+            uint64_t v = 0;
+            if (sscanf(line, "max %" SCNu64, &v) == 1)
             {
                 *out = v;
                 found = true;
@@ -439,12 +441,12 @@ bool OOMCrash::isMemoryAtLimit()
 
     for (size_t i = 0; i < 2; i++)
     {
-        unsigned long maxUsage = 0, limit = 0;
+        uint64_t maxUsage = 0, limit = 0;
         if (readValue(basePath + pairs[i][0], &maxUsage) &&
             readValue(basePath + pairs[i][1], &limit) &&
             limit > 0 && maxUsage >= limit)
         {
-            AI_LOG_INFO("%s=%lu reached %s=%lu", pairs[i][0]+1, maxUsage, pairs[i][1]+1, limit);
+            AI_LOG_INFO("%s=%" PRIu64 " reached %s=%" PRIu64, pairs[i][0]+1, maxUsage, pairs[i][1]+1, limit);
             return true;
         }
 
@@ -455,10 +457,10 @@ bool OOMCrash::isMemoryAtLimit()
             struct stat peakSt;
             if (stat((basePath + pairs[i][0]).c_str(), &peakSt) != 0)
             {
-                unsigned long maxEvents = 0;
+                uint64_t maxEvents = 0;
                 if (readMaxEventCount(basePath + eventFiles[i], &maxEvents) && maxEvents > 0)
                 {
-                    AI_LOG_INFO("%s 'max' event count=%lu (peak file unavailable)",
+                    AI_LOG_INFO("%s 'max' event count=%" PRIu64 " (peak file unavailable)",
                                 eventFiles[i]+1, maxEvents);
                     return true;
                 }
@@ -490,7 +492,7 @@ bool OOMCrash::isMemoryAtLimit()
 
 bool OOMCrash::checkForOOM()
 {
-    unsigned long oomIndicator = 0;
+    uint64_t oomIndicator = 0;
     bool cgroupRead = readCgroup(&oomIndicator);
 
     if (cgroupRead)
@@ -506,13 +508,13 @@ bool OOMCrash::checkForOOM()
         // source depends on the hierarchy/kernel (memory.oom_control oom_kill
         // or under_oom on v1, memory.events oom_kill on v2), so keep the
         // wording generic.
-        AI_LOG_INFO("cgroup OOM indicator set (value=%lu) for container '%s'",
+        AI_LOG_INFO("cgroup OOM indicator set (value=%" PRIu64 ") for container '%s'",
                     oomIndicator, mUtils->getContainerId().c_str());
     }
     else if (isMemoryAtLimit())
     {
         // cgroup file was unreadable — fall back to high-water-mark heuristic
-        AI_LOG_WARN("cgroup unreadable; max memory usage reached limit for container '%s'",
+        AI_LOG_WARN("OOM counter unavailable; max memory usage reached limit for container '%s'",
                     mUtils->getContainerId().c_str());
     }
     else
