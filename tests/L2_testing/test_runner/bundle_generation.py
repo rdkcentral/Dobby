@@ -17,6 +17,8 @@
 
 import test_utils
 import json
+import os
+import tempfile
 from copy import deepcopy
 
 # in case we would like to change container name
@@ -41,6 +43,20 @@ tests = (
 def _load_json(path):
     with open(path, encoding="utf-8") as f:
         return json.load(f)
+
+
+def _assert_oomcrash_injected(config):
+    # oomcrash is enabled via "defaultPlugins" in the Dobby settings file; it
+    # must end up non-required with an object-valued "data" in the bundle.
+    plugins = config.get("rdkPlugins")
+    if not isinstance(plugins, dict) or "oomcrash" not in plugins:
+        raise AssertionError("Generated config is missing rdkPlugins.oomcrash (check defaultPlugins in settings file)")
+
+    oomcrash = plugins["oomcrash"]
+    if oomcrash.get("required") is not False:
+        raise AssertionError("rdkPlugins.oomcrash.required must be false, got: %r" % oomcrash.get("required"))
+    if not isinstance(oomcrash.get("data"), dict):
+        raise AssertionError("rdkPlugins.oomcrash.data must be an object, got: %r" % oomcrash.get("data"))
 
 
 def _normalise_config(config):
@@ -92,8 +108,10 @@ def _normalise_config(config):
             mount["options"] = [opt for opt in mount["options"] if not str(opt).startswith("size=")]
 
     # Networking plugin can be auto-disabled depending on environment
+    # OOMCrash plugin is enabled via defaultPlugins in the settings file
     if isinstance(cfg.get("rdkPlugins"), dict):
         cfg["rdkPlugins"].pop("networking", None)
+        cfg["rdkPlugins"].pop("oomcrash", None)
 
     return cfg
 
@@ -119,11 +137,18 @@ def execute_test():
         
         # Test 0
         test = tests[0]
-        status = test_utils.run_command_line(["DobbyBundleGenerator",
-                                              "-i",
-                                              test_utils.get_container_spec_path(test.container_id),
-                                              "-o",
-                                              test_utils.get_bundle_path(test.container_id)])
+        with tempfile.TemporaryDirectory() as settings_dir:
+            settings_path = os.path.join(settings_dir, "dobby.json")
+            with open(settings_path, "w", encoding="utf-8") as settings_file:
+                json.dump({"defaultPlugins": [{"oomcrash": {}}]}, settings_file)
+
+            status = test_utils.run_command_line(["DobbyBundleGenerator",
+                                                  "-s",
+                                                  settings_path,
+                                                  "-i",
+                                                  test_utils.get_container_spec_path(test.container_id),
+                                                  "-o",
+                                                  test_utils.get_bundle_path(test.container_id)])
 
         message = ""
         result = True
@@ -148,7 +173,12 @@ def execute_test():
         log = ""
 
         try:
-            generated_config = _normalise_config(_load_json(generated_config_path))
+            generated_config_raw = _load_json(generated_config_path)
+            _assert_oomcrash_injected(generated_config_raw)
+
+            # Normalize only afterwards, to compare against the legacy bundle
+            # fixture, which predates the oomcrash defaultPlugins entry.
+            generated_config = _normalise_config(generated_config_raw)
             original_config = _normalise_config(_load_json(original_config_path))
 
             if generated_config != original_config:
@@ -160,7 +190,6 @@ def execute_test():
                 )
 
             # Verify rootfs directory exists in generated bundle
-            import os
             generated_rootfs = os.path.join(test_utils.get_bundle_path(test.container_id), "rootfs")
             if not os.path.isdir(generated_rootfs):
                 result = False
@@ -169,7 +198,7 @@ def execute_test():
         except Exception as err:
             result = False
             message = "Failed to compare bundle configs"
-            log = str(err)
+            log = "%s\nGenerator stdout:\n%s\nGenerator stderr:\n%s" % (err, status.stdout, status.stderr)
 
         output = test_utils.create_simple_test_output(test, result, message, log)
         output_table.append(output)
