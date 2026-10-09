@@ -132,6 +132,8 @@ public:
     void printCommand() const;
     bool enableSTrace(const std::string& logsDir);
     void setApparmorProfile(const std::string& profileName);
+    bool setApparmorProfileForContainer(const std::string& preferredProfile,
+                                        const std::string& defaultProfile);
     void setPidsLimit(int limit);
 
 // protected methods for derived classes to use
@@ -168,3 +170,4 @@ private:
 
 
 #endif // !defined(DOBBYCONFIG_H)
+

@@ -98,6 +98,8 @@ private:
     void cleanupContainers();
     bool cleanupContainer(const DobbyRunC::ContainerListItem& container);
     void cleanupContainersShutdown();
+    bool configureApparmorProfile(const ContainerId& id,
+                                  const std::shared_ptr<DobbyConfig>& config);
 public:
 #if defined(LEGACY_COMPONENTS)
     int32_t startContainerFromSpec(const ContainerId& id,
@@ -252,3 +254,4 @@ private:
 
 
 #endif // !defined(DOBBYMANAGER_H)
+

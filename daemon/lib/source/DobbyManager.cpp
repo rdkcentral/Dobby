@@ -57,6 +57,8 @@
 #include <sys/prctl.h>
 #include <sys/resource.h>
 #include <fstream>
+#include <algorithm>
+#include <cctype>
 #include <unordered_map>
 #include <chrono>
 #include <thread>
@@ -80,6 +82,38 @@
 #ifndef PR_GET_CHILD_SUBREAPER
 #  define PR_GET_CHILD_SUBREAPER 37
 #endif
+
+namespace
+{
+std::string profileForContainerId(const ContainerId& id)
+{
+    std::string normalizedId = id.str();
+    std::transform(normalizedId.begin(), normalizedId.end(), normalizedId.begin(),
+                   [](unsigned char character) { return static_cast<char>(std::tolower(character)); });
+
+    static const std::string appContainerPrefix = "com.sky.as.apps_";
+    if (normalizedId.compare(0, appContainerPrefix.size(), appContainerPrefix) != 0)
+    {
+        return std::string();
+    }
+
+    if (normalizedId.find("netflix") != std::string::npos)
+    {
+        return "netflix";
+    }
+    if (normalizedId.find("youtube") != std::string::npos)
+    {
+        return "youtube";
+    }
+    if ((normalizedId.find("prime") != std::string::npos) ||
+        (normalizedId.find("amazonvideo") != std::string::npos))
+    {
+        return "primevideo";
+    }
+
+    return "webapps";
+}
+}
 
 // Can override the plugin path at build time by setting -DPLUGIN_PATH=/path/to/plugins/
 #ifndef PLUGIN_PATH
@@ -135,6 +169,34 @@ DobbyManager::~DobbyManager()
     {
         mUtilities->cancelTimer(mCleanupTaskTimerId);
     }
+}
+
+bool DobbyManager::configureApparmorProfile(const ContainerId& id,
+                                            const std::shared_ptr<DobbyConfig>& config)
+{
+    const IDobbySettings::ApparmorSettings apparmorSettings = mSettings->apparmorSettings();
+    if (!apparmorSettings.enabled)
+    {
+        return true;
+    }
+
+    const std::string appProfile = profileForContainerId(id);
+    if (appProfile.empty())
+    {
+        config->setApparmorProfile(apparmorSettings.profileName);
+        return true;
+    }
+
+    if (!config->setApparmorProfileForContainer(appProfile, apparmorSettings.profileName))
+    {
+        AI_LOG_ERROR("Refusing to start app container '%s' without required AppArmor profile '%s'",
+                     id.c_str(), appProfile.c_str());
+        return false;
+    }
+
+    AI_LOG_INFO("Selected AppArmor profile '%s' for container '%s'",
+                appProfile.c_str(), id.c_str());
+    return true;
 }
 
 // -----------------------------------------------------------------------------
@@ -860,6 +922,13 @@ int32_t DobbyManager::startContainerFromSpec(const ContainerId &id,
         return -1;
     }
 
+    // Set AppArmor profile before creating container resources.
+    if (!configureApparmorProfile(id, config))
+    {
+        AI_LOG_ERROR_EXIT("failed to select AppArmor profile for container '%s'", id.c_str());
+        return -1;
+    }
+
     // create a (populated) rootfs directory within the bundle from the config
     std::shared_ptr<DobbyRootfs> rootfs =
         std::make_shared<DobbyRootfs>(mUtilities, bundle, config);
@@ -876,12 +945,6 @@ int32_t DobbyManager::startContainerFromSpec(const ContainerId &id,
     {
         AI_LOG_ERROR_EXIT("failed to create 'start state' object");
         return -1;
-    }
-
-    // Set Apparmor profile
-    if (mSettings->apparmorSettings().enabled)
-    {
-        config->setApparmorProfile(mSettings->apparmorSettings().profileName);
     }
 
     // Set pids limit
@@ -1039,6 +1102,13 @@ int32_t DobbyManager::startContainerFromBundle(const ContainerId &id,
         return -1;
     }
 
+    // Set AppArmor profile before creating container resources.
+    if (!configureApparmorProfile(id, config))
+    {
+        AI_LOG_ERROR_EXIT("failed to select AppArmor profile for container '%s'", id.c_str());
+        return -1;
+    }
+
     // Populate DobbyBundle object with path to the bundle
     std::shared_ptr<DobbyBundle> bundle =
         std::make_shared<DobbyBundle>(mUtilities, mEnvironment, bundlePath);
@@ -1065,12 +1135,6 @@ int32_t DobbyManager::startContainerFromBundle(const ContainerId &id,
     {
         AI_LOG_ERROR_EXIT("failed to create 'start state' object");
         return -1;
-    }
-
-    // Set Apparmor profile
-    if (mSettings->apparmorSettings().enabled)
-    {
-        config->setApparmorProfile(mSettings->apparmorSettings().profileName);
     }
 
     // Set pids limit
@@ -3731,4 +3795,5 @@ bool DobbyManager::shouldEnableSTrace(const std::shared_ptr<DobbyConfig> &config
 
     return std::find(apps.begin(), apps.end(), hostName) != apps.end();
 }
+
 

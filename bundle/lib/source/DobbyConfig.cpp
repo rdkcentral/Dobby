@@ -24,6 +24,7 @@
 #include "DobbyConfig.h"
 
 #include <atomic>
+#include <cstdlib>
 #include <glob.h>
 #include <sys/stat.h>
 #include <fstream>
@@ -874,6 +875,53 @@ void DobbyConfig::setApparmorProfile(const std::string& defaultProfileName)
 
 // -----------------------------------------------------------------------------
 /**
+ *  @brief Prefer a container-specific profile, falling back to the configured default.
+ *
+ *  Used for container IDs with an explicit app-to-profile policy. A missing
+ *  app profile (for example, RFC disable mode) falls back to Dobby's default.
+ */
+bool DobbyConfig::setApparmorProfileForContainer(const std::string& preferredProfile,
+                                                 const std::string& defaultProfile)
+{
+    std::shared_ptr<rt_dobby_schema> cfg = config();
+    if ((cfg == nullptr) || (cfg->process == nullptr))
+    {
+        AI_LOG_ERROR("Invalid bundle config for AppArmor profile selection");
+        return false;
+    }
+
+    std::string selectedProfile;
+    if (!preferredProfile.empty() && isApparmorProfileLoaded(preferredProfile.c_str()))
+    {
+        selectedProfile = preferredProfile;
+    }
+    else if (!defaultProfile.empty() && isApparmorProfileLoaded(defaultProfile.c_str()))
+    {
+        selectedProfile = defaultProfile;
+        AI_LOG_WARN("AppArmor profile [%s] is not loaded; using default profile [%s]",
+                preferredProfile.c_str(), defaultProfile.c_str());
+    }
+    else
+    {
+        AI_LOG_ERROR("Neither AppArmor profile [%s] nor default profile [%s] is loaded",
+                     preferredProfile.c_str(), defaultProfile.c_str());
+        return false;
+    }
+
+    char* profile = strdup(selectedProfile.c_str());
+    if (profile == nullptr)
+    {
+        AI_LOG_ERROR("Failed to allocate AppArmor profile name");
+        return false;
+    }
+
+    free(cfg->process->apparmor_profile);
+    cfg->process->apparmor_profile = profile;
+    return true;
+}
+
+// -----------------------------------------------------------------------------
+/**
  *  @brief Set cgroup pids limit.
  *
  *  Limits the number of processes that containered app can create.
@@ -1007,3 +1055,4 @@ bool DobbyConfig::convertToCompliant(const ContainerId& id, std::shared_ptr<rt_d
     AI_LOG_FN_EXIT();
     return true;
 }
+
