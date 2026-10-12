@@ -49,10 +49,22 @@ inputs:
     description: Optional mentions to include in fallback issue (for example @org/team)
     required: false
     default: ""
+  notification_webhook_url:
+    description: Optional webhook URL for notifications (for example Slack incoming webhook).
+    required: false
+    default: ""
+  notification_on:
+    description: "When to send webhook notifications: never | human-intervention-required | all"
+    required: false
+    default: "human-intervention-required"
+  fail_on_human_intervention:
+    description: Whether to fail the action when manual intervention is required.
+    required: false
+    default: "true"
 
 outputs:
   result:
-    description: "Outcome: merged | skipped | human-intervention-required"
+    description: "Outcome: merged | skipped | human-intervention-required | failed"
     value: ${{ steps.outcome.outputs.result }}
   pr_number:
     description: "Fallback PR number (if any)"
@@ -153,6 +165,30 @@ runs:
         TARGET_BRANCH: ${{ steps.branches.outputs.target_branch }}
       run: |
         set -euo pipefail
+
+        branch_exists_remote() {
+          local branch="$1"
+          git -C "$WORKDIR" ls-remote --exit-code --heads origin "$branch" >/dev/null 2>&1
+        }
+
+        if ! branch_exists_remote "$SOURCE_BRANCH"; then
+          echo "Sync aborted: source branch '${SOURCE_BRANCH}' does not exist on origin (${GITHUB_REPOSITORY})." >&2
+          echo "Tips:" >&2
+          echo "  - If this was a workflow_dispatch run, verify the source_branch input value." >&2
+          echo "  - If this was a push-triggered run, the branch may have been renamed or deleted after the event fired." >&2
+          echo "  - Verify branch names with: gh api repos/${GITHUB_REPOSITORY}/branches --jq '.[].name'" >&2
+          exit 1
+        fi
+
+        if ! branch_exists_remote "$TARGET_BRANCH"; then
+          echo "Sync aborted: target branch '${TARGET_BRANCH}' does not exist on origin (${GITHUB_REPOSITORY})." >&2
+          echo "Tips:" >&2
+          echo "  - Confirm target_branch input for workflow_dispatch runs." >&2
+          echo "  - Ensure the destination branch exists (for example 'main')." >&2
+          echo "  - Verify branch names with: gh api repos/${GITHUB_REPOSITORY}/branches --jq '.[].name'" >&2
+          exit 1
+        fi
+
         git -C "$WORKDIR" fetch origin \
           "refs/heads/${SOURCE_BRANCH}:refs/remotes/origin/${SOURCE_BRANCH}" \
           "refs/heads/${TARGET_BRANCH}:refs/remotes/origin/${TARGET_BRANCH}"
@@ -225,31 +261,23 @@ runs:
       run: |
         set -euo pipefail
         branch_prefix="${PR_BRANCH_PREFIX}/${SOURCE_BRANCH}-to-${TARGET_BRANCH}"
+        source_sha="$(git -C "$WORKDIR" rev-parse "origin/${SOURCE_BRANCH}")"
 
         reason="merge conflict"
         if [[ "$CONFLICT" != "true" ]]; then
           reason="direct push failed"
         fi
 
-        pr_list_json="$(gh pr list --base "$TARGET_BRANCH" --state open --json headRefName 2>/dev/null || echo '[]')"
-        existing_head="$(echo "$pr_list_json" | jq -r --arg prefix "$branch_prefix" 'map(select(.headRefName | startswith($prefix))) | .[0].headRefName // empty')"
-
-        if [[ -n "$existing_head" ]]; then
-          echo "Reusing existing fallback branch ${existing_head}."
-          echo "fallback_branch=${existing_head}" >> "$GITHUB_OUTPUT"
-          echo "reason=${reason}" >> "$GITHUB_OUTPUT"
-          exit 0
-        fi
-
-        pr_branch="$branch_prefix"
+        pr_branch="${branch_prefix}-${source_sha:0:12}"
         if git -C "$WORKDIR" ls-remote --exit-code --heads origin "$pr_branch" >/dev/null 2>&1; then
-          pr_branch="${pr_branch}-${GITHUB_RUN_ID}"
+          echo "Reusing fallback branch ${pr_branch} for source commit ${source_sha}."
+        else
+          git -C "$WORKDIR" checkout -B "$pr_branch" "$source_sha"
+          git -C "$WORKDIR" push origin "$pr_branch"
         fi
-
-        git -C "$WORKDIR" checkout -B "$pr_branch" "origin/${SOURCE_BRANCH}"
-        git -C "$WORKDIR" push origin "$pr_branch"
 
         echo "fallback_branch=${pr_branch}" >> "$GITHUB_OUTPUT"
+        echo "source_sha=${source_sha}" >> "$GITHUB_OUTPUT"
         echo "reason=${reason}" >> "$GITHUB_OUTPUT"
 
     - name: Ensure labels exist
@@ -281,6 +309,7 @@ runs:
         GH_TOKEN: ${{ steps.token.outputs.token }}
         SOURCE_BRANCH: ${{ steps.branches.outputs.source_branch }}
         TARGET_BRANCH: ${{ steps.branches.outputs.target_branch }}
+        SOURCE_SHA: ${{ steps.fallback_branch.outputs.source_sha }}
         REASON: ${{ steps.fallback_branch.outputs.reason }}
         FALLBACK_BRANCH: ${{ steps.fallback_branch.outputs.fallback_branch }}
         PR_BRANCH_PREFIX: ${{ inputs.pr_branch_prefix }}
@@ -293,6 +322,7 @@ runs:
         set -euo pipefail
         source_branch="$SOURCE_BRANCH"
         target_branch="$TARGET_BRANCH"
+        source_sha="$SOURCE_SHA"
         reason="$REASON"
         fallback_branch="$FALLBACK_BRANCH"
         branch_prefix="${PR_BRANCH_PREFIX}/${source_branch}-to-${target_branch}"
@@ -329,30 +359,21 @@ runs:
           echo "No Jira key detected from override, source branch, or source HEAD subject; using ${jira_key}." >&2
         fi
 
-        pr_list_json="$(gh pr list --base "$target_branch" --state open --json number,headRefName 2>/dev/null || echo '[]')"
-        existing_pr="$(echo "$pr_list_json" | jq -r --arg prefix "$branch_prefix" 'map(select(.headRefName | startswith($prefix))) | .[0].number // empty')"
-        existing_head="$(echo "$pr_list_json" | jq -r --arg prefix "$branch_prefix" 'map(select(.headRefName | startswith($prefix))) | .[0].headRefName // empty')"
+        pr_list_json="$(gh pr list --base "$target_branch" --state open --limit 200 --json number,headRefName 2>/dev/null || echo '[]')"
+        existing_pr="$(echo "$pr_list_json" | jq -r --arg head "$fallback_branch" 'map(select(.headRefName == $head)) | .[0].number // empty')"
 
         pr_title="${jira_key}: auto-sync ${source_branch} -> ${target_branch} (${reason})"
         compare_branch="$fallback_branch"
-        if [[ -z "$compare_branch" && -n "$existing_head" ]]; then
-          compare_branch="$existing_head"
-        fi
         compare_url="https://github.com/${GITHUB_REPOSITORY}/compare/${target_branch}...${compare_branch}?expand=1"
-        printf -v pr_body '%s\n\nReason: %s\nFallback branch: %s\nCompare: %s\nRun: %s' \
+        printf -v pr_body '%s\n\nReason: %s\nSource commit: %s\nFallback branch: %s\nCompare: %s\nRun: %s' \
           "Automatic sync of ${source_branch} to ${target_branch} requires human intervention." \
           "$reason" \
+          "$source_sha" \
           "${compare_branch}" \
           "$compare_url" \
           "${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
 
         if [[ -n "$existing_pr" ]]; then
-          if [[ "$CONFLICT" != "true" && -n "$existing_head" ]]; then
-            git -C "$workdir" fetch origin "refs/heads/${existing_head}:refs/remotes/origin/${existing_head}"
-            git -C "$workdir" checkout -B "$existing_head" "origin/${source_branch}"
-            git -C "$workdir" push --force-with-lease origin "$existing_head"
-            echo "Updated fallback PR branch ${existing_head} to latest ${source_branch}."
-          fi
           if ! gh pr edit "$existing_pr" --title "$pr_title" --body "$pr_body" >/dev/null 2>&1; then
             echo "Warning: failed to update title/body for fallback PR #${existing_pr}." >&2
           fi
@@ -392,7 +413,7 @@ runs:
           pr_url="$(cat "$pr_create_output_file")"
           pr_number="$(gh pr view "$pr_url" --json number --jq .number 2>/dev/null || true)"
           if [[ -z "$pr_number" ]]; then
-            pr_number="$(gh pr list --base "$target_branch" --head "$fallback_branch" --state open --json number --jq '.[0].number // empty' 2>/dev/null || true)"
+            pr_number="$(gh pr list --base "$target_branch" --head "$fallback_branch" --state open --limit 200 --json number --jq '.[0].number // empty' 2>/dev/null || true)"
           fi
           if [[ -z "$pr_number" ]]; then
             echo "Created PR but failed to resolve its number." >&2
@@ -410,6 +431,14 @@ runs:
 
         create_err="$(cat "$pr_create_output_file")"
         if echo "$create_err" | grep -Eq 'createPullRequest|not permitted to create or approve pull requests'; then
+          manual_pr_url="https://github.com/${GITHUB_REPOSITORY}/compare/${target_branch}...${fallback_branch}?expand=1&quick_pull=1"
+          echo "::warning::GitHub Actions token cannot create PRs in this repository policy. Open PR manually: ${manual_pr_url}"
+          {
+            echo "### PR Creation Blocked By Policy"
+            echo "- Reason: GitHub Actions token is not permitted to create/approve pull requests"
+            echo "- One-click PR: ${manual_pr_url}"
+            echo "- Fallback branch: ${fallback_branch}"
+          } >> "$GITHUB_STEP_SUMMARY"
           echo "pr_number=" >> "$GITHUB_OUTPUT"
           echo "pr_permission_denied=true" >> "$GITHUB_OUTPUT"
           echo "pr_error_message=$(echo "$create_err" | tr '\n' ' ')" >> "$GITHUB_OUTPUT"
@@ -421,6 +450,30 @@ runs:
         echo "pr_error_message=$(echo "$create_err" | tr '\n' ' ')" >> "$GITHUB_OUTPUT"
         exit 0
 
+    - name: Close superseded fallback PRs
+      if: steps.check.outputs.already_synced == 'false' && (steps.merge.outputs.conflict == 'true' || steps.push.outputs.push_failed == 'true') && steps.pr_fallback.outputs.pr_number != ''
+      shell: bash
+      env:
+        GH_TOKEN: ${{ steps.token.outputs.token }}
+        SOURCE_BRANCH: ${{ steps.branches.outputs.source_branch }}
+        TARGET_BRANCH: ${{ steps.branches.outputs.target_branch }}
+        PR_BRANCH_PREFIX: ${{ inputs.pr_branch_prefix }}
+        FALLBACK_BRANCH: ${{ steps.fallback_branch.outputs.fallback_branch }}
+        SOURCE_SHA: ${{ steps.fallback_branch.outputs.source_sha }}
+        PR_NUMBER: ${{ steps.pr_fallback.outputs.pr_number }}
+      run: |
+        set -euo pipefail
+        branch_prefix="${PR_BRANCH_PREFIX}/${SOURCE_BRANCH}-to-${TARGET_BRANCH}"
+        pr_list_json="$(gh pr list --base "$TARGET_BRANCH" --state open --limit 200 --json number,headRefName 2>/dev/null || echo '[]')"
+        stale_prs="$(echo "$pr_list_json" | jq -r --arg prefix "$branch_prefix" --arg keep "$FALLBACK_BRANCH" '.[] | select(.headRefName != $keep) | select(.headRefName == $prefix or (.headRefName | startswith($prefix + "-"))) | .number')"
+
+        while IFS= read -r stale_pr; do
+          [[ -z "$stale_pr" ]] && continue
+          if ! gh pr close "$stale_pr" --comment "Superseded by #${PR_NUMBER} for source commit ${SOURCE_SHA}. The old branch is retained so manual resolution commits can be recovered." >/dev/null 2>&1; then
+            echo "Warning: failed to close superseded fallback PR #${stale_pr}." >&2
+          fi
+        done <<< "$stale_prs"
+
     - name: Open or update fallback issue
       if: steps.check.outputs.already_synced == 'false' && (steps.merge.outputs.conflict == 'true' || steps.push.outputs.push_failed == 'true')
       id: issue_fallback
@@ -429,6 +482,7 @@ runs:
         GH_TOKEN: ${{ steps.token.outputs.token }}
         SOURCE_BRANCH: ${{ steps.branches.outputs.source_branch }}
         TARGET_BRANCH: ${{ steps.branches.outputs.target_branch }}
+        SOURCE_SHA: ${{ steps.fallback_branch.outputs.source_sha }}
         REASON: ${{ steps.fallback_branch.outputs.reason }}
         FALLBACK_BRANCH: ${{ steps.fallback_branch.outputs.fallback_branch }}
         PR_NUMBER: ${{ steps.pr_fallback.outputs.pr_number }}
@@ -440,9 +494,11 @@ runs:
         set -euo pipefail
         source_branch="$SOURCE_BRANCH"
         target_branch="$TARGET_BRANCH"
+        source_sha="$SOURCE_SHA"
         reason="$REASON"
         fallback_branch="$FALLBACK_BRANCH"
         compare_url="https://github.com/${GITHUB_REPOSITORY}/compare/${target_branch}...${fallback_branch}?expand=1"
+        pr_create_url="https://github.com/${GITHUB_REPOSITORY}/compare/${target_branch}...${fallback_branch}?expand=1&quick_pull=1"
         run_url="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
 
         title="chore: auto-sync ${source_branch} -> ${target_branch} needs manual merge"
@@ -456,13 +512,20 @@ runs:
           pr_note="Fallback PR creation encountered an error: ${PR_ERROR_MESSAGE}"
         fi
 
-        printf -v body '%s\n\nReason: %s\nFallback branch: %s\nCompare: %s\nRun: %s\n\nPR status: %s' \
+        printf -v body '%s\n\nReason: %s\nSource branch: %s\nSource commit: %s\nFallback branch: %s\nCompare: %s\nCreate PR: %s\nRun: %s\n\nPR status: %s\n\nManual merge checklist:\n- Checkout `%s` and merge `%s` into it\n- Resolve conflicts\n- Open PR with one click (base `%s`): %s\n- Merge PR after checks pass\n- Close this issue' \
           "Automatic sync from ${source_branch} to ${target_branch} requires manual intervention." \
           "$reason" \
+          "$source_branch" \
+          "$source_sha" \
           "$fallback_branch" \
           "$compare_url" \
+          "$pr_create_url" \
           "$run_url" \
-          "$pr_note"
+          "$pr_note" \
+          "$fallback_branch" \
+          "$source_branch" \
+          "$target_branch" \
+          "$pr_create_url"
         if [[ -n "$ESCALATION_MENTIONS" ]]; then
           printf -v body '%s\n\nAttention: %s' "$body" "$ESCALATION_MENTIONS"
         fi
@@ -510,14 +573,43 @@ runs:
       id: outcome
       if: always()
       shell: bash
+      env:
+        ALREADY_SYNCED: ${{ steps.check.outputs.already_synced }}
+        MERGE_CONFLICT: ${{ steps.merge.outputs.conflict }}
+        PUSH_FAILED: ${{ steps.push.outputs.push_failed }}
+        ALREADY_SYNCED_AFTER_PUSH_REJECT: ${{ steps.push.outputs.already_synced_after_push_reject }}
+        FAIL_ON_HUMAN_INTERVENTION: ${{ inputs.fail_on_human_intervention }}
       run: |
-        if [[ "${{ steps.check.outputs.already_synced }}" == "true" ]]; then
+        if [[ -z "${ALREADY_SYNCED:-}" ]]; then
+          echo "result=failed" >> "$GITHUB_OUTPUT"
+          echo "Unable to determine sync result because a prior step did not publish required outputs." >&2
+          exit 1
+        fi
+
+        if [[ "$ALREADY_SYNCED" == "true" ]]; then
           echo "result=skipped" >> "$GITHUB_OUTPUT"
           exit 0
         fi
 
-        if [[ "${{ steps.merge.outputs.conflict }}" == "false" && "${{ steps.push.outputs.push_failed }}" == "false" ]]; then
-          if [[ "${{ steps.push.outputs.already_synced_after_push_reject }}" == "true" ]]; then
+        if [[ "$MERGE_CONFLICT" == "true" ]]; then
+          echo "result=human-intervention-required" >> "$GITHUB_OUTPUT"
+          normalized_fail="$(echo "${FAIL_ON_HUMAN_INTERVENTION}" | tr '[:upper:]' '[:lower:]')"
+          if [[ "$normalized_fail" == "true" || "$normalized_fail" == "1" || "$normalized_fail" == "yes" ]]; then
+            exit 1
+          fi
+
+          echo "Manual intervention required; continuing because fail_on_human_intervention is disabled."
+          exit 0
+        fi
+
+        if [[ -z "${PUSH_FAILED:-}" ]]; then
+          echo "result=failed" >> "$GITHUB_OUTPUT"
+          echo "Unable to determine merge/push outcome from prior steps." >&2
+          exit 1
+        fi
+
+        if [[ "$MERGE_CONFLICT" == "false" && "$PUSH_FAILED" == "false" ]]; then
+          if [[ "$ALREADY_SYNCED_AFTER_PUSH_REJECT" == "true" ]]; then
             echo "result=skipped" >> "$GITHUB_OUTPUT"
             exit 0
           fi
@@ -527,4 +619,61 @@ runs:
         fi
 
         echo "result=human-intervention-required" >> "$GITHUB_OUTPUT"
-        exit 1
+        normalized_fail="$(echo "${FAIL_ON_HUMAN_INTERVENTION}" | tr '[:upper:]' '[:lower:]')"
+        if [[ "$normalized_fail" == "true" || "$normalized_fail" == "1" || "$normalized_fail" == "yes" ]]; then
+          exit 1
+        fi
+
+        echo "Manual intervention required; continuing because fail_on_human_intervention is disabled."
+        exit 0
+
+    - name: Send optional webhook notification
+      if: always() && inputs.notification_webhook_url != ''
+      continue-on-error: true
+      shell: bash
+      env:
+        WEBHOOK_URL: ${{ inputs.notification_webhook_url }}
+        NOTIFICATION_ON: ${{ inputs.notification_on }}
+        RESULT: ${{ steps.outcome.outputs.result }}
+        SOURCE_BRANCH: ${{ steps.branches.outputs.source_branch }}
+        TARGET_BRANCH: ${{ steps.branches.outputs.target_branch }}
+        PR_NUMBER: ${{ steps.pr_fallback.outputs.pr_number }}
+        ISSUE_NUMBER: ${{ steps.issue_fallback.outputs.issue_number }}
+      run: |
+        set -euo pipefail
+
+        result="${RESULT:-unknown}"
+        notify_on="$(echo "${NOTIFICATION_ON}" | tr '[:upper:]' '[:lower:]')"
+
+        case "$notify_on" in
+          never)
+            exit 0
+            ;;
+          human-intervention-required)
+            [[ "$result" == "human-intervention-required" ]] || exit 0
+            ;;
+          all)
+            ;;
+          *)
+            echo "::warning::Invalid notification_on value '${NOTIFICATION_ON}'. Expected: never | human-intervention-required | all. Skipping notification."
+            exit 0
+            ;;
+        esac
+
+        run_url="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+        message="[${GITHUB_REPOSITORY}] sync ${SOURCE_BRANCH} -> ${TARGET_BRANCH}: ${result}. Run: ${run_url}"
+
+        if [[ -n "${PR_NUMBER:-}" ]]; then
+          message+=" PR: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/pull/${PR_NUMBER}"
+        fi
+        if [[ -n "${ISSUE_NUMBER:-}" ]]; then
+          message+=" Issue: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/issues/${ISSUE_NUMBER}"
+        fi
+
+        payload="$(jq -n --arg text "$message" '{text: $text}')"
+        if ! curl -fsS --max-time 10 --retry 1 -X POST -H 'Content-Type: application/json' --data "$payload" "$WEBHOOK_URL" >/dev/null; then
+          echo "::warning::Notification webhook delivery failed; continuing without failing the workflow."
+          exit 0
+        fi
+
+        echo "Sent webhook notification for result '${result}'."

@@ -1,11 +1,13 @@
 # Sync develop -> main -- consumer template
 #
 # Copy this file to .github/workflows/sync-develop-to-main.yml in any consumer repo.
+# Do not place this file under .github/actions/; GitHub only loads workflow YAML from .github/workflows/.
 # The sync logic lives in app-gateway-automation/actions/sync-branches.
 #
-# Optional secret: SEMANTIC_RELEASE_TOKEN (contents:write + pull-requests:write + issues:write)
-# Used only for workflow_dispatch runs (falls back to github.token if absent).
-# Push-triggered runs always use github.token to keep PAT scope out of routine automation.
+# Optional secrets (first match wins):
+# - RDKE_GITHUB_TOKEN
+# - SEMANTIC_RELEASE_TOKEN
+# Configure one if downstream Actions workflows must run; github.token fallback does not trigger them.
 
 name: Sync develop to main
 
@@ -41,4 +43,4 @@ jobs:
         with:
           source_branch: ${{ github.event.inputs.source_branch || 'develop' }}
           target_branch: ${{ github.event.inputs.target_branch || 'main' }}
-          token: ${{ github.event_name == 'workflow_dispatch' && (secrets.SEMANTIC_RELEASE_TOKEN || github.token) || github.token }}
+          token: ${{ secrets.RDKE_GITHUB_TOKEN || secrets.SEMANTIC_RELEASE_TOKEN || github.token }}

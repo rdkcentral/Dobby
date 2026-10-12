@@ -11,6 +11,9 @@
 - Fallback PR title format now includes Jira key (`<JIRA>: auto-sync ...`).
 - Drift/concurrency push rejection path now distinguishes "already synced after push reject" from real push failures.
 - Action result output values are now `merged`, `skipped`, and `human-intervention-required`.
+- Fallback PR branches are now tied to the source commit; newer source states get a new PR, while retries for the same source commit preserve manual edits.
+- Older fallback PRs are closed only after a replacement PR is available.
+- Documented that `GITHUB_TOKEN` fallback does not trigger downstream Actions workflows; configured tokens are passed for push and manual runs.
 
 ### Outputs
 - Added `issue_number` output.

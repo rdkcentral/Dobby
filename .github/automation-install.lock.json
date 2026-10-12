@@ -1,12 +1,12 @@
 {
   "schema_version": 1,
   "installer_version": "1.0.0",
-  "installed_at": "2026-10-12T17:51:20Z",
+  "installed_at": "2026-10-12T22:31:18Z",
   "modules": [
     {
       "module": "sync-branches",
-      "version": "1.2.0",
-      "source": "sync-branches-1.2.0.tar.gz",
+      "version": "1.1.0",
+      "source": "sync-branches-1.1.0.tar.gz",
       "managed_files": [
         ".github/actions/sync-branches/action.yml",
         ".github/actions/sync-branches/consumer-template.yml",
@@ -17,13 +17,13 @@
         ".github/workflows/sync-develop-to-main.yml"
       ],
       "managed_hashes": {
-        ".github/actions/sync-branches/action.yml": "1ae328550bcda2bd4b18bcbd8c19c94d815ffda59d8e651672d5e3e47e98fee0",
-        ".github/actions/sync-branches/consumer-template.yml": "4c0f4df32e65c6413670e4c606d9f5ca0d8f47842804f9c447bfe5673ed35ef5",
-        ".github/actions/sync-branches/consumer-template-oss.yml": "229f7bb5f0c12968db5032bc87a7c951eb67b55647caf3ff1a1792cafb6cfba0",
-        ".github/actions/sync-branches/README.md": "71552ed6a378683e8084b580f38f8863f8d4f411d1293bc62fad7b32ec27ce65",
-        ".github/actions/sync-branches/CHANGELOG.md": "ec9fef23a6a18e2ff4f9608b004d983905b88d8453f2e112c879b1f59ad36fdc",
+        ".github/actions/sync-branches/action.yml": "f98b36b67f3db3e7cb4be1317c2d1f794e63b7a48a7fb0c0819f20f6e5b23158",
+        ".github/actions/sync-branches/consumer-template.yml": "6efdc38e57062ad0afef55dd68b7fb636a5efee161d9f913414b2b1005c1391d",
+        ".github/actions/sync-branches/consumer-template-oss.yml": "6714d666f62d27e55acdeb10af8b0f791651a5f1aa7210a8decc35bd6a7bf953",
+        ".github/actions/sync-branches/README.md": "827f7eb067ce06f5f268b69abe2ed31dc4d9c2f96da9266fda2378367a5534c1",
+        ".github/actions/sync-branches/CHANGELOG.md": "2a1f75ba0d20f10d9af2958eb7fbf988cbc468ab5faf27d9e77e4785949ab7d6",
         ".github/actions/sync-branches/scripts/move-major-tag.sh": "b8208ef3395fa7b94d99657865e9bfb0fe7d7bd255d3616f0b12edafff032ea2",
-        ".github/workflows/sync-develop-to-main.yml": "a0756c7fc68d97e4f3e8e34bd6382bbffdd3f381ca9280979d0b26916d851c7e"
+        ".github/workflows/sync-develop-to-main.yml": "e1f934fddd46723a5e5a9f378be3b4bc98183e25ce4146fb400be785763f4456"
       },
       "template_values": {
         "source_branch": "develop",

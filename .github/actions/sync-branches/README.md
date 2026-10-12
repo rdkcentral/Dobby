@@ -8,13 +8,25 @@ Automated branch synchronization that keeps a target branch (for example `main`)
 - **Clean merges**: Direct push to target branch when no conflicts exist
 - **Conflict handling**: Opens or updates fallback PR and fallback issue artifacts for manual resolution
 - **Idempotent**: Skips sync if source is already in target (no unnecessary merges)
-- **Safer token policy**: Push-triggered runs use `github.token`; optional PAT is limited to manual dispatch
+- **Safer token policy**: Sync operations prefer the configured PAT and fall back to `github.token`
 - **Policy-compliant fallback titles**: Fallback PR titles include a Jira key (derived or override)
 - **Customizable**: Configure branches, labels, reviewers, and commit identity
 
 ## Consumption Modes
 
 This automation is intentionally distributed in two modes so internal (`rdk-e`) and OSS (`rdkcentral`) repositories can consume the same behavior using different delivery models.
+
+## Workflow Placement Rule
+
+Always install the workflow YAML at:
+- `.github/workflows/sync-develop-to-main.yml`
+
+Do not place the workflow file under `.github/actions/`.
+GitHub only auto-discovers workflow files in `.github/workflows/`.
+
+Naming note:
+- The reusable action metadata file must remain `action.yml` inside `actions/sync-branches/`.
+- `sync-develop-to-main.yml` is the consumer workflow filename under `.github/workflows/`.
 
 ### Mode A: By Reference (RDK-E/Internal)
 
@@ -52,22 +64,32 @@ Tradeoffs:
 
 Copy `actions/sync-branches/consumer-template.yml` into your consumer repo as `.github/workflows/sync-develop-to-main.yml`.
 
+Placement check:
+- Correct: `.github/workflows/sync-develop-to-main.yml`
+- Incorrect: `.github/actions/sync-develop-to-main.yml`
+
 The default template uses:
 - `rdk-e/app-gateway-automation/actions/sync-branches@actions-v1`
 - `runs-on: comcast-ubuntu-latest`
 - `source_branch: develop`
 - `target_branch: main`
 
-### 2. Optional: Add PAT Secret For Manual Dispatch
+### 2. Optional: Add Token Secrets
 
-If you want manual dispatch runs to use a PAT (for protected branch scenarios), add `SEMANTIC_RELEASE_TOKEN` in the consumer repo.
+For RDK-E closed-source repos, use `RDKE_GITHUB_TOKEN` as the standard secret.
+The template also supports `SEMANTIC_RELEASE_TOKEN` as a fallback.
+
+Token precedence in template workflows is:
+1. `RDKE_GITHUB_TOKEN`
+2. `SEMANTIC_RELEASE_TOKEN`
+3. `github.token`
 
 Required PAT scopes:
 - `contents:write`
 - `pull-requests:write`
 - `issues:write`
 
-Push-triggered runs still use `github.token` by design.
+Configure one of these secrets when pushes to the target branch or fallback PRs must trigger downstream Actions workflows. GitHub suppresses workflow runs caused by `GITHUB_TOKEN`; the fallback token keeps synchronization working but will not start those downstream checks.
 
 ### 3. Example Consumer Workflow
 
@@ -91,12 +113,17 @@ jobs:
         with:
           source_branch: ${{ github.event.inputs.source_branch || 'develop' }}
           target_branch: ${{ github.event.inputs.target_branch || 'main' }}
-          token: ${{ github.event_name == 'workflow_dispatch' && (secrets.SEMANTIC_RELEASE_TOKEN || github.token) || github.token }}
+          token: ${{ secrets.RDKE_GITHUB_TOKEN || secrets.SEMANTIC_RELEASE_TOKEN || github.token }}
 ```
 
 ### 4. Optional: Generate From Installer
 
 You can generate a repo-specific workflow from `tools/install-workflow.sh`:
+
+Default secret selection is automatic by target repo origin:
+- `rdkcentral/*` repos: `SEMANTIC_RELEASE_TOKEN`
+- other repos: `RDKE_GITHUB_TOKEN`
+- `--secret-name` overrides either default
 
 ```bash
 ./tools/install-workflow.sh \
@@ -104,12 +131,20 @@ You can generate a repo-specific workflow from `tools/install-workflow.sh`:
   --repo-dir ../firebolt-entos-apis \
   --source-branch develop \
   --target-branch main \
-  --secret-name SEMANTIC_RELEASE_TOKEN \
   --runner comcast-ubuntu-latest \
   --open-pr
 ```
 
 This writes `.github/workflows/sync-develop-to-main.yml` in the target repo.
+
+### 5. Single Command For Multiple RDK-E Consumer Repos
+
+```bash
+SCRIPT=./tools/install-workflow.sh
+for repo in ../firebolt-entos-apis ../firebolt-players ../firebolt-entos-runtime-apis; do
+  "$SCRIPT" --workflow sync-develop-to-main --repo-dir "$repo" --runner comcast-ubuntu-latest --open-pr
+done
+```
 
 ## Mode B Quick Start (Install Mode)
 
@@ -118,6 +153,10 @@ For OSS repositories that cannot directly consume private reusable actions, use 
 The bundle installer renders the workflow to use the local action path:
 
 - `uses: ./.github/actions/sync-branches`
+
+Important:
+- The workflow file still belongs in `.github/workflows/`.
+- Only the reusable action implementation lives in `.github/actions/sync-branches/`.
 
 1. Download release assets from `app-gateway-automation`:
 - `sync-branches-<version>.tar.gz`
@@ -131,6 +170,9 @@ The bundle installer renders the workflow to use the local action path:
   --repo-dir /path/to/oss-repo \
   --bundle /path/to/sync-branches-<version>.tar.gz
 ```
+
+For `rdkcentral/*` repos, use `SEMANTIC_RELEASE_TOKEN` as the secret name (unless your bundle manifest specifies another default).
+Configure this secret if target-branch pushes and fallback PRs must trigger downstream Actions workflows; the `github.token` fallback does not trigger those workflows.
 
 3. Check current state:
 
@@ -218,7 +260,7 @@ jobs:
           pr_labels: "auto-merge,requires-review"
           git_user_name: "Release Bot"
           git_user_email: "releases@company.com"
-          token: ${{ secrets.SEMANTIC_RELEASE_TOKEN }}
+          token: ${{ secrets.RDKE_GITHUB_TOKEN }}
 ```
 
 ## Inputs
@@ -235,6 +277,15 @@ jobs:
 | `pr_labels` | `auto-sync,needs-manual-merge` | Comma-separated labels for fallback PR |
 | `issue_labels` | `auto-sync,needs-manual-merge,needs-human-attention` | Comma-separated labels for fallback issue |
 | `escalation_mentions` | `` | Optional mentions added to fallback issue body |
+| `notification_webhook_url` | `` | Optional webhook URL for notifications (Slack-compatible incoming webhook) |
+| `notification_on` | `human-intervention-required` | When to notify: `never`, `human-intervention-required`, or `all` |
+| `fail_on_human_intervention` | `true` | If `true`, action exits non-zero when manual intervention is required. If `false`, action returns success and sets `result=human-intervention-required`. |
+
+`result` output can be one of:
+- `merged`
+- `skipped`
+- `human-intervention-required`
+- `failed`
 
 ## Token Input
 
@@ -257,8 +308,29 @@ attempt merge: success ✓
 direct push to main: success ✓
     ↓
 ✅ main updated, no PR created
+
 ```
 
+### Example 4: Optional Slack/Webhook notifications
+
+```yaml
+jobs:
+  sync:
+    runs-on: comcast-ubuntu-latest
+    steps:
+      - uses: rdk-e/app-gateway-automation/actions/sync-branches@actions-v1
+        with:
+          source_branch: develop
+          target_branch: main
+          token: ${{ github.token }}
+          notification_webhook_url: ${{ secrets.SYNC_ALERT_WEBHOOK_URL }}
+          notification_on: human-intervention-required
+```
+
+Notes:
+- The webhook payload is JSON: `{ "text": "..." }`, which works with Slack Incoming Webhooks and many webhook relays.
+- If `notification_webhook_url` is not set, no notification is sent.
+- Notification delivery is best-effort and non-blocking: webhook failures emit a warning but do not fail the sync workflow.
 ### Fallback Case: Conflict or Protected Branch
 ```
 push to develop
@@ -277,6 +349,18 @@ open/update issue with compare link + run link
     ↓
 ⚠️  Human intervention required via PR/issue artifacts
 ```
+
+The fallback issue contains:
+- Snapshot source commit SHA used for the fallback branch
+- Fallback branch name to merge from
+- Compare, run, and one-click PR links
+- A manual merge checklist for responders
+
+When GitHub policy blocks PR creation by Actions token, the workflow also writes
+an explicit warning and one-click PR URL to the job summary for faster manual recovery.
+
+By default this path fails the action (`result=human-intervention-required` + non-zero exit).
+Set `fail_on_human_intervention: false` in the consumer workflow if you want a non-blocking run while still creating escalation artifacts.
 
 ### Idempotent Case: Already Synced
 ```
@@ -306,10 +390,32 @@ Repository access:
 
 ## Troubleshooting
 
+**Q: The run says source or target branch does not exist. What should I do?**
+- For `workflow_dispatch`, verify the exact `source_branch` and `target_branch` inputs.
+- For push-triggered runs, the branch may have been renamed/deleted after the event fired.
+- List remote branches with:
+
+```bash
+gh api repos/<owner>/<repo>/branches --jq '.[].name'
+```
+
+**Q: How do I test this locally with act?**
+- Run act against the workflow file under `.github/workflows/` (not `.github/actions/`):
+
+```bash
+GITHUB_TOKEN="$(gh auth token)" act workflow_dispatch \
+  -W .github/workflows/sync-develop-to-main.yml \
+  -P comcast-ubuntu-latest=ghcr.io/catthehacker/ubuntu:act-latest \
+  --input source_branch=develop \
+  --input target_branch=main
+```
+
+- If the run fails with `gh: command not found` during fallback PR/issue steps, use an act runner image that includes the GitHub CLI, or treat local testing as partial and validate fallback artifact creation in GitHub-hosted runners.
+
 **Q: Workflow runs but push fails to protected branch**
 - Ensure your token has `contents:write`, `pull-requests:write`, and `issues:write`
-- If you are using the template, verify `SEMANTIC_RELEASE_TOKEN` exists when you need PAT-backed dispatch
-- Confirm the workflow expression passes `github.token` for push runs and optional PAT only for dispatch runs
+- If you are using the template, verify `RDKE_GITHUB_TOKEN` exists (or `SEMANTIC_RELEASE_TOKEN` as fallback)
+- Confirm the workflow expression is `secrets.RDKE_GITHUB_TOKEN || secrets.SEMANTIC_RELEASE_TOKEN || github.token`
 
 **Q: PR opens but I don't want it**
 - If it's just checking feature, use `workflow_dispatch` instead of automatic trigger
