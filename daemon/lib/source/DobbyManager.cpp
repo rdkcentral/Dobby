@@ -97,6 +97,12 @@ std::string profileForContainerId(const ContainerId& id)
         return std::string();
     }
 
+    if ((normalizedId.find("com.bskyb.epgui") != std::string::npos) ||
+        (normalizedId.find("viper") != std::string::npos))
+    {
+        return "dobby_default";
+    }
+
     if (normalizedId.find("netflix") != std::string::npos)
     {
         return "netflix";
