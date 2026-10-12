@@ -1,5 +1,12 @@
 ## [Unreleased]
 
+## [1.1.1] - 2026-10-12
+
+### Fixed
+- Fallback issue manual-merge checklist now instructs responders to merge `target_branch` into the fallback branch instead of `source_branch`, which was a no-op since the fallback branch is created directly from the source commit.
+
+## [1.1.0] - 2026-10-12
+
 ### Added
 - Branch input validation before sync operations.
 - Stable temporary workspace flow for sync/merge/push operations.

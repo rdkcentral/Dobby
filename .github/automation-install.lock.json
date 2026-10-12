@@ -1,12 +1,12 @@
 {
   "schema_version": 1,
   "installer_version": "1.0.0",
-  "installed_at": "2026-10-12T22:31:18Z",
+  "installed_at": "2026-10-12T22:47:40Z",
   "modules": [
     {
       "module": "sync-branches",
-      "version": "1.1.0",
-      "source": "sync-branches-1.1.0.tar.gz",
+      "version": "1.1.1",
+      "source": "sync-branches-1.1.1.tar.gz",
       "managed_files": [
         ".github/actions/sync-branches/action.yml",
         ".github/actions/sync-branches/consumer-template.yml",
@@ -17,11 +17,11 @@
         ".github/workflows/sync-develop-to-main.yml"
       ],
       "managed_hashes": {
-        ".github/actions/sync-branches/action.yml": "f98b36b67f3db3e7cb4be1317c2d1f794e63b7a48a7fb0c0819f20f6e5b23158",
+        ".github/actions/sync-branches/action.yml": "05162820de0935894e631af050923c2b18bc88bf10553bf31951cd9176817e82",
         ".github/actions/sync-branches/consumer-template.yml": "6efdc38e57062ad0afef55dd68b7fb636a5efee161d9f913414b2b1005c1391d",
         ".github/actions/sync-branches/consumer-template-oss.yml": "6714d666f62d27e55acdeb10af8b0f791651a5f1aa7210a8decc35bd6a7bf953",
         ".github/actions/sync-branches/README.md": "827f7eb067ce06f5f268b69abe2ed31dc4d9c2f96da9266fda2378367a5534c1",
-        ".github/actions/sync-branches/CHANGELOG.md": "2a1f75ba0d20f10d9af2958eb7fbf988cbc468ab5faf27d9e77e4785949ab7d6",
+        ".github/actions/sync-branches/CHANGELOG.md": "39505dfc3dfbd3a38bb812a7aa8470cd9c413b05e0196ada284f882d43e4ef3e",
         ".github/actions/sync-branches/scripts/move-major-tag.sh": "b8208ef3395fa7b94d99657865e9bfb0fe7d7bd255d3616f0b12edafff032ea2",
         ".github/workflows/sync-develop-to-main.yml": "e1f934fddd46723a5e5a9f378be3b4bc98183e25ce4146fb400be785763f4456"
       },

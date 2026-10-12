@@ -523,7 +523,7 @@ runs:
           "$run_url" \
           "$pr_note" \
           "$fallback_branch" \
-          "$source_branch" \
+          "$target_branch" \
           "$target_branch" \
           "$pr_create_url"
         if [[ -n "$ESCALATION_MENTIONS" ]]; then
