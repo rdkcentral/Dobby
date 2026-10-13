@@ -1,5 +1,10 @@
 ## [Unreleased]
 
+## [1.1.2] - 2026-10-13
+
+### Fixed
+- Label-ensure step no longer passes `--force` to `gh label create`, so re-running a fallback no longer overwrites an existing label's color/description; non-existence is still treated as non-fatal via `|| true`.
+
 ## [1.1.1] - 2026-10-12
 
 ### Fixed

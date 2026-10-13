@@ -294,7 +294,7 @@ runs:
           IFS=',' read -ra labels <<< "$csv"
           for label in "${labels[@]}"; do
             label="$(echo "$label" | xargs)"
-            [[ -n "$label" ]] && gh label create "$label" --force || true
+            [[ -n "$label" ]] && gh label create "$label" || true
           done
         }
 
