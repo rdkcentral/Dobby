@@ -21,6 +21,7 @@ The daemon is the heart of Dobby, orchestrating container creation, start, stop,
 - Invokes legacy plugin hooks (PostConstruction, PreStart, PostStart, PostStop, PreDestruction) and RDK plugin hooks (postInstallation, preCreation, postHalt)
 - Supports `restartOnCrash` for automatic container restart
 - Loads plugins from configurable `PLUGIN_PATH` (default: `/usr/lib/plugins/dobby`)
+- `stopContainer(cd, withPrejudice=true)` sends SIGKILL to every process in the container's cgroup (`killCont(..., all=true)`), not just the tracked init process, and blocks for up to ~500ms confirming via `DobbyRunC::state()` that the container actually stopped. This guarantees termination even if a crashed/hung process left orphaned descendants that init can't reap; it only fails if a process is wedged in an uninterruptible (D-state) sleep.
 
 ### DobbyContainer
 - Stores container state: bundle, config, rootfs, rdkPluginManager
@@ -161,3 +162,4 @@ _No open queries._
 
 ## Change History
 - 2025-05-18 - openspec-templater - Restructured to match spec template.
+- 2026-09-16 - Hardened `stopContainer(withPrejudice=true)` to SIGKILL the whole container cgroup and verify the container actually stopped, so a hung/crashed process with orphaned descendants can't leave the container running forever.

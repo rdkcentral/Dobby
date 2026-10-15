@@ -18,6 +18,10 @@
       "addressRange": "100.64.11.0"
     },
 
+    "defaultPlugins": [
+      { "oomcrash": {} }
+    ],
+
     "logRelay": {
       "syslog": {
         "enable": true,
