@@ -1,6 +1,8 @@
 # Recommended Development Workflow
 This describes the recommended workflow for developing Dobby, although you are obviously free to use whatever tools you are most comfortable with.
 
+For an architectural map before setting up the development VM, see the [subsystem documentation index](../docs/README.md), especially the [daemon](../daemon/README.md), [bundle](../bundle/README.md), and [AppInfrastructure](../AppInfrastructure/README.md) guides.
+
 ## 1. Setup Vagrant
 The Vagrant VM in the `vagrant` directory is recommended for Dobby development. Follow the `README.md` file to set up the VM.
 

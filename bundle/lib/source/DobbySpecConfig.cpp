@@ -378,6 +378,8 @@ DobbySpecConfig::DobbySpecConfig(const std::shared_ptr<IDobbyUtils> &utils,
     : mUtilities(utils)
     , mGpuSettings(settings->gpuAccessSettings())
     , mVpuSettings(settings->vpuAccessSettings())
+    , mDefaultPlugins(settings->defaultPlugins())
+    , mRdkPluginsData(settings->rdkPluginsData())
     , mDictionary(nullptr)
     , mZramSwapToRamRatio(0.0)
     , mConf(nullptr)
@@ -734,7 +736,7 @@ bool DobbySpecConfig::parseSpec(ctemplate::TemplateDictionary* dictionary,
     // step 6 - enable the RDK plugins section
     dictionary->ShowSection(ENABLE_RDK_PLUGINS);
 
-    // step 6.5 - add any default plugins in the settings file
+    // step 6.1 - add any default plugins in the settings file
     Json::Value rdkPluginData = mRdkPluginsData;
     for (const auto& pluginName : mDefaultPlugins)
     {
