@@ -15,6 +15,8 @@
 # Preface
 There are a number of things that could go wrong when running containers. This document explains some common issues encountered when starting containers, and where to look for logs to help troubleshoot
 
+For architecture and lifecycle context while diagnosing an issue, see the [daemon guide](daemon/README.md), [bundle guide](bundle/README.md), [IPC guide](AppInfrastructure/IpcService/README.md), and [RDK plugin guide](rdkPlugins/README.md).
+
 # Log Files
 If a container does not start, there are a few important log files to look at.
 

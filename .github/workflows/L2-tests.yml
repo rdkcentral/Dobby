@@ -1,5 +1,6 @@
-name: DobbyL2Test
-on: [push, pull_request]
+name: L2-tests
+on:
+  workflow_call:
 
 env:
   MEMCR_REF: "b58f2b8e26cab6b67eceaa36fd6ce5a6d04dcd28"
@@ -265,7 +266,7 @@ jobs:
         if: ${{ !env.ACT && matrix.coverage == 'with-coverage' }}
         uses: actions/upload-artifact@v4
         with:
-          name: artifacts
+          name: artifacts-L2-dobby
           path: |
             DobbyL2TestResults.json
             l2coverage

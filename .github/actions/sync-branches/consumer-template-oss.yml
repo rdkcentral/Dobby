@@ -1,0 +1,47 @@
+# Sync @@SOURCE_BRANCH@@ -> @@TARGET_BRANCH@@ -- OSS consumer template
+#
+# Installed by bundle into OSS repositories.
+# Workflow YAML must be installed at .github/workflows/sync-develop-to-main.yml.
+# Do not place this file under .github/actions/; GitHub only discovers workflows from .github/workflows/.
+# The sync logic runs from the local action files managed under .github/actions.
+#
+# Optional secret: @@SECRET_NAME@@ (contents:write + pull-requests:write + issues:write)
+# Used for push and manual runs; GITHUB_TOKEN fallback does not trigger downstream Actions workflows.
+
+name: Sync @@SOURCE_BRANCH@@ to @@TARGET_BRANCH@@
+
+on:
+  push:
+    branches: [@@SOURCE_BRANCH@@]
+  workflow_dispatch:
+    inputs:
+      source_branch:
+        description: "Source branch"
+        required: false
+        default: "@@SOURCE_BRANCH@@"
+      target_branch:
+        description: "Target branch"
+        required: false
+        default: "@@TARGET_BRANCH@@"
+
+concurrency:
+  group: sync-${{ github.repository }}-${{ github.event_name == 'workflow_dispatch' && format('{0}-to-{1}', github.event.inputs.source_branch || '@@SOURCE_BRANCH@@', github.event.inputs.target_branch || '@@TARGET_BRANCH@@') || format('{0}-to-{1}', github.ref_name, '@@TARGET_BRANCH@@') }}
+  cancel-in-progress: ${{ github.event_name != 'workflow_dispatch' }}
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+jobs:
+  sync:
+    name: Merge ${{ github.event.inputs.source_branch || '@@SOURCE_BRANCH@@' }} -> ${{ github.event.inputs.target_branch || '@@TARGET_BRANCH@@' }}
+    runs-on: @@RUNNER@@
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - uses: ./.github/actions/sync-branches
+        with:
+          source_branch: ${{ github.event.inputs.source_branch || '@@SOURCE_BRANCH@@' }}
+          target_branch: ${{ github.event.inputs.target_branch || '@@TARGET_BRANCH@@' }}
+          token: ${{ secrets.@@SECRET_NAME@@ || github.token }}
