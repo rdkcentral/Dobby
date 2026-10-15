@@ -1,5 +1,12 @@
 ## [Unreleased]
 
+## [1.1.3] - 2026-10-15
+
+### Fixed
+- Fallback PR lookup (existing-PR match and stale-PR cleanup) now excludes fork PRs via `isCrossRepository`, so a cross-repo PR sharing the same head branch name is no longer mistaken for this action's own fallback PR.
+- Stale fallback PR cleanup now requires the branch suffix to be exactly 12 hex characters, so a different source/target branch pair whose prefix is a superset of this pair's prefix (e.g. `develop-to-main-hotfix -> main` vs `develop -> main`) can no longer have its fallback PR closed by mistake.
+- PR-creation permission-denial detection no longer matches on the bare string `createPullRequest`, which could misclassify unrelated GraphQL errors (e.g. "No commits between ... (createPullRequest)") as a token-policy denial.
+
 ## [1.1.2] - 2026-10-13
 
 ### Fixed

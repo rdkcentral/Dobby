@@ -359,8 +359,8 @@ runs:
           echo "No Jira key detected from override, source branch, or source HEAD subject; using ${jira_key}." >&2
         fi
 
-        pr_list_json="$(gh pr list --base "$target_branch" --state open --limit 200 --json number,headRefName 2>/dev/null || echo '[]')"
-        existing_pr="$(echo "$pr_list_json" | jq -r --arg head "$fallback_branch" 'map(select(.headRefName == $head)) | .[0].number // empty')"
+        pr_list_json="$(gh pr list --base "$target_branch" --state open --limit 200 --json number,headRefName,isCrossRepository 2>/dev/null || echo '[]')"
+        existing_pr="$(echo "$pr_list_json" | jq -r --arg head "$fallback_branch" 'map(select(.headRefName == $head and .isCrossRepository == false)) | .[0].number // empty')"
 
         pr_title="${jira_key}: auto-sync ${source_branch} -> ${target_branch} (${reason})"
         compare_branch="$fallback_branch"
@@ -430,7 +430,7 @@ runs:
         fi
 
         create_err="$(cat "$pr_create_output_file")"
-        if echo "$create_err" | grep -Eq 'createPullRequest|not permitted to create or approve pull requests'; then
+        if echo "$create_err" | grep -Eq 'not permitted to create or approve pull requests'; then
           manual_pr_url="https://github.com/${GITHUB_REPOSITORY}/compare/${target_branch}...${fallback_branch}?expand=1&quick_pull=1"
           echo "::warning::GitHub Actions token cannot create PRs in this repository policy. Open PR manually: ${manual_pr_url}"
           {
@@ -464,8 +464,21 @@ runs:
       run: |
         set -euo pipefail
         branch_prefix="${PR_BRANCH_PREFIX}/${SOURCE_BRANCH}-to-${TARGET_BRANCH}"
-        pr_list_json="$(gh pr list --base "$TARGET_BRANCH" --state open --limit 200 --json number,headRefName 2>/dev/null || echo '[]')"
-        stale_prs="$(echo "$pr_list_json" | jq -r --arg prefix "$branch_prefix" --arg keep "$FALLBACK_BRANCH" '.[] | select(.headRefName != $keep) | select(.headRefName == $prefix or (.headRefName | startswith($prefix + "-"))) | .number')"
+        pr_list_json="$(gh pr list --base "$TARGET_BRANCH" --state open --limit 200 --json number,headRefName,isCrossRepository 2>/dev/null || echo '[]')"
+        stale_prs="$(echo "$pr_list_json" | jq -r --arg prefix "$branch_prefix" --arg keep "$FALLBACK_BRANCH" '
+          ($prefix + "-") as $dashed
+          | .[]
+          | select(.isCrossRepository == false)
+          | select(.headRefName != $keep)
+          | select(
+              .headRefName == $prefix
+              or (
+                (.headRefName | startswith($dashed))
+                and (.headRefName[($dashed | length):] | test("^[0-9a-f]{12}$"))
+              )
+            )
+          | .number
+        ')"
 
         while IFS= read -r stale_pr; do
           [[ -z "$stale_pr" ]] && continue
