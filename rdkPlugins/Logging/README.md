@@ -1,5 +1,7 @@
 # Dobby RDK Logging Plugin
 
+For the shared hook contract and plugin loading flow, see the [RDK plugin guide](../README.md) and [plugin launcher guide](../../pluginLauncher/README.md). This README remains the source for logging sink configuration.
+
 ## Quick Start
 Add the following section to your OCI runtime configuration `config.json` file to enable logging to a file. This will capture all the stdout/err from the container (in addition to any output from `DobbyPluginLauncher`) and redirect it to the specified file.
 

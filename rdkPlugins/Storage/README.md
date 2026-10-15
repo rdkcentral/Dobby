@@ -1,5 +1,7 @@
 # Dobby RDK Storage Plugin
 
+For the shared hook contract and plugin loading flow, see the [RDK plugin guide](../README.md) and [plugin launcher guide](../../pluginLauncher/README.md). This README remains the source for storage mount configuration.
+
 ## Quick Start
 ### Loop Mounts
 Add the following section to your OCI runtime configuration `config.json` file to create loop mount. It will mount file from "source" field into container

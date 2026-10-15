@@ -1,5 +1,7 @@
 # Dobby RDK HTTP Proxy Plugin
 
+For the shared hook contract and plugin loading flow, see the [RDK plugin guide](../README.md) and [plugin launcher guide](../../pluginLauncher/README.md). This README remains the source for HTTP proxy configuration.
+
 ## Quick Start
 Add the following section to your OCI runtime configuration `config.json` file to setup a http proxy in the container.
 
