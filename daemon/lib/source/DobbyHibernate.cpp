@@ -71,7 +71,7 @@ const std::string DobbyHibernate::DFL_LOCATOR = "/tmp/memcrcom";
 const uint32_t DobbyHibernate::DFL_TIMEOUTE_MS = 20000;
 
 #define MEMCR_DUMPDIR_LEN_MAX	1024
-#define CMD_LEN_MAX		 (sizeof(ServerRequest) + (2*sizeof(ServerRequestCodeOptions)) + MEMCR_DUMPDIR_LEN_MAX + 1)
+#define CMD_LEN_MAX		 (sizeof(ServerRequest) + (2*sizeof(ServerRequestCodeOptions)) + MEMCR_DUMPDIR_LEN_MAX + sizeof(DobbyHibernate::CompressionAlg))
 
 
 static int Connect(const char* serverLocator, uint32_t timeoutMs)
@@ -170,6 +170,14 @@ static bool SendRcvCmd(const ServerRequest* cmd, ServerResponse* resp, uint32_t 
 
     resp->respCode = MEMCR_ERROR;
 
+#ifdef DOBBY_HIBERNATE_MEMCR_PARAMS_ENABLED
+    if (opt && opt->dumpDir.length() >= MEMCR_DUMPDIR_LEN_MAX) {
+        AI_LOG_ERROR("Dump directory path exceeds maximum length");
+        AI_LOG_FN_EXIT();
+        return false;
+    }
+#endif
+
     cd = Connect(serverLocator, timeoutMs);
     if (cd < 0) {
         AI_LOG_ERROR("Unnable to connect to %s", serverLocator);
@@ -189,7 +197,7 @@ static bool SendRcvCmd(const ServerRequest* cmd, ServerResponse* resp, uint32_t 
             ServerRequestCodeOptions optId = MEMCR_CHECKPOINT_DUMPDIR;
             memcpy(cmdBuf + cmdSize, &optId, sizeof(ServerRequestCodeOptions));
             cmdSize += sizeof(ServerRequestCodeOptions);
-            strncpy((char *)cmdBuf + cmdSize, opt->dumpDir.c_str(), MEMCR_DUMPDIR_LEN_MAX);
+            memcpy(cmdBuf + cmdSize, opt->dumpDir.c_str(), opt->dumpDir.length() + 1);
             cmdSize += opt->dumpDir.length() + 1;
         }
 
