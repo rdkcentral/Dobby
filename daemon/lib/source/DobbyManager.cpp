@@ -85,40 +85,6 @@
 
 namespace
 {
-std::string profileForContainerId(const ContainerId& id)
-{
-    std::string normalizedId = id.str();
-    std::transform(normalizedId.begin(), normalizedId.end(), normalizedId.begin(),
-                   [](unsigned char character) { return static_cast<char>(std::tolower(character)); });
-
-    static const std::string appContainerPrefix = "com.sky.as.apps_";
-    if (normalizedId.compare(0, appContainerPrefix.size(), appContainerPrefix) != 0)
-    {
-        return std::string();
-    }
-
-    if ((normalizedId.find("com.bskyb.epgui") != std::string::npos) ||
-        (normalizedId.find("viper") != std::string::npos))
-    {
-        return "dobby_default";
-    }
-
-    if (normalizedId.find("netflix") != std::string::npos)
-    {
-        return "netflix";
-    }
-    if (normalizedId.find("youtube") != std::string::npos)
-    {
-        return "youtube";
-    }
-    if ((normalizedId.find("prime") != std::string::npos) ||
-        (normalizedId.find("amazonvideo") != std::string::npos))
-    {
-        return "primevideo";
-    }
-
-    return "webapps";
-}
 }
 
 // Can override the plugin path at build time by setting -DPLUGIN_PATH=/path/to/plugins/
@@ -186,22 +152,16 @@ bool DobbyManager::configureApparmorProfile(const ContainerId& id,
         return true;
     }
 
-    const std::string appProfile = profileForContainerId(id);
-    if (appProfile.empty())
+    // Use the container ID as the profile name. If no matching profile is
+    // loaded, DobbyConfig falls back to the configured default profile.
+    if (!config->setApparmorProfileForContainer(id.str(), apparmorSettings.profileName))
     {
-        config->setApparmorProfile(apparmorSettings.profileName);
-        return true;
-    }
-
-    if (!config->setApparmorProfileForContainer(appProfile, apparmorSettings.profileName))
-    {
-        AI_LOG_ERROR("Refusing to start app container '%s' without required AppArmor profile '%s'",
-                     id.c_str(), appProfile.c_str());
+        AI_LOG_ERROR("Failed to select AppArmor profile for container '%s'", id.c_str());
         return false;
     }
 
-    AI_LOG_INFO("Selected AppArmor profile '%s' for container '%s'",
-                appProfile.c_str(), id.c_str());
+    AI_LOG_INFO("Selected AppArmor profile for container '%s' (default '%s' if unavailable)",
+                id.c_str(), apparmorSettings.profileName.c_str());
     return true;
 }
 
