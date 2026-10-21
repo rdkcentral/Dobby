@@ -184,6 +184,8 @@ private:
 
     bool abortContainerHibernationIfNeeded(int32_t cd);
 
+    bool forceKillContainerAndVerify(const ContainerId& id);
+
 private:
     ContainerStartedFunc mContainerStartedCb;
     ContainerStoppedFunc mContainerStoppedCb;
