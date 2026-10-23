@@ -24,6 +24,7 @@
 #include "DobbyConfig.h"
 
 #include <atomic>
+#include <cstdlib>
 #include <glob.h>
 #include <sys/stat.h>
 #include <fstream>
@@ -796,6 +797,11 @@ bool DobbyConfig::updateBundleConfig(const ContainerId& id, std::shared_ptr<rt_d
 
 bool DobbyConfig::isApparmorProfileLoaded(const char *profile) const
  {
+    if ((profile == nullptr) || (profile[0] == '\0'))
+    {
+        return false;
+    }
+
      DIR *d = NULL;
      bool status = false;
      struct dirent *cur_dir = NULL;
@@ -809,15 +815,18 @@ bool DobbyConfig::isApparmorProfileLoaded(const char *profile) const
 
      errno = 0;
      while((cur_dir = readdir(d)) != NULL) {
-          if(strlen(cur_dir->d_name) >= (profile_len + 2)) {
-               if(!strncmp(cur_dir->d_name, profile, profile_len) &&
-                    cur_dir->d_name[profile_len] == '.' &&
-                    isdigit(cur_dir->d_name[profile_len + 1])) {
-                    
-                    status = true;
-                    AI_LOG_INFO("AppArmor profile [%s] is loaded.", profile);
-                    break;
-               }
+        const size_t entry_len = strlen(cur_dir->d_name);
+        const bool exactMatch = (entry_len == profile_len) &&
+                            (strncmp(cur_dir->d_name, profile, profile_len) == 0);
+        const bool numberedMatch = (entry_len > profile_len + 1) &&
+                              (strncmp(cur_dir->d_name, profile, profile_len) == 0) &&
+                              (cur_dir->d_name[profile_len] == '.') &&
+                              isdigit(static_cast<unsigned char>(cur_dir->d_name[profile_len + 1]));
+        if (exactMatch || numberedMatch)
+        {
+            status = true;
+            AI_LOG_INFO("AppArmor profile [%s] is loaded.", profile);
+            break;
           }
      }
 
@@ -838,38 +847,105 @@ bool DobbyConfig::isApparmorProfileLoaded(const char *profile) const
 /**
  *  @brief Set apparmor profile in config.
  *
- *  Checks if profile from config is loaded. If not uses default profile if it
- *  is loaded.
+ *  Preserves the OCI process.apparmorProfile when it is loaded. If no profile
+ *  is configured, or the requested profile is not loaded, uses the configured
+ *  default profile when available.
  *
  *  @param[in]  defaultProfileName  The name of the default apparmor profile.
  */
 void DobbyConfig::setApparmorProfile(const std::string& defaultProfileName)
 {
     std::shared_ptr<rt_dobby_schema> cfg = config();
-    if (cfg == nullptr)
+    if ((cfg == nullptr) || (cfg->process == nullptr))
     {
         AI_LOG_ERROR("Invalid bundle config");
         return;
     }
 
-    bool status = false;
-
-    if (cfg->process->apparmor_profile)
+    if ((cfg->process->apparmor_profile != nullptr) &&
+        (cfg->process->apparmor_profile[0] != '\0') &&
+        isApparmorProfileLoaded(cfg->process->apparmor_profile))
     {
-        status = isApparmorProfileLoaded(cfg->process->apparmor_profile);
+        AI_LOG_INFO("Using OCI AppArmor profile [%s]",
+                    cfg->process->apparmor_profile);
+        return;
     }
 
-    if (!status)
+    if ((cfg->process->apparmor_profile != nullptr) &&
+        (cfg->process->apparmor_profile[0] != '\0'))
     {
-        cfg->process->apparmor_profile = strdup(defaultProfileName.c_str());
-        status = isApparmorProfileLoaded(cfg->process->apparmor_profile);
+        AI_LOG_WARN("OCI AppArmor profile [%s] is not loaded; trying configured default [%s]",
+                    cfg->process->apparmor_profile, defaultProfileName.c_str());
     }
 
-    if (!status)
+    char* defaultProfile = nullptr;
+    if (!defaultProfileName.empty())
     {
+        defaultProfile = strdup(defaultProfileName.c_str());
+    }
+
+    if ((defaultProfile != nullptr) && isApparmorProfileLoaded(defaultProfile))
+    {
+        free(cfg->process->apparmor_profile);
+        cfg->process->apparmor_profile = defaultProfile;
+        AI_LOG_INFO("Using configured default AppArmor profile [%s]", defaultProfileName.c_str());
+    }
+    else
+    {
+        free(defaultProfile);
+        free(cfg->process->apparmor_profile);
         cfg->process->apparmor_profile = nullptr;
         AI_LOG_INFO("No apparmor profile is loaded");
     }
+}
+
+// -----------------------------------------------------------------------------
+/**
+ *  @brief Set the container-ID-named AppArmor profile, falling back to default.
+ *
+ *  @param[in]  preferredProfile  Profile name derived from the container ID.
+ *  @param[in]  defaultProfile    Dobby's configured fallback profile.
+ *
+ *  @return true when a loaded preferred or default profile was selected.
+ */
+bool DobbyConfig::setApparmorProfileForContainer(const std::string& preferredProfile,
+                                                 const std::string& defaultProfile)
+{
+    std::shared_ptr<rt_dobby_schema> cfg = config();
+    if ((cfg == nullptr) || (cfg->process == nullptr))
+    {
+        AI_LOG_ERROR("Invalid bundle config for AppArmor profile selection");
+        return false;
+    }
+
+    std::string selectedProfile;
+    if (!preferredProfile.empty() && isApparmorProfileLoaded(preferredProfile.c_str()))
+    {
+        selectedProfile = preferredProfile;
+    }
+    else if (!defaultProfile.empty() && isApparmorProfileLoaded(defaultProfile.c_str()))
+    {
+        selectedProfile = defaultProfile;
+        AI_LOG_WARN("AppArmor profile [%s] is not loaded; using default profile [%s]",
+                    preferredProfile.c_str(), defaultProfile.c_str());
+    }
+    else
+    {
+        AI_LOG_ERROR("Neither AppArmor profile [%s] nor default profile [%s] is loaded",
+                     preferredProfile.c_str(), defaultProfile.c_str());
+        return false;
+    }
+
+    char* profile = strdup(selectedProfile.c_str());
+    if (profile == nullptr)
+    {
+        AI_LOG_ERROR("Failed to allocate AppArmor profile name");
+        return false;
+    }
+
+    free(cfg->process->apparmor_profile);
+    cfg->process->apparmor_profile = profile;
+    return true;
 }
 
 // -----------------------------------------------------------------------------
@@ -1007,3 +1083,4 @@ bool DobbyConfig::convertToCompliant(const ContainerId& id, std::shared_ptr<rt_d
     AI_LOG_FN_EXIT();
     return true;
 }
+
