@@ -27,6 +27,26 @@
 #include <sys/stat.h>
 #include <pwd.h>
 #include <grp.h>
+#include <limits.h>
+#include <stdlib.h>
+
+static bool pathWithinRoot(const std::string& path, const std::string& root)
+{
+    char resolvedPath[PATH_MAX];
+    char resolvedRoot[PATH_MAX];
+    if (!realpath(path.c_str(), resolvedPath) || !realpath(root.c_str(), resolvedRoot))
+    {
+        return false;
+    }
+
+    const std::string canonicalPath(resolvedPath);
+    std::string canonicalRoot(resolvedRoot);
+    if (canonicalRoot.back() != '/')
+    {
+        canonicalRoot += '/';
+    }
+    return canonicalPath == resolvedRoot || canonicalPath.compare(0, canonicalRoot.size(), canonicalRoot) == 0;
+}
 
 // -----------------------------------------------------------------------------
 /**
@@ -78,6 +98,12 @@ bool MountOwnerDetails::onCreateRuntime() const
     struct stat buffer;
     if (stat(mMountOwnerProperties.source.c_str(), &buffer) == 0)
     {
+        if (!pathWithinRoot(mMountOwnerProperties.source, mRootfsPath))
+        {
+            AI_LOG_ERROR("Mount owner source is outside the container rootfs");
+            AI_LOG_FN_EXIT();
+            return false;
+        }
         success = processOwners();
     }
     else
@@ -232,7 +258,7 @@ bool MountOwnerDetails::changeOwner(const std::string& path, uid_t userId, gid_t
 {
     AI_LOG_FN_ENTRY();
 
-    bool success = (chown(path.c_str(), userId, groupId) == 0);
+    bool success = (lchown(path.c_str(), userId, groupId) == 0);
     if (!success)
     {
         AI_LOG_SYS_ERROR(errno, "Failed to change owner of '%s' to '%d:%d", path.c_str(), userId, groupId);
