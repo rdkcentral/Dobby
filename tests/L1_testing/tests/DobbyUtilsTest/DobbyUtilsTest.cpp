@@ -49,13 +49,50 @@ TEST_F(DobbyUtilsTest, TestRmdirRecursiveAbsolutePath)
         EXPECT_TRUE(test.rmdirRecursive("/tmp/hello"));
 }
 
-TEST_F(DobbyUtilsTest, TestCleanMountLostAndFound)
+TEST_F(DobbyUtilsTest, TestCleanMountLostAndFoundRejectsSymlink)
 {
-        std::string tmp = "/lost+found/some/long/path/file.xyz";
+        char mountTemplate[] = "/tmp/dobby-mount-XXXXXX";
+        char targetTemplate[] = "/tmp/dobby-target-XXXXXX";
+        char* mountPoint = mkdtemp(mountTemplate);
+        char* target = mkdtemp(targetTemplate);
+        ASSERT_NE(mountPoint, nullptr);
+        ASSERT_NE(target, nullptr);
 
-        test.mkdirRecursive(tmp, 0700);
+        std::string targetFile = std::string(target) + "/sentinel";
+        int targetFd = open(targetFile.c_str(), O_CREAT | O_WRONLY | O_CLOEXEC, 0600);
+        ASSERT_GE(targetFd, 0);
+        close(targetFd);
 
-        test.cleanMountLostAndFound("/home", std::string("0"));
+        std::string lostFound = std::string(mountPoint) + "/lost+found";
+        ASSERT_EQ(symlink(target, lostFound.c_str()), 0);
+
+        test.cleanMountLostAndFound(mountPoint, std::string("0"));
+
+        EXPECT_EQ(access(targetFile.c_str(), F_OK), 0);
+        unlink(lostFound.c_str());
+        unlink(targetFile.c_str());
+        rmdir(target);
+        rmdir(mountPoint);
+}
+
+TEST_F(DobbyUtilsTest, TestCleanMountLostAndFoundCleansDirectory)
+{
+        char mountTemplate[] = "/tmp/dobby-mount-XXXXXX";
+        char* mountPoint = mkdtemp(mountTemplate);
+        ASSERT_NE(mountPoint, nullptr);
+
+        std::string lostFound = std::string(mountPoint) + "/lost+found";
+        ASSERT_EQ(mkdir(lostFound.c_str(), 0700), 0);
+        std::string staleFile = lostFound + "/stale";
+        int staleFd = open(staleFile.c_str(), O_CREAT | O_WRONLY | O_CLOEXEC, 0600);
+        ASSERT_GE(staleFd, 0);
+        close(staleFd);
+
+        test.cleanMountLostAndFound(mountPoint, std::string("0"));
+
+        EXPECT_EQ(access(staleFile.c_str(), F_OK), -1);
+        rmdir(lostFound.c_str());
+        rmdir(mountPoint);
 }
 
 TEST_F(DobbyUtilsTest, TestAttachFileToLoopDevice)
