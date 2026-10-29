@@ -83,7 +83,7 @@ jobs:
          git clone --depth 1 --branch 2.5.5 https://github.com/troglobit/smcroute.git
          cd smcroute
          ./autogen.sh
-         ./configure
+         ./configure --with-systemd=/usr/lib/systemd/system
          sudo make install -j$(nproc)
          sudo ln -sf /usr/local/sbin/smcroutectl /usr/sbin/smcroutectl
          sudo mkdir -p /usr/local/var/run
@@ -271,5 +271,4 @@ jobs:
             DobbyL2TestResults.json
             l2coverage
           if-no-files-found: warn
-
 
