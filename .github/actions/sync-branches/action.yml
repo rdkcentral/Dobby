@@ -231,13 +231,15 @@ runs:
           "$source_sha" \
           "${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}")"
 
+        repository_id="$(gh repo view "$GITHUB_REPOSITORY" --json id --jq .id)"
         existing_pr="$(gh pr list \
           --base "$TARGET_BRANCH" \
-          --head "$SOURCE_BRANCH" \
           --state open \
           --limit 100 \
-          --json number \
-          --jq '.[0].number // empty')"
+          --json number,headRefName,headRepository \
+          --repo "$GITHUB_REPOSITORY" |
+          jq -r --arg source "$SOURCE_BRANCH" --arg repository_id "$repository_id" \
+            'map(select(.headRefName == $source and .headRepository.id == $repository_id)) | .[0].number // empty')"
 
         if [[ -n "$existing_pr" ]]; then
           gh pr edit "$existing_pr" --title "$title" --body "$body"

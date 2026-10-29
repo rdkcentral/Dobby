@@ -96,6 +96,7 @@ jobs:
           --rc geninfo_unexecuted_blocks=1
           --ignore-errors source
           --ignore-errors mismatch
+          --ignore-errors inconsistent
           -c
           -o coverage.info
           -d $GITHUB_WORKSPACE

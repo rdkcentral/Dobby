@@ -37,6 +37,9 @@ jobs:
   sync:
     name: Open sync PR ${{ github.event.inputs.source_branch || 'develop' }} -> ${{ github.event.inputs.target_branch || 'main' }}
     runs-on: ubuntu-latest
+    outputs:
+      result: ${{ steps.sync.outputs.result }}
+      pr_number: ${{ steps.sync.outputs.pr_number }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -47,9 +50,22 @@ jobs:
           source_branch: ${{ github.event.inputs.source_branch || 'develop' }}
           target_branch: ${{ github.event.inputs.target_branch || 'main' }}
           token: ${{ github.token }}
+
+  native-build:
+    needs: sync
+    if: needs.sync.outputs.result == 'pr-opened'
+    uses: ./.github/workflows/native_full_build.yml
+    with:
+      pull_request_number: ${{ needs.sync.outputs.pr_number }}
+
+  auto-merge:
+    name: Enable Pull Request Automerge
+    needs: [sync, native-build]
+    if: needs.sync.outputs.result == 'pr-opened' && needs.native-build.result == 'success'
+    runs-on: ubuntu-latest
+    steps:
       - name: Enable Pull Request Automerge
-        if: steps.sync.outputs.result == 'pr-opened' && steps.sync.outputs.pr_number != ''
         env:
           GH_TOKEN: ${{ github.token }}
-          PR_NUMBER: ${{ steps.sync.outputs.pr_number }}
+          PR_NUMBER: ${{ needs.sync.outputs.pr_number }}
         run: gh pr merge "$PR_NUMBER" --merge --auto
