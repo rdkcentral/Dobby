@@ -35,13 +35,21 @@ permissions:
 
 jobs:
   sync:
-    name: Merge ${{ github.event.inputs.source_branch || '@@SOURCE_BRANCH@@' }} -> ${{ github.event.inputs.target_branch || '@@TARGET_BRANCH@@' }}
+    name: Open sync PR ${{ github.event.inputs.source_branch || '@@SOURCE_BRANCH@@' }} -> ${{ github.event.inputs.target_branch || '@@TARGET_BRANCH@@' }}
     runs-on: @@RUNNER@@
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-      - uses: ./.github/actions/sync-branches
+      - id: sync
+        uses: ./.github/actions/sync-branches
         with:
+          strategy: pull-request
           source_branch: ${{ github.event.inputs.source_branch || '@@SOURCE_BRANCH@@' }}
           target_branch: ${{ github.event.inputs.target_branch || '@@TARGET_BRANCH@@' }}
           token: ${{ secrets.@@SECRET_NAME@@ || github.token }}
+      - name: Enable Pull Request Automerge
+        if: steps.sync.outputs.result == 'pr-opened' && steps.sync.outputs.pr_number != ''
+        env:
+          GH_TOKEN: ${{ secrets.@@SECRET_NAME@@ || github.token }}
+          PR_NUMBER: ${{ steps.sync.outputs.pr_number }}
+        run: gh pr merge "$PR_NUMBER" --merge --auto

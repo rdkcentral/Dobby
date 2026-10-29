@@ -1,10 +1,14 @@
 name: Sync Branches
 description: >
-  Merge source branch into target branch and push directly.
+  Sync source branch into target branch directly or through a pull request.
   On conflict or push failure, open/update fallback artifacts for human intervention.
   Callers only need triggers, concurrency, and permissions.
 
 inputs:
+  strategy:
+    description: "Sync strategy: direct (merge and push) or pull-request (open/update a PR)"
+    required: false
+    default: direct
   source_branch:
     description: Branch to sync from
     required: false
@@ -64,11 +68,11 @@ inputs:
 
 outputs:
   result:
-    description: "Outcome: merged | skipped | human-intervention-required | failed"
+    description: "Outcome: merged | pr-opened | skipped | human-intervention-required | failed"
     value: ${{ steps.outcome.outputs.result }}
   pr_number:
-    description: "Fallback PR number (if any)"
-    value: ${{ steps.pr_fallback.outputs.pr_number }}
+    description: "Pull request number (if any)"
+    value: ${{ steps.pr_request.outputs.pr_number || steps.pr_fallback.outputs.pr_number }}
   issue_number:
     description: "Fallback issue number (if any)"
     value: ${{ steps.issue_fallback.outputs.issue_number }}
@@ -99,6 +103,7 @@ runs:
       env:
         INPUT_SOURCE_BRANCH: ${{ inputs.source_branch }}
         INPUT_TARGET_BRANCH: ${{ inputs.target_branch }}
+        INPUT_STRATEGY: ${{ inputs.strategy }}
       run: |
         set -euo pipefail
 
@@ -119,9 +124,15 @@ runs:
 
         source_branch="$INPUT_SOURCE_BRANCH"
         target_branch="$INPUT_TARGET_BRANCH"
+        strategy="$INPUT_STRATEGY"
 
         validate_branch "$source_branch" "source"
         validate_branch "$target_branch" "target"
+
+        if [[ "$strategy" != "direct" && "$strategy" != "pull-request" ]]; then
+          echo "Invalid sync strategy '$strategy'. Expected 'direct' or 'pull-request'." >&2
+          exit 1
+        fi
 
         echo "source_branch=${source_branch}" >> "$GITHUB_OUTPUT"
         echo "target_branch=${target_branch}" >> "$GITHUB_OUTPUT"
@@ -200,8 +211,56 @@ runs:
           echo "already_synced=false" >> "$GITHUB_OUTPUT"
         fi
 
+    - name: Open or update sync pull request
+      if: inputs.strategy == 'pull-request' && steps.check.outputs.already_synced == 'false'
+      id: pr_request
+      shell: bash
+      env:
+        GH_TOKEN: ${{ steps.token.outputs.token }}
+        SOURCE_BRANCH: ${{ steps.branches.outputs.source_branch }}
+        TARGET_BRANCH: ${{ steps.branches.outputs.target_branch }}
+        WORKDIR: ${{ steps.workspace.outputs.path }}
+      run: |
+        set -euo pipefail
+
+        title="chore: sync ${SOURCE_BRANCH} -> ${TARGET_BRANCH}"
+        source_sha="$(git -C "$WORKDIR" rev-parse "origin/${SOURCE_BRANCH}")"
+        body="$(printf 'Automated sync of `%s` into `%s`.\n\nThis pull request is eligible for auto-merge once required reviews and checks pass.\n\nSource commit: %s\nWorkflow run: %s' \
+          "$SOURCE_BRANCH" \
+          "$TARGET_BRANCH" \
+          "$source_sha" \
+          "${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}")"
+
+        existing_pr="$(gh pr list \
+          --base "$TARGET_BRANCH" \
+          --head "$SOURCE_BRANCH" \
+          --state open \
+          --limit 100 \
+          --json number \
+          --jq '.[0].number // empty')"
+
+        if [[ -n "$existing_pr" ]]; then
+          gh pr edit "$existing_pr" --title "$title" --body "$body"
+          pr_number="$existing_pr"
+          echo "Updated existing sync pull request #${pr_number}."
+        else
+          pr_url="$(gh pr create \
+            --base "$TARGET_BRANCH" \
+            --head "$SOURCE_BRANCH" \
+            --title "$title" \
+            --body "$body")"
+          pr_number="$(gh pr view "$pr_url" --json number --jq .number)"
+          if [[ -z "$pr_number" ]]; then
+            echo "Created sync pull request but could not resolve its number." >&2
+            exit 1
+          fi
+          echo "Created sync pull request #${pr_number}."
+        fi
+
+        echo "pr_number=${pr_number}" >> "$GITHUB_OUTPUT"
+
     - name: Attempt merge
-      if: steps.check.outputs.already_synced == 'false'
+      if: inputs.strategy == 'direct' && steps.check.outputs.already_synced == 'false'
       id: merge
       shell: bash
       env:
@@ -221,7 +280,7 @@ runs:
         fi
 
     - name: Push merged result
-      if: steps.check.outputs.already_synced == 'false' && steps.merge.outputs.conflict == 'false'
+      if: inputs.strategy == 'direct' && steps.check.outputs.already_synced == 'false' && steps.merge.outputs.conflict == 'false'
       id: push
       shell: bash
       env:
@@ -578,6 +637,8 @@ runs:
         MERGE_CONFLICT: ${{ steps.merge.outputs.conflict }}
         PUSH_FAILED: ${{ steps.push.outputs.push_failed }}
         ALREADY_SYNCED_AFTER_PUSH_REJECT: ${{ steps.push.outputs.already_synced_after_push_reject }}
+        STRATEGY: ${{ inputs.strategy }}
+        SYNC_PR_NUMBER: ${{ steps.pr_request.outputs.pr_number }}
         FAIL_ON_HUMAN_INTERVENTION: ${{ inputs.fail_on_human_intervention }}
       run: |
         if [[ -z "${ALREADY_SYNCED:-}" ]]; then
@@ -588,6 +649,17 @@ runs:
 
         if [[ "$ALREADY_SYNCED" == "true" ]]; then
           echo "result=skipped" >> "$GITHUB_OUTPUT"
+          exit 0
+        fi
+
+        if [[ "$STRATEGY" == "pull-request" ]]; then
+          if [[ -z "$SYNC_PR_NUMBER" ]]; then
+            echo "result=failed" >> "$GITHUB_OUTPUT"
+            echo "Pull-request strategy completed without publishing a pull request number." >&2
+            exit 1
+          fi
+
+          echo "result=pr-opened" >> "$GITHUB_OUTPUT"
           exit 0
         fi
 

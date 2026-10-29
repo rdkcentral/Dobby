@@ -1,5 +1,9 @@
 ## [Unreleased]
 
+### Added
+- `strategy: pull-request` opens or updates a source-to-target pull request instead of directly merging and pushing.
+- The `pr_number` output now includes the pull request created by pull-request strategy.
+
 ## [1.1.2] - 2026-10-13
 
 ### Fixed
