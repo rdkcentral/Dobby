@@ -56,6 +56,10 @@
 #include <sys/wait.h>
 #include <sys/prctl.h>
 #include <sys/resource.h>
+#include <algorithm>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 #include <fstream>
 #include <unordered_map>
 #include <chrono>
@@ -85,6 +89,25 @@
 #ifndef PLUGIN_PATH
     #define PLUGIN_PATH     "/usr/lib/plugins/dobby"
 #endif
+
+static bool isInDifferentPidNamespace(pid_t pid)
+{
+    char childPath[64];
+    snprintf(childPath, sizeof(childPath), "/proc/%d/ns/pid", pid);
+
+    char selfNamespace[64];
+    char childNamespace[64];
+    const ssize_t selfLength = readlink("/proc/self/ns/pid", selfNamespace,
+                                        sizeof(selfNamespace) - 1);
+    const ssize_t childLength = readlink(childPath, childNamespace,
+                                         sizeof(childNamespace) - 1);
+    if ((selfLength < 0) || (childLength < 0))
+        return false;
+
+    selfNamespace[selfLength] = '\0';
+    childNamespace[childLength] = '\0';
+    return strcmp(selfNamespace, childNamespace) != 0;
+}
 
 DobbyManager::DobbyManager(const std::shared_ptr<IDobbyEnv> &env,
                            const std::shared_ptr<IDobbyUtils> &utils,
@@ -3571,6 +3594,54 @@ void DobbyManager::onChildExit()
         {
             ++execit;
         }
+    }
+
+    DIR *procDir = opendir("/proc");
+    if (!procDir)
+    {
+        AI_LOG_SYS_ERROR(errno, "failed to open /proc while checking for adopted children");
+    }
+    else
+    {
+        struct dirent *entry;
+        while ((entry = readdir(procDir)) != nullptr)
+        {
+            char *end = nullptr;
+            const long value = strtol(entry->d_name, &end, 10);
+            if (!end || (*end != '\0') || (value <= 0))
+                continue;
+
+            const pid_t childPid = static_cast<pid_t>(value);
+            if (!isInDifferentPidNamespace(childPid))
+                continue;
+
+            const bool trackedContainer = std::any_of(mContainers.cbegin(), mContainers.cend(),
+                                                      [childPid](const auto &containerEntry)
+                                                      {
+                                                          return containerEntry.second &&
+                                                                 (containerEntry.second->containerPid == childPid);
+                                                      });
+            const bool trackedExec = std::any_of(mContainerExecPids.cbegin(), mContainerExecPids.cend(),
+                                                 [childPid](const auto &execEntry)
+                                                 {
+                                                     return execEntry.second == childPid;
+                                                 });
+            if (trackedContainer || trackedExec)
+                continue;
+
+            int status = 0;
+            const pid_t reapedPid = waitpid(childPid, &status, WNOHANG);
+            if (reapedPid == childPid)
+            {
+                AI_LOG_WARN("reaped untracked adopted child pid %d status 0x%04x",
+                            reapedPid, status);
+            }
+            else if ((reapedPid < 0) && (errno != ECHILD))
+            {
+                AI_LOG_SYS_ERROR(errno, "failed to reap untracked adopted child pid %d", childPid);
+            }
+        }
+        closedir(procDir);
     }
 
     if (mContainerStoppedCb)
