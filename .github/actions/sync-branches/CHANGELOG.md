@@ -4,6 +4,9 @@
 - `strategy: pull-request` opens or updates a source-to-target pull request instead of directly merging and pushing.
 - The `pr_number` output now includes the pull request created by pull-request strategy.
 
+### Changed
+- The OSS consumer workflow template uses the built-in `GITHUB_TOKEN` for pull request creation and auto-merge.
+
 ## [1.1.2] - 2026-10-13
 
 ### Fixed
