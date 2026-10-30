@@ -1,9 +1,5 @@
-name: DobbyL1Test
+name: L1-tests
 on:
-  push:
-    branches-ignore: [ main, develop, 'sprint/**', 'release/**' ]
-  pull_request:
-    branches-ignore: [ main, develop, 'sprint/**', 'release/**' ]
   workflow_call:
 
 jobs:
@@ -68,7 +64,7 @@ jobs:
           cd googletest
           mkdir build
           cd build
-          cmake ..
+          cmake -DCMAKE_POLICY_VERSION_MINIMUM=3.5 ..
           make
           sudo make install
 
@@ -100,6 +96,7 @@ jobs:
           --rc geninfo_unexecuted_blocks=1
           --ignore-errors source
           --ignore-errors mismatch
+          --ignore-errors inconsistent
           -c
           -o coverage.info
           -d $GITHUB_WORKSPACE

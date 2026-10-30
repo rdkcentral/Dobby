@@ -44,7 +44,7 @@ static const char* ociJsonTemplate = R"JSON(
             "/usr/libexec/DobbyInit",
             {{#ARGS_VAR_SECTION}}"{{ARGS_VAR_VALUE:json_escape}}"{{#ARGS_VAR_SECTION_separator}},{{/ARGS_VAR_SECTION_separator}} {{/ARGS_VAR_SECTION}}
         ],
-        "cwd": "{{WORKING_DIRECTORY}}",
+        "cwd": "{{WORKING_DIRECTORY:json_escape}}",
         "env": [
             {{#ENV_VAR_SECTION}}"{{ENV_VAR_VALUE:json_escape}}", {{/ENV_VAR_SECTION}}
             {{EXTRA_ENV_VARS}}
@@ -412,4 +412,5 @@ static const char* ociJsonTemplate = R"JSON(
     {{/ENABLE_RDK_PLUGINS}}
 }
 )JSON";
+
 

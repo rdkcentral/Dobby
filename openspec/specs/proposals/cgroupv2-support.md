@@ -57,9 +57,19 @@ Branches on `cgroupVersion()` for file names:
 ### 5. OOMCrash Plugin (`rdkPlugins/OOMCrash/source/OOMCrashPlugin.cpp`)
 
 - `readCgroup()` detects v1/v2 at runtime
-- On v2: reads `memory.events`, parses `oom_kill` count
-- Includes fallback to `system.slice/dobby-<id>.scope/` path (common with systemd on v2)
-- On v1: reads `memory.failcnt` as before
+- On v2: reads `memory.events`, parses `oom_kill` count; falls back to the
+  `system.slice/dobby-<id>.scope/` path (common with systemd on v2)
+- On v1: reads `memory.oom_control`, preferring the `oom_kill` field
+  (kernel >= 4.13, monotonic); falls back to `under_oom` (kernel < 4.13,
+  transient) when `oom_kill` is absent
+- Added `isMemoryAtLimit()` as a high-water-mark fallback, used when the
+  cgroup counter is unreadable (or, on kernel < 4.13, `under_oom` has already
+  cleared before `postHalt` runs): compares `memory.max_usage_in_bytes` /
+  `memory.memsw.max_usage_in_bytes` against their limits on v1, or
+  `memory.peak` / `memory.swap.peak` against `memory.max` / `memory.swap.max`
+  on v2 — falling back further to the `max` event counter in
+  `memory.events` / `memory.swap.events` on v2 kernels predating
+  `memory.peak`/`memory.swap.peak` (< 5.19/6.5)
 
 ### 6. GPU Plugin (`rdkPlugins/GPU/source/GpuPlugin.cpp`)
 
