@@ -5,8 +5,8 @@
 # Do not place this file under .github/actions/; GitHub only discovers workflows from .github/workflows/.
 # The sync logic runs from the local action files managed under .github/actions.
 #
-# Optional secret: @@SECRET_NAME@@ (contents:write + pull-requests:write + issues:write)
-# Used for push and manual runs; GITHUB_TOKEN fallback does not trigger downstream Actions workflows.
+# Optional secret: @@SECRET_NAME@@ (contents:write + pull-requests:write)
+# Falls back to GITHUB_TOKEN, which does not trigger downstream Actions workflows.
 
 name: Sync @@SOURCE_BRANCH@@ to @@TARGET_BRANCH@@
 
@@ -35,13 +35,21 @@ permissions:
 
 jobs:
   sync:
-    name: Merge ${{ github.event.inputs.source_branch || '@@SOURCE_BRANCH@@' }} -> ${{ github.event.inputs.target_branch || '@@TARGET_BRANCH@@' }}
+    name: Open sync PR ${{ github.event.inputs.source_branch || '@@SOURCE_BRANCH@@' }} -> ${{ github.event.inputs.target_branch || '@@TARGET_BRANCH@@' }}
     runs-on: @@RUNNER@@
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-      - uses: ./.github/actions/sync-branches
+      - id: sync
+        uses: ./.github/actions/sync-branches
         with:
+          strategy: pull-request
           source_branch: ${{ github.event.inputs.source_branch || '@@SOURCE_BRANCH@@' }}
           target_branch: ${{ github.event.inputs.target_branch || '@@TARGET_BRANCH@@' }}
           token: ${{ secrets.@@SECRET_NAME@@ || github.token }}
+      - name: Enable Pull Request Automerge
+        if: steps.sync.outputs.result == 'pr-opened' && steps.sync.outputs.pr_number != ''
+        env:
+          GH_TOKEN: ${{ secrets.@@SECRET_NAME@@ || github.token }}
+          PR_NUMBER: ${{ steps.sync.outputs.pr_number }}
+        run: gh pr merge "$PR_NUMBER" --merge --auto

@@ -5,8 +5,8 @@
 # Do not place this file under .github/actions/; GitHub only discovers workflows from .github/workflows/.
 # The sync logic runs from the local action files managed under .github/actions.
 #
-# Optional secret: SEMANTIC_RELEASE_TOKEN (contents:write + pull-requests:write + issues:write)
-# Used for push and manual runs; GITHUB_TOKEN fallback does not trigger downstream Actions workflows.
+# Uses the built-in GITHUB_TOKEN for PR creation and auto-merge.
+# Actions triggered by this token do not start downstream Actions workflows.
 
 name: Sync develop to main
 
@@ -35,13 +35,37 @@ permissions:
 
 jobs:
   sync:
-    name: Merge ${{ github.event.inputs.source_branch || 'develop' }} -> ${{ github.event.inputs.target_branch || 'main' }}
+    name: Open sync PR ${{ github.event.inputs.source_branch || 'develop' }} -> ${{ github.event.inputs.target_branch || 'main' }}
     runs-on: ubuntu-latest
+    outputs:
+      result: ${{ steps.sync.outputs.result }}
+      pr_number: ${{ steps.sync.outputs.pr_number }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-      - uses: ./.github/actions/sync-branches
+      - id: sync
+        uses: ./.github/actions/sync-branches
         with:
+          strategy: pull-request
           source_branch: ${{ github.event.inputs.source_branch || 'develop' }}
           target_branch: ${{ github.event.inputs.target_branch || 'main' }}
-          token: ${{ secrets.SEMANTIC_RELEASE_TOKEN || github.token }}
+          token: ${{ github.token }}
+
+  native-build:
+    needs: sync
+    if: needs.sync.outputs.result == 'pr-opened'
+    uses: ./.github/workflows/native_full_build.yml
+    with:
+      pull_request_number: ${{ needs.sync.outputs.pr_number }}
+
+  auto-merge:
+    name: Enable Pull Request Automerge
+    needs: [sync, native-build]
+    if: needs.sync.outputs.result == 'pr-opened' && needs.native-build.result == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Enable Pull Request Automerge
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ needs.sync.outputs.pr_number }}
+        run: gh pr merge "$PR_NUMBER" --merge --auto
