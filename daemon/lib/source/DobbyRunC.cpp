@@ -610,10 +610,15 @@ std::pair<pid_t, pid_t> DobbyRunC::exec(const ContainerId& id, const std::string
 {
     AI_LOG_FN_ENTRY();
 
+    if (!options.empty())
+    {
+        AI_LOG_ERROR_EXIT("custom exec options are not supported");
+        return {-1,-1};
+    }
+
     // Just save the PID somewhere temporary so we can read it
     std::string pidFilePath = "/tmp/exec" + id.str() + ".pid";
 
-    std::vector<std::string> opts;
     std::vector<std::string> cmd;
     std::string tmp;
 
@@ -626,19 +631,6 @@ std::pair<pid_t, pid_t> DobbyRunC::exec(const ContainerId& id, const std::string
         "--pid-file", pidFilePath.c_str()
     };
 
-
-    std::stringstream ss_opts(options);
-    // Insert space delimited options string into a vector
-    while(getline(ss_opts, tmp, ' '))
-    {
-        opts.push_back(tmp);
-    }
-
-    // Insert strings from options vector into args for crun
-    for (std::size_t i = 0; i < opts.size(); i++)
-    {
-        args.push_back(opts.at(i).c_str());
-    }
 
     args.push_back(id.c_str());
 
