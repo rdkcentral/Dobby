@@ -27,8 +27,11 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <fstream>
 #include <string>
 #include <memory>
+#include <utility>
+#include <vector>
 #include <unistd.h>
 
 // DobbySettingsMock.h pulls in gmock which eventually includes <sstream>;
@@ -44,6 +47,15 @@
 // below, which can cause hard-to-diagnose build failures on some compilers.
 #undef private
 
+// Include both production templates under distinct symbol names so this test
+// exercises JSON escaping for standard and DEV_VM builds in one run.
+#define ociJsonTemplate ociJsonTemplateStandard
+#include "../../../../bundle/lib/source/templates/OciConfigJson1.0.2-dobby.template"
+#undef ociJsonTemplate
+#define ociJsonTemplate ociJsonTemplateVm
+#include "../../../../bundle/lib/source/templates/OciConfigJsonVM1.0.2-dobby.template"
+#undef ociJsonTemplate
+
 using ::testing::NiceMock;
 using ::testing::Return;
 
@@ -52,6 +64,7 @@ using ::testing::Return;
 static const char* kSpecMemOnly = R"({
     "version": "1.0",
     "args": ["/bin/true"],
+    "cwd": "/",
     "user": { "uid": 1000, "gid": 1000 },
     "memLimit": 2998272
 })";
@@ -59,6 +72,7 @@ static const char* kSpecMemOnly = R"({
 static const char* kSpecWithSwap = R"({
     "version": "1.0",
     "args": ["/bin/true"],
+    "cwd": "/",
     "user": { "uid": 1000, "gid": 1000 },
     "memLimit": 2998272,
     "swapLimit": 5996544
@@ -67,6 +81,7 @@ static const char* kSpecWithSwap = R"({
 static const char* kSpecSwapEqualsLimit = R"({
     "version": "1.0",
     "args": ["/bin/true"],
+    "cwd": "/",
     "user": { "uid": 1000, "gid": 1000 },
     "memLimit": 2998272,
     "swapLimit": 2998272
@@ -75,6 +90,7 @@ static const char* kSpecSwapEqualsLimit = R"({
 static const char* kSpecSwapBelowLimit = R"({
     "version": "1.0",
     "args": ["/bin/true"],
+    "cwd": "/",
     "user": { "uid": 1000, "gid": 1000 },
     "memLimit": 5996544,
     "swapLimit": 0
@@ -85,6 +101,7 @@ static const char* kSpecSwapBelowLimit = R"({
 static const char* kSpecWithCapabilities = R"({
     "version": "1.0",
     "args": ["/bin/true"],
+    "cwd": "/",
     "user": { "uid": 1000, "gid": 1000 },
     "memLimit": 2998272,
     "capabilities": ["CAP_NET_RAW"]
@@ -97,6 +114,9 @@ static const char* kMemTemplateStr  = "LIMIT={{MEM_LIMIT}} SWAP={{MEM_SWAP}}";
 // ── Inline ctemplate for reading NO_NEW_PRIVS back from the dict ─────────────
 static const char* kPrivsTemplateName = "test_no_new_privs";
 static const char* kPrivsTemplateStr  = "NO_NEW_PRIVS={{NO_NEW_PRIVS}}";
+
+static const char* kCwdTemplateName = "test_working_directory";
+static const char* kCwdTemplateStr  = "CWD={{WORKING_DIRECTORY}}";
 
 // ── Fixture ───────────────────────────────────────────────────────────────────
 
@@ -158,6 +178,11 @@ protected:
             kPrivsTemplateName,
             kPrivsTemplateStr,
             ctemplate::DO_NOT_STRIP);
+
+        ctemplate::StringToTemplateCache(
+            kCwdTemplateName,
+            kCwdTemplateStr,
+            ctemplate::DO_NOT_STRIP);
     }
 
     void TearDown() override
@@ -198,6 +223,17 @@ protected:
         std::string out;
         ctemplate::ExpandTemplate(
             kPrivsTemplateName,
+            ctemplate::DO_NOT_STRIP,
+            cfg.mDictionary,
+            &out);
+        return out;
+    }
+
+    std::string expandCwdTemplate(DobbySpecConfig& cfg)
+    {
+        std::string out;
+        ctemplate::ExpandTemplate(
+            kCwdTemplateName,
             ctemplate::DO_NOT_STRIP,
             cfg.mDictionary,
             &out);
@@ -297,3 +333,124 @@ TEST_F(DobbySpecConfigTest, NoCapabilities_SetsNoNewPrivsTrue)
     EXPECT_TRUE(cfg->isValid());
     EXPECT_EQ(expandPrivsTemplate(*cfg), "NO_NEW_PRIVS=true");
 }
+
+TEST_F(DobbySpecConfigTest, Cwd_AcceptsAndNormalizesAbsolutePaths)
+{
+    auto cfg = makeConfig(kSpecMemOnly);
+    ASSERT_TRUE(cfg->isValid());
+
+    const std::vector<std::pair<std::string, std::string>> validPaths = {
+        {"/", "/"},
+        {"/home/app", "/home/app"},
+        {"/home/my app", "/home/my app"},
+        {"/home/line\nbreak", "/home/line\nbreak"},
+        {"/home/caf\xc3\xa9", "/home/caf\xc3\xa9"},
+        {"/var/run/my_app", "/var/run/my_app"},
+        {"//var///run/my_app/", "/var/run/my_app"},
+    };
+
+    for (const auto& path : validPaths)
+    {
+        ctemplate::TemplateDictionary dict("cwd_test");
+        Json::Value value(path.first);
+        ASSERT_TRUE(cfg->processCwd(value, &dict)) << path.first;
+
+        std::string out;
+        ctemplate::ExpandTemplate(kCwdTemplateName, ctemplate::DO_NOT_STRIP,
+                                  &dict, &out);
+        EXPECT_EQ(out, "CWD=" + path.second);
+    }
+}
+
+TEST_F(DobbySpecConfigTest, Cwd_RejectsUnsafeOrMalformedPaths)
+{
+    auto cfg = makeConfig(kSpecMemOnly);
+
+    std::vector<std::string> invalidPaths = {
+        "../../etc/shadow",
+        "/tmp/../../",
+        "/./bin",
+        "bin/sh",
+        "",
+        std::string("/\0bin", 5),
+        std::string("/bin\0/sh", 8),
+        std::string("/") + std::string(PATH_MAX - 1, 'a'),
+    };
+
+    for (const auto& path : invalidPaths)
+    {
+        ctemplate::TemplateDictionary dict("cwd_invalid_test");
+        Json::Value value(path);
+        EXPECT_FALSE(cfg->processCwd(value, &dict))
+            << "accepted unsafe cwd with length " << path.size();
+    }
+}
+
+TEST_F(DobbySpecConfigTest, Cwd_IsOptionalAndDefaultsToContainerRoot)
+{
+    const std::string specWithoutCwd = R"({
+        "version": "1.0",
+        "args": ["/bin/true"],
+        "user": { "uid": 1000, "gid": 1000 },
+        "memLimit": 2998272
+    })";
+
+    auto cfg = makeConfig(specWithoutCwd);
+    ASSERT_TRUE(cfg->isValid());
+    EXPECT_EQ(expandCwdTemplate(*cfg), "CWD=/");
+}
+
+TEST_F(DobbySpecConfigTest, Cwd_JsonEscapingProducesValidConfigForBothTemplates)
+{
+    const std::string cwd = "/home/my \"quoted\" app\\data";
+
+    Json::Value spec(Json::objectValue);
+    spec["version"] = "1.0";
+    spec["args"].append("/bin/true");
+    spec["cwd"] = cwd;
+    spec["user"]["uid"] = 1000;
+    spec["user"]["gid"] = 1000;
+    spec["memLimit"] = 2998272;
+
+    Json::StreamWriterBuilder writer;
+    writer["indentation"] = "";
+    auto cfg = makeConfig(Json::writeString(writer, spec));
+    ASSERT_TRUE(cfg->isValid());
+
+    // The selected production build variant must generate a parseable OCI
+    // config file with the original cwd value intact.
+    std::ifstream generatedConfigFile(std::string(mTmpDir) + "/config.json");
+    ASSERT_TRUE(generatedConfigFile.is_open());
+    Json::Value generatedConfig;
+    Json::Reader generatedConfigReader;
+    ASSERT_TRUE(generatedConfigReader.parse(generatedConfigFile, generatedConfig))
+        << generatedConfigReader.getFormattedErrorMessages();
+    ASSERT_TRUE(generatedConfig["process"].isObject());
+    EXPECT_EQ(generatedConfig["process"]["cwd"].asString(), cwd);
+
+    const std::pair<const char*, const char*> templateVariants[] = {
+        {"test_oci_standard_cwd_escape", ociJsonTemplateStandard},
+        {"test_oci_vm_cwd_escape", ociJsonTemplateVm},
+    };
+
+    for (const auto& variant : templateVariants)
+    {
+        ctemplate::TemplateCache cache;
+        ASSERT_TRUE(cache.StringToTemplateCache(variant.first, variant.second,
+                                                ctemplate::STRIP_WHITESPACE));
+        cache.Freeze();
+
+        std::string renderedConfig;
+        ASSERT_TRUE(cache.ExpandNoLoad(variant.first, ctemplate::STRIP_WHITESPACE,
+                                       cfg->mDictionary, nullptr, &renderedConfig));
+
+        Json::Value parsedConfig;
+        Json::Reader reader;
+        ASSERT_TRUE(reader.parse(renderedConfig, parsedConfig))
+            << variant.first << ": " << reader.getFormattedErrorMessages();
+        ASSERT_TRUE(parsedConfig["process"].isObject());
+        EXPECT_EQ(parsedConfig["process"]["cwd"].asString(), cwd)
+            << variant.first;
+    }
+}
+
