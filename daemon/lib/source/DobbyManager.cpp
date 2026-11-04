@@ -90,23 +90,35 @@
     #define PLUGIN_PATH     "/usr/lib/plugins/dobby"
 #endif
 
-static bool isInDifferentPidNamespace(pid_t pid)
+static bool isInDifferentPidNamespace(pid_t pid, const char* selfNamespace)
 {
-    char childPath[64];
-    snprintf(childPath, sizeof(childPath), "/proc/%d/ns/pid", pid);
+    char statusPath[64];
+    char line[256];
+    snprintf(statusPath, sizeof(statusPath), "/proc/%d/status", pid);
 
-    char selfNamespace[64];
-    char childNamespace[64];
-    const ssize_t selfLength = readlink("/proc/self/ns/pid", selfNamespace,
-                                        sizeof(selfNamespace) - 1);
-    const ssize_t childLength = readlink(childPath, childNamespace,
-                                         sizeof(childNamespace) - 1);
-    if ((selfLength < 0) || (childLength < 0))
+    FILE* f = fopen(statusPath, "r");
+    if (!f)
         return false;
 
-    selfNamespace[selfLength] = '\0';
-    childNamespace[childLength] = '\0';
-    return strcmp(selfNamespace, childNamespace) != 0;
+    bool different = false;
+    while (fgets(line, sizeof(line), f))
+    {
+        if (strncmp(line, "NSpid:", 6) == 0)
+        {
+            char* space = strchr(line, ' ');
+            if (space)
+            {
+                space++;
+                char* end = strchr(space, '\n');
+                if (end)
+                    *end = '\0';
+                different = (strcmp(space, selfNamespace) != 0);
+            }
+            break;
+        }
+    }
+    fclose(f);
+    return different;
 }
 
 DobbyManager::DobbyManager(const std::shared_ptr<IDobbyEnv> &env,
@@ -3603,42 +3615,89 @@ void DobbyManager::onChildExit()
     }
     else
     {
-        struct dirent *entry;
-        while ((entry = readdir(procDir)) != nullptr)
+        char selfNamespace[64];
+        const ssize_t selfLength = readlink("/proc/self/ns/pid", selfNamespace,
+                                            sizeof(selfNamespace) - 1);
+        if (selfLength < 0)
         {
-            char *end = nullptr;
-            const long value = strtol(entry->d_name, &end, 10);
-            if (!end || (*end != '\0') || (value <= 0))
-                continue;
+            AI_LOG_SYS_ERROR(errno, "failed to read daemon PID namespace");
+        }
+        else
+        {
+            selfNamespace[selfLength] = '\0';
 
-            const pid_t childPid = static_cast<pid_t>(value);
-            if (!isInDifferentPidNamespace(childPid))
-                continue;
+            const pid_t daemonPid = getpid();
 
-            const bool trackedContainer = std::any_of(mContainers.cbegin(), mContainers.cend(),
-                                                      [childPid](const auto &containerEntry)
-                                                      {
-                                                          return containerEntry.second &&
-                                                                 (containerEntry.second->containerPid == childPid);
-                                                      });
-            const bool trackedExec = std::any_of(mContainerExecPids.cbegin(), mContainerExecPids.cend(),
-                                                 [childPid](const auto &execEntry)
-                                                 {
-                                                     return execEntry.second == childPid;
-                                                 });
-            if (trackedContainer || trackedExec)
-                continue;
-
-            int status = 0;
-            const pid_t reapedPid = waitpid(childPid, &status, WNOHANG);
-            if (reapedPid == childPid)
+            struct dirent *entry;
+            while ((entry = readdir(procDir)) != nullptr)
             {
-                AI_LOG_WARN("reaped untracked adopted child pid %d status 0x%04x",
-                            reapedPid, status);
-            }
-            else if ((reapedPid < 0) && (errno != ECHILD))
-            {
-                AI_LOG_SYS_ERROR(errno, "failed to reap untracked adopted child pid %d", childPid);
+                char *end = nullptr;
+                const long value = strtol(entry->d_name, &end, 10);
+                if (!end || (*end != '\0') || (value <= 0))
+                    continue;
+
+                const pid_t childPid = static_cast<pid_t>(value);
+
+                char statusPath[64];
+                snprintf(statusPath, sizeof(statusPath), "/proc/%d/status", childPid);
+                FILE* f = fopen(statusPath, "r");
+                if (!f)
+                    continue;
+
+                bool isChild = false;
+                bool differentNamespace = false;
+                char line[256];
+                while (fgets(line, sizeof(line), f))
+                {
+                    if (strncmp(line, "PPid:", 5) == 0)
+                    {
+                        pid_t ppid = 0;
+                        sscanf(line + 5, "%d", &ppid);
+                        isChild = (ppid == daemonPid);
+                    }
+                    else if (strncmp(line, "NSpid:", 6) == 0)
+                    {
+                        char* space = strchr(line, ' ');
+                        if (space)
+                        {
+                            space++;
+                            char* newline = strchr(space, '\n');
+                            if (newline)
+                                *newline = '\0';
+                            differentNamespace = (strcmp(space, selfNamespace) != 0);
+                        }
+                    }
+                }
+                fclose(f);
+
+                if (!isChild || !differentNamespace)
+                    continue;
+
+                const bool trackedContainer = std::any_of(mContainers.cbegin(), mContainers.cend(),
+                                                              [childPid](const auto &containerEntry)
+                                                              {
+                                                                  return containerEntry.second &&
+                                                                         (containerEntry.second->containerPid == childPid);
+                                                              });
+                const bool trackedExec = std::any_of(mContainerExecPids.cbegin(), mContainerExecPids.cend(),
+                                                   [childPid](const auto &execEntry)
+                                                   {
+                                                       return execEntry.second == childPid;
+                                                   });
+                if (trackedContainer || trackedExec)
+                    continue;
+
+                int status = 0;
+                const pid_t reapedPid = waitpid(childPid, &status, WNOHANG);
+                if (reapedPid == childPid)
+                {
+                    AI_LOG_WARN("reaped untracked adopted child pid %d status 0x%04x",
+                                reapedPid, status);
+                }
+                else if ((reapedPid < 0) && (errno != ECHILD))
+                {
+                    AI_LOG_SYS_ERROR(errno, "failed to reap untracked adopted child pid %d", childPid);
+                }
             }
         }
         closedir(procDir);
