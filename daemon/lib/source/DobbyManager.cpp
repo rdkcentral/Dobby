@@ -160,7 +160,7 @@ static std::vector<pid_t> adoptedContainerDescendants()
             // the comm field may contain spaces and brackets, so parse the
             // state and ppid fields from after the last closing bracket
             std::string line;
-            std::getline(std::ifstream(std::string("/proc/") + entry->d_name + "/stat"), line);
+            std::getline(std::ifstream(std::string("/proc/") + entry->d_name + "/stat"), line, '\0');
             const size_t comm = line.rfind(')');
             if ((comm == std::string::npos) || (line.size() < (comm + 5)))
                 continue;
