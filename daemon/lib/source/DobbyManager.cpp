@@ -3596,10 +3596,12 @@ void DobbyManager::onChildExit()
         }
     }
 
-    DIR *procDir = opendir("/proc");
-    if (!procDir)
+    char childrenPath[64];
+    snprintf(childrenPath, sizeof(childrenPath), "/proc/self/children");
+    FILE* childrenFile = fopen(childrenPath, "r");
+    if (!childrenFile)
     {
-        AI_LOG_SYS_ERROR(errno, "failed to open /proc while checking for adopted children");
+        AI_LOG_SYS_ERROR(errno, "failed to open daemon children file");
     }
     else
     {
@@ -3614,40 +3616,15 @@ void DobbyManager::onChildExit()
         {
             selfNamespace[selfLength] = '\0';
 
-            const pid_t daemonPid = getpid();
-
-            struct dirent *entry;
-            while ((entry = readdir(procDir)) != nullptr)
+            char line[1024];
+            while (fgets(line, sizeof(line), childrenFile))
             {
                 char *end = nullptr;
-                const long value = strtol(entry->d_name, &end, 10);
-                if (!end || (*end != '\0') || (value <= 0))
+                const long value = strtol(line, &end, 10);
+                if (end == line || (*end != '\0' && *end != '\n' && *end != ' ') || (value <= 0))
                     continue;
 
                 const pid_t childPid = static_cast<pid_t>(value);
-
-                char statusPath[64];
-                snprintf(statusPath, sizeof(statusPath), "/proc/%d/status", childPid);
-                FILE* f = fopen(statusPath, "r");
-                if (!f)
-                    continue;
-
-                bool isChild = false;
-                char line[256];
-                while (fgets(line, sizeof(line), f))
-                {
-                    if (strncmp(line, "PPid:", 5) == 0)
-                    {
-                        pid_t ppid = 0;
-                        sscanf(line + 5, "%d", &ppid);
-                        isChild = (ppid == daemonPid);
-                        break;
-                    }
-                }
-                fclose(f);
-
-                if (!isChild)
-                    continue;
 
                 char childNamespace[64];
                 char namespacePath[64];
@@ -3688,7 +3665,7 @@ void DobbyManager::onChildExit()
                 }
             }
         }
-        closedir(procDir);
+        fclose(childrenFile);
     }
 
     if (mContainerStoppedCb)
