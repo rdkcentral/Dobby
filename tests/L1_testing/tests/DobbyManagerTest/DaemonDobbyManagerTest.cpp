@@ -27,7 +27,11 @@
 #include <sys/wait.h>
 #include <sys/prctl.h>
 #include <sys/resource.h>
+#include <sched.h>
+#include <cstring>
 #include <fstream>
+#include <future>
+#include <memory>
 #include <unordered_map>
 #include <chrono>
 #include <thread>
@@ -4864,3 +4868,352 @@ TEST_F(DaemonDobbyManagerTest, synthesizeContainerSignalStatus_AlreadySignalled_
     EXPECT_EQ(out, raw);
 }
 
+
+// =============================================================================
+// Tests for the reaping of adopted container descendants in
+// DobbyManager::onChildExit()
+//
+// When a container init or an exec'd DobbyInit wrapper dies, the processes it
+// left behind in the container's PID namespace are re-parented to Dobby (it is
+// a subreaper).  If nothing waits on them they stay zombies and can stop the
+// PID namespace from being torn down, hanging the container.
+//
+// These tests create such zombies for real and check that the SIGCHLD monitor
+// thread of the DobbyManager reaps them.  Creating a PID namespace needs
+// CAP_SYS_ADMIN, the tests are skipped without it.
+// =============================================================================
+
+namespace
+{
+
+const int kNoPrivilegeExitCode = 77;
+const int kReapTimeoutMs = 5000;
+
+/**
+ * SIGCHLD is ignored by default, so unless it is blocked in the thread the
+ * kernel notifies it is dropped before the DobbyManager's sigwaitinfo() can see
+ * it.  The daemon blocks it in every thread, do the same for the test thread
+ * (and the threads it creates).
+ */
+class ScopedSigchldBlock
+{
+public:
+    ScopedSigchldBlock()
+    {
+        sigset_t set;
+        sigemptyset(&set);
+        sigaddset(&set, SIGCHLD);
+        pthread_sigmask(SIG_BLOCK, &set, &mOldMask);
+    }
+
+    ~ScopedSigchldBlock()
+    {
+        pthread_sigmask(SIG_SETMASK, &mOldMask, nullptr);
+    }
+
+private:
+    sigset_t mOldMask;
+};
+
+/**
+ * A process in its own PID namespace that is adopted by this process (a
+ * subreaper), the same way the descendants of a dead exec'd DobbyInit are
+ * adopted by Dobby.  It stays alive until release() is called and then turns
+ * into a zombie that only Dobby's reaping can remove.
+ */
+class AdoptedForeignChild
+{
+public:
+    enum class Result { Ok, NoPrivilege, Failed };
+
+    AdoptedForeignChild() = default;
+    AdoptedForeignChild(const AdoptedForeignChild&) = delete;
+    AdoptedForeignChild& operator=(const AdoptedForeignChild&) = delete;
+
+    ~AdoptedForeignChild()
+    {
+        // never leave anything behind if a test bailed out early
+        release();
+        if (mPid > 0)
+        {
+            kill(mPid, SIGKILL);
+            waitpid(mPid, nullptr, WNOHANG);
+        }
+    }
+
+    Result start()
+    {
+        int hold[2];
+        int report[2];
+        if ((pipe(hold) != 0) || (pipe(report) != 0))
+            return Result::Failed;
+
+        const pid_t helper = fork();
+        if (helper < 0)
+            return Result::Failed;
+
+        if (helper == 0)
+        {
+            // Only async-signal-safe calls from here on, we're a fork of a
+            // multi-threaded process.  Our own PID namespace doesn't change,
+            // only the one our children are created in.
+            close(hold[1]);
+            close(report[0]);
+            if (unshare(CLONE_NEWPID) != 0)
+                _exit((errno == EPERM) ? kNoPrivilegeExitCode : 1);
+
+            const pid_t child = fork();
+            if (child < 0)
+                _exit(1);
+
+            if (child == 0)
+            {
+                // PID 1 of the new namespace, wait until we're told to exit
+                close(report[1]);
+                char byte;
+                while ((read(hold[0], &byte, 1) < 0) && (errno == EINTR))
+                {
+                }
+                _exit(0);
+            }
+
+            if (write(report[1], &child, sizeof(child)) != static_cast<ssize_t>(sizeof(child)))
+                _exit(1);
+            _exit(0);
+        }
+
+        close(hold[0]);
+        close(report[1]);
+        mHoldFd = hold[1];
+
+        pid_t child = -1;
+        const ssize_t got = read(report[0], &child, sizeof(child));
+        close(report[0]);
+
+        // once the helper is gone the child is re-parented to us
+        int status = 0;
+        if (waitpid(helper, &status, 0) != helper)
+            return Result::Failed;
+
+        if (WIFEXITED(status) && (WEXITSTATUS(status) == kNoPrivilegeExitCode))
+            return Result::NoPrivilege;
+
+        if ((got != static_cast<ssize_t>(sizeof(child))) || (child <= 0) ||
+            !WIFEXITED(status) || (WEXITSTATUS(status) != 0))
+            return Result::Failed;
+
+        mPid = child;
+        return Result::Ok;
+    }
+
+    /** Lets the process exit, turning it into a zombie child of ours */
+    void release()
+    {
+        if (mHoldFd >= 0)
+        {
+            close(mHoldFd);
+            mHoldFd = -1;
+        }
+    }
+
+    pid_t pid() const { return mPid; }
+
+private:
+    pid_t mPid = -1;
+    int mHoldFd = -1;
+};
+
+/**
+ * Waits for the process to disappear.  kill(pid, 0) is used rather than
+ * waitpid() as we must not be the ones that reap it, a zombie still exists.
+ */
+bool waitUntilReaped(pid_t pid, int timeoutMs)
+{
+    const auto deadline = std::chrono::steady_clock::now() + std::chrono::milliseconds(timeoutMs);
+    while (std::chrono::steady_clock::now() < deadline)
+    {
+        if ((kill(pid, 0) != 0) && (errno == ESRCH))
+            return true;
+
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    }
+    return false;
+}
+
+/** True if the process is no longer our child, i.e. someone else reaped it */
+bool isNoLongerOurChild(pid_t pid)
+{
+    return (waitpid(pid, nullptr, WNOHANG) < 0) && (errno == ECHILD);
+}
+
+} // namespace
+
+/**
+ * @brief Test that a zombie adopted from a foreign PID namespace is reaped.
+ * Check the SIGCHLD handling waitpid()s a process Dobby didn't spawn itself
+ * and that lives in a different PID namespace, which is what stops a container
+ * hanging on a zombie left behind by a dead exec'd DobbyInit.
+ */
+TEST_F(DaemonDobbyManagerTest, onChildExit_ReapsAdoptedZombieInForeignPidNamespace)
+{
+    expect_invalidContainerCleanupTask();
+    ScopedSigchldBlock sigchldBlock;
+
+    AdoptedForeignChild child;
+    const auto result = child.start();
+    if (result == AdoptedForeignChild::Result::NoPrivilege)
+        GTEST_SKIP() << "creating a PID namespace needs CAP_SYS_ADMIN";
+    ASSERT_EQ(result, AdoptedForeignChild::Result::Ok);
+
+    // alive and not a zombie yet, so nothing can be reaped by mistake
+    EXPECT_EQ(kill(child.pid(), 0), 0);
+
+    child.release();
+
+    EXPECT_TRUE(waitUntilReaped(child.pid(), kReapTimeoutMs))
+        << "adopted zombie " << child.pid() << " was never reaped";
+    EXPECT_TRUE(isNoLongerOurChild(child.pid()));
+}
+
+/**
+ * @brief Test that several adopted zombies are all reaped.
+ * Check every adopted child is handled, SIGCHLD signals are coalesced so a
+ * single notification can stand for any number of dead children.
+ */
+TEST_F(DaemonDobbyManagerTest, onChildExit_ReapsAllAdoptedZombies)
+{
+    expect_invalidContainerCleanupTask();
+    ScopedSigchldBlock sigchldBlock;
+
+    const size_t count = 4;
+    std::vector<std::unique_ptr<AdoptedForeignChild>> children;
+    for (size_t i = 0; i < count; i++)
+    {
+        children.emplace_back(new AdoptedForeignChild);
+        const auto result = children.back()->start();
+        if (result == AdoptedForeignChild::Result::NoPrivilege)
+            GTEST_SKIP() << "creating a PID namespace needs CAP_SYS_ADMIN";
+        ASSERT_EQ(result, AdoptedForeignChild::Result::Ok);
+    }
+
+    for (const auto &child : children)
+        child->release();
+
+    for (const auto &child : children)
+    {
+        EXPECT_TRUE(waitUntilReaped(child->pid(), kReapTimeoutMs))
+            << "adopted zombie " << child->pid() << " was never reaped";
+        EXPECT_TRUE(isNoLongerOurChild(child->pid()));
+    }
+}
+
+/**
+ * @brief Test that a zombie in Dobby's own PID namespace is left alone.
+ * Check children in our own PID namespace are not reaped by the adopted child
+ * handling, other code waits for those explicitly and needs their exit status.
+ */
+TEST_F(DaemonDobbyManagerTest, onChildExit_DoesNotReapZombieInOwnPidNamespace)
+{
+    expect_invalidContainerCleanupTask();
+    ScopedSigchldBlock sigchldBlock;
+
+    const int exitCode = 7;
+    const pid_t own = fork();
+    ASSERT_GE(own, 0);
+    if (own == 0)
+        _exit(exitCode);
+
+    // wait for it to exit without reaping it
+    siginfo_t info;
+    memset(&info, 0, sizeof(info));
+    ASSERT_EQ(waitid(P_PID, own, &info, WEXITED | WNOWAIT), 0);
+
+    // the foreign zombie is a marker, once it has been reaped we know the
+    // adopted child handling has run since our own child became a zombie
+    AdoptedForeignChild marker;
+    const auto result = marker.start();
+    if (result == AdoptedForeignChild::Result::NoPrivilege)
+    {
+        waitpid(own, nullptr, 0);
+        GTEST_SKIP() << "creating a PID namespace needs CAP_SYS_ADMIN";
+    }
+    ASSERT_EQ(result, AdoptedForeignChild::Result::Ok);
+
+    marker.release();
+    EXPECT_TRUE(waitUntilReaped(marker.pid(), kReapTimeoutMs));
+
+    int status = 0;
+    ASSERT_EQ(waitpid(own, &status, WNOHANG), own) << "our own child was reaped behind our back";
+    EXPECT_TRUE(WIFEXITED(status));
+    EXPECT_EQ(WEXITSTATUS(status), exitCode);
+}
+
+/**
+ * @brief Test that a zombie forked by a thread other than the main one is reaped.
+ * Check children are looked for in every thread of Dobby, the kernel lists a
+ * child under the thread that forked it.
+ */
+TEST_F(DaemonDobbyManagerTest, onChildExit_ReapsAdoptedZombieForkedByAnotherThread)
+{
+    expect_invalidContainerCleanupTask();
+    ScopedSigchldBlock sigchldBlock;
+
+    std::promise<pid_t> childCreated;
+    std::promise<void> releaseChild;
+    std::promise<void> finishThread;
+    std::future<pid_t> childFuture = childCreated.get_future();
+    std::future<void> releaseFuture = releaseChild.get_future();
+    std::future<void> finishFuture = finishThread.get_future();
+
+    std::thread worker([&]()
+    {
+        // children of this thread are created in a new PID namespace, and are
+        // children of this thread rather than of the main one
+        int hold[2];
+        if ((unshare(CLONE_NEWPID) != 0) || (pipe(hold) != 0))
+        {
+            childCreated.set_value((errno == EPERM) ? -2 : -1);
+            return;
+        }
+
+        const pid_t child = fork();
+        if (child == 0)
+        {
+            close(hold[1]);
+            char byte;
+            while ((read(hold[0], &byte, 1) < 0) && (errno == EINTR))
+            {
+            }
+            _exit(0);
+        }
+
+        close(hold[0]);
+        childCreated.set_value(child);
+
+        // let it exit once we're told to, then keep the thread alive so the
+        // zombie stays a child of this thread
+        releaseFuture.wait();
+        close(hold[1]);
+        finishFuture.wait();
+    });
+
+    const pid_t child = childFuture.get();
+    if (child < 0)
+    {
+        worker.join();
+        if (child == -2)
+            GTEST_SKIP() << "creating a PID namespace needs CAP_SYS_ADMIN";
+        FAIL() << "failed to create the child";
+    }
+
+    releaseChild.set_value();
+    const bool reaped = waitUntilReaped(child, kReapTimeoutMs);
+
+    if (!reaped)
+        kill(child, SIGKILL);
+    finishThread.set_value();
+    worker.join();
+
+    EXPECT_TRUE(reaped) << "zombie " << child << " of another thread was never reaped";
+    EXPECT_TRUE(isNoLongerOurChild(child));
+}
