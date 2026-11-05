@@ -4937,7 +4937,9 @@ public:
         if (mPid > 0)
         {
             kill(mPid, SIGKILL);
-            waitpid(mPid, nullptr, WNOHANG);
+            while ((waitpid(mPid, nullptr, 0) < 0) && (errno == EINTR))
+            {
+            }
         }
     }
 
