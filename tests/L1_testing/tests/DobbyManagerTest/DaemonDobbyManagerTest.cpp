@@ -5179,6 +5179,13 @@ TEST_F(DaemonDobbyManagerTest, onChildExit_ReapsAdoptedZombieForkedByAnotherThre
         }
 
         const pid_t child = fork();
+        if (child < 0)
+        {
+            close(hold[0]);
+            close(hold[1]);
+            childCreated.set_value(-1);
+            return;
+        }
         if (child == 0)
         {
             close(hold[1]);
