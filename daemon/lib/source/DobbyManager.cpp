@@ -90,35 +90,23 @@
     #define PLUGIN_PATH     "/usr/lib/plugins/dobby"
 #endif
 
-static bool isInDifferentPidNamespace(pid_t pid, const char* selfNamespace)
+static bool isInDifferentPidNamespace(pid_t pid)
 {
-    char statusPath[64];
-    char line[256];
-    snprintf(statusPath, sizeof(statusPath), "/proc/%d/status", pid);
+    char childPath[64];
+    snprintf(childPath, sizeof(childPath), "/proc/%d/ns/pid", pid);
 
-    FILE* f = fopen(statusPath, "r");
-    if (!f)
+    char selfNamespace[64];
+    char childNamespace[64];
+    const ssize_t selfLength = readlink("/proc/self/ns/pid", selfNamespace,
+                                        sizeof(selfNamespace) - 1);
+    const ssize_t childLength = readlink(childPath, childNamespace,
+                                         sizeof(childNamespace) - 1);
+    if ((selfLength < 0) || (childLength < 0))
         return false;
 
-    bool different = false;
-    while (fgets(line, sizeof(line), f))
-    {
-        if (strncmp(line, "NSpid:", 6) == 0)
-        {
-            char* space = strchr(line, ' ');
-            if (space)
-            {
-                space++;
-                char* end = strchr(space, '\n');
-                if (end)
-                    *end = '\0';
-                different = (strcmp(space, selfNamespace) != 0);
-            }
-            break;
-        }
-    }
-    fclose(f);
-    return different;
+    selfNamespace[selfLength] = '\0';
+    childNamespace[childLength] = '\0';
+    return strcmp(selfNamespace, childNamespace) != 0;
 }
 
 DobbyManager::DobbyManager(const std::shared_ptr<IDobbyEnv> &env,
@@ -3349,7 +3337,6 @@ void DobbyManager::onChildExit()
                     continue;
 
                 bool isChild = false;
-                bool differentNamespace = false;
                 char line[256];
                 while (fgets(line, sizeof(line), f))
                 {
@@ -3358,23 +3345,24 @@ void DobbyManager::onChildExit()
                         pid_t ppid = 0;
                         sscanf(line + 5, "%d", &ppid);
                         isChild = (ppid == daemonPid);
-                    }
-                    else if (strncmp(line, "NSpid:", 6) == 0)
-                    {
-                        char* space = strchr(line, ' ');
-                        if (space)
-                        {
-                            space++;
-                            char* newline = strchr(space, '\n');
-                            if (newline)
-                                *newline = '\0';
-                            differentNamespace = (strcmp(space, selfNamespace) != 0);
-                        }
+                        break;
                     }
                 }
                 fclose(f);
 
-                if (!isChild || !differentNamespace)
+                if (!isChild)
+                    continue;
+
+                char childNamespace[64];
+                char namespacePath[64];
+                snprintf(namespacePath, sizeof(namespacePath), "/proc/%d/ns/pid", childPid);
+                const ssize_t childLength = readlink(namespacePath, childNamespace,
+                                                     sizeof(childNamespace) - 1);
+                if (childLength < 0)
+                    continue;
+
+                childNamespace[childLength] = '\0';
+                if (strcmp(selfNamespace, childNamespace) == 0)
                     continue;
 
                 const bool trackedContainer = std::any_of(mContainers.cbegin(), mContainers.cend(),
@@ -3395,7 +3383,7 @@ void DobbyManager::onChildExit()
                 const pid_t reapedPid = waitpid(childPid, &status, WNOHANG);
                 if (reapedPid == childPid)
                 {
-                    AI_LOG_WARN("reaped untracked adopted child pid %d status 0x%04x",
+                    AI_LOG_WARN("Reaped untracked adopted child pid %d status 0x%04x",
                                 reapedPid, status);
                 }
                 else if ((reapedPid < 0) && (errno != ECHILD))
