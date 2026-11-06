@@ -56,6 +56,8 @@
 #include <sys/wait.h>
 #include <sys/prctl.h>
 #include <sys/resource.h>
+#include <algorithm>
+#include <cstdlib>
 #include <fstream>
 #include <unordered_map>
 #include <chrono>
@@ -85,6 +87,99 @@
 #ifndef PLUGIN_PATH
     #define PLUGIN_PATH     "/usr/lib/plugins/dobby"
 #endif
+
+/**
+ *  @brief Returns the PID namespace link target (e.g. "pid:[4026531836]") of
+ *  the given process, or an empty string if it can't be read.
+ *
+ *  Unlike /proc/<pid>/status this also works for zombie processes.
+ *
+ *  @param[in]  pid     Process to inspect, either a number or "self".
+ */
+static std::string pidNamespaceOf(const std::string &pid)
+{
+    char buf[64];
+    const std::string path = "/proc/" + pid + "/ns/pid";
+    const ssize_t len = readlink(path.c_str(), buf, sizeof(buf) - 1);
+    return (len > 0) ? std::string(buf, static_cast<size_t>(len)) : std::string();
+}
+
+/**
+ *  @brief Returns the pids of our direct children that live in a different PID
+ *  namespace, i.e. container processes that were adopted by us (we are a
+ *  subreaper) because their parent died.
+ *
+ *  This only reads procfs and takes no locks, so it must not be called with
+ *  @a mLock held.
+ *
+ *  /proc/<pid>/task/<tid>/children is used when the kernel provides it
+ *  (CONFIG_PROC_CHILDREN). A child is listed under the thread that forked it,
+ *  so every thread has to be checked. Otherwise fall back to looking for
+ *  processes whose parent is us in /proc/<pid>/stat.
+ */
+static std::vector<pid_t> adoptedContainerDescendants()
+{
+    const std::string selfNamespace = pidNamespaceOf("self");
+    if (selfNamespace.empty())
+        return {};
+
+    const pid_t selfPid = getpid();
+    std::vector<pid_t> children;
+
+    static const bool childrenListSupported =
+        (access(("/proc/self/task/" + std::to_string(selfPid) + "/children").c_str(), R_OK) == 0);
+
+    if (childrenListSupported)
+    {
+        if (DIR *taskDir = opendir("/proc/self/task"))
+        {
+            const struct dirent *entry;
+            while ((entry = readdir(taskDir)) != nullptr)
+            {
+                if (entry->d_name[0] == '.')
+                    continue;
+
+                std::ifstream list(std::string("/proc/self/task/") + entry->d_name + "/children");
+                pid_t pid;
+                while (list >> pid)
+                    children.push_back(pid);
+            }
+            closedir(taskDir);
+        }
+    }
+    else if (DIR *procDir = opendir("/proc"))
+    {
+        const struct dirent *entry;
+        while ((entry = readdir(procDir)) != nullptr)
+        {
+            char *end = nullptr;
+            const long pid = strtol(entry->d_name, &end, 10);
+            if ((end == entry->d_name) || (*end != '\0') || (pid <= 0))
+                continue;
+
+            // the comm field may contain spaces and brackets, so parse the
+            // state and ppid fields from after the last closing bracket
+            std::string line;
+            std::getline(std::ifstream(std::string("/proc/") + entry->d_name + "/stat"), line, '\0');
+            const size_t comm = line.rfind(')');
+            if ((comm == std::string::npos) || (line.size() < (comm + 5)))
+                continue;
+
+            if (strtol(line.c_str() + comm + 4, nullptr, 10) == selfPid)
+                children.push_back(static_cast<pid_t>(pid));
+        }
+        closedir(procDir);
+    }
+
+    children.erase(std::remove_if(children.begin(), children.end(),
+                                  [&selfNamespace](pid_t pid)
+                                  {
+                                      const std::string ns = pidNamespaceOf(std::to_string(pid));
+                                      return ns.empty() || (ns == selfNamespace);
+                                  }),
+                   children.end());
+    return children;
+}
 
 DobbyManager::DobbyManager(const std::shared_ptr<IDobbyEnv> &env,
                            const std::shared_ptr<IDobbyUtils> &utils,
@@ -3170,6 +3265,10 @@ void DobbyManager::onChildExit()
 
     AI_LOG_DEBUG("detected child terminated signal");
 
+    // look for adopted container descendants before taking the lock, the
+    // procfs reads it needs are not something to do in the critical section
+    const std::vector<pid_t> adoptedChildren = adoptedContainerDescendants();
+
     // take the lock as we're being called from the signal monitor thread
     std::lock_guard<std::mutex> locker(mLock);
     std::vector<ContainerStoppedEvent> containerStoppedEvents;
@@ -3274,6 +3373,39 @@ void DobbyManager::onChildExit()
         else
         {
             ++execit;
+        }
+    }
+
+    // Reap any adopted container descendants that have become zombies,
+    // otherwise they can keep the container's PID namespace from being torn
+    // down.  Anything we are tracking is waited on above, and children in our
+    // own PID namespace are left alone as other code waits on those explicitly.
+    for (const pid_t childPid : adoptedChildren)
+    {
+        const bool tracked =
+            std::any_of(mContainers.cbegin(), mContainers.cend(),
+                        [childPid](const auto &entry)
+                        {
+                            return entry.second && (entry.second->containerPid == childPid);
+                        }) ||
+            std::any_of(mContainerExecPids.cbegin(), mContainerExecPids.cend(),
+                        [childPid](const auto &entry)
+                        {
+                            return entry.second == childPid;
+                        });
+        if (tracked)
+            continue;
+
+        int status = 0;
+        const pid_t reapedPid = waitpid(childPid, &status, WNOHANG);
+        if (reapedPid == childPid)
+        {
+            AI_LOG_WARN("reaped untracked adopted child pid %d status 0x%04x",
+                        reapedPid, status);
+        }
+        else if ((reapedPid < 0) && (errno != ECHILD))
+        {
+            AI_LOG_SYS_ERROR(errno, "failed to reap untracked adopted child pid %d", childPid);
         }
     }
 
