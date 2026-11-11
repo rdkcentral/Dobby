@@ -4,13 +4,16 @@ name: main-workflow
 
 on:
   push:
-    branches: [ main, develop, 'sprint/**', 'release/**' ]
+    branches: [ main, develop, 'topic/**', 'release/**' ]
   pull_request:
-    branches: [ main, develop, 'sprint/**', 'release/**' ]
+    branches: [ main, develop, 'topic/**', 'release/**' ]
 
 jobs:
   trigger-L1:
     uses: ./.github/workflows/L1-tests.yml
+
+  trigger-L2:
+    uses: ./.github/workflows/L2-tests.yml
 
   coverage-gate:
     name: Coverage Gate

@@ -1,0 +1,46 @@
+# Sync develop -> main -- consumer template
+#
+# Copy this file to .github/workflows/sync-develop-to-main.yml in any consumer repo.
+# Do not place this file under .github/actions/; GitHub only loads workflow YAML from .github/workflows/.
+# The sync logic lives in app-gateway-automation/actions/sync-branches.
+#
+# Optional secrets (first match wins):
+# - RDKE_GITHUB_TOKEN
+# - SEMANTIC_RELEASE_TOKEN
+# Configure one if downstream Actions workflows must run; github.token fallback does not trigger them.
+
+name: Sync develop to main
+
+on:
+  push:
+    branches: [develop]
+  workflow_dispatch:
+    inputs:
+      source_branch:
+        description: "Source branch"
+        required: false
+        default: "develop"
+      target_branch:
+        description: "Target branch"
+        required: false
+        default: "main"
+
+concurrency:
+  group: sync-${{ github.repository }}-${{ github.event_name == 'workflow_dispatch' && format('{0}-to-{1}', github.event.inputs.source_branch || 'develop', github.event.inputs.target_branch || 'main') || format('{0}-to-{1}', github.ref_name, 'main') }}
+  cancel-in-progress: ${{ github.event_name != 'workflow_dispatch' }}
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+jobs:
+  sync:
+    name: Merge ${{ github.event.inputs.source_branch || 'develop' }} → ${{ github.event.inputs.target_branch || 'main' }}
+    runs-on: comcast-ubuntu-latest  # use org runner label; change if repo uses a different label
+    steps:
+      - uses: rdk-e/app-gateway-automation/actions/sync-branches@actions-v1
+        with:
+          source_branch: ${{ github.event.inputs.source_branch || 'develop' }}
+          target_branch: ${{ github.event.inputs.target_branch || 'main' }}
+          token: ${{ secrets.RDKE_GITHUB_TOKEN || secrets.SEMANTIC_RELEASE_TOKEN || github.token }}
