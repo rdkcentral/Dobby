@@ -267,6 +267,7 @@ jobs:
 
 | Input | Default | Description |
 |-------|---------|-------------|
+| `strategy` | `direct` | `direct` merges and pushes the source into the target; `pull-request` opens or updates a PR from source to target instead |
 | `source_branch` | `develop` | Branch to sync from |
 | `target_branch` | `main` | Branch to sync to |
 | `git_user_name` | `github-actions[bot]` | Committer name for merge commits |
@@ -283,6 +284,7 @@ jobs:
 
 `result` output can be one of:
 - `merged`
+- `pr-opened`
 - `skipped`
 - `human-intervention-required`
 - `failed`
@@ -294,6 +296,12 @@ jobs:
 | `token` | No | Auth token for push/PR operations. Falls back to `github.token` if not provided by caller workflow. |
 
 ## Behavior
+
+### Pull-request Strategy
+Set `strategy: pull-request` to open or update a pull request from `source_branch` into `target_branch` whenever the target does not already contain the source. The action returns the PR number and `result=pr-opened`; the calling workflow can then enable auto-merge or apply other PR-specific handling. This strategy does not push directly to the target or create fallback issues.
+
+### Direct Strategy (Default)
+With the default `strategy: direct`, the action attempts a merge and pushes directly to the target when there are no conflicts. If the merge conflicts or the push fails, it creates fallback artifacts for human intervention.
 
 ### Success Case: No Conflicts
 ```
@@ -331,7 +339,7 @@ Notes:
 - The webhook payload is JSON: `{ "text": "..." }`, which works with Slack Incoming Webhooks and many webhook relays.
 - If `notification_webhook_url` is not set, no notification is sent.
 - Notification delivery is best-effort and non-blocking: webhook failures emit a warning but do not fail the sync workflow.
-### Fallback Case: Conflict or Protected Branch
+### Fallback Case: Conflict or Protected Branch (Direct Strategy)
 ```
 push to develop
     ↓

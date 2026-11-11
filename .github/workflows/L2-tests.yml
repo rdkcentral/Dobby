@@ -83,7 +83,7 @@ jobs:
          git clone --depth 1 --branch 2.5.5 https://github.com/troglobit/smcroute.git
          cd smcroute
          ./autogen.sh
-         ./configure
+         ./configure --with-systemd=/usr/lib/systemd/system
          sudo make install -j$(nproc)
          sudo ln -sf /usr/local/sbin/smcroutectl /usr/sbin/smcroutectl
          sudo mkdir -p /usr/local/var/run
@@ -142,6 +142,7 @@ jobs:
           git clone https://github.com/LibertyGlobal/memcr.git .
           git checkout ${{env.MEMCR_REF}}
           git apply $GITHUB_WORKSPACE/Dobby/develop/vagrant/memcr/0001-RDK-47153-Support-zstd-compression-and-option-to-set-dump-dir-.patch
+          sed -i 's/"-> %n: %s bytes <-"/"%n: %s bytes"/g' Makefile
           make COMPRESS_LZ4=1 COMPRESS_ZSTD=1 CHECKSUM_MD5=1 ENCRYPT=1
           mkdir -p scripts
           cp $GITHUB_WORKSPACE/Dobby/develop/vagrant/memcr/start_memcr.sh ~/memcr/scripts/
@@ -271,5 +272,3 @@ jobs:
             DobbyL2TestResults.json
             l2coverage
           if-no-files-found: warn
-
-

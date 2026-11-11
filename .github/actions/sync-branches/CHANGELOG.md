@@ -1,5 +1,13 @@
 ## [Unreleased]
 
+### Added
+- `strategy: pull-request` opens or updates a source-to-target pull request instead of directly merging and pushing.
+- The `pr_number` output now includes the pull request created by pull-request strategy.
+
+### Changed
+- The OSS consumer workflow template supports a configurable token for pull request creation and auto-merge, falling back to `GITHUB_TOKEN`.
+- The Dobby sync workflow runs the native build against the sync PR merge ref before enabling auto-merge.
+
 ## [1.1.2] - 2026-10-13
 
 ### Fixed
