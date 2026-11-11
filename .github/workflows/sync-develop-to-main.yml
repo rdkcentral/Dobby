@@ -1,0 +1,71 @@
+# Sync develop -> main -- OSS consumer template
+#
+# Installed by bundle into OSS repositories.
+# Workflow YAML must be installed at .github/workflows/sync-develop-to-main.yml.
+# Do not place this file under .github/actions/; GitHub only discovers workflows from .github/workflows/.
+# The sync logic runs from the local action files managed under .github/actions.
+#
+# Uses the built-in GITHUB_TOKEN for PR creation and auto-merge.
+# Actions triggered by this token do not start downstream Actions workflows.
+
+name: Sync develop to main
+
+on:
+  push:
+    branches: [develop]
+  workflow_dispatch:
+    inputs:
+      source_branch:
+        description: "Source branch"
+        required: false
+        default: "develop"
+      target_branch:
+        description: "Target branch"
+        required: false
+        default: "main"
+
+concurrency:
+  group: sync-${{ github.repository }}-${{ github.event_name == 'workflow_dispatch' && format('{0}-to-{1}', github.event.inputs.source_branch || 'develop', github.event.inputs.target_branch || 'main') || format('{0}-to-{1}', github.ref_name, 'main') }}
+  cancel-in-progress: ${{ github.event_name != 'workflow_dispatch' }}
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+jobs:
+  sync:
+    name: Open sync PR ${{ github.event.inputs.source_branch || 'develop' }} -> ${{ github.event.inputs.target_branch || 'main' }}
+    runs-on: ubuntu-latest
+    outputs:
+      result: ${{ steps.sync.outputs.result }}
+      pr_number: ${{ steps.sync.outputs.pr_number }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - id: sync
+        uses: ./.github/actions/sync-branches
+        with:
+          strategy: pull-request
+          source_branch: ${{ github.event.inputs.source_branch || 'develop' }}
+          target_branch: ${{ github.event.inputs.target_branch || 'main' }}
+          token: ${{ github.token }}
+
+  native-build:
+    needs: sync
+    if: needs.sync.outputs.result == 'pr-opened'
+    uses: ./.github/workflows/native_full_build.yml
+    with:
+      pull_request_number: ${{ needs.sync.outputs.pr_number }}
+
+  auto-merge:
+    name: Enable Pull Request Automerge
+    needs: [sync, native-build]
+    if: needs.sync.outputs.result == 'pr-opened' && needs.native-build.result == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Enable Pull Request Automerge
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ needs.sync.outputs.pr_number }}
+        run: gh pr merge "$PR_NUMBER" --merge --auto

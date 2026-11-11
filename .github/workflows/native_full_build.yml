@@ -5,6 +5,12 @@ on:
     branches: [ main, 'sprint/**', 'release/**', master ]
   pull_request:
     branches: [ main, 'sprint/**', 'release/**', master ]
+  workflow_call:
+    inputs:
+      pull_request_number:
+        description: Pull request number whose merge ref should be built
+        required: true
+        type: string
 
 jobs:
   build-dobby-on-pr:
@@ -15,7 +21,14 @@ jobs:
    
     steps:
       - name: Checkout code
+        if: github.event_name != 'workflow_call'
         uses: actions/checkout@v4
+
+      - name: Checkout pull request merge ref
+        if: github.event_name == 'workflow_call'
+        uses: actions/checkout@v4
+        with:
+          ref: refs/pull/${{ inputs.pull_request_number }}/merge
 
       - name: native build
         run: |
