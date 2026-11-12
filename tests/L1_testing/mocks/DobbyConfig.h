@@ -46,6 +46,8 @@ public:
     virtual bool addEnvironmentVar(const std::string& envVar) = 0;
     virtual bool enableSTrace(const std::string& logsDir) = 0;
     virtual void setApparmorProfile(const std::string& profileName) = 0;
+    virtual bool setApparmorProfileForContainer(const std::string& preferredProfile,
+                                                const std::string& defaultProfile) = 0;
     virtual void setPidsLimit(int limit) = 0;
     virtual std::string configJson() const = 0;
 
@@ -70,6 +72,8 @@ public:
     bool addEnvironmentVar(const std::string& envVar);
     bool enableSTrace(const std::string& logsDir);
     void setApparmorProfile(const std::string& profileName);
+    bool setApparmorProfileForContainer(const std::string& preferredProfile,
+                                        const std::string& defaultProfile);
     void setPidsLimit(int limit);
     const std::string configJson() const;
 
@@ -82,5 +86,6 @@ public:
 };
 
 #endif // !defined(DOBBYCONFIG_H)
+
 
 
