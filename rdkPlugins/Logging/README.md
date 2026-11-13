@@ -1,7 +1,5 @@
 # Dobby RDK Logging Plugin
 
-For the shared hook contract and plugin loading flow, see the [RDK plugin guide](../README.md) and [plugin launcher guide](../../pluginLauncher/README.md). This README remains the source for logging sink configuration.
-
 ## Quick Start
 Add the following section to your OCI runtime configuration `config.json` file to enable logging to a file. This will capture all the stdout/err from the container (in addition to any output from `DobbyPluginLauncher`) and redirect it to the specified file.
 
@@ -22,6 +20,44 @@ Add the following section to your OCI runtime configuration `config.json` file t
 }
 ```
 If you already have other RDK plugins in the bundle, then just add the logging plugin. Do not create multiple `rdkPlugin` sections.
+
+## Logging Process
+
+The plugin captures container stdout and stderr through a PTY, then forwards the data to the configured sink. The sequence below shows both the ongoing PTY stream and the separate path used for buffered log data.
+
+```mermaid
+sequenceDiagram
+    participant Config as OCI config
+    participant Plugin as LoggingPlugin
+    participant Dobby as Dobby / DobbyLogger
+    participant Container
+    participant Poll as Poll loop
+    participant Sink as Selected log sink
+    participant Destination as File, journald, or /dev/null
+
+    Config->>Plugin: Configure logging sink and options
+    Dobby->>Plugin: Run postInstallation hook
+    Plugin->>Plugin: Enable container terminal (PTY)
+    opt Sink is not journald
+        Plugin->>Plugin: Route OCI hook stdout/stderr to container streams
+    end
+    Dobby->>Plugin: RegisterPollSources(PTY fd, poll loop)
+    Plugin->>Sink: Create sink from configuration
+    Plugin->>Poll: Register PTY fd for input
+    Container->>Poll: Write stdout/stderr to PTY
+    Poll->>Sink: PTY data is ready
+    Sink->>Sink: Read available data in chunks
+    Sink->>Destination: Forward container output
+    Note over Poll,Sink: On PTY hangup, remove the source and close the PTY fd
+
+    opt Dobby supplies buffered log data
+        Dobby->>Plugin: DumpToLog(buffer fd)
+        Plugin->>Sink: Read buffer and forward its contents
+        Sink->>Destination: Write buffered output
+    end
+```
+
+The selected sink determines the destination: `file` writes to the configured path, `journald` writes with the configured priority, and `devNull` discards output. Missing or unknown sink configuration falls back to `/dev/null`. If journald support is not built in, a journald request also falls back to `/dev/null`.
 
 ## Options
 ### File Logging
