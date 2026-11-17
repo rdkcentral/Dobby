@@ -32,6 +32,8 @@ add_library(Utils SHARED
             ../../../../utils/source/DobbyUtils.cpp
             ../../../../utils/source/ContainerId.cpp
             ../../../../utils/source/DobbyTimer.cpp
+            ../../../../rdkPlugins/Storage/source/StorageHelper.cpp
+            ../../../../tests/L1_testing/mocks/StorageHelperTestStubs.cpp
             ../../../../AppInfrastructure/Logging/source/Logging.cpp
             )
 
@@ -42,6 +44,9 @@ target_include_directories(Utils
                 ../../../../utils/source
                 ../../../../AppInfrastructure/Logging/include
                 ../../../../AppInfrastructure/Common/include
+                ../../../../rdkPlugins/Storage/source
+                ../../../../pluginLauncher/lib/include
+                $<TARGET_PROPERTY:DobbyDaemonLib,INTERFACE_INCLUDE_DIRECTORIES>
                 )
 
 file(GLOB TESTS *.cpp)
@@ -54,3 +59,4 @@ target_link_libraries(${PROJECT_NAME} Utils ${GTEST_LIBRARIES} gtest_main pthrea
 
 
 install(TARGETS ${PROJECT_NAME} DESTINATION bin)
+

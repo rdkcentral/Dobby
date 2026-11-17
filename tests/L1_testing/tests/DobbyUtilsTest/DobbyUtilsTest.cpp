@@ -18,10 +18,16 @@
 */
 
 #include <gtest/gtest.h>
+#include <SafeDirectory.h>
+#include <cstdlib>
+#include <cstring>
 #include <fcntl.h>
+#include <sys/stat.h>
+#include <unistd.h>
 #include "DobbyTimer.h"
 #include "ContainerId.h"
 #include "Logging.h"
+#include "StorageHelper.h"
 #define private public
 #include "DobbyUtils.h"
 
@@ -49,13 +55,157 @@ TEST_F(DobbyUtilsTest, TestRmdirRecursiveAbsolutePath)
         EXPECT_TRUE(test.rmdirRecursive("/tmp/hello"));
 }
 
-TEST_F(DobbyUtilsTest, TestCleanMountLostAndFound)
+TEST_F(DobbyUtilsTest, TestStorageHelperRejectsLostAndFoundSymlink)
 {
-        std::string tmp = "/lost+found/some/long/path/file.xyz";
+        char mountTemplate[] = "/tmp/dobby-mount-XXXXXX";
+        char targetTemplate[] = "/tmp/dobby-target-XXXXXX";
+        char* mountPoint = mkdtemp(mountTemplate);
+        char* target = mkdtemp(targetTemplate);
+        ASSERT_NE(mountPoint, nullptr);
+        ASSERT_NE(target, nullptr);
 
-        test.mkdirRecursive(tmp, 0700);
+        std::string targetFile = std::string(target) + "/sentinel";
+        int targetFd = open(targetFile.c_str(), O_CREAT | O_WRONLY | O_CLOEXEC, 0600);
+        ASSERT_GE(targetFd, 0);
+        close(targetFd);
 
-        test.cleanMountLostAndFound("/home", std::string("0"));
+        std::string lostFound = std::string(mountPoint) + "/lost+found";
+        ASSERT_EQ(symlink(target, lostFound.c_str()), 0);
+
+        StorageHelper::cleanMountLostAndFound(mountPoint, "test");
+
+        EXPECT_EQ(access(targetFile.c_str(), F_OK), 0);
+        unlink(lostFound.c_str());
+        unlink(targetFile.c_str());
+        rmdir(target);
+        rmdir(mountPoint);
+}
+
+TEST_F(DobbyUtilsTest, TestStorageHelperRejectsSymlinkInMountPath)
+{
+        char mountTemplate[] = "/tmp/dobby-mount-XXXXXX";
+        char aliasTemplate[] = "/tmp/dobby-alias-XXXXXX";
+        char* mountPoint = mkdtemp(mountTemplate);
+        char* aliasDirectory = mkdtemp(aliasTemplate);
+        ASSERT_NE(mountPoint, nullptr);
+        ASSERT_NE(aliasDirectory, nullptr);
+
+        std::string lostFound = std::string(mountPoint) + "/lost+found";
+        ASSERT_EQ(mkdir(lostFound.c_str(), 0700), 0);
+        std::string targetFile = lostFound + "/sentinel";
+        int targetFd = open(targetFile.c_str(), O_CREAT | O_WRONLY | O_CLOEXEC, 0600);
+        ASSERT_GE(targetFd, 0);
+        close(targetFd);
+        std::string mountAlias = std::string(aliasDirectory) + "/mount";
+        ASSERT_EQ(symlink(mountPoint, mountAlias.c_str()), 0);
+
+        StorageHelper::cleanMountLostAndFound(mountAlias, "test");
+
+        EXPECT_EQ(access(targetFile.c_str(), F_OK), 0);
+        unlink(mountAlias.c_str());
+        unlink(targetFile.c_str());
+        rmdir(lostFound.c_str());
+        rmdir(aliasDirectory);
+        rmdir(mountPoint);
+}
+
+TEST_F(DobbyUtilsTest, TestStorageHelperDoesNotFollowNestedSymlink)
+{
+        char mountTemplate[] = "/tmp/dobby-mount-XXXXXX";
+        char targetTemplate[] = "/tmp/dobby-target-XXXXXX";
+        char* mountPoint = mkdtemp(mountTemplate);
+        char* target = mkdtemp(targetTemplate);
+        ASSERT_NE(mountPoint, nullptr);
+        ASSERT_NE(target, nullptr);
+
+        std::string lostFound = std::string(mountPoint) + "/lost+found";
+        ASSERT_EQ(mkdir(lostFound.c_str(), 0700), 0);
+        std::string targetFile = std::string(target) + "/sentinel";
+        int targetFd = open(targetFile.c_str(), O_CREAT | O_WRONLY | O_CLOEXEC, 0600);
+        ASSERT_GE(targetFd, 0);
+        close(targetFd);
+        std::string nestedLink = lostFound + "/outside";
+        ASSERT_EQ(symlink(target, nestedLink.c_str()), 0);
+
+        StorageHelper::cleanMountLostAndFound(mountPoint, "test");
+
+        EXPECT_EQ(access(targetFile.c_str(), F_OK), 0);
+        EXPECT_EQ(access(nestedLink.c_str(), F_OK), -1);
+        rmdir(lostFound.c_str());
+        unlink(targetFile.c_str());
+        rmdir(target);
+        rmdir(mountPoint);
+}
+
+TEST_F(DobbyUtilsTest, TestStorageHelperCleansManySiblingDirectories)
+{
+        char mountTemplate[] = "/tmp/dobby-mount-XXXXXX";
+        char* mountPoint = mkdtemp(mountTemplate);
+        ASSERT_NE(mountPoint, nullptr);
+
+        std::string lostFound = std::string(mountPoint) + "/lost+found";
+        ASSERT_EQ(mkdir(lostFound.c_str(), 0700), 0);
+        for (int index = 0; index < 140; ++index)
+        {
+            std::string child = lostFound + "/dir" + std::to_string(index);
+            ASSERT_EQ(mkdir(child.c_str(), 0700), 0);
+        }
+
+        StorageHelper::cleanMountLostAndFound(mountPoint, "test");
+
+        for (int index = 0; index < 140; ++index)
+        {
+            std::string child = lostFound + "/dir" + std::to_string(index);
+            EXPECT_EQ(access(child.c_str(), F_OK), -1);
+        }
+        rmdir(lostFound.c_str());
+        rmdir(mountPoint);
+}
+
+TEST_F(DobbyUtilsTest, TestDirectoryEntryIsDirectoryWithUnknownType)
+{
+        char rootTemplate[] = "/tmp/dobby-dir-XXXXXX";
+        char* root = mkdtemp(rootTemplate);
+        ASSERT_NE(root, nullptr);
+        std::string child = std::string(root) + "/child";
+        ASSERT_EQ(mkdir(child.c_str(), 0700), 0);
+
+        int rootFd = open(root, O_RDONLY | O_DIRECTORY | O_CLOEXEC);
+        ASSERT_GE(rootFd, 0);
+        struct dirent entry{};
+        std::strncpy(entry.d_name, "child", sizeof(entry.d_name) - 1);
+        entry.d_type = DT_UNKNOWN;
+        EXPECT_TRUE(AICommon::directoryEntryIsDirectory(rootFd, &entry));
+
+        ASSERT_EQ(symlink(child.c_str(), (std::string(root) + "/child-link").c_str()), 0);
+        std::strncpy(entry.d_name, "child-link", sizeof(entry.d_name) - 1);
+        entry.d_type = DT_UNKNOWN;
+        EXPECT_FALSE(AICommon::directoryEntryIsDirectory(rootFd, &entry));
+
+        close(rootFd);
+        unlink((std::string(root) + "/child-link").c_str());
+        rmdir(child.c_str());
+        rmdir(root);
+}
+
+TEST_F(DobbyUtilsTest, TestDobbyUtilsCleansLostAndFoundDirectory)
+{
+        char mountTemplate[] = "/tmp/dobby-mount-XXXXXX";
+        char* mountPoint = mkdtemp(mountTemplate);
+        ASSERT_NE(mountPoint, nullptr);
+
+        std::string lostFound = std::string(mountPoint) + "/lost+found";
+        ASSERT_EQ(mkdir(lostFound.c_str(), 0700), 0);
+        std::string staleFile = lostFound + "/stale";
+        int staleFd = open(staleFile.c_str(), O_CREAT | O_WRONLY | O_CLOEXEC, 0600);
+        ASSERT_GE(staleFd, 0);
+        close(staleFd);
+
+        test.cleanMountLostAndFound(mountPoint, "test");
+
+        EXPECT_EQ(access(staleFile.c_str(), F_OK), -1);
+        rmdir(lostFound.c_str());
+        rmdir(mountPoint);
 }
 
 TEST_F(DobbyUtilsTest, TestAttachFileToLoopDevice)
