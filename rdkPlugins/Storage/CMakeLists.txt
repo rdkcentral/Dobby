@@ -35,6 +35,7 @@ add_library( ${PROJECT_NAME}
 target_include_directories(${PROJECT_NAME}
         PRIVATE
         $<TARGET_PROPERTY:DobbyDaemonLib,INTERFACE_INCLUDE_DIRECTORIES>
+        $<TARGET_PROPERTY:AppInfraCommon,INTERFACE_INCLUDE_DIRECTORIES>
 )
 
 install(
@@ -48,3 +49,4 @@ target_link_libraries(${PROJECT_NAME}
 )
 
 set_target_properties( ${PROJECT_NAME} PROPERTIES SOVERSION 1 )
+

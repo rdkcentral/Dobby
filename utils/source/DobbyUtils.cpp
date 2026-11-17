@@ -22,6 +22,7 @@
  */
 #include "DobbyUtils.h"
 #include "DobbyTimer.h"
+#include "SafeDirectory.h"
 
 #include <Logging.h>
 #include <FileUtilities.h>
@@ -205,11 +206,10 @@ bool DobbyUtils::deleteRecursive(int dirfd, int availDepth)
             continue;
         }
 
-        // if a directory then recurse into it
-        if (entry->d_type == DT_DIR)
+        const bool isDirectory = AICommon::directoryEntryIsDirectory(dirfd, entry);
+        if (isDirectory)
         {
-            // check we're not going to deep
-            if (--availDepth <= 0)
+            if (availDepth <= 1)
             {
                 AI_LOG_ERROR("recursing to deep, aborting");
                 success = false;
@@ -229,7 +229,7 @@ bool DobbyUtils::deleteRecursive(int dirfd, int availDepth)
             {
                 // recurse into the directory deleting it's contents, the
                 // function assumes ownership of the fd and will free (closedir)
-                if (!deleteRecursive(fd, availDepth))
+                if (!deleteRecursive(fd, availDepth - 1))
                 {
                     success = false;
                     break;
@@ -237,7 +237,7 @@ bool DobbyUtils::deleteRecursive(int dirfd, int availDepth)
             }
         }
 
-        int flags = (entry->d_type == DT_DIR) ? AT_REMOVEDIR : 0;
+        int flags = isDirectory ? AT_REMOVEDIR : 0;
 
         // try unlinking the file / directory / symlink / whatever
         if (unlinkat(dirfd, entry->d_name, flags) != 0)
@@ -394,10 +394,10 @@ void DobbyUtils::cleanMountLostAndFound(const std::string& mountPoint,
     lostFoundDirPath.append("/lost+found");
 
     // iterate through the directory
-    DIR* dir = opendir(lostFoundDirPath.c_str());
+    DIR* dir = AICommon::openDirectoryNoFollow(lostFoundDirPath);
     if (!dir)
     {
-        AI_LOG_SYS_ERROR(errno, "opendir failed for '%s'",
+        AI_LOG_SYS_ERROR(errno, "failed to open directory '%s'",
                          lostFoundDirPath.c_str());
         return;
     }
@@ -419,7 +419,7 @@ void DobbyUtils::cleanMountLostAndFound(const std::string& mountPoint,
             }
 
             // if a directory then recursively delete it
-            if (entry->d_type == DT_DIR)
+            if (AICommon::directoryEntryIsDirectory(dirfd(dir), entry))
             {
                 if (!logTag.empty())
                     AI_LOG_WARN("cleaning dir '%s' from lost+found for '%s'",
@@ -1747,3 +1747,4 @@ uid_t DobbyUtils::getUID(pid_t pid) const
 {
     return static_cast<uid_t>(getGIDorUID(pid, "Uid"));
 }
+
