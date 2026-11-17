@@ -49,92 +49,102 @@ Netfilter::RuleSet constructRules(const std::string &containerId, const int ipVe
 
     // setup NAT'ing on the Dobby network ip range through external interface
     std::list<std::string> natRules;
-    std::string natRule("PREROUTING "
+    constexpr char natRule[] =
+                        "PREROUTING "
                         "-s %s "
                         "-d %s "
                         "-i " BRIDGE_NAME " "
                         "-p %s "
                         "-m %s --dport 53 "
-                        "-m comment --comment " + containerId + " "
-                        "-j DNAT --to-destination %s:53");
+                        "-m comment --comment %s "
+                        "-j DNAT --to-destination %s:53";
 
     // allow DNS packets from containers
     std::list<std::string> filterRules;
-    std::string filterRule("DobbyInputChain -s %s "
+    constexpr char filterRule[] =
+                           "DobbyInputChain -s %s "
                            "-d %s "
                            "-i " BRIDGE_NAME " "
                            "-p %s "
                            "-m %s --dport 53 "
-                           "-m comment --comment " + containerId + " -j ACCEPT");
+                           "-m comment --comment %s -j ACCEPT";
 
     if (ipVersion == AF_INET)
     {
         // compose IPv4 rules for 'nat' table
-        snprintf(buf, sizeof(buf), natRule.c_str(),
+        snprintf(buf, sizeof(buf), natRule,
                  BRIDGE_ADDRESS_RANGE "/24",
                  BRIDGE_ADDRESS "/32",
                  "udp",
                  "udp",
+                 containerId.c_str(),
                  LOCALHOST);
         natRules.emplace_back(buf);
         memset(buf, 0, sizeof(buf));
-        snprintf(buf, sizeof(buf), natRule.c_str(),
+        snprintf(buf, sizeof(buf), natRule,
                  BRIDGE_ADDRESS_RANGE "/24",
                  BRIDGE_ADDRESS "/32",
                  "tcp",
                  "tcp",
+                 containerId.c_str(),
                  LOCALHOST);
         natRules.emplace_back(buf);
         memset(buf, 0, sizeof(buf));
 
         // compose IPv4 rules for 'filter' table
-        snprintf(buf, sizeof(buf), filterRule.c_str(),
+        snprintf(buf, sizeof(buf), filterRule,
                  BRIDGE_ADDRESS_RANGE "/24",
                  LOCALHOST "/32",
                  "udp",
-                 "udp");
+                 "udp",
+                 containerId.c_str());
         filterRules.emplace_back(buf);
         memset(buf, 0, sizeof(buf));
-        snprintf(buf, sizeof(buf), filterRule.c_str(),
+        snprintf(buf, sizeof(buf), filterRule,
                  BRIDGE_ADDRESS_RANGE "/24",
                  LOCALHOST "/32",
                  "tcp",
-                 "tcp");
+                 "tcp",
+                 containerId.c_str());
         filterRules.emplace_back(buf);
     }
     else if (ipVersion == AF_INET6)
     {
         // compose IPv6 rules for 'nat' table
-        snprintf(buf, sizeof(buf), natRule.c_str(),
+        snprintf(buf, sizeof(buf), natRule,
                  BRIDGE_ADDRESS_RANGE_IPV6 "/120",
                  BRIDGE_ADDRESS_IPV6 "/128",
                  "udp",
                  "udp",
+                 containerId.c_str(),
                  "[" LOCALHOST_IPV6 "]");
         natRules.emplace_back(buf);
         memset(buf, 0, sizeof(buf));
-        snprintf(buf, sizeof(buf), natRule.c_str(),
+        snprintf(buf, sizeof(buf), natRule,
                  BRIDGE_ADDRESS_RANGE_IPV6 "/120",
                  BRIDGE_ADDRESS_IPV6 "/128",
                  "tcp",
                  "tcp",
+                 containerId.c_str(),
                  "[" LOCALHOST_IPV6 "]");
         natRules.emplace_back(buf);
         memset(buf, 0, sizeof(buf));
 
         // compose IPv6 rules for 'filter' table
-        snprintf(buf, sizeof(buf), filterRule.c_str(),
+        snprintf(buf, sizeof(buf), filterRule,
                  BRIDGE_ADDRESS_RANGE_IPV6 "/120",
                  LOCALHOST_IPV6 "/128",
                  "udp",
-                 "udp");
+                 "udp",
+                 containerId.c_str());
         filterRules.emplace_back(buf);
         memset(buf, 0, sizeof(buf));
-        snprintf(buf, sizeof(buf), filterRule.c_str(),
+        snprintf(buf, sizeof(buf), filterRule,
                  BRIDGE_ADDRESS_RANGE_IPV6 "/120",
                  LOCALHOST_IPV6 "/128",
                  "tcp",
-                 "tcp");
+                 "tcp",
+                 containerId.c_str());
         filterRules.emplace_back(buf);
         memset(buf, 0, sizeof(buf));
     }

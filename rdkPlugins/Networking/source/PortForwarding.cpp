@@ -599,13 +599,14 @@ std::string createPreroutingRule(const PortForward &portForward,
 
     // We need to add -m <PROTOCOL> because it's automatically added by
     // iptables. If omitted, we won't be able to match the rule for deletion.
-    std::string baseRule("PREROUTING "
+    constexpr char baseRule[] =
+                         "PREROUTING "
                          "! -i " BRIDGE_NAME " "
                          "-p %s "                           // protocol
                          "-m %s "                           // protocol
                          "--dport %s "                      // port number
                          "-m comment --comment %s "         // container id
-                         "-j DNAT --to-destination %s");    // target address
+                         "-j DNAT --to-destination %s";     // target address
 
     std::string destination;
 
@@ -613,7 +614,7 @@ std::string createPreroutingRule(const PortForward &portForward,
     if (ipVersion == AF_INET)
     {
         destination = ipAddress + ":" + portForward.port;
-        snprintf(buf, sizeof(buf), baseRule.c_str(),
+        snprintf(buf, sizeof(buf), baseRule,
                  portForward.protocol.c_str(),
                  portForward.protocol.c_str(),
                  portForward.port.c_str(),
@@ -623,7 +624,7 @@ std::string createPreroutingRule(const PortForward &portForward,
     else if (ipVersion == AF_INET6)
     {
         destination = "[" + ipAddress + "]:" + portForward.port;
-        snprintf(buf, sizeof(buf), baseRule.c_str(),
+        snprintf(buf, sizeof(buf), baseRule,
                  portForward.protocol.c_str(),
                  portForward.protocol.c_str(),
                  portForward.port.c_str(),
@@ -664,7 +665,8 @@ std::string createForwardingRule(const PortForward &portForward,
 
     // We need to add -m <PROTOCOL> because it's automatically added by
     // iptables. If omitted, we won't be able to match the rule for deletion.
-    std::string baseRule("FORWARD "
+    constexpr char baseRule[] =
+                         "FORWARD "
                          "-d %s/%s "                // container ip address/mask
                          "! -i " BRIDGE_NAME " "
                          "-o " BRIDGE_NAME " "
@@ -672,12 +674,12 @@ std::string createForwardingRule(const PortForward &portForward,
                          "-m %s "                   // protocol
                          "--dport %s "              // port number
                          "-m comment --comment %s " // container id
-                         "-j ACCEPT");
+                         "-j ACCEPT";
 
     // populate '%s' fields in base rule
     if (ipVersion == AF_INET)
     {
-        snprintf(buf, sizeof(buf), baseRule.c_str(),
+        snprintf(buf, sizeof(buf), baseRule,
                  ipAddress.c_str(), "32",
                  portForward.protocol.c_str(),
                  portForward.protocol.c_str(),
@@ -686,7 +688,7 @@ std::string createForwardingRule(const PortForward &portForward,
     }
     else if (ipVersion == AF_INET6)
     {
-        snprintf(buf, sizeof(buf), baseRule.c_str(),
+        snprintf(buf, sizeof(buf), baseRule,
                  ipAddress.c_str(), "128",
                  portForward.protocol.c_str(),
                  portForward.protocol.c_str(),
@@ -815,7 +817,8 @@ std::string createDnatRule(const PortForward &portForward,
 
     // We need to add -m <PROTOCOL> because it's automatically added by
     // iptables. If omitted, we won't be able to match the rule for deletion.
-    std::string baseRule("PREROUTING "
+    constexpr char baseRule[] =
+                         "PREROUTING "
                          "-s %s "                       // container address
                          "-d %s "                       // bridge address
                          "-i " BRIDGE_NAME " "
@@ -823,8 +826,7 @@ std::string createDnatRule(const PortForward &portForward,
                          "-m %s "                       // protocol
                          "--dport %s "                  // port number
                          "-m comment --comment %s "     // container id
-                         "-j DNAT --to-destination %s"  // localhost address
-                         );
+                         "-j DNAT --to-destination %s"; // localhost address
 
     // create addresses based on IP version
     if (ipVersion == AF_INET)
@@ -841,7 +843,7 @@ std::string createDnatRule(const PortForward &portForward,
     }
 
     // populate '%s' fields in base rule
-    snprintf(buf, sizeof(buf), baseRule.c_str(),
+    snprintf(buf, sizeof(buf), baseRule,
              sourceAddr.c_str(),
              bridgeAddr.c_str(),
              portForward.protocol.c_str(),
@@ -886,7 +888,8 @@ std::string createAcceptRule(const PortForward &portForward,
 
     // We need to add -m <PROTOCOL> because it's automatically added by
     // iptables. If omitted, we won't be able to match the rule for deletion.
-    std::string baseRule("DobbyInputChain "
+    constexpr char baseRule[] =
+                         "DobbyInputChain "
                          "-s %s "                       // container address
                          "-d %s "                       // localhost address
                          "-i " BRIDGE_NAME " "
@@ -895,7 +898,7 @@ std::string createAcceptRule(const PortForward &portForward,
                          "--dport %s "                  // port number
                          "-m physdev --physdev-in %s "  // veth name
                          "-m comment --comment %s "     // container id
-                         "-j ACCEPT");
+                         "-j ACCEPT";
 
     // create addresses based on IP version
     if (ipVersion == AF_INET)
@@ -910,7 +913,7 @@ std::string createAcceptRule(const PortForward &portForward,
     }
 
     // populate '%s' fields in base rule
-    snprintf(buf, sizeof(buf), baseRule.c_str(),
+    snprintf(buf, sizeof(buf), baseRule,
              sourceAddr.c_str(),
              loAddr.c_str(),
              portForward.protocol.c_str(),
@@ -947,26 +950,25 @@ std::string createMasqueradeDnatRule(const PortForward &portForward,
     // create addresses based on IP version
     if (ipVersion == AF_INET)
     {
-        std::string baseRule("OUTPUT "
+        constexpr char baseRule[] =
+                            "OUTPUT "
                             "-o lo "
                             "-p %s "                   // protocol
                             "-m %s "                   // protocol
                             "--dport %s "              // port number
                             "-j DNAT "
                             "-m comment --comment %s " // Container id
-                            "--to-destination %s"      // Bridge address:port
-        );
+                            "--to-destination %s";     // Bridge address:port
 
         destination = std::string() + BRIDGE_ADDRESS + ":" + portForward.port;
 
         // populate '%s' fields in base rule
-        snprintf(buf, sizeof(buf), baseRule.c_str(),
+        snprintf(buf, sizeof(buf), baseRule,
                 portForward.protocol.c_str(),
                 portForward.protocol.c_str(),
                 portForward.port.c_str(),
                 id.c_str(),
-                destination.c_str(),
-                portForward.port.c_str());
+                destination.c_str());
     }
 
     return std::string(buf);
@@ -1001,19 +1003,19 @@ std::string createNoIpv6LocalRule(const PortForward &portForward,
     // create addresses based on IP version
     if (ipVersion == AF_INET6)
     {
-        std::string baseRule("OUTPUT "
+        constexpr char baseRule[] =
+                            "OUTPUT "
                             "-o lo "
                             "-p %s "                   // protocol
                             "-m %s "                   // protocol
                             "--dport %s "              // port number
                             "-m comment --comment %s " // Container id
-                            "-j REJECT"                // Bridge address:port
-        );
+                            "-j REJECT";               // Bridge address:port
 
         destination = std::string() + BRIDGE_ADDRESS + ":" + portForward.port;
 
         // populate '%s' fields in base rule
-        snprintf(buf, sizeof(buf), baseRule.c_str(),
+        snprintf(buf, sizeof(buf), baseRule,
                 portForward.protocol.c_str(),
                 portForward.protocol.c_str(),
                 portForward.port.c_str(),
@@ -1047,13 +1049,14 @@ std::string createMasqueradeSnatRule(const PortForward &portForward,
     std::string sourceAddr;
     std::string destination;
 
-    std::string baseRule("POSTROUTING "
+    constexpr char baseRule[] =
+                        "POSTROUTING "
                         "-p %s "                    // protocol
                         "-s %s "                    // container localhost
                         "-d %s "                    // bridge address
                         "-j SNAT "
                         "-m comment --comment %s "  // container id
-                        "--to %s");                 // container address
+                        "--to %s";                  // container address
 
     // create addresses based on IP version
     if (ipVersion == AF_INET)
@@ -1070,7 +1073,7 @@ std::string createMasqueradeSnatRule(const PortForward &portForward,
     }
 
     // populate '%s' fields in base rule
-    snprintf(buf, sizeof(buf), baseRule.c_str(),
+    snprintf(buf, sizeof(buf), baseRule,
              portForward.protocol.c_str(),
              sourceAddr.c_str(),
              bridgeAddr.c_str(),
@@ -1105,13 +1108,14 @@ std::string createLocalLinkSnatRule(const PortForward &portForward,
     std::string sourceAddr;
     std::string destination;
 
-    std::string baseRule("POSTROUTING "
+    constexpr char baseRule[] =
+                        "POSTROUTING "
                         "-p %s "                    // protocol
                         "-s %s "                    // container local link
                         "-d %s "                    // bridge address
                         "-j SNAT "
                         "-m comment --comment %s "  // container id
-                        "--to %s");                 // container address
+                        "--to %s";                  // container address
 
     // create addresses based on IP version
     if (ipVersion == AF_INET6)
@@ -1127,7 +1131,7 @@ std::string createLocalLinkSnatRule(const PortForward &portForward,
     }
 
     // populate '%s' fields in base rule
-    snprintf(buf, sizeof(buf), baseRule.c_str(),
+    snprintf(buf, sizeof(buf), baseRule,
              portForward.protocol.c_str(),
              sourceAddr.c_str(),
              bridgeAddr.c_str(),

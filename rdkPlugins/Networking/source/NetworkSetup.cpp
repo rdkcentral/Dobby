@@ -264,16 +264,17 @@ Netfilter::RuleSet createAntiSpoofRule(const std::string &vethName,
     std::list<std::string> antiSpoofRules;
     char buf[128];
 
-    std::string filterRule("DobbyInputChain "
+    constexpr char filterRule[] =
+                           "DobbyInputChain "
                            "! -s %s/%s "                    // ipAddress / mask
                            "-i %s "                         // bridge name
                            "-m physdev --physdev-in %s "    // veth name
-                           "-j DROP");
+                           "-j DROP";
 
     // construct the rule
     if (ipVersion == AF_INET)
     {
-        snprintf(buf, sizeof(buf), filterRule.c_str(),
+        snprintf(buf, sizeof(buf), filterRule,
                  address.c_str(), "32",
                  BRIDGE_NAME,
                  vethName.c_str());
@@ -281,7 +282,7 @@ Netfilter::RuleSet createAntiSpoofRule(const std::string &vethName,
     }
     else if (ipVersion == AF_INET6)
     {
-        snprintf(buf, sizeof(buf), filterRule.c_str(),
+        snprintf(buf, sizeof(buf), filterRule,
                  address.c_str(), "128",
                  BRIDGE_NAME,
                  vethName.c_str());

@@ -506,19 +506,20 @@ std::string constructPreRoutingIptablesRule(const std::string &containerId,
                                             const in_port_t port,
                                             const int addressFamily)
 {
-    std::string baseRule("PREROUTING "
+    constexpr char baseRule[] =
+                         "PREROUTING "
                          "-d %s "                       // address/mask
                          "! -i " BRIDGE_NAME " "
                          "-p udp -m udp --dport %hu "   // port
                          "-m comment --comment %s "     // container id
-                         "-j TTL --ttl-inc 1");
+                         "-j TTL --ttl-inc 1";
 
     // create addresses based on IP family
     std::string destAddr = (addressFamily == AF_INET) ?
                             address + "/32" : address + "/128";
 
     char buf[256];
-    snprintf(buf, sizeof(buf), baseRule.c_str(),
+    snprintf(buf, sizeof(buf), baseRule,
              address.c_str(),
              port,
              containerId.c_str());
@@ -550,20 +551,21 @@ std::string constructForwardingIptablesRule(const std::string &containerId,
                                             const in_port_t port,
                                             const int addressFamily)
 {
-    std::string baseRule("FORWARD "
+    constexpr char baseRule[] =
+                         "FORWARD "
                          "-d %s "                       // address/mask
                          "! -i " BRIDGE_NAME " "
                          "-o " BRIDGE_NAME " "
                          "-p udp -m udp --dport %hu "   // port
                          "-m comment --comment %s "     // container id
-                         "-j ACCEPT");
+                         "-j ACCEPT";
 
     // create addresses based on IP family
     std::string destAddr = (addressFamily == AF_INET) ?
                             address + "/32" : address + "/128";
 
     char buf[256];
-    snprintf(buf, sizeof(buf), baseRule.c_str(),
+    snprintf(buf, sizeof(buf), baseRule,
              address.c_str(),
              port,
              containerId.c_str());
