@@ -20,4 +20,4 @@ add_subdirectory(DobbyTest)
 add_subdirectory(DobbyManagerTest)
 add_subdirectory(DobbySpecConfigTest)
 add_subdirectory(DobbyProxyTest)
-
+add_subdirectory(StorageHelperTest)

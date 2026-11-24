@@ -19,9 +19,11 @@
 
 #include <gtest/gtest.h>
 #include <fcntl.h>
+#include <cstring>
 #include "DobbyTimer.h"
 #include "ContainerId.h"
 #include "Logging.h"
+#include "SafeDirectory.h"
 #define private public
 #include "DobbyUtils.h"
 
@@ -49,13 +51,133 @@ TEST_F(DobbyUtilsTest, TestRmdirRecursiveAbsolutePath)
         EXPECT_TRUE(test.rmdirRecursive("/tmp/hello"));
 }
 
-TEST_F(DobbyUtilsTest, TestCleanMountLostAndFound)
+TEST_F(DobbyUtilsTest, TestCleanMountLostAndFoundRejectsSymlink)
 {
-        std::string tmp = "/lost+found/some/long/path/file.xyz";
+        char mountTemplate[] = "/tmp/dobby-mount-XXXXXX";
+        char targetTemplate[] = "/tmp/dobby-target-XXXXXX";
+        char* mountPoint = mkdtemp(mountTemplate);
+        char* target = mkdtemp(targetTemplate);
+        ASSERT_NE(mountPoint, nullptr);
+        ASSERT_NE(target, nullptr);
 
-        test.mkdirRecursive(tmp, 0700);
+        std::string targetFile = std::string(target) + "/sentinel";
+        int targetFd = open(targetFile.c_str(), O_CREAT | O_WRONLY | O_CLOEXEC, 0600);
+        ASSERT_GE(targetFd, 0);
+        close(targetFd);
 
-        test.cleanMountLostAndFound("/home", std::string("0"));
+        std::string lostFound = std::string(mountPoint) + "/lost+found";
+        ASSERT_EQ(symlink(target, lostFound.c_str()), 0);
+
+        test.cleanMountLostAndFound(mountPoint, std::string("0"));
+
+        EXPECT_EQ(access(targetFile.c_str(), F_OK), 0);
+        unlink(lostFound.c_str());
+        unlink(targetFile.c_str());
+        rmdir(target);
+        rmdir(mountPoint);
+}
+
+TEST_F(DobbyUtilsTest, TestCleanMountLostAndFoundCleansDirectory)
+{
+        char mountTemplate[] = "/tmp/dobby-mount-XXXXXX";
+        char* mountPoint = mkdtemp(mountTemplate);
+        ASSERT_NE(mountPoint, nullptr);
+
+        std::string lostFound = std::string(mountPoint) + "/lost+found";
+        ASSERT_EQ(mkdir(lostFound.c_str(), 0700), 0);
+        std::string staleFile = lostFound + "/stale";
+        int staleFd = open(staleFile.c_str(), O_CREAT | O_WRONLY | O_CLOEXEC, 0600);
+        ASSERT_GE(staleFd, 0);
+        close(staleFd);
+
+        test.cleanMountLostAndFound(mountPoint, std::string("0"));
+
+        EXPECT_EQ(access(staleFile.c_str(), F_OK), -1);
+        rmdir(lostFound.c_str());
+        rmdir(mountPoint);
+}
+
+TEST_F(DobbyUtilsTest, TestCleanMountLostAndFoundUnlinksNestedSymlink)
+{
+        char mountTemplate[] = "/tmp/dobby-mount-XXXXXX";
+        char targetTemplate[] = "/tmp/dobby-target-XXXXXX";
+        char* mountPoint = mkdtemp(mountTemplate);
+        char* target = mkdtemp(targetTemplate);
+        ASSERT_NE(mountPoint, nullptr);
+        ASSERT_NE(target, nullptr);
+
+        std::string lostFound = std::string(mountPoint) + "/lost+found";
+        std::string nested = lostFound + "/nested";
+        ASSERT_EQ(mkdir(lostFound.c_str(), 0700), 0);
+        ASSERT_EQ(mkdir(nested.c_str(), 0700), 0);
+
+        std::string targetFile = std::string(target) + "/sentinel";
+        int targetFd = open(targetFile.c_str(), O_CREAT | O_WRONLY | O_CLOEXEC, 0600);
+        ASSERT_GE(targetFd, 0);
+        close(targetFd);
+        std::string linkPath = nested + "/target";
+        ASSERT_EQ(symlink(target, linkPath.c_str()), 0);
+
+        test.cleanMountLostAndFound(mountPoint, std::string("0"));
+
+        EXPECT_EQ(access(linkPath.c_str(), F_OK), -1);
+        EXPECT_EQ(access(targetFile.c_str(), F_OK), 0);
+        rmdir(nested.c_str());
+        rmdir(lostFound.c_str());
+        unlink(targetFile.c_str());
+        rmdir(target);
+        rmdir(mountPoint);
+}
+
+TEST_F(DobbyUtilsTest, TestDirectoryEntryUnknownUsesNoFollowStat)
+{
+        char directoryTemplate[] = "/tmp/dobby-entry-XXXXXX";
+        char* directory = mkdtemp(directoryTemplate);
+        ASSERT_NE(directory, nullptr);
+
+        std::string realDirectory = std::string(directory) + "/directory";
+        std::string regularFile = std::string(directory) + "/file";
+        std::string symbolicLink = std::string(directory) + "/link";
+        ASSERT_EQ(mkdir(realDirectory.c_str(), 0700), 0);
+        int fileFd = open(regularFile.c_str(), O_CREAT | O_WRONLY | O_CLOEXEC, 0600);
+        ASSERT_GE(fileFd, 0);
+        close(fileFd);
+        ASSERT_EQ(symlink(realDirectory.c_str(), symbolicLink.c_str()), 0);
+
+        int directoryFd = open(directory, O_RDONLY | O_DIRECTORY | O_CLOEXEC);
+        ASSERT_GE(directoryFd, 0);
+        dirent entry = {};
+        entry.d_type = DT_UNKNOWN;
+        std::strcpy(entry.d_name, "directory");
+        EXPECT_TRUE(AICommon::directoryEntryIsDirectory(directoryFd, &entry));
+        std::strcpy(entry.d_name, "file");
+        EXPECT_FALSE(AICommon::directoryEntryIsDirectory(directoryFd, &entry));
+        std::strcpy(entry.d_name, "link");
+        EXPECT_FALSE(AICommon::directoryEntryIsDirectory(directoryFd, &entry));
+        close(directoryFd);
+
+        rmdir(realDirectory.c_str());
+        unlink(regularFile.c_str());
+        unlink(symbolicLink.c_str());
+        rmdir(directory);
+}
+
+TEST_F(DobbyUtilsTest, TestDeleteRecursivePreservesDepthForSiblings)
+{
+        char directoryTemplate[] = "/tmp/dobby-depth-XXXXXX";
+        char* directory = mkdtemp(directoryTemplate);
+        ASSERT_NE(directory, nullptr);
+        std::string first = std::string(directory) + "/first";
+        std::string second = std::string(directory) + "/second";
+        ASSERT_EQ(mkdir(first.c_str(), 0700), 0);
+        ASSERT_EQ(mkdir(second.c_str(), 0700), 0);
+
+        int directoryFd = open(directory, O_RDONLY | O_DIRECTORY | O_CLOEXEC);
+        ASSERT_GE(directoryFd, 0);
+        EXPECT_TRUE(test.deleteRecursive(directoryFd, 2));
+        EXPECT_EQ(access(first.c_str(), F_OK), -1);
+        EXPECT_EQ(access(second.c_str(), F_OK), -1);
+        rmdir(directory);
 }
 
 TEST_F(DobbyUtilsTest, TestAttachFileToLoopDevice)
