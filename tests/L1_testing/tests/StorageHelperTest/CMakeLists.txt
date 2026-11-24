@@ -14,6 +14,9 @@ add_executable(${PROJECT_NAME}
 target_include_directories(${PROJECT_NAME}
         PRIVATE
         ../../../../rdkPlugins/Storage/source
+        ../../../../pluginLauncher/lib/include
+        ../../../../daemon/lib/include
+        ../../../../libocispec/generated_output
         ../../../../rdkPlugins/Common/include
         ../../../../AppInfrastructure/Common/include
         ../../../../AppInfrastructure/Logging/include
