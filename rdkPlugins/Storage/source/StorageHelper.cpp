@@ -335,7 +335,8 @@ void StorageHelper::cleanMountLostAndFound(const std::string& mountPoint,
     std::string lostFoundDirPath(mountPoint);
     lostFoundDirPath.append("/lost+found");
 
-    // iterate through the directory
+    // mountPoint is created and managed by the root Dobby runtime before this
+    // helper runs, so only the lost+found component needs no-follow handling.
     DIR* dir = AICommon::openDirectoryNoFollow(lostFoundDirPath);
     if (!dir)
     {
@@ -590,11 +591,13 @@ bool StorageHelper::deleteRecursive(int dirfd, int availDepth)
             continue;
         }
 
+        const bool isDirectory = AICommon::directoryEntryIsDirectory(dirfd, entry);
+
         // if a directory then recurse into it
-        if (AICommon::directoryEntryIsDirectory(dirfd, entry))
+        if (isDirectory)
         {
             // check we're not going to deep
-            if (--availDepth <= 0)
+            if (availDepth <= 1)
             {
                 AI_LOG_ERROR("recursing to deep, aborting");
                 success = false;
@@ -614,7 +617,7 @@ bool StorageHelper::deleteRecursive(int dirfd, int availDepth)
             {
                 // recurse into the directory deleting it's contents, the
                 // function assumes ownership of the fd and will free (closedir)
-                if (!deleteRecursive(fd, availDepth))
+                if (!deleteRecursive(fd, availDepth - 1))
                 {
                     success = false;
                     break;
@@ -622,7 +625,7 @@ bool StorageHelper::deleteRecursive(int dirfd, int availDepth)
             }
         }
 
-        int flags = (AICommon::directoryEntryIsDirectory(dirfd, entry)) ? AT_REMOVEDIR : 0;
+        int flags = isDirectory ? AT_REMOVEDIR : 0;
 
         // try unlinking the file / directory / symlink / whatever
         if (unlinkat(dirfd, entry->d_name, flags) != 0)
